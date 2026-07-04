@@ -1,8 +1,16 @@
+import { getBridalKeywordLinesForImageProfile } from "../data/bridalImageKeywordProfiles";
+import {
+  getXiaohongshuBridalContentProfile,
+  xiaohongshuBridalTopicCopyKits,
+  xiaohongshuBridalTopicOptions,
+  type XiaohongshuBridalTopic
+} from "../data/xiaohongshuBridalContentProfiles";
 import type { ImageType, ProductCategory, PromptParams, ScenePreference } from "../types";
 import { generatePrompt } from "./generatePrompt";
 
 export type BridalFashionTopic =
   | "试纱体验"
+  | XiaohongshuBridalTopic
   | "极简新娘"
   | "法式婚纱"
   | "草坪婚礼"
@@ -87,6 +95,7 @@ type TopicCopyDraft = {
 
 export const bridalFashionTopicOptions: BridalFashionTopic[] = [
   "试纱体验",
+  ...xiaohongshuBridalTopicOptions,
   "极简新娘",
   "法式婚纱",
   "草坪婚礼",
@@ -112,6 +121,10 @@ export const dressFashionTopicOptions: DressFashionTopic[] = [
 ];
 
 export const fashionSeedingDailySlotOptions: FashionSeedingDailySlot[] = [1, 2];
+
+function isXiaohongshuBridalTopic(topic: BridalFashionTopic): topic is XiaohongshuBridalTopic {
+  return xiaohongshuBridalTopicOptions.includes(topic as XiaohongshuBridalTopic);
+}
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DAILY_POST_COUNT = 2;
@@ -198,6 +211,7 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
 }
 
 const topicCopyKits: Record<FashionSeedingTopic, TopicCopyKit> = {
+  ...xiaohongshuBridalTopicCopyKits,
   试纱体验: {
     titles: ["试纱这件事，不用急着被夸", "一件婚纱合不合适，身体会先知道", "好的试纱，是慢慢确认自己"],
     openings: [
@@ -506,7 +520,7 @@ const topicCopyKits: Record<FashionSeedingTopic, TopicCopyKit> = {
   }
 };
 
-const bridalMainSceneByTopic: Record<BridalFashionTopic, ScenePreference> = {
+const bridalMainSceneByTopic: Partial<Record<BridalFashionTopic, ScenePreference>> = {
   试纱体验: "试纱间",
   极简新娘: "酒店套房晨光",
   法式婚纱: "婚纱店橱窗",
@@ -533,7 +547,18 @@ const dressMainSceneByTopic: Record<DressFashionTopic, ScenePreference> = {
 };
 
 function getBridalImageDrafts(topic: BridalFashionTopic): ImageDraft[] {
-  const mainScene = bridalMainSceneByTopic[topic];
+  if (isXiaohongshuBridalTopic(topic)) {
+    return getXiaohongshuBridalContentProfile(topic).imageBlueprints.map((blueprint) => ({
+      name: blueprint.name,
+      purpose: blueprint.purpose,
+      description: blueprint.description,
+      imageType: blueprint.imageType,
+      scenePreference: blueprint.scenePreference,
+      extraRequirement: `${blueprint.extraRequirement} ${getBridalKeywordLinesForImageProfile(blueprint.keywordProfileId)}`
+    }));
+  }
+
+  const mainScene = bridalMainSceneByTopic[topic] ?? "试纱间";
   return [
     {
       name: "图1｜主图｜完整状态",

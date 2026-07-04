@@ -1,4 +1,5 @@
 import { getCompatibleSceneOptions } from "../data/bridalDressSceneOptions";
+import { getBridalPromptKeywordProfileForParams } from "../data/bridalImageKeywordProfiles";
 import type {
   BridalStyle,
   DressStyle,
@@ -212,6 +213,8 @@ function cleanJoin(lines: Array<string | false | undefined>) {
 export function generatePrompt(params: PromptParams): PromptOutput {
   const resolvedScene = resolveScene(params);
   const extraRequirement = params.extraRequirement.trim();
+  const bridalKeywordProfile = getBridalPromptKeywordProfileForParams(params, resolvedScene);
+  const negativeConstraintLines = [...negativeRules, bridalKeywordProfile?.negativeLine].filter(Boolean);
 
   const prompt = cleanJoin([
     categoryLines[params.productCategory],
@@ -223,10 +226,13 @@ export function generatePrompt(params: PromptParams): PromptOutput {
     sceneLines[resolvedScene],
     seasonLines[params.season],
     lightLines[params.lightPreference],
+    bridalKeywordProfile
+      ? `Xiaohongshu bridal visual keyword alignment: ${bridalKeywordProfile.promptLine}`
+      : undefined,
     brandDirection,
     "Composition: balanced crop, natural posture if a person appears, clear waistline and hemline, visible fabric detail, no chaotic props, no excessive retouching.",
     "Camera feel: editorial but believable, real lens perspective, soft texture, realistic skin and hands, premium e-commerce and social content quality.",
-    `Negative constraints: ${negativeRules.join(" ")}`,
+    `Negative constraints: ${negativeConstraintLines.join(" ")}`,
     extraRequirement ? `Additional user requirement, appended exactly as supplied: ${extraRequirement}` : undefined
   ]);
 
