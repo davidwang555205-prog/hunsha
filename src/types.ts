@@ -1,3 +1,5 @@
+import type { BridalImageKeywordProfileId } from "./data/bridalImageKeywordProfiles";
+
 export type ProductCategory = "婚纱 / 礼服" | "裙装 / 女装";
 
 export type BridalStyle =
@@ -88,6 +90,7 @@ export type PromptParams = {
   lightPreference: LightPreference;
   extraRequirement: string;
   generationNonce: number;
+  bridalKeywordProfileId?: BridalImageKeywordProfileId;
 };
 
 export type PromptOutput = {

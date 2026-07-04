@@ -41,6 +41,7 @@ const imageTypeOptions: ImageType[] = ["产品上身图", "对镜穿搭图", "�
 const seasonOptions: Season[] = ["春", "夏", "秋", "冬"];
 const lightPreferenceOptions: LightPreference[] = ["自动匹配", "清晨自然光", "午后柔光", "傍晚金色光", "室内窗边光", "酒店暖光", "婚礼现场自然光"];
 const imageCountOptions: Array<3 | 5> = [3, 5];
+const preferredBridalContentTopic: FashionSeedingTopic = "真实客户试纱";
 
 const initialParams: PromptParams = {
   productCategory: "婚纱 / 礼服",
@@ -57,12 +58,14 @@ const initialParams: PromptParams = {
 };
 
 const initialDailySelection = getDailyFashionSeedingSelection(initialParams.productCategory, new Date(), 1);
+const initialContentTopic =
+  initialParams.productCategory === "婚纱 / 礼服" ? preferredBridalContentTopic : initialDailySelection.topic;
 const initialGeneratedPrompt = generatePrompt(initialParams).prompt;
 const initialContent = generateFashionSeedingContent({
   productCategory: initialParams.productCategory,
   baseParams: initialParams,
   imageCount: 3,
-  topic: initialDailySelection.topic,
+  topic: initialContentTopic,
   dailySlot: 1
 });
 
@@ -80,6 +83,11 @@ function updateField<K extends keyof PromptParams>(params: PromptParams, key: K,
   return { ...params, [key]: value };
 }
 
+function getDefaultContentTopic(productCategory: ProductCategory, dailySlot: FashionSeedingDailySlot) {
+  if (productCategory === "婚纱 / 礼服") return preferredBridalContentTopic;
+  return getDailyFashionSeedingSelection(productCategory, new Date(), dailySlot).topic;
+}
+
 function buildParameterSummary(params: PromptParams) {
   const style = params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle;
   return [params.productCategory, style, params.imageType, params.scenePreference, params.modelChoice, params.lightPreference].join("｜");
@@ -91,9 +99,10 @@ function App() {
   const [copyStatus, setCopyStatus] = useState("");
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const [referenceImageCount, setReferenceImageCount] = useState(0);
-  const [contentTopic, setContentTopic] = useState<FashionSeedingTopic>(initialDailySelection.topic);
+  const [contentTopic, setContentTopic] = useState<FashionSeedingTopic>(initialContentTopic);
   const [dailySlot, setDailySlot] = useState<FashionSeedingDailySlot>(1);
   const [imageCount, setImageCount] = useState<3 | 5>(3);
+  const [contentNonce, setContentNonce] = useState(0);
   const [content, setContent] = useState(initialContent);
   const [contentCopyStatus, setContentCopyStatus] = useState("");
   const [expandedPrompts, setExpandedPrompts] = useState<Record<number, boolean>>({});
@@ -113,8 +122,9 @@ function App() {
   };
 
   const handleCategoryChange = (productCategory: ProductCategory) => {
-    const nextTopic = getDailyFashionSeedingSelection(productCategory, new Date(), dailySlot).topic;
+    const nextTopic = getDefaultContentTopic(productCategory, dailySlot);
     setContentTopic(nextTopic);
+    setContentNonce(0);
     updateParams((current) => {
       const nextImageType = current.imageType;
       return {
@@ -162,12 +172,15 @@ function App() {
 
   const handleGenerateContent = () => {
     const syncedParams = syncPromptParams();
+    const nextContentNonce = contentNonce + 1;
+    setContentNonce(nextContentNonce);
     const nextContent = generateFashionSeedingContent({
       productCategory: syncedParams.productCategory,
       baseParams: syncedParams,
       imageCount,
       topic: contentTopic,
-      dailySlot
+      dailySlot,
+      contentNonce: nextContentNonce
     });
     setContent(nextContent);
     setContentCopyStatus("");
@@ -399,7 +412,10 @@ function App() {
               <select
                 className={inputClass}
                 value={contentTopic}
-                onChange={(event) => setContentTopic(event.target.value as FashionSeedingTopic)}
+                onChange={(event) => {
+                  setContentTopic(event.target.value as FashionSeedingTopic);
+                  setContentNonce(0);
+                }}
               >
                 {contentTopicOptions.map((option) => (
                   <option key={option} value={option}>
@@ -414,7 +430,10 @@ function App() {
               <select
                 className={inputClass}
                 value={dailySlot}
-                onChange={(event) => setDailySlot(Number(event.target.value) as FashionSeedingDailySlot)}
+                onChange={(event) => {
+                  setDailySlot(Number(event.target.value) as FashionSeedingDailySlot);
+                  setContentNonce(0);
+                }}
               >
                 {fashionSeedingDailySlotOptions.map((option) => (
                   <option key={option} value={option}>

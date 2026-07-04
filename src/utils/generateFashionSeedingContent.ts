@@ -1,11 +1,12 @@
-import { getBridalKeywordLinesForImageProfile } from "../data/bridalImageKeywordProfiles";
+import type { BridalImageKeywordProfileId } from "../data/bridalImageKeywordProfiles";
 import {
   getXiaohongshuBridalContentProfile,
+  xiaohongshuBridalCopyDrafts,
   xiaohongshuBridalTopicCopyKits,
   xiaohongshuBridalTopicOptions,
   type XiaohongshuBridalTopic
 } from "../data/xiaohongshuBridalContentProfiles";
-import type { ImageType, ProductCategory, PromptParams, ScenePreference } from "../types";
+import type { ImageType, ModelChoice, ProductCategory, PromptParams, ScenePreference } from "../types";
 import { generatePrompt } from "./generatePrompt";
 
 export type BridalFashionTopic =
@@ -65,6 +66,7 @@ type FashionSeedingInput = {
   topic?: FashionSeedingTopic;
   date?: Date;
   dailySlot?: FashionSeedingDailySlot;
+  contentNonce?: number;
 };
 
 type ImageDraft = {
@@ -74,6 +76,7 @@ type ImageDraft = {
   imageType: ImageType;
   scenePreference: ScenePreference;
   extraRequirement: string;
+  bridalKeywordProfileId?: BridalImageKeywordProfileId;
 };
 
 type TopicCopyKit = {
@@ -122,7 +125,7 @@ export const dressFashionTopicOptions: DressFashionTopic[] = [
 
 export const fashionSeedingDailySlotOptions: FashionSeedingDailySlot[] = [1, 2];
 
-function isXiaohongshuBridalTopic(topic: BridalFashionTopic): topic is XiaohongshuBridalTopic {
+function isXiaohongshuBridalTopic(topic: FashionSeedingTopic): topic is XiaohongshuBridalTopic {
   return xiaohongshuBridalTopicOptions.includes(topic as XiaohongshuBridalTopic);
 }
 
@@ -155,6 +158,10 @@ export function getFashionSeedingTopicOptions(productCategory: ProductCategory) 
 }
 
 function getTopicVariantCount(topic: FashionSeedingTopic) {
+  if (isXiaohongshuBridalTopic(topic)) {
+    return xiaohongshuBridalCopyDrafts[topic].length;
+  }
+
   const kit = topicCopyKits[topic];
   return kit.openings.length * kit.observations.length * kit.scenes.length * kit.closings.length;
 }
@@ -186,6 +193,18 @@ function pick<T>(items: T[], index: number) {
 }
 
 function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): TopicCopyDraft {
+  if (isXiaohongshuBridalTopic(topic)) {
+    const profile = getXiaohongshuBridalContentProfile(topic);
+    const draft = pick(xiaohongshuBridalCopyDrafts[topic], variantIndex);
+
+    return {
+      titles: draft.titles,
+      body: draft.paragraphs.join("\n\n"),
+      tags: draft.tags ?? profile.copyKit.tags,
+      note: draft.note ?? profile.copyKit.note
+    };
+  }
+
   const kit = topicCopyKits[topic];
   const openingIndex = variantIndex % kit.openings.length;
   const observationIndex = Math.floor(variantIndex / kit.openings.length) % kit.observations.length;
@@ -554,7 +573,8 @@ function getBridalImageDrafts(topic: BridalFashionTopic): ImageDraft[] {
       description: blueprint.description,
       imageType: blueprint.imageType,
       scenePreference: blueprint.scenePreference,
-      extraRequirement: `${blueprint.extraRequirement} ${getBridalKeywordLinesForImageProfile(blueprint.keywordProfileId)}`
+      extraRequirement: blueprint.extraRequirement,
+      bridalKeywordProfileId: blueprint.keywordProfileId
     }));
   }
 
@@ -666,13 +686,33 @@ function getImageDrafts(productCategory: ProductCategory, topic: FashionSeedingT
     : getDressImageDrafts(topic as DressFashionTopic);
 }
 
-function buildImagePlan(baseParams: PromptParams, draft: ImageDraft, index: number): FashionSeedingImagePlan {
+function resolveImageModelChoice(baseParams: PromptParams, draft: ImageDraft): ModelChoice {
+  if (baseParams.productCategory !== "婚纱 / 礼服") return baseParams.modelChoice;
+  if (draft.imageType !== "产品上身图" && draft.imageType !== "对镜穿搭图" && draft.imageType !== "生活场景图") {
+    return baseParams.modelChoice;
+  }
+
+  if (
+    draft.bridalKeywordProfileId === "realCustomerFitting" ||
+    draft.bridalKeywordProfileId === "companionFitting" ||
+    draft.bridalKeywordProfileId === "fittingServiceDetail" ||
+    draft.bridalKeywordProfileId === "storePublishing"
+  ) {
+    return "高级婚纱店真实试纱客户";
+  }
+
+  return baseParams.modelChoice;
+}
+
+function buildImagePlan(baseParams: PromptParams, draft: ImageDraft, index: number, contentNonce: number): FashionSeedingImagePlan {
   const params: PromptParams = {
     ...baseParams,
     imageType: draft.imageType,
+    modelChoice: resolveImageModelChoice(baseParams, draft),
     scenePreference: draft.scenePreference,
     extraRequirement: draft.extraRequirement,
-    generationNonce: baseParams.generationNonce + index + 1
+    generationNonce: baseParams.generationNonce + contentNonce * 10 + index + 1,
+    bridalKeywordProfileId: draft.bridalKeywordProfileId
   };
 
   return {
@@ -691,11 +731,15 @@ export function generateFashionSeedingContent(input: FashionSeedingInput): Fashi
   const safeTopic =
     input.topic && topicOptions.includes(input.topic) ? input.topic : daily.topic;
   const variantCount = getTopicVariantCount(safeTopic);
-  const variantIndex = input.topic && input.topic !== daily.topic ? input.baseParams.generationNonce % variantCount : daily.variantIndex;
+  const contentNonce = input.contentNonce ?? 0;
+  const variantIndex =
+    input.topic && input.topic !== daily.topic
+      ? contentNonce % variantCount
+      : (daily.variantIndex + contentNonce) % variantCount;
   const copy = buildCopyFromKit(safeTopic, variantIndex);
   const images = getImageDrafts(input.productCategory, safeTopic)
     .slice(0, imageCount)
-    .map((draft, index) => buildImagePlan(input.baseParams, draft, index));
+    .map((draft, index) => buildImagePlan(input.baseParams, draft, index, contentNonce));
 
   return {
     topic: safeTopic,

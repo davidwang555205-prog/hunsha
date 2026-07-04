@@ -1,5 +1,5 @@
 import { getCompatibleSceneOptions } from "../data/bridalDressSceneOptions";
-import { getBridalPromptKeywordProfileForParams } from "../data/bridalImageKeywordProfiles";
+import { getBridalImageKeywordProfile, getBridalPromptKeywordProfileForParams } from "../data/bridalImageKeywordProfiles";
 import type {
   BridalStyle,
   DressStyle,
@@ -213,7 +213,9 @@ function cleanJoin(lines: Array<string | false | undefined>) {
 export function generatePrompt(params: PromptParams): PromptOutput {
   const resolvedScene = resolveScene(params);
   const extraRequirement = params.extraRequirement.trim();
-  const bridalKeywordProfile = getBridalPromptKeywordProfileForParams(params, resolvedScene);
+  const bridalKeywordProfile = params.bridalKeywordProfileId
+    ? getBridalImageKeywordProfile(params.bridalKeywordProfileId)
+    : getBridalPromptKeywordProfileForParams(params, resolvedScene);
   const negativeConstraintLines = [...negativeRules, bridalKeywordProfile?.negativeLine].filter(Boolean);
 
   const prompt = cleanJoin([
