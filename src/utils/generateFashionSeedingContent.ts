@@ -94,7 +94,43 @@ type TopicCopyDraft = {
   body: string;
   tags: string[];
   note: string;
+  promptContext: CopyAlignmentContext;
 };
+
+type CopyVariationBank = {
+  audiences: string[];
+  focuses: string[];
+  concerns: string[];
+  proofs: string[];
+  scenes: string[];
+  materials: string[];
+  services: string[];
+  takeaways: string[];
+  tones: string[];
+  tagExtras: string[];
+};
+
+type VariantAxes = {
+  primary: number;
+  secondary: number;
+  tertiary: number;
+};
+
+type CopyAlignmentContext = {
+  topic: FashionSeedingTopic;
+  audience: string;
+  focus: string;
+  concern: string;
+  proof: string;
+  scene: string;
+  material: string;
+  service: string;
+  takeaway: string;
+  tone: string;
+};
+
+const TOPIC_VARIANT_COUNT = 1000;
+const VARIANT_AXIS_SIZE = 10;
 
 export const bridalFashionTopicOptions: BridalFashionTopic[] = [
   "试纱体验",
@@ -129,6 +165,10 @@ function isXiaohongshuBridalTopic(topic: FashionSeedingTopic): topic is Xiaohong
   return xiaohongshuBridalTopicOptions.includes(topic as XiaohongshuBridalTopic);
 }
 
+function isBridalFashionTopic(topic: FashionSeedingTopic): topic is BridalFashionTopic {
+  return bridalFashionTopicOptions.includes(topic as BridalFashionTopic);
+}
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DAILY_POST_COUNT = 2;
 
@@ -158,12 +198,7 @@ export function getFashionSeedingTopicOptions(productCategory: ProductCategory) 
 }
 
 function getTopicVariantCount(topic: FashionSeedingTopic) {
-  if (isXiaohongshuBridalTopic(topic)) {
-    return xiaohongshuBridalCopyDrafts[topic].length;
-  }
-
-  const kit = topicCopyKits[topic];
-  return kit.openings.length * kit.observations.length * kit.scenes.length * kit.closings.length;
+  return TOPIC_VARIANT_COUNT;
 }
 
 export function getDailyFashionSeedingSelection(
@@ -192,40 +227,490 @@ function pick<T>(items: T[], index: number) {
   return items[index % items.length];
 }
 
-function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): TopicCopyDraft {
-  if (isXiaohongshuBridalTopic(topic)) {
-    const profile = getXiaohongshuBridalContentProfile(topic);
-    const draft = pick(xiaohongshuBridalCopyDrafts[topic], variantIndex);
+const bridalVariationBank: CopyVariationBank = {
+  audiences: [
+    "第一次预约试纱的新娘",
+    "带妈妈一起看婚纱的人",
+    "担心手臂和肩颈的新娘",
+    "正在对比主纱和轻婚纱的人",
+    "想要酒店仪式感的新娘",
+    "喜欢克制审美的备婚用户",
+    "容易被精修图影响判断的人",
+    "需要朋友陪着确认状态的人",
+    "在意走路和坐下舒适度的人",
+    "想提前了解婚纱店体验的人"
+  ],
+  focuses: [
+    "肩颈线有没有被打开",
+    "腰线落点是否托住比例",
+    "裙摆体量会不会压住人",
+    "拖尾长度和婚礼场地是否匹配",
+    "领口弧度能不能修饰脸型",
+    "手臂和背部有没有紧绷感",
+    "白纱在自然光下是否保留纹理",
+    "走动时裙摆是否跟得上身体",
+    "头纱长度和主纱层次是否协调",
+    "坐下、转身和敬茶动作是否方便"
+  ],
+  concerns: [
+    "穿上后会不会一直想整理胸口",
+    "侧面看是不是比正面更显真实比例",
+    "朋友随手视频里状态是否自然",
+    "顾问调整后版型有没有明显变顺",
+    "照片好看但现场会不会太沉",
+    "婚礼当天穿几个小时会不会累",
+    "近看蕾丝和珠绣是否经得起放大",
+    "背影在仪式动线里是否完整",
+    "试纱间灯光有没有掩盖面料问题",
+    "预算范围内是否真的适合自己"
+  ],
+  proofs: [
+    "正面、侧面和背影三张对比",
+    "顾问调整试穿夹的过程近景",
+    "低头看腰线时的自然停顿",
+    "朋友手机里的十秒走动视频",
+    "坐下时裙摆和腰部的状态",
+    "强光下白色面料的纹理细节",
+    "头纱叠在肩颈处的层次",
+    "拖尾展开后的完整比例",
+    "衣架和面料小样的真实质感",
+    "试纱记录表上的选择理由"
+  ],
+  scenes: [
+    "镜前完整试穿",
+    "顾问整理裙摆",
+    "朋友坐在旁边看反应",
+    "材质工作台上的面料近景",
+    "候场区里的衣架和纱帘",
+    "橱窗柔光下的挂装",
+    "试纱间门口的预约细节",
+    "酒店晨光里的主纱状态",
+    "头纱和配饰搭配区",
+    "回看手机记录的桌面"
+  ],
+  materials: [
+    "缎面垂坠和腰部转折",
+    "蕾丝花纹密度和透感",
+    "珠绣、刺绣和白纱层次",
+    "裙摆重量和拖尾边缘",
+    "领口、袖口和肩线收口",
+    "头纱边缘和主纱的衔接",
+    "试穿夹留下的临时调整痕迹",
+    "挂装状态下的廓形",
+    "面料在窗边光里的细节",
+    "配饰与婚纱主线的关系"
+  ],
+  services: [
+    "让顾问解释版型为什么适合",
+    "请朋友拍一段不美化的视频",
+    "每件都记录一个喜欢和一个犹豫点",
+    "把婚礼场地告诉顾问再试下一件",
+    "同时看正面、侧面、背影和走动",
+    "确认客照发布前会不会再次授权",
+    "问清楚改尺寸和拖尾处理方式",
+    "不要在特别累的时候立刻决定",
+    "把头纱和鞋高一起纳入判断",
+    "回家后用同角度照片再复盘"
+  ],
+  takeaways: [
+    "让用户知道该保存哪几张试纱图",
+    "把焦虑从身材转回版型判断",
+    "帮预约前的人少一点紧张",
+    "让品牌或门店专业感落在细节上",
+    "把选择理由讲得比夸奖更可信",
+    "让组图每一张都回答一个问题",
+    "把真实体验和审美判断放在一起",
+    "让用户知道到店后可以怎么沟通",
+    "避免把婚纱内容写成硬广",
+    "让最终选择看起来有过程而不是冲动"
+  ],
+  tones: [
+    "像试纱后回家复盘",
+    "像朋友认真帮忙记录",
+    "像婚纱店顾问轻声解释",
+    "像备婚用户写给自己的提醒",
+    "像门店日常里截下来的真实片段",
+    "像品牌发布前的细节说明",
+    "像探店笔记里可被验证的经验",
+    "像收藏夹里会反复看的攻略",
+    "像客照授权后的温和转述",
+    "像把选择过程慢慢讲清楚"
+  ],
+  tagExtras: [
+    "#真实试纱",
+    "#试纱记录",
+    "#婚纱细节",
+    "#备婚攻略",
+    "#婚纱店日常",
+    "#主纱选择",
+    "#试纱避坑",
+    "#婚纱新品",
+    "#陪试纱",
+    "#备婚收藏"
+  ]
+};
 
-    return {
-      titles: draft.titles,
-      body: draft.paragraphs.join("\n\n"),
-      tags: draft.tags ?? profile.copyKit.tags,
-      note: draft.note ?? profile.copyKit.note
-    };
+const dressVariationBank: CopyVariationBank = {
+  audiences: [
+    "通勤后还要直接赴约的人",
+    "想把裙子穿进日常的人",
+    "需要显利落但不紧绷的用户",
+    "正在找周末出门裙装的人",
+    "喜欢低饱和穿搭的人",
+    "在意腰线和裙长比例的人",
+    "想减少衣橱闲置的人",
+    "需要办公室和晚餐都成立的人",
+    "想让照片看起来不摆拍的人",
+    "偏爱轻熟质感的用户"
+  ],
+  focuses: [
+    "腰线位置是否干净",
+    "裙长是否压身高",
+    "面料垂坠是否顺",
+    "走路时裙摆是否自然",
+    "肩颈和领口是否利落",
+    "坐下后腰腹会不会紧",
+    "外套叠穿后比例是否稳定",
+    "鞋包换掉后场景能不能迁移",
+    "光线下颜色是否显廉价",
+    "细节近看是否经得起放大"
+  ],
+  concerns: [
+    "通勤场景会不会太用力",
+    "约会场景会不会显得太正式",
+    "周末穿会不会不够轻松",
+    "面料皱了以后是否影响质感",
+    "镜前照片和真实走动是否一致",
+    "坐下时裙摆会不会卡住",
+    "换一双鞋后比例会不会变乱",
+    "深浅色背景里是否都能成立",
+    "配饰一多会不会抢掉裙子本身",
+    "同一条裙子能不能覆盖多个日程"
+  ],
+  proofs: [
+    "全身比例和裙长对比",
+    "入户镜前的真实试穿",
+    "走路时裙摆摆动的瞬间",
+    "坐下后面料和腰线状态",
+    "办公室电梯镜里的干净线条",
+    "咖啡馆桌边的自然姿态",
+    "艺术馆留白里的廓形",
+    "花店或街角的低饱和色彩",
+    "衣帽间挂装和面料近景",
+    "同一条裙子的鞋包替换"
+  ],
+  scenes: [
+    "入户镜前确认比例",
+    "写字楼大厅的通勤动线",
+    "咖啡馆窗边坐下",
+    "艺术馆白墙前停留",
+    "花店门口的自然光",
+    "城市街角的走动瞬间",
+    "晚餐桌边的暖光",
+    "度假海边的轻风",
+    "衣帽间里的挂装细节",
+    "电梯镜里的真实记录"
+  ],
+  materials: [
+    "针织纹理和垂坠重量",
+    "衬衫裙领口和袖口线条",
+    "A 字裙摆的展开幅度",
+    "吊带细节和肩颈留白",
+    "半裙腰头和上衣衔接",
+    "印花或纯色在光线下的层次",
+    "裙摆边缘和褶裥细节",
+    "外套叠穿后的面料关系",
+    "鞋包与裙长的比例",
+    "挂装状态下的廓形"
+  ],
+  services: [
+    "先用同一镜头拍完整比例",
+    "再补一张坐下和走动状态",
+    "把鞋包变化控制在两组以内",
+    "不要用夸张滤镜盖住面料",
+    "让场景承担穿着理由",
+    "用近景说明面料而不是堆道具",
+    "保留一点真实动作",
+    "每张图只讲一个穿搭判断点",
+    "让用户看见通勤到约会的切换",
+    "把收藏价值放在可复穿上"
+  ],
+  takeaways: [
+    "让用户知道这条裙子能进入哪一天",
+    "把好看落到可复穿和好行动",
+    "让场景切换比单张美图更有说服力",
+    "减少只靠氛围卖货的感觉",
+    "让面料和比例成为购买理由",
+    "让用户能直接套进自己的日程",
+    "把轻熟感写得具体而不空泛",
+    "让同一单品的生活范围更清楚",
+    "把穿搭建议变成可保存的判断清单",
+    "让裙装内容更像真实衣橱记录"
+  ],
+  tones: [
+    "像出门前认真照镜子",
+    "像朋友帮忙拍穿搭记录",
+    "像衣橱复盘里的实用备注",
+    "像品牌日常而不是硬广",
+    "像城市女性自己的日程切片",
+    "像通勤后顺路赴约的自然状态",
+    "像周末慢下来的一组照片",
+    "像把面料和比例讲清楚的笔记",
+    "像轻熟穿搭的低声建议",
+    "像一条裙子被反复穿过的证据"
+  ],
+  tagExtras: [
+    "#裙装穿搭",
+    "#通勤穿搭",
+    "#轻熟风",
+    "#一条裙子多场景",
+    "#约会穿搭",
+    "#周末穿搭",
+    "#面料细节",
+    "#衣橱灵感",
+    "#日常穿搭",
+    "#低饱和穿搭"
+  ]
+};
+
+const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<CopyVariationBank>>> = {
+  真实客户试纱: {
+    audiences: [
+      "第一次真实到店试纱的新娘",
+      "带着截图但还没确定风格的人",
+      "担心自己撑不起主纱的人",
+      "一直纠结手臂和腰线的人",
+      "想听真实客照反馈的备婚用户",
+      "试了很多件反而更乱的人",
+      "需要朋友帮忙拍视频的人",
+      "想确认婚礼当天舒适度的人",
+      "不想被一句好看带着走的人",
+      "想把顾虑说清楚再选择的人"
+    ],
+    focuses: [
+      "穿上后身体有没有先放松",
+      "截图款和真实上身是否一致",
+      "镜前停顿是不是来自喜欢",
+      "走动视频里状态是否自然",
+      "顾问调整后的比例变化",
+      "手臂、肩颈和腰线的真实反应",
+      "朋友随手拍是否比精修更有参考",
+      "坐下和转身是否仍然舒服",
+      "价格之外的选择理由",
+      "最后留下来的那一点确定感"
+    ]
+  },
+  试纱陪同视角: {
+    audiences: [
+      "陪闺蜜试纱的人",
+      "陪女儿看婚纱的妈妈",
+      "陪伴侣一起确认婚纱的人",
+      "负责拍试纱视频的朋友",
+      "想给真实意见又怕说重的人",
+      "能看到新娘小变化的人",
+      "坐在试纱间旁边观察的人",
+      "帮忙对比几件婚纱的人",
+      "陪试后回家一起复盘的人",
+      "不想把陪试拍成夸张剧情的人"
+    ],
+    focuses: [
+      "她有没有不再反复问显不显胖",
+      "旁边人的安静反应是否真实",
+      "朋友视角里走动是否轻松",
+      "妈妈先整理头纱而不是先评价",
+      "伴侣听顾问解释时的停顿",
+      "陪同者有没有抢走画面重点",
+      "手机记录里哪一件最自然",
+      "关系感是否比剧情更重要",
+      "几个人一起确认的那一刻",
+      "陪试意见是否真的帮她决策"
+    ]
+  },
+  试纱避坑准备: {
+    audiences: [
+      "第一次预约试纱的人",
+      "怕试纱当天紧张的人",
+      "想提前做清单的备婚用户",
+      "担心身材状态不够好的人",
+      "一天想约好几家店的人",
+      "不知道怎么拍试纱记录的人",
+      "想问清服务细节的人",
+      "容易被试纱间情绪带着走的人",
+      "准备胸贴、鞋和发夹的人",
+      "想少踩坑但不想焦虑的人"
+    ],
+    focuses: [
+      "先把婚礼场地告诉顾问",
+      "提前写下最在意的身体位置",
+      "每件都拍同角度对比",
+      "不要饿着肚子试很多件",
+      "鞋高和头发状态要接近婚礼当天",
+      "问清楚改尺寸和拖尾处理",
+      "确认客照授权和隐私处理",
+      "不要把一天安排得太满",
+      "回家再看视频做决定",
+      "把问题带去而不是带着焦虑去"
+    ]
+  },
+  婚纱品牌发布: {
+    audiences: [
+      "正在对比新品系列的新娘",
+      "想看懂主纱设计逻辑的人",
+      "偏爱克制品牌审美的用户",
+      "想知道一件婚纱适合谁的人",
+      "关注面料证据而不是口号的人",
+      "需要判断酒店和草坪适配的人",
+      "想收藏婚纱细节的人",
+      "看新品但怕被大片误导的人",
+      "重视背影和拖尾的新娘",
+      "想理解系列差异的备婚用户"
+    ],
+    focuses: [
+      "新品为什么适合这一类新娘",
+      "系列里每件婚纱的功能差异",
+      "领口、腰线和拖尾的设计关系",
+      "面料近看是否仍然耐看",
+      "完整上身和挂装图是否互相补充",
+      "品牌审美是否落在可判断细节上",
+      "场地适配是否讲得清楚",
+      "不是每件都喊命定款",
+      "发布内容是否帮用户排除不适合",
+      "lookbook 感和真实参考是否平衡"
+    ]
+  },
+  婚纱店发布: {
+    audiences: [
+      "预约前想了解店铺体验的人",
+      "担心进店后被催定的新娘",
+      "想看真实试纱间的人",
+      "在意顾问沟通方式的备婚用户",
+      "想判断客照是否可信的人",
+      "准备探店但还没下定的人",
+      "关注隐私和授权的人",
+      "想知道试纱流程是否舒服的人",
+      "不只看装修漂亮的人",
+      "需要一个安心预约理由的人"
+    ],
+    focuses: [
+      "进店后会不会被理解",
+      "顾问是否先听需求再拿款",
+      "试纱间空间和镜子是否真实",
+      "客照授权有没有被尊重",
+      "预约卡和试穿记录是否清楚",
+      "服务过程有没有压迫感",
+      "每张图是否对应一个体验节点",
+      "店铺日常是否干净但不空",
+      "门店内容有没有真实过程",
+      "用户能不能预约前就知道会被怎样对待"
+    ]
   }
+};
 
+function toPhrase(value: string) {
+  return value
+    .replace(/[。！？!?；;]+/g, "，")
+    .replace(/\.+/g, "，")
+    .replace(/，+$/g, "")
+    .trim();
+}
+
+function uniqueItems(items: string[]) {
+  return Array.from(new Set(items.map(toPhrase).filter(Boolean)));
+}
+
+function ensureBankItems(items: string[], fallback: string[], fallbackLabel: string) {
+  const unique = uniqueItems([...items, ...fallback]);
+  const safeItems = unique.length > 0 ? unique : [fallbackLabel];
+
+  return Array.from({ length: VARIANT_AXIS_SIZE }, (_, index) => safeItems[index % safeItems.length]);
+}
+
+function getDraftSourcePhrases(topic: FashionSeedingTopic) {
+  if (!isXiaohongshuBridalTopic(topic)) return [];
+
+  return xiaohongshuBridalCopyDrafts[topic].flatMap((draft) => [...draft.titles, ...draft.paragraphs]);
+}
+
+function buildCopyVariationBank(topic: FashionSeedingTopic, kit: TopicCopyKit): CopyVariationBank {
+  const categoryBank = isBridalFashionTopic(topic) ? bridalVariationBank : dressVariationBank;
+  const override = xiaohongshuTopicOverrides[topic] ?? {};
+  const draftPhrases = getDraftSourcePhrases(topic);
+  const kitPhrases = [...draftPhrases, ...kit.openings, ...kit.observations, ...kit.scenes, ...kit.closings];
+
+  return {
+    audiences: ensureBankItems(override.audiences ?? [], categoryBank.audiences, `${topic}用户`),
+    focuses: ensureBankItems([...(override.focuses ?? []), ...kit.openings], categoryBank.focuses, `${topic}判断点`),
+    concerns: ensureBankItems([...(override.concerns ?? []), ...kit.observations], categoryBank.concerns, `${topic}顾虑`),
+    proofs: ensureBankItems([...(override.proofs ?? []), ...kitPhrases], categoryBank.proofs, `${topic}证据`),
+    scenes: ensureBankItems([...(override.scenes ?? []), ...kit.scenes], categoryBank.scenes, `${topic}场景`),
+    materials: ensureBankItems([...(override.materials ?? []), ...kit.observations], categoryBank.materials, `${topic}细节`),
+    services: ensureBankItems(override.services ?? [], categoryBank.services, `${topic}动作`),
+    takeaways: ensureBankItems([...(override.takeaways ?? []), ...kit.closings], categoryBank.takeaways, `${topic}收尾`),
+    tones: ensureBankItems(override.tones ?? [], categoryBank.tones, `${topic}语气`),
+    tagExtras: ensureBankItems(override.tagExtras ?? [], categoryBank.tagExtras, `#${topic}`)
+  };
+}
+
+function getVariantAxes(variantIndex: number): VariantAxes {
+  const safeIndex = ((variantIndex % TOPIC_VARIANT_COUNT) + TOPIC_VARIANT_COUNT) % TOPIC_VARIANT_COUNT;
+
+  return {
+    primary: safeIndex % VARIANT_AXIS_SIZE,
+    secondary: Math.floor(safeIndex / VARIANT_AXIS_SIZE) % VARIANT_AXIS_SIZE,
+    tertiary: Math.floor(safeIndex / (VARIANT_AXIS_SIZE * VARIANT_AXIS_SIZE)) % VARIANT_AXIS_SIZE
+  };
+}
+
+function buildVariantTags(kit: TopicCopyKit, bank: CopyVariationBank, axes: VariantAxes) {
+  return uniqueItems([
+    ...kit.tags,
+    pick(bank.tagExtras, axes.primary),
+    pick(bank.tagExtras, axes.secondary),
+    pick(bank.tagExtras, axes.tertiary)
+  ]).slice(0, 7);
+}
+
+function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): TopicCopyDraft {
   const kit = topicCopyKits[topic];
-  const openingIndex = variantIndex % kit.openings.length;
-  const observationIndex = Math.floor(variantIndex / kit.openings.length) % kit.observations.length;
-  const sceneIndex = Math.floor(variantIndex / (kit.openings.length * kit.observations.length)) % kit.scenes.length;
-  const closingIndex =
-    Math.floor(variantIndex / (kit.openings.length * kit.observations.length * kit.scenes.length)) % kit.closings.length;
+  const bank = buildCopyVariationBank(topic, kit);
+  const axes = getVariantAxes(variantIndex);
+  const audience = pick(bank.audiences, axes.primary);
+  const focus = pick(bank.focuses, axes.secondary);
+  const concern = pick(bank.concerns, axes.tertiary);
+  const proof = pick(bank.proofs, axes.primary);
+  const scene = pick(bank.scenes, axes.secondary);
+  const material = pick(bank.materials, axes.tertiary);
+  const service = pick(bank.services, axes.primary);
+  const takeaway = pick(bank.takeaways, axes.secondary);
+  const tone = pick(bank.tones, axes.tertiary);
+  const promptContext: CopyAlignmentContext = {
+    topic,
+    audience,
+    focus,
+    concern,
+    proof,
+    scene,
+    material,
+    service,
+    takeaway,
+    tone
+  };
 
   return {
     titles: [
-      pick(kit.titles, openingIndex),
-      pick(kit.titles, observationIndex + sceneIndex + 1),
-      pick(kit.titles, variantIndex + closingIndex + 2)
+      `${topic}｜${audience}先看「${focus}」和「${concern}」`,
+      `别只看「${proof}」，也要确认「${scene}」里的${material}`,
+      `用「${scene}」这一组，帮${audience}回应「${concern}」并讲清「${takeaway}」`
     ],
     body: [
-      pick(kit.openings, openingIndex),
-      pick(kit.observations, observationIndex),
-      pick(kit.scenes, sceneIndex),
-      pick(kit.closings, closingIndex)
+      `这篇${topic}写给${audience}，不急着把重点放在好不好看，而是先用「${focus}」「${concern}」和「${scene}」建立判断入口。`,
+      `正文中围绕「${proof}」补充证据，再接上${material}、${service}和「${focus}」，让读者能看见具体变化，而不是只读到一句漂亮。`,
+      `组图里保留「${scene}」这一类信息，接着放「${proof}」相关画面，再用${material}收住节奏；同一篇内容围绕${audience}的真实疑问展开，信息不会互相抢。`,
+      `结尾落在「${takeaway}」，语气保持${tone}，并回应${audience}对「${focus}」的判断需求，让${topic}既有真实感，也保留店铺或品牌的专业度。`
     ].join("\n\n"),
-    tags: kit.tags,
-    note: kit.note
+    tags: buildVariantTags(kit, bank, axes),
+    note: `遵循「${toPhrase(kit.note)}」的方向，本版围绕${audience}，用「${proof}」验证「${focus}」，并通过${material}回应「${concern}」；同主题共有 ${TOPIC_VARIANT_COUNT} 组组合文案。`,
+    promptContext
   };
 }
 
@@ -686,6 +1171,44 @@ function getImageDrafts(productCategory: ProductCategory, topic: FashionSeedingT
     : getDressImageDrafts(topic as DressFashionTopic);
 }
 
+function resolveAlignedScenePreference(baseParams: PromptParams, draft: ImageDraft, context?: CopyAlignmentContext): ScenePreference {
+  if (!context) return draft.scenePreference;
+
+  const text = context.scene;
+  const isMaterialImage = draft.imageType === "拍摄花絮 / 材质图" || draft.imageType === "产品静物图";
+
+  if (isMaterialImage) {
+    if (text.includes("衣帽间")) return "衣帽间";
+    if (text.includes("材质") || text.includes("面料") || text.includes("桌面") || text.includes("挂装")) {
+      return "材质工作台";
+    }
+    return draft.scenePreference;
+  }
+
+  if (text.includes("试纱") || text.includes("镜前") || text.includes("顾问") || text.includes("头纱") || text.includes("候场")) {
+    return "试纱间";
+  }
+  if (text.includes("橱窗")) return "婚纱店橱窗";
+  if (text.includes("酒店晨光") || text.includes("酒店套房")) return "酒店套房晨光";
+  if (text.includes("草坪")) return "草坪婚礼";
+  if (text.includes("教堂")) return "教堂门口";
+  if (text.includes("登记")) return "登记照";
+  if (text.includes("海边") || text.includes("度假")) {
+    return baseParams.productCategory === "婚纱 / 礼服" ? "海边旅拍" : "度假海边";
+  }
+  if (text.includes("入户")) return "入户镜前";
+  if (text.includes("写字楼")) return "通勤写字楼";
+  if (text.includes("咖啡")) return "咖啡馆";
+  if (text.includes("艺术馆")) return "艺术馆";
+  if (text.includes("花店")) return "花店";
+  if (text.includes("城市街角")) return "城市街角";
+  if (text.includes("晚餐")) return "晚餐约会";
+  if (text.includes("电梯")) return "电梯镜拍";
+  if (text.includes("衣帽间")) return "衣帽间";
+
+  return draft.scenePreference;
+}
+
 function resolveImageModelChoice(baseParams: PromptParams, draft: ImageDraft): ModelChoice {
   if (baseParams.productCategory !== "婚纱 / 礼服") return baseParams.modelChoice;
   if (draft.imageType !== "产品上身图" && draft.imageType !== "对镜穿搭图" && draft.imageType !== "生活场景图") {
@@ -704,13 +1227,28 @@ function resolveImageModelChoice(baseParams: PromptParams, draft: ImageDraft): M
   return baseParams.modelChoice;
 }
 
-function buildImagePlan(baseParams: PromptParams, draft: ImageDraft, index: number, contentNonce: number): FashionSeedingImagePlan {
+function buildPromptAlignmentRequirement(draft: ImageDraft, context?: CopyAlignmentContext) {
+  if (!context) return draft.extraRequirement;
+
+  return [
+    draft.extraRequirement,
+    `Content alignment: match the generated Xiaohongshu copy context. Topic: ${context.topic}. Audience: ${context.audience}. Main focus: ${context.focus}. User concern: ${context.concern}. Visual proof to support: ${context.proof}. Scene evidence: ${context.scene}. Material/detail cue: ${context.material}. Service/action cue: ${context.service}. Takeaway: ${context.takeaway}. Tone: ${context.tone}. Make this image read as part of the same post, not a separate generic prompt.`
+  ].join(" ");
+}
+
+function buildImagePlan(
+  baseParams: PromptParams,
+  draft: ImageDraft,
+  index: number,
+  contentNonce: number,
+  context?: CopyAlignmentContext
+): FashionSeedingImagePlan {
   const params: PromptParams = {
     ...baseParams,
     imageType: draft.imageType,
     modelChoice: resolveImageModelChoice(baseParams, draft),
-    scenePreference: draft.scenePreference,
-    extraRequirement: draft.extraRequirement,
+    scenePreference: resolveAlignedScenePreference(baseParams, draft, context),
+    extraRequirement: buildPromptAlignmentRequirement(draft, context),
     generationNonce: baseParams.generationNonce + contentNonce * 10 + index + 1,
     bridalKeywordProfileId: draft.bridalKeywordProfileId
   };
@@ -739,7 +1277,7 @@ export function generateFashionSeedingContent(input: FashionSeedingInput): Fashi
   const copy = buildCopyFromKit(safeTopic, variantIndex);
   const images = getImageDrafts(input.productCategory, safeTopic)
     .slice(0, imageCount)
-    .map((draft, index) => buildImagePlan(input.baseParams, draft, index, contentNonce));
+    .map((draft, index) => buildImagePlan(input.baseParams, draft, index, contentNonce, copy.promptContext));
 
   return {
     topic: safeTopic,
