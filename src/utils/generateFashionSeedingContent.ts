@@ -6,6 +6,7 @@ import {
   xiaohongshuBridalTopicOptions,
   type XiaohongshuBridalTopic
 } from "../data/xiaohongshuBridalContentProfiles";
+import { isSceneCompatibleWithImageType } from "../data/bridalDressSceneOptions";
 import type { ImageType, ModelChoice, ProductCategory, PromptParams, ScenePreference } from "../types";
 import { generatePrompt } from "./generatePrompt";
 
@@ -1171,42 +1172,54 @@ function getImageDrafts(productCategory: ProductCategory, topic: FashionSeedingT
     : getDressImageDrafts(topic as DressFashionTopic);
 }
 
+function getCompatibleSceneOrFallback(baseParams: PromptParams, draft: ImageDraft, scene: ScenePreference) {
+  if (isSceneCompatibleWithImageType(baseParams.productCategory, draft.imageType, scene)) return scene;
+  if (isSceneCompatibleWithImageType(baseParams.productCategory, draft.imageType, draft.scenePreference)) return draft.scenePreference;
+  return "自动匹配";
+}
+
 function resolveAlignedScenePreference(baseParams: PromptParams, draft: ImageDraft, context?: CopyAlignmentContext): ScenePreference {
-  if (!context) return draft.scenePreference;
+  if (!context) return getCompatibleSceneOrFallback(baseParams, draft, draft.scenePreference);
 
   const text = context.scene;
   const isMaterialImage = draft.imageType === "拍摄花絮 / 材质图" || draft.imageType === "产品静物图";
 
   if (isMaterialImage) {
-    if (text.includes("衣帽间")) return "衣帽间";
+    if (text.includes("衣帽间")) return getCompatibleSceneOrFallback(baseParams, draft, "衣帽间");
     if (text.includes("材质") || text.includes("面料") || text.includes("桌面") || text.includes("挂装")) {
-      return "材质工作台";
+      return getCompatibleSceneOrFallback(baseParams, draft, "材质工作台");
     }
-    return draft.scenePreference;
+    return getCompatibleSceneOrFallback(baseParams, draft, draft.scenePreference);
   }
 
   if (text.includes("试纱") || text.includes("镜前") || text.includes("顾问") || text.includes("头纱") || text.includes("候场")) {
-    return "试纱间";
+    return getCompatibleSceneOrFallback(baseParams, draft, "试纱间");
   }
-  if (text.includes("橱窗")) return "婚纱店橱窗";
-  if (text.includes("酒店晨光") || text.includes("酒店套房")) return "酒店套房晨光";
-  if (text.includes("草坪")) return "草坪婚礼";
-  if (text.includes("教堂")) return "教堂门口";
-  if (text.includes("登记")) return "登记照";
+  if (text.includes("橱窗")) return getCompatibleSceneOrFallback(baseParams, draft, "婚纱店橱窗");
+  if (text.includes("酒店晨光") || text.includes("酒店套房")) {
+    return getCompatibleSceneOrFallback(baseParams, draft, "酒店套房晨光");
+  }
+  if (text.includes("草坪")) return getCompatibleSceneOrFallback(baseParams, draft, "草坪婚礼");
+  if (text.includes("教堂")) return getCompatibleSceneOrFallback(baseParams, draft, "教堂门口");
+  if (text.includes("登记")) return getCompatibleSceneOrFallback(baseParams, draft, "登记照");
   if (text.includes("海边") || text.includes("度假")) {
-    return baseParams.productCategory === "婚纱 / 礼服" ? "海边旅拍" : "度假海边";
+    return getCompatibleSceneOrFallback(
+      baseParams,
+      draft,
+      baseParams.productCategory === "婚纱 / 礼服" ? "海边旅拍" : "度假海边"
+    );
   }
-  if (text.includes("入户")) return "入户镜前";
-  if (text.includes("写字楼")) return "通勤写字楼";
-  if (text.includes("咖啡")) return "咖啡馆";
-  if (text.includes("艺术馆")) return "艺术馆";
-  if (text.includes("花店")) return "花店";
-  if (text.includes("城市街角")) return "城市街角";
-  if (text.includes("晚餐")) return "晚餐约会";
-  if (text.includes("电梯")) return "电梯镜拍";
-  if (text.includes("衣帽间")) return "衣帽间";
+  if (text.includes("入户")) return getCompatibleSceneOrFallback(baseParams, draft, "入户镜前");
+  if (text.includes("写字楼")) return getCompatibleSceneOrFallback(baseParams, draft, "通勤写字楼");
+  if (text.includes("咖啡")) return getCompatibleSceneOrFallback(baseParams, draft, "咖啡馆");
+  if (text.includes("艺术馆")) return getCompatibleSceneOrFallback(baseParams, draft, "艺术馆");
+  if (text.includes("花店")) return getCompatibleSceneOrFallback(baseParams, draft, "花店");
+  if (text.includes("城市街角")) return getCompatibleSceneOrFallback(baseParams, draft, "城市街角");
+  if (text.includes("晚餐")) return getCompatibleSceneOrFallback(baseParams, draft, "晚餐约会");
+  if (text.includes("电梯")) return getCompatibleSceneOrFallback(baseParams, draft, "电梯镜拍");
+  if (text.includes("衣帽间")) return getCompatibleSceneOrFallback(baseParams, draft, "衣帽间");
 
-  return draft.scenePreference;
+  return getCompatibleSceneOrFallback(baseParams, draft, draft.scenePreference);
 }
 
 function resolveImageModelChoice(baseParams: PromptParams, draft: ImageDraft): ModelChoice {
