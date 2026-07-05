@@ -1047,9 +1047,11 @@ function readableCue(value: string) {
     .replace(/^如果是系列发布，最好让/, "系列发布时让")
     .replace(/^每张图要说明/, "每张图说明")
     .replace(/^不要把/, "不把")
-    .replace(/内容/g, "分享")
+    .replace(/内容/g, "笔记")
+    .replace(/用户/g, "人")
     .replace(/读者/g, "看到的人")
-    .replace(/^让用户知道/, "知道")
+    .replace(/是否/g, "有没有")
+    .replace(/^让人知道/, "知道")
     .replace(/^让看到的人/, "让人")
     .replace(/^帮预约前的人/, "预约前的人")
     .replace(/^让品牌或门店/, "品牌或门店")
@@ -1063,12 +1065,149 @@ function readableCue(value: string) {
     .trim();
 }
 
-function compactCue(value: string, maxLength = 18) {
-  const cue = readableCue(value);
+function titleCue(value: string, maxLength = 12) {
+  const cue = readableCue(value)
+    .replace(/第一次真实到店试纱的新娘/g, "第一次试纱的人")
+    .replace(/第一次预约试纱的新娘/g, "第一次试纱的人")
+    .replace(/带着截图但还没确定风格的人/g, "带截图试纱的人")
+    .replace(/担心自己撑不起主纱的人/g, "担心主纱压身的人")
+    .replace(/一直纠结手臂和腰线的人/g, "纠结手臂腰线的人")
+    .replace(/想听真实客照反馈的备婚人/g, "想看真实客照的人")
+    .replace(/试了很多件反而更乱的人/g, "越试越乱的人")
+    .replace(/需要朋友帮忙拍视频的人/g, "需要朋友拍视频的人")
+    .replace(/想确认婚礼当天舒适度的人/g, "在意当天舒适度的人")
+    .replace(/不想被一句好看带着走的人/g, "不想只听好看的人")
+    .replace(/想把顾虑说清楚再选择的人/g, "想先说清顾虑的人")
+    .replace(/带妈妈一起看婚纱的人/g, "带妈妈试纱的人")
+    .replace(/容易被精修图影响判断的人/g, "容易被精修带跑的人")
+    .replace(/穿上后身体有没有先放松/g, "身体放松感")
+    .replace(/截图款穿上后是不是和想象一样/g, "截图款上身落差")
+    .replace(/截图款和真实上身有没有一致/g, "截图款上身落差")
+    .replace(/镜前停顿是不是来自喜欢/g, "镜前那一下停顿")
+    .replace(/走动视频里状态有没有自然/g, "走动视频状态")
+    .replace(/手臂、肩颈和腰线的真实反应/g, "手臂肩颈腰线")
+    .replace(/朋友随手拍有没有比精修更有参考/g, "朋友随手拍")
+    .replace(/坐下和转身有没有仍然舒服/g, "坐下转身舒适度")
+    .replace(/最后留下来的那一点确定感/g, "最后那点确定感")
+    .replace(/手臂和肩颈会不会一直紧绷/g, "手臂肩颈紧绷感")
+    .replace(/主纱会不会压住整个人/g, "主纱压身")
+    .replace(/试纱间灯光有没有让判断失真/g, "灯光判断误差")
+    .replace(/朋友视频里状态是不是自然/g, "朋友视频状态")
+    .replace(/坐下敬茶时腰部会不会卡住/g, "坐下敬茶余量")
+    .replace(/拖尾重量会不会影响走路/g, "拖尾走路负担")
+    .replace(/价格高的那件有没有真的更适合/g, "高价款适配度")
+    .replace(/顾问建议和自己感受有没有一致/g, "顾问建议和体感")
+    .replace(/回家复盘时还能不能说清喜欢哪里/g, "回家还说得清")
+    .replace(/正面、侧面和背影三张对比/g, "正侧背对比")
+    .replace(/顾问重新收腰后的前后变化/g, "收腰前后变化")
+    .replace(/低头看腰线时那几秒停顿/g, "低头看腰线")
+    .replace(/朋友手机里的走动小视频/g, "朋友走动视频")
+    .replace(/坐下时裙摆和腰部的状态/g, "坐下时腰裙状态")
+    .replace(/转身时拖尾有没有跟着身体走/g, "转身拖尾状态")
+    .replace(/头纱叠上以后肩颈有没有更轻/g, "头纱叠上肩颈")
+    .replace(/试纱记录里写下的犹豫点/g, "试纱犹豫点")
+    .replace(/同一光线下几件婚纱的差别/g, "同光线对比")
+    .replace(/自己不再反复问显不显胖的瞬间/g, "不再问显胖那刻")
+    .replace(/试纱间镜前完整试穿/g, "镜前完整试穿")
+    .replace(/顾问蹲下整理裙摆/g, "顾问整理裙摆")
+    .replace(/朋友坐在旁边回看视频/g, "朋友回看视频")
+    .replace(/客人低头确认腰线/g, "低头确认腰线")
+    .replace(/试穿夹临时调整的位置/g, "试穿夹位置")
+    .replace(/头纱和主纱一起上身/g, "头纱主纱上身")
+    .replace(/坐下试敬茶动作的片刻/g, "坐下敬茶动作")
+    .replace(/试纱记录表旁边的面料小样/g, "记录表和面料")
+    .replace(/衣架前重新对比上一件/g, "衣架前对比")
+    .replace(/镜子里安静站住的那一刻/g, "镜前站住那刻")
+    .replace(/缎面垂坠和腰部转折/g, "缎面腰线")
+    .replace(/蕾丝花纹和肩颈留白/g, "蕾丝肩颈留白")
+    .replace(/拖尾边缘和裙摆重量/g, "拖尾和裙摆重量")
+    .replace(/领口弧度和手臂线条/g, "领口和手臂线")
+    .replace(/头纱长度和主纱层次/g, "头纱主纱层次")
+    .replace(/试穿夹调整后的腰线/g, "试穿夹后腰线")
+    .replace(/坐下时腰腹处的余量/g, "坐下腰腹余量")
+    .replace(/背后拉链和背影完整度/g, "背影完整度")
+    .replace(/窗边光里的白纱纹理/g, "窗边白纱纹理")
+    .replace(/走动时裙摆的跟随感/g, "裙摆跟随感")
+    .replace(/有没有/g, "")
+    .replace(/是不是/g, "")
+    .replace(/会不会/g, "")
+    .replace(/能不能/g, "")
+    .replace(/是否/g, "")
+    .replace(/穿上后/g, "")
+    .replace(/一直/g, "")
+    .replace(/真的/g, "")
+    .replace(/，+/g, "，")
+    .replace(/^，|，$/g, "")
+    .trim();
+
   if (cue.length <= maxLength) return cue;
 
   return `${cue.slice(0, maxLength).replace(/[，、：:]+$/g, "")}…`;
 }
+
+function softenAction(value: string) {
+  return readableCue(value)
+    .replace(/^让顾问/, "可以让顾问")
+    .replace(/^请朋友/, "记得请朋友")
+    .replace(/^每件都/, "每件最好都")
+    .replace(/^把/, "可以把")
+    .replace(/^同时看/, "别忘了看")
+    .replace(/^问清楚/, "提前问清楚")
+    .replace(/^确认/, "提前确认")
+    .replace(/^不要/, "尽量不要")
+    .replace(/^回家后/, "回家后再")
+    .replace(/^先用/, "先用")
+    .replace(/^再补/, "再补")
+    .replace(/^保留/, "保留")
+    .replace(/^避免/, "避免")
+    .replace(/^听完/, "听完")
+    .trim();
+}
+
+const titleStarters = ["说实话", "别急着定", "试完才懂", "这点很容易忽略", "建议收藏", "别只看精修", "真的有差", "这组更像真实记录", "先别被大片带跑", "我会先看"];
+
+const titleAngles = ["不是越惊艳越适合", "比好看更重要", "回家复盘才看出来", "一眼看懂差别", "不想踩坑先看这点", "拍照前先确认", "真实感在这些细节里", "别让情绪替你做决定", "收藏这几个判断点", "越具体越安心"];
+
+const titleClosers = ["这点真的会影响判断", "别等试完才发现", "很多人第一眼会看错", "看懂就不容易乱", "适合比惊艳更重要", "这才是能收藏的原因", "不是广告感，是参考感", "细节会自己说话", "别被一句好看带走", "越真实越有说服力"];
+
+const bodyOpeners = [
+  "先说结论：",
+  "这条想写得实在一点。",
+  "如果只看第一眼，真的很容易选偏。",
+  "我现在看这类图，会先看细节。",
+  "这不是那种只夸漂亮的笔记。",
+  "越到后面越觉得，判断不能只靠氛围。",
+  "有些差别，只有上身以后才明显。",
+  "这类内容最怕写得太满。",
+  "真实记录里，最有用的反而是小细节。",
+  "别急着下结论，先看这几个地方。"
+];
+
+const bodyTransitions = [
+  "所以这组图里，我会先留这一点：",
+  "真正有参考价值的，是",
+  "比起大词，我更想把镜头放到",
+  "如果要我选一张最该留下的图，我会选",
+  "这比单纯说好看更具体：",
+  "回头看最能说明问题的，其实是",
+  "别小看这个画面：",
+  "它能把判断从情绪拉回细节：",
+  "很多人会忽略，但我觉得该拍下来：",
+  "这一幕比精修照更诚实："
+];
+
+const bodyClosers = [
+  "不用把话说得太满，能让人看懂为什么，就已经很值得收藏。",
+  "好看的图很多，能帮人做判断的图更少。",
+  "我会更喜欢这种有过程的记录，看完知道下一步该怎么选。",
+  "真实感不是随便拍，是每张图都有一个能被验证的点。",
+  "这类笔记不用喊口号，细节讲清楚就会有人停下来。",
+  "如果看完能少一点纠结，这条内容就不是空的。",
+  "比起制造惊艳，我更想保留这种能复盘的证据。",
+  "它不需要特别热闹，但要让人觉得可信。",
+  "收藏价值就在这里：不是替你决定，而是帮你看清楚。",
+  "越真实的内容，越不需要把情绪推得很满。"
+];
 
 function uniqueItems(items: string[]) {
   return Array.from(new Set(items.map(toPhrase).filter(Boolean)));
@@ -1126,31 +1265,19 @@ function buildVariantTags(kit: TopicCopyKit, bank: CopyVariationBank, axes: Vari
   ]).slice(0, 7);
 }
 
-function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): TopicCopyDraft {
-  const kit = topicCopyKits[topic];
-  const bank = buildCopyVariationBank(topic, kit);
-  const axes = getVariantAxes(variantIndex);
-  const audience = readableCue(pick(bank.audiences, axes.primary));
-  const focus = readableCue(pick(bank.focuses, axes.secondary));
-  const concern = readableCue(pick(bank.concerns, axes.tertiary));
-  const proof = readableCue(pick(bank.proofs, axes.primary));
-  const scene = readableCue(pick(bank.scenes, axes.secondary));
-  const material = readableCue(pick(bank.materials, axes.tertiary));
-  const service = readableCue(pick(bank.services, axes.primary));
-  const takeaway = readableCue(pick(bank.takeaways, axes.secondary));
-  const tone = readableCue(pick(bank.tones, axes.tertiary));
-  const isBridalTopic = isBridalFashionTopic(topic);
-  const productName = isBridalTopic ? "婚纱" : "裙子";
-  const wearingMoment = isBridalTopic ? "真正试到身上" : "真正穿进日常";
-  const shortAudience = compactCue(audience, 14);
-  const shortFocus = compactCue(focus, 14);
-  const shortConcern = compactCue(concern, 14);
-  const shortProof = compactCue(proof, 14);
-  const shortScene = compactCue(scene, 14);
-  const shortMaterial = compactCue(material, 14);
-  const shortTakeaway = compactCue(takeaway, 14);
-  const toneText = tone.startsWith("像") ? tone : `像${tone}`;
-  const promptContext: CopyAlignmentContext = {
+function buildHumanPromptContext(
+  topic: FashionSeedingTopic,
+  audience: string,
+  focus: string,
+  concern: string,
+  proof: string,
+  scene: string,
+  material: string,
+  service: string,
+  takeaway: string,
+  tone: string
+): CopyAlignmentContext {
+  return {
     topic,
     audience,
     focus,
@@ -1162,18 +1289,110 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
     takeaway,
     tone
   };
+}
+
+function buildXiaohongshuDraftCopy(
+  topic: XiaohongshuBridalTopic,
+  kit: TopicCopyKit,
+  bank: CopyVariationBank,
+  axes: VariantAxes
+): TopicCopyDraft {
+  const draft = pick(xiaohongshuBridalCopyDrafts[topic], axes.primary);
+  const audience = readableCue(pick(bank.audiences, axes.primary));
+  const focus = readableCue(pick(bank.focuses, axes.secondary));
+  const concern = readableCue(pick(bank.concerns, axes.tertiary));
+  const proof = readableCue(pick(bank.proofs, axes.primary));
+  const scene = readableCue(pick(bank.scenes, axes.secondary));
+  const material = readableCue(pick(bank.materials, axes.tertiary));
+  const service = softenAction(pick(bank.services, axes.primary));
+  const takeaway = readableCue(pick(bank.takeaways, axes.secondary));
+  const tone = readableCue(pick(bank.tones, axes.tertiary));
+  const titleAudience = titleCue(audience, 11);
+  const shortFocus = titleCue(focus, 11);
+  const shortConcern = titleCue(concern, 11);
+  const titleProof = titleCue(proof, 12);
+  const titleScene = titleCue(scene, 10);
+  const titleMaterial = titleCue(material, 10);
+  const bodyAudience = titleCue(audience, 24);
+  const bodyFocus = titleCue(focus, 24);
+  const bodyConcern = titleCue(concern, 24);
+  const bodyProof = titleCue(proof, 24);
+  const bodyScene = titleCue(scene, 24);
+  const bodyMaterial = titleCue(material, 24);
+  const baseTitle = pick(draft.titles, axes.secondary);
+  const titleStarter = pick(titleStarters, axes.primary);
+  const titleCloser = pick(titleClosers, axes.tertiary);
+  const paragraphs = draft.paragraphs.map(toPhrase);
+  const [p0, p1, p2, p3] = paragraphs;
+  const promptContext = buildHumanPromptContext(topic, audience, focus, concern, proof, scene, material, service, takeaway, tone);
 
   return {
     titles: [
-      `${shortAudience}，先看${shortFocus}和${shortConcern}`,
-      `${shortScene}里的${shortProof}，近看${shortMaterial}`,
-      `${shortTakeaway}，${shortAudience}也要看${shortConcern}`
+      `${baseTitle}，${titleAudience}先看${shortFocus}，别急着纠结${shortConcern}`,
+      `${titleStarter}，${titleScene}里的${titleProof}，比精修更能看出${titleMaterial}`,
+      `${titleAudience}别被${shortConcern}带跑，先看${titleProof}和${shortFocus}`
     ],
     body: [
-      `${audience}很容易先被漂亮照片吸引，但${wearingMoment}以后，我更想看${focus}，也会留意${concern}。`,
-      `这次最值得留下的不是一句“好看”，而是${proof}，把它放在${scene}里，再近一点看${material}，${productName}就不只是一个漂亮轮廓。`,
-      `围绕${focus}继续看${material}，同时记得${service}，很多犹豫会从情绪变成可以判断的细节。`,
-      `对${audience}来说，${takeaway}比一句夸奖更有用，不用把话说满，${toneText}那样把原因讲清楚，就已经足够被收藏。`
+      `${p0}，对${bodyAudience}来说，我会先看${bodyFocus}，再看${bodyConcern}，因为这两点最容易被第一眼的氛围盖过去。`,
+      `${p1}，这组最该留下的是${bodyProof}，放在${bodyScene}里看，${bodyMaterial}比精修图更能说明问题。`,
+      `${p2}，现场${service}，顺手把${bodyProof}也拍下来，再补一眼${bodyFocus}和${bodyMaterial}，回家复盘时就不会只剩一句“好看”或“不好看”。`,
+      `${p3}，对${bodyAudience}来说，${takeaway}就够实用了；${titleCloser}。`
+    ].join("\n\n"),
+    tags: buildVariantTags(kit, bank, axes),
+    note: `这一版主打${tone}，用${proof}和${material}回应${audience}最在意的${concern}。`,
+    promptContext
+  };
+}
+
+function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): TopicCopyDraft {
+  const kit = topicCopyKits[topic];
+  const bank = buildCopyVariationBank(topic, kit);
+  const axes = getVariantAxes(variantIndex);
+
+  if (isXiaohongshuBridalTopic(topic)) {
+    return buildXiaohongshuDraftCopy(topic, kit, bank, axes);
+  }
+
+  const audience = readableCue(pick(bank.audiences, axes.primary));
+  const focus = readableCue(pick(bank.focuses, axes.secondary));
+  const concern = readableCue(pick(bank.concerns, axes.tertiary));
+  const proof = readableCue(pick(bank.proofs, axes.primary));
+  const scene = readableCue(pick(bank.scenes, axes.secondary));
+  const material = readableCue(pick(bank.materials, axes.tertiary));
+  const service = softenAction(pick(bank.services, axes.primary));
+  const takeaway = readableCue(pick(bank.takeaways, axes.secondary));
+  const tone = readableCue(pick(bank.tones, axes.tertiary));
+  const shortAudience = titleCue(audience, 11);
+  const shortFocus = titleCue(focus, 11);
+  const shortConcern = titleCue(concern, 11);
+  const shortProof = titleCue(proof, 12);
+  const shortScene = titleCue(scene, 10);
+  const shortMaterial = titleCue(material, 10);
+  const bodyAudience = titleCue(audience, 24);
+  const bodyFocus = titleCue(focus, 24);
+  const bodyConcern = titleCue(concern, 24);
+  const bodyProof = titleCue(proof, 24);
+  const bodyScene = titleCue(scene, 24);
+  const bodyMaterial = titleCue(material, 24);
+  const titleStarter = pick(titleStarters, axes.primary);
+  const titleAngle = pick(titleAngles, axes.secondary);
+  const titleCloser = pick(titleClosers, axes.tertiary);
+  const openingHook = toPhrase(pick(bodyOpeners, axes.primary));
+  const transitionHook = toPhrase(pick(bodyTransitions, axes.secondary));
+  const closingHook = toPhrase(pick(bodyClosers, axes.tertiary));
+  const promptContext = buildHumanPromptContext(topic, audience, focus, concern, proof, scene, material, service, takeaway, tone);
+
+  return {
+    titles: [
+      `${titleStarter}，${shortAudience}先看${shortFocus}，别被${shortConcern}带跑`,
+      `${shortScene}这张留好，${shortProof}能看出${shortMaterial}`,
+      `${titleAngle}：${shortAudience}别忽略${shortConcern}，${titleCloser}`
+    ],
+    body: [
+      `${openingHook}${bodyAudience}别只看第一眼，${bodyFocus}和${bodyConcern}才是后面会反复想起的点。`,
+      `${transitionHook}${bodyProof}，放在${bodyScene}里，${bodyMaterial}会比精修更说明问题。`,
+      `现场${service}，再补一眼${bodyFocus}和${bodyMaterial}，不要把判断全交给氛围。`,
+      `${takeaway}就够了，${bodyAudience}看完能少一点纠结，${closingHook}`
     ].join("\n\n"),
     tags: buildVariantTags(kit, bank, axes),
     note: `本版面向${audience}，核心是${focus}，用${proof}和${material}回应${concern}；同主题共有 ${TOPIC_VARIANT_COUNT} 组组合文案。`,
