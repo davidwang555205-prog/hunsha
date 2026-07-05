@@ -16,6 +16,7 @@ import type {
 import {
   fashionSeedingDailySlotOptions,
   formatFashionSeedingContent,
+  formatFashionSeedingKeywords,
   generateFashionSeedingContent,
   getDailyFashionSeedingSelection,
   getFashionSeedingTopicOptions,
@@ -399,6 +400,13 @@ function App() {
                 onClick={() => copyText(formatFashionSeedingContent(content), "已复制小红书内容全文。", setContentCopyStatus)}
               >
                 复制全文
+              </button>
+              <button
+                className={secondaryButtonClass}
+                type="button"
+                onClick={() => copyText(formatFashionSeedingKeywords(content), "已复制生图关键词。", setContentCopyStatus)}
+              >
+                复制关键词
               </button>
               <button className={primaryButtonClass} type="button" onClick={handleGenerateContent}>
                 生成内容

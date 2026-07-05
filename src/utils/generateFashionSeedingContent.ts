@@ -1994,7 +1994,7 @@ export function generateFashionSeedingContent(input: FashionSeedingInput): Fashi
 
 export function formatFashionSeedingContent(content: FashionSeedingContent) {
   return [
-    `# Bridal & Dress Content Studio 小红书内容｜${content.dateKey}｜第 ${content.dailySlot} 篇｜${content.topic}｜${content.variantLabel}`,
+    `# 小红书内容｜${content.dateKey}｜第 ${content.dailySlot} 篇｜${content.topic}｜${content.variantLabel}`,
     "",
     "## 标题备选",
     ...content.titles.map((title, index) => `${index + 1}. ${title}`),
@@ -2008,14 +2008,25 @@ export function formatFashionSeedingContent(content: FashionSeedingContent) {
     "## 内容逻辑",
     content.note,
     "",
-    "## 配图方案与独立英文 Prompt",
+    "## 配图方案",
     ...content.images.flatMap((image, index) => [
       "",
       `### ${index + 1}. ${image.name}`,
       `用途：${image.purpose}`,
       `配图建议：${image.description}`,
+      `参数：${image.params.productCategory}｜${image.params.imageType}｜${image.params.scenePreference}｜${image.params.modelChoice}｜${image.params.lightPreference}`
+    ])
+  ].join("\n");
+}
+
+export function formatFashionSeedingKeywords(content: FashionSeedingContent) {
+  return [
+    `# 生图关键词｜${content.dateKey}｜第 ${content.dailySlot} 篇｜${content.topic}｜${content.variantLabel}`,
+    ...content.images.flatMap((image, index) => [
+      "",
+      `## ${image.name || `图${index + 1}`}`,
       `参数：${image.params.productCategory}｜${image.params.imageType}｜${image.params.scenePreference}｜${image.params.modelChoice}｜${image.params.lightPreference}`,
-      "英文 Prompt：",
+      "",
       image.prompt
     ])
   ].join("\n");
