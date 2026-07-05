@@ -161,6 +161,10 @@ const lightLines: Record<LightPreference, string> = {
 const brandDirection =
   "Unified brand direction: refined, natural, premium, soft daylight, low saturation, elegant but not over-staged, real-camera look, tasteful Chinese / Asian fashion brand mood.";
 
+function hasCjkText(value: string) {
+  return /[\u3400-\u9fff]/.test(value);
+}
+
 function resolveScene(params: PromptParams): Exclude<ScenePreference, "自动匹配"> {
   if (params.scenePreference !== "自动匹配") return params.scenePreference;
   const compatibleScenes = getCompatibleSceneOptions(params.productCategory, params.imageType).filter(
@@ -172,12 +176,12 @@ function resolveScene(params: PromptParams): Exclude<ScenePreference, "自动匹
 function resolveStyleLine(params: PromptParams) {
   const customName = params.customProductName.trim();
   if (params.productCategory === "婚纱 / 礼服") {
-    return customName
+    return customName && !hasCjkText(customName)
       ? `Product style: ${customName}. Use it as the exact style name while following the uploaded reference image.`
       : `Product style: ${bridalStyleLines[params.bridalStyle]}.`;
   }
 
-  return customName
+  return customName && !hasCjkText(customName)
     ? `Product style: ${customName}. Use it as the exact style name while following the uploaded reference image.`
     : `Product style: ${dressStyleLines[params.dressStyle]}.`;
 }
@@ -210,6 +214,11 @@ function cleanJoin(lines: Array<string | false | undefined>) {
   return lines.filter(Boolean).join("\n");
 }
 
+function buildBridalKeywordLine(promptLine: string) {
+  const visualKeywords = promptLine.replace(/^Xiaohongshu [^:]+ keywords:\s*/i, "");
+  return `Include visual cues such as ${visualKeywords}`;
+}
+
 export function generatePrompt(params: PromptParams): PromptOutput {
   const resolvedScene = resolveScene(params);
   const extraRequirement = params.extraRequirement.trim();
@@ -228,14 +237,14 @@ export function generatePrompt(params: PromptParams): PromptOutput {
     sceneLines[resolvedScene],
     seasonLines[params.season],
     lightLines[params.lightPreference],
-    bridalKeywordProfile
-      ? `Xiaohongshu bridal visual keyword alignment: ${bridalKeywordProfile.promptLine}`
-      : undefined,
+    bridalKeywordProfile ? buildBridalKeywordLine(bridalKeywordProfile.promptLine) : undefined,
     brandDirection,
     "Composition: balanced crop, natural posture if a person appears, clear waistline and hemline, visible fabric detail, no chaotic props, no excessive retouching.",
     "Camera feel: editorial but believable, real lens perspective, soft texture, realistic skin and hands, premium e-commerce and social content quality.",
     `Negative constraints: ${negativeConstraintLines.join(" ")}`,
-    extraRequirement ? `Additional user requirement, appended exactly as supplied: ${extraRequirement}` : undefined
+    extraRequirement && !hasCjkText(extraRequirement)
+      ? `Additional visual requirement: ${extraRequirement}`
+      : undefined
   ]);
 
   return { prompt };

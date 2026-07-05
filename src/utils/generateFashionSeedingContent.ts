@@ -1925,12 +1925,65 @@ function resolveImageModelChoice(baseParams: PromptParams, draft: ImageDraft): M
   return baseParams.modelChoice;
 }
 
+const englishVisualAlignmentByTopic: Record<FashionSeedingTopic, string> = {
+  试纱体验:
+    "a realistic bridal fitting experience, focused on body comfort, silhouette confirmation, mirror records, and calm decision-making",
+  真实客户试纱:
+    "a real customer bridal fitting post, focused on authentic try-on evidence, fitting-room mirror moments, body comfort, and honest customer hesitation",
+  试纱陪同视角:
+    "a companion-view bridal fitting post, focused on subtle friend or family reactions, quiet support, and real relationship details in the fitting room",
+  试纱避坑准备:
+    "a bridal fitting preparation post, focused on practical physical preparation items, fitting notes, shoes, undergarment planning, and realistic appointment readiness",
+  婚纱品牌发布:
+    "a bridal brand release post, focused on new collection structure, silhouette clarity, fabric evidence, and restrained premium lookbook mood",
+  婚纱店发布:
+    "a bridal boutique publishing post, focused on store trust, appointment-ready space, service detail, clean fitting-room order, and real boutique atmosphere",
+  极简新娘:
+    "a minimalist bridal styling post, focused on satin structure, clean proportion, quiet luxury, and soft natural light",
+  法式婚纱:
+    "a French lace bridal post, focused on delicate lace texture, restrained romance, neckline detail, and breathable fabric evidence",
+  草坪婚礼:
+    "an outdoor lawn wedding post, focused on natural movement, greenery, soft daylight, and white gown detail without overexposure",
+  酒店婚礼:
+    "a hotel wedding post, focused on morning preparation, warm interior mood, suite details, and understated ceremony feeling",
+  海边旅拍:
+    "a seaside bridal travel shoot post, focused on gentle wind, low-saturation coast, natural movement, and clean dress proportion",
+  登记照:
+    "a registry-day bridal post, focused on clean documentation, simple styling, intimate milestone feeling, and natural light",
+  晚宴礼服:
+    "an evening gown post, focused on formal proportion, warm dinner light, restrained glamour, and polished event mood",
+  婚礼前一天:
+    "a pre-wedding-day detail post, focused on preparation stillness, veil, gown, shoes, bouquet, and quiet anticipation",
+  新娘独处时刻:
+    "a quiet solo bride post, focused on personal stillness, soft room light, natural posture, and breathable emotional space",
+  通勤裙装:
+    "a commuter dress post, focused on weekday polish, practical movement, clean waistline, and grounded city styling",
+  约会裙装:
+    "a date dress post, focused on natural femininity, warm social setting, comfortable fit, and not overly sweet styling",
+  周末裙装:
+    "a weekend dress post, focused on relaxed movement, cafe or flower-shop rhythm, soft daylight, and wearable ease",
+  度假长裙:
+    "a vacation maxi dress post, focused on light drape, resort daylight, wind movement, and low-saturation travel mood",
+  艺术馆穿搭:
+    "an art-gallery outfit post, focused on negative space, clean silhouette, quiet city mood, and restrained styling",
+  下午茶:
+    "an afternoon-tea dress post, focused on relaxed social mood, soft cafe light, clean proportion, and non-sugary femininity",
+  晚餐约会:
+    "a dinner-date dress post, focused on warm evening light, mature elegance, fabric detail, and comfortable formal mood",
+  轻熟日常:
+    "a refined daily dress post, focused on mature ease, stable proportion, low-saturation styling, and real wardrobe feeling",
+  秋冬裙装:
+    "an autumn-winter dress post, focused on tactile fabric, warmth, clear layering, and balanced lightness",
+  一条裙子的多场景:
+    "a multi-scene dress post, focused on one garment across commuting, cafe, gallery, and dinner moments with consistent structure"
+};
+
 function buildPromptAlignmentRequirement(draft: ImageDraft, context?: CopyAlignmentContext) {
   if (!context) return draft.extraRequirement;
 
   return [
     draft.extraRequirement,
-    `Content alignment: match the generated Xiaohongshu copy context. Topic: ${context.topic}. Audience: ${context.audience}. Main focus: ${context.focus}. User concern: ${context.concern}. Visual proof to support: ${context.proof}. Scene evidence: ${context.scene}. Material/detail cue: ${context.material}. Service/action cue: ${context.service}. Takeaway: ${context.takeaway}. Tone: ${context.tone}. Make this image read as part of the same post, not a separate generic prompt.`
+    `Create it as part of ${englishVisualAlignmentByTopic[context.topic]}. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image.`
   ].join(" ");
 }
 
@@ -2020,14 +2073,5 @@ export function formatFashionSeedingContent(content: FashionSeedingContent) {
 }
 
 export function formatFashionSeedingKeywords(content: FashionSeedingContent) {
-  return [
-    `# 生图关键词｜${content.dateKey}｜第 ${content.dailySlot} 篇｜${content.topic}｜${content.variantLabel}`,
-    ...content.images.flatMap((image, index) => [
-      "",
-      `## ${image.name || `图${index + 1}`}`,
-      `参数：${image.params.productCategory}｜${image.params.imageType}｜${image.params.scenePreference}｜${image.params.modelChoice}｜${image.params.lightPreference}`,
-      "",
-      image.prompt
-    ])
-  ].join("\n");
+  return content.images.map((image, index) => `Prompt ${index + 1}\n${image.prompt}`).join("\n\n---\n\n");
 }
