@@ -499,6 +499,90 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "坐下和转身是否仍然舒服",
       "价格之外的选择理由",
       "最后留下来的那一点确定感"
+    ],
+    concerns: [
+      "截图款穿上后是不是和想象一样",
+      "手臂和肩颈会不会一直紧绷",
+      "主纱会不会压住整个人",
+      "试纱间灯光有没有让判断失真",
+      "朋友视频里状态是不是自然",
+      "坐下敬茶时腰部会不会卡住",
+      "拖尾重量会不会影响走路",
+      "价格高的那件是否真的更适合",
+      "顾问建议和自己感受是否一致",
+      "回家复盘时还能不能说清喜欢哪里"
+    ],
+    proofs: [
+      "正面、侧面和背影三张对比",
+      "顾问重新收腰后的前后变化",
+      "低头看腰线时那几秒停顿",
+      "朋友手机里的走动小视频",
+      "坐下时裙摆和腰部的状态",
+      "转身时拖尾有没有跟着身体走",
+      "头纱叠上以后肩颈是否更轻",
+      "试纱记录里写下的犹豫点",
+      "同一光线下几件婚纱的差别",
+      "自己不再反复问显不显胖的瞬间"
+    ],
+    scenes: [
+      "试纱间镜前完整试穿",
+      "顾问蹲下整理裙摆",
+      "朋友坐在旁边回看视频",
+      "客人低头确认腰线",
+      "试穿夹临时调整的位置",
+      "头纱和主纱一起上身",
+      "坐下试敬茶动作的片刻",
+      "试纱记录表旁边的面料小样",
+      "衣架前重新对比上一件",
+      "镜子里安静站住的那一刻"
+    ],
+    materials: [
+      "缎面垂坠和腰部转折",
+      "蕾丝花纹和肩颈留白",
+      "拖尾边缘和裙摆重量",
+      "领口弧度和手臂线条",
+      "头纱长度和主纱层次",
+      "试穿夹调整后的腰线",
+      "坐下时腰腹处的余量",
+      "背后拉链和背影完整度",
+      "窗边光里的白纱纹理",
+      "走动时裙摆的跟随感"
+    ],
+    services: [
+      "让顾问解释版型为什么适合",
+      "请朋友拍一段不美化的视频",
+      "每件都记录一个喜欢和一个犹豫点",
+      "把婚礼场地告诉顾问再试下一件",
+      "同时看正面、侧面、背影和走动",
+      "问清楚改尺寸和拖尾处理方式",
+      "把头纱和鞋高一起纳入判断",
+      "不要在特别累的时候立刻决定",
+      "回家后用同角度照片再复盘",
+      "把真实顾虑直接讲给顾问听"
+    ],
+    takeaways: [
+      "知道该保存哪几张试纱图",
+      "把焦虑从身材转回版型判断",
+      "试纱不只是在选一张漂亮照片",
+      "最后选择应该有过程而不是冲动",
+      "舒服和自然比立刻惊艳更重要",
+      "真实视频比单张正面照更诚实",
+      "适合自己的婚纱会让身体先放松",
+      "顾虑被解决比被夸好看更有用",
+      "选婚纱时可以慢一点确认",
+      "试纱记录应该帮自己回忆当时的感觉"
+    ],
+    tones: [
+      "像试纱后回家复盘",
+      "像真实顾客写给自己的备婚日记",
+      "像朋友认真帮忙记录",
+      "像婚纱店温和转述客照故事",
+      "像把犹豫慢慢讲清楚",
+      "像试完几件后终于放松下来",
+      "像不急着下结论的选择记录",
+      "像把身体感受写得很具体",
+      "像客照背后的真实说明",
+      "像备婚收藏夹里的经验笔记"
     ]
   },
   试纱陪同视角: {
@@ -525,6 +609,90 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "关系感是否比剧情更重要",
       "几个人一起确认的那一刻",
       "陪试意见是否真的帮她决策"
+    ],
+    concerns: [
+      "她是不是一直回头问别人意见",
+      "朋友夸好看会不会反而让她更乱",
+      "妈妈在意的实用细节有没有被听见",
+      "伴侣反应会不会被拍得太像剧情",
+      "陪试的人有没有抢走新娘重点",
+      "手机视频能不能留下真实状态",
+      "几个人意见不一致时怎么判断",
+      "她穿上以后有没有自然站直",
+      "陪同者说实话会不会太直接",
+      "回家复盘还能不能记起每件差别"
+    ],
+    proofs: [
+      "她站在镜前安静了几秒",
+      "朋友拍到她自然转身的画面",
+      "妈妈先帮她理头纱而不是先评价",
+      "伴侣提醒她刚才一直在笑",
+      "同一个角度拍下几件婚纱对比",
+      "陪试的人记录下她少问问题的瞬间",
+      "旁边人看见她肩颈终于放松",
+      "手机相册里最自然的那段视频",
+      "朋友帮她补上看不到的背影",
+      "几个人一起确认不再纠结的时刻"
+    ],
+    scenes: [
+      "朋友视角的镜前全身",
+      "妈妈坐在旁边看头纱",
+      "伴侣安静听顾问解释",
+      "试纱间沙发边的真实反应",
+      "手机里回看上一件婚纱",
+      "陪同者帮忙整理拖尾",
+      "几个人一起看镜子的画面",
+      "朋友从侧面拍走动视频",
+      "试纱间桌面上的记录和发夹",
+      "候场区里轻声讨论的片刻"
+    ],
+    materials: [
+      "头纱边缘和肩线关系",
+      "拖尾展开后的背影完整度",
+      "裙摆重量和走动状态",
+      "腰线调整后的侧面比例",
+      "袖口和手臂的自然程度",
+      "坐下时裙身有没有紧绷",
+      "朋友视频里的面料垂坠",
+      "妈妈会注意到的敬茶动作",
+      "伴侣能看懂的场地适配",
+      "几件婚纱同角度下的差别"
+    ],
+    services: [
+      "帮她拍正面、侧面、背影和走动",
+      "先问她自己的感受再给意见",
+      "把每件的喜欢和犹豫点记下来",
+      "提醒她不要只看试纱间灯光",
+      "帮她确认坐下和转身是否舒服",
+      "少说都好看，多说具体差别",
+      "把伴侣或妈妈的真实反应留下来",
+      "回家后一起看同角度视频",
+      "帮她看自己看不到的背影",
+      "把陪伴感留在动作里而不是台词里"
+    ],
+    takeaways: [
+      "陪试的人负责记录真实状态",
+      "旁边人的观察能补上试纱盲区",
+      "关系感不需要被拍成夸张剧情",
+      "朋友视角比精修照更容易看出放松",
+      "妈妈的动作有时比评价更真实",
+      "伴侣陪试可以安静但很有用",
+      "陪同建议要具体而不是只夸漂亮",
+      "几个人一起确认的过程值得留下",
+      "真实记录能让回家复盘更轻松",
+      "陪试纱的重点是帮她更像自己"
+    ],
+    tones: [
+      "像朋友陪试后的认真复盘",
+      "像妈妈视角里的温柔记录",
+      "像伴侣安静陪在旁边",
+      "像试纱间里自然发生的小片段",
+      "像帮闺蜜说真话但不施压",
+      "像回家后一起翻相册",
+      "像关系感自己慢慢出现",
+      "像陪同者写下的备婚旁白",
+      "像把反应和细节都留住",
+      "像不制造剧情的真实见证"
     ]
   },
   试纱避坑准备: {
@@ -541,16 +709,100 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "想少踩坑但不想焦虑的人"
     ],
     focuses: [
-      "先把婚礼场地告诉顾问",
-      "提前写下最在意的身体位置",
-      "每件都拍同角度对比",
-      "不要饿着肚子试很多件",
-      "鞋高和头发状态要接近婚礼当天",
-      "问清楚改尺寸和拖尾处理",
+      "婚礼场地是否先告诉顾问",
+      "最在意的身体位置是否提前写下",
+      "每件婚纱是否同角度对比",
+      "试纱当天体力是否留够",
+      "鞋高和头发状态是否接近婚礼当天",
+      "改尺寸和拖尾处理是否问清",
+      "客照授权和隐私处理是否确认",
+      "一天的预约数量是否太满",
+      "回家后视频复盘是否保留",
+      "问题是否带去了而不是只带焦虑"
+    ],
+    concerns: [
+      "第一次去会不会什么都不懂",
+      "试太多家会不会越试越乱",
+      "没有准备鞋和胸贴会不会影响比例",
+      "身材焦虑会不会带偏判断",
+      "试纱间情绪会不会让人立刻上头",
+      "照片好看但婚礼当天会不会累",
+      "问题没问清会不会后面后悔",
+      "客照授权和隐私有没有说明",
+      "顾问推荐是不是适合自己的场地",
+      "回家以后还能不能清楚对比"
+    ],
+    proofs: [
+      "预约前写下场地、预算和顾虑",
+      "胸贴、无痕内裤和接近婚礼高度的鞋",
+      "每件婚纱同角度的照片和视频",
+      "试完后立刻写下喜欢和犹豫",
+      "坐下、转身和走动三组动作",
+      "头纱、发型和鞋高一起试",
+      "问清改尺寸、拖尾和档期",
+      "确认客照发布前会再次授权",
+      "一天少约几家保持判断力",
+      "回家用视频复盘而不是只看精修"
+    ],
+    scenes: [
+      "试纱前清单桌面",
+      "预约卡和面料小样",
+      "镜前正侧面对比",
+      "顾问说明腰线和拖尾",
+      "头纱、胸贴和鞋放在一起",
+      "试纱间入口和衣架",
+      "手机相册里的同角度记录",
+      "坐下试敬茶动作的画面",
+      "试穿夹和改尺寸标记",
+      "回家复盘时的记录本"
+    ],
+    materials: [
+      "胸贴和无痕内裤的干净线条",
+      "鞋高对腰线比例的影响",
+      "头纱长度和发型关系",
+      "拖尾重量和行动空间",
+      "试穿夹调整出的临时腰线",
+      "蕾丝、缎面和白纱在光线下的差别",
+      "坐下时腰腹处是否舒服",
+      "改尺寸位置和背后拉链",
+      "手机视频里的真实比例",
+      "同角度照片里能看出的差别"
+    ],
+    services: [
+      "把婚礼场地和预算说清楚",
+      "每件都拍正面、侧面、背影和走动",
+      "把最在意的身体位置直接告诉顾问",
+      "不要饿着肚子连续试很多件",
+      "问清楚改尺寸和拖尾处理方式",
       "确认客照授权和隐私处理",
-      "不要把一天安排得太满",
-      "回家再看视频做决定",
-      "把问题带去而不是带着焦虑去"
+      "试头纱时一起看发型和鞋高",
+      "每试完一件立刻记两句话",
+      "一天不要把店铺排得太满",
+      "回家后再用视频做最后判断"
+    ],
+    takeaways: [
+      "试纱准备是为了少一点慌",
+      "攻略不该制造新的身材焦虑",
+      "带着问题去比带着焦虑去更有用",
+      "同角度记录能让对比更公平",
+      "第一次试纱也可以慢慢确认",
+      "问清服务细节不是麻烦",
+      "准备物品是帮自己看清比例",
+      "预约节奏比跑很多家更重要",
+      "真实视频能帮人冷静下来",
+      "避坑的重点是让选择更清楚"
+    ],
+    tones: [
+      "像第一次试纱前的实用提醒",
+      "像备婚收藏夹里的清单",
+      "像朋友把踩过的坑讲清楚",
+      "像不制造焦虑的预约攻略",
+      "像试纱前一天的准备备注",
+      "像顾问温和提醒注意事项",
+      "像回家复盘后整理出的经验",
+      "像把复杂选择拆小一点",
+      "像写给第一次去试纱的人",
+      "像让人安心出门的备忘录"
     ]
   },
   婚纱品牌发布: {
@@ -577,6 +829,90 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "不是每件都喊命定款",
       "发布内容是否帮用户排除不适合",
       "lookbook 感和真实参考是否平衡"
+    ],
+    concerns: [
+      "新品是不是只剩漂亮口号",
+      "适合谁有没有讲清楚",
+      "面料近看会不会失真",
+      "完整上身和细节图是否能互相证明",
+      "场地适配有没有说具体",
+      "系列里每件婚纱差异是否清楚",
+      "品牌感会不会盖过真实参考",
+      "拖尾和背影是否经得起近看",
+      "极简款会不会只剩白色轮廓",
+      "用户能不能判断自己适不适合"
+    ],
+    proofs: [
+      "完整上身和侧面结构",
+      "领口、腰线和拖尾的连续关系",
+      "面料近景里的纹理和光泽",
+      "挂装静物和上身图的对照",
+      "系列 mood board 里的设计线索",
+      "强光下白纱没有丢掉细节",
+      "背影和拖尾展开后的比例",
+      "不同场地里的同一件婚纱",
+      "样衣调整前后的结构确认",
+      "不是命定款口号而是适配理由"
+    ],
+    scenes: [
+      "品牌 lookbook 完整上身",
+      "婚纱店橱窗里的新品挂装",
+      "材质工作台上的面料小样",
+      "模特轻微转身看拖尾",
+      "系列 mood board 和草图",
+      "酒店晨光下的主纱比例",
+      "草坪自然光里的轻婚纱",
+      "教堂门口的背影和拖尾",
+      "橱窗柔光里的静物细节",
+      "发布前最后一次样衣确认"
+    ],
+    materials: [
+      "缎面光泽和垂坠方向",
+      "蕾丝花纹密度和透感",
+      "珠绣、刺绣和白纱层次",
+      "领口弧度和肩颈留白",
+      "腰线位置和裙摆体量",
+      "拖尾长度和仪式动线",
+      "挂装状态下的廓形",
+      "头纱与主纱的层次关系",
+      "背后拉链和收腰结构",
+      "近景里仍然真实的面料纹理"
+    ],
+    services: [
+      "把适合场地写清楚",
+      "用完整上身图说明比例",
+      "补一张面料近景做证据",
+      "说明这件不适合哪类需求",
+      "让每张图承担不同信息",
+      "把系列差异拆开讲",
+      "保留挂装和 mood board",
+      "避免把每件都叫命定款",
+      "用侧面和背影补足参考",
+      "把设计语言翻译成可判断细节"
+    ],
+    takeaways: [
+      "新品发布应该帮人看懂选择",
+      "品牌感要落在版型和面料上",
+      "不是每件婚纱都需要被喊成命定",
+      "系列差异越清楚越容易被收藏",
+      "适合谁比单纯漂亮更重要",
+      "细节图能让发布更可信",
+      "克制发布反而更显专业",
+      "lookbook 也要保留真实参考价值",
+      "婚纱设计需要被讲得具体",
+      "用户能排除不适合也是专业"
+    ],
+    tones: [
+      "像品牌发布前的设计说明",
+      "像克制的新品 lookbook 文案",
+      "像把版型讲给备婚用户听",
+      "像设计师解释一件婚纱",
+      "像系列发布里的温和旁白",
+      "像不喊口号的新品介绍",
+      "像从面料证据开始讲",
+      "像品牌把适配人群说清楚",
+      "像一组可以慢慢看的发布笔记",
+      "像高级但不空泛的系列说明"
     ]
   },
   婚纱店发布: {
@@ -603,6 +939,90 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "店铺日常是否干净但不空",
       "门店内容有没有真实过程",
       "用户能不能预约前就知道会被怎样对待"
+    ],
+    concerns: [
+      "到店后会不会被一直催定",
+      "顾问是否真的先听需求",
+      "试纱间是不是只在照片里好看",
+      "客照授权和隐私有没有被尊重",
+      "预约流程会不会让人紧张",
+      "店铺日常是不是只有空间美图",
+      "试纱记录能不能帮人做决定",
+      "配饰和头纱搭配是否专业",
+      "真实客照有没有过度精修",
+      "用户预约前能不能看懂体验"
+    ],
+    proofs: [
+      "预约卡、试穿记录和授权说明",
+      "顾问先听需求再拿款的过程",
+      "试纱间镜子和真实光线",
+      "顾问整理裙摆时的服务距离",
+      "客人看镜子时的自然表情",
+      "头纱和配饰区的有序细节",
+      "衣架、面料小样和改尺寸记录",
+      "不露隐私的手机记录桌面",
+      "每张图对应一个体验节点",
+      "试纱结束后的温和确认"
+    ],
+    scenes: [
+      "试纱间主视觉",
+      "顾问和客人一起看镜子",
+      "婚纱店橱窗的第一印象",
+      "头纱与配饰工作台",
+      "客人授权后的真实试穿瞬间",
+      "预约卡和面料小样桌面",
+      "候场区里的衣架和纱帘",
+      "顾问整理拖尾的服务过程",
+      "朋友陪同回看照片",
+      "试纱结束后记录选择理由"
+    ],
+    materials: [
+      "试纱间镜子和灯光真实度",
+      "衣架上婚纱的挂装状态",
+      "头纱、耳饰和手套的搭配关系",
+      "面料小样和裙摆近景",
+      "预约卡和记录表的干净细节",
+      "顾问调整腰线时的手部动作",
+      "橱窗柔光下的礼服质感",
+      "客照里保留的自然姿态",
+      "试穿夹和改尺寸标记",
+      "等待区是否干净但不空"
+    ],
+    services: [
+      "听完需求再拿第一组款",
+      "让顾问说明每件适合和不适合的原因",
+      "提前确认客照授权和隐私边界",
+      "把试纱流程拍成几个清楚节点",
+      "保留整理裙摆和搭配头纱的过程",
+      "避免只发一排漂亮裙子",
+      "让空间图也能说明服务体验",
+      "把预约前最担心的问题讲出来",
+      "用真实客照补充完整上身参考",
+      "让每张图都对应一个安心理由"
+    ],
+    takeaways: [
+      "门店发布要让人预约前就安心",
+      "真实过程比空间炫耀更有转化价值",
+      "服务感应该落在小动作里",
+      "用户想看的不只是漂亮裙子",
+      "客照可信度来自授权和细节",
+      "试纱体验从进店那刻开始",
+      "店铺日常可以真实但不能杂乱",
+      "顾问沟通方式本身就是内容",
+      "预约理由应该被具体看见",
+      "婚纱店专业度要让人能感受到"
+    ],
+    tones: [
+      "像门店日常的温和记录",
+      "像预约前能安心看的探店笔记",
+      "像顾问把流程慢慢讲清楚",
+      "像真实试纱间里的服务片段",
+      "像不催定的婚纱店转述",
+      "像把空间和体验一起拍出来",
+      "像客照发布前的细节说明",
+      "像给还没到店的人一颗定心丸",
+      "像婚纱馆认真经营的日常",
+      "像把信任感落到每个小动作"
     ]
   }
 };
@@ -613,6 +1033,41 @@ function toPhrase(value: string) {
     .replace(/\.+/g, "，")
     .replace(/，+$/g, "")
     .trim();
+}
+
+function readableCue(value: string) {
+  return toPhrase(value)
+    .replace(/^内容可以保留/, "")
+    .replace(/^画面可以有/, "")
+    .replace(/^画面不需要拍成大片，/, "")
+    .replace(/^配图适合出现/, "")
+    .replace(/^配图可以有/, "")
+    .replace(/^适合拍/, "")
+    .replace(/^试纱间里可以保留/, "")
+    .replace(/^如果是系列发布，最好让/, "系列发布时让")
+    .replace(/^每张图要说明/, "每张图说明")
+    .replace(/^不要把/, "不把")
+    .replace(/内容/g, "分享")
+    .replace(/读者/g, "看到的人")
+    .replace(/^让用户知道/, "知道")
+    .replace(/^让看到的人/, "让人")
+    .replace(/^帮预约前的人/, "预约前的人")
+    .replace(/^让品牌或门店/, "品牌或门店")
+    .replace(/^让组图/, "组图")
+    .replace(/^让最终选择/, "最终选择")
+    .replace(/^让同一单品/, "同一单品")
+    .replace(/^让场景/, "场景")
+    .replace(/^让面料/, "面料")
+    .replace(/^让裙装/, "裙装")
+    .replace(/^，+/, "")
+    .trim();
+}
+
+function compactCue(value: string, maxLength = 18) {
+  const cue = readableCue(value);
+  if (cue.length <= maxLength) return cue;
+
+  return `${cue.slice(0, maxLength).replace(/[，、：:]+$/g, "")}…`;
 }
 
 function uniqueItems(items: string[]) {
@@ -640,13 +1095,13 @@ function buildCopyVariationBank(topic: FashionSeedingTopic, kit: TopicCopyKit): 
 
   return {
     audiences: ensureBankItems(override.audiences ?? [], categoryBank.audiences, `${topic}用户`),
-    focuses: ensureBankItems([...(override.focuses ?? []), ...kit.openings], categoryBank.focuses, `${topic}判断点`),
-    concerns: ensureBankItems([...(override.concerns ?? []), ...kit.observations], categoryBank.concerns, `${topic}顾虑`),
-    proofs: ensureBankItems([...(override.proofs ?? []), ...kitPhrases], categoryBank.proofs, `${topic}证据`),
-    scenes: ensureBankItems([...(override.scenes ?? []), ...kit.scenes], categoryBank.scenes, `${topic}场景`),
-    materials: ensureBankItems([...(override.materials ?? []), ...kit.observations], categoryBank.materials, `${topic}细节`),
+    focuses: ensureBankItems([...(override.focuses ?? []), ...categoryBank.focuses, ...kit.openings], [], `${topic}判断点`),
+    concerns: ensureBankItems([...(override.concerns ?? []), ...categoryBank.concerns, ...kit.observations], [], `${topic}顾虑`),
+    proofs: ensureBankItems([...(override.proofs ?? []), ...categoryBank.proofs, ...kitPhrases], [], `${topic}证据`),
+    scenes: ensureBankItems([...(override.scenes ?? []), ...categoryBank.scenes, ...kit.scenes], [], `${topic}场景`),
+    materials: ensureBankItems([...(override.materials ?? []), ...categoryBank.materials, ...kit.observations], [], `${topic}细节`),
     services: ensureBankItems(override.services ?? [], categoryBank.services, `${topic}动作`),
-    takeaways: ensureBankItems([...(override.takeaways ?? []), ...kit.closings], categoryBank.takeaways, `${topic}收尾`),
+    takeaways: ensureBankItems([...(override.takeaways ?? []), ...categoryBank.takeaways, ...kit.closings], [], `${topic}收尾`),
     tones: ensureBankItems(override.tones ?? [], categoryBank.tones, `${topic}语气`),
     tagExtras: ensureBankItems(override.tagExtras ?? [], categoryBank.tagExtras, `#${topic}`)
   };
@@ -675,15 +1130,26 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
   const kit = topicCopyKits[topic];
   const bank = buildCopyVariationBank(topic, kit);
   const axes = getVariantAxes(variantIndex);
-  const audience = pick(bank.audiences, axes.primary);
-  const focus = pick(bank.focuses, axes.secondary);
-  const concern = pick(bank.concerns, axes.tertiary);
-  const proof = pick(bank.proofs, axes.primary);
-  const scene = pick(bank.scenes, axes.secondary);
-  const material = pick(bank.materials, axes.tertiary);
-  const service = pick(bank.services, axes.primary);
-  const takeaway = pick(bank.takeaways, axes.secondary);
-  const tone = pick(bank.tones, axes.tertiary);
+  const audience = readableCue(pick(bank.audiences, axes.primary));
+  const focus = readableCue(pick(bank.focuses, axes.secondary));
+  const concern = readableCue(pick(bank.concerns, axes.tertiary));
+  const proof = readableCue(pick(bank.proofs, axes.primary));
+  const scene = readableCue(pick(bank.scenes, axes.secondary));
+  const material = readableCue(pick(bank.materials, axes.tertiary));
+  const service = readableCue(pick(bank.services, axes.primary));
+  const takeaway = readableCue(pick(bank.takeaways, axes.secondary));
+  const tone = readableCue(pick(bank.tones, axes.tertiary));
+  const isBridalTopic = isBridalFashionTopic(topic);
+  const productName = isBridalTopic ? "婚纱" : "裙子";
+  const wearingMoment = isBridalTopic ? "真正试到身上" : "真正穿进日常";
+  const shortAudience = compactCue(audience, 14);
+  const shortFocus = compactCue(focus, 14);
+  const shortConcern = compactCue(concern, 14);
+  const shortProof = compactCue(proof, 14);
+  const shortScene = compactCue(scene, 14);
+  const shortMaterial = compactCue(material, 14);
+  const shortTakeaway = compactCue(takeaway, 14);
+  const toneText = tone.startsWith("像") ? tone : `像${tone}`;
   const promptContext: CopyAlignmentContext = {
     topic,
     audience,
@@ -699,18 +1165,18 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
 
   return {
     titles: [
-      `${topic}｜${audience}先看「${focus}」和「${concern}」`,
-      `别只看「${proof}」，也要确认「${scene}」里的${material}`,
-      `用「${scene}」这一组，帮${audience}回应「${concern}」并讲清「${takeaway}」`
+      `${shortAudience}，先看${shortFocus}和${shortConcern}`,
+      `${shortScene}里的${shortProof}，近看${shortMaterial}`,
+      `${shortTakeaway}，${shortAudience}也要看${shortConcern}`
     ],
     body: [
-      `这篇${topic}写给${audience}，不急着把重点放在好不好看，而是先用「${focus}」「${concern}」和「${scene}」建立判断入口。`,
-      `正文中围绕「${proof}」补充证据，再接上${material}、${service}和「${focus}」，让读者能看见具体变化，而不是只读到一句漂亮。`,
-      `组图里保留「${scene}」这一类信息，接着放「${proof}」相关画面，再用${material}收住节奏；同一篇内容围绕${audience}的真实疑问展开，信息不会互相抢。`,
-      `结尾落在「${takeaway}」，语气保持${tone}，并回应${audience}对「${focus}」的判断需求，让${topic}既有真实感，也保留店铺或品牌的专业度。`
+      `${audience}很容易先被漂亮照片吸引，但${wearingMoment}以后，我更想看${focus}，也会留意${concern}。`,
+      `这次最值得留下的不是一句“好看”，而是${proof}，把它放在${scene}里，再近一点看${material}，${productName}就不只是一个漂亮轮廓。`,
+      `围绕${focus}继续看${material}，同时记得${service}，很多犹豫会从情绪变成可以判断的细节。`,
+      `对${audience}来说，${takeaway}比一句夸奖更有用，不用把话说满，${toneText}那样把原因讲清楚，就已经足够被收藏。`
     ].join("\n\n"),
     tags: buildVariantTags(kit, bank, axes),
-    note: `遵循「${toPhrase(kit.note)}」的方向，本版围绕${audience}，用「${proof}」验证「${focus}」，并通过${material}回应「${concern}」；同主题共有 ${TOPIC_VARIANT_COUNT} 组组合文案。`,
+    note: `本版面向${audience}，核心是${focus}，用${proof}和${material}回应${concern}；同主题共有 ${TOPIC_VARIANT_COUNT} 组组合文案。`,
     promptContext
   };
 }
