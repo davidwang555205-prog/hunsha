@@ -111,10 +111,29 @@ type CopyVariationBank = {
   tagExtras: string[];
 };
 
+type VisualRecipe = {
+  camera: string;
+  evidence: string;
+  detail: string;
+};
+
 type VariantAxes = {
+  variantIndex: number;
   primary: number;
   secondary: number;
   tertiary: number;
+  audience: number;
+  focus: number;
+  concern: number;
+  proof: number;
+  scene: number;
+  material: number;
+  service: number;
+  takeaway: number;
+  tone: number;
+  tagA: number;
+  tagB: number;
+  tagC: number;
 };
 
 type CopyAlignmentContext = {
@@ -128,6 +147,7 @@ type CopyAlignmentContext = {
   service: string;
   takeaway: string;
   tone: string;
+  visualRecipe: VisualRecipe;
 };
 
 const TOPIC_VARIANT_COUNT = 1000;
@@ -1390,6 +1410,84 @@ const bodyClosers = [
   "越真实的内容，越不需要把情绪推得很满。"
 ];
 
+const bridalVisualRecipes = {
+  cameras: [
+    "full-length front mirror framing with enough floor line to judge gown proportion",
+    "three-quarter body angle that keeps the waistline, neckline, and train visible",
+    "normal-lens phone-camera distance with no wide-angle leg stretching",
+    "side-profile framing for checking arm line, waist fit, and skirt volume",
+    "quiet consultant-distance view that shows adjustment without crowding the client",
+    "low-clutter boutique documentary crop with garment rack context kept secondary",
+    "soft window-light full-body crop that preserves white gown fabric detail",
+    "slight movement frame showing walking comfort and train response",
+    "back-view or over-shoulder frame for veil, zipper, and train relationship",
+    "detail-to-full-body sequence logic, with close fabric proof supporting the main image"
+  ],
+  evidence: [
+    "same-angle front, side, and back comparison as the decision evidence",
+    "visible fitting clips or consultant adjustment proving the fit process",
+    "honest mirror reflection that shows the client posture before heavy styling",
+    "phone album review feeling, as if the image helps the bride compare later",
+    "waistline and hemline kept unobstructed so the dress structure can be judged",
+    "fabric close-up evidence connected to the worn gown, not a detached product shot",
+    "natural sitting, turning, or walking comfort clue included when possible",
+    "companion or consultant presence used only as quiet context, not the main subject",
+    "store appointment detail such as rack, curtain, veil, or fitting table kept believable",
+    "non-retouched real-client mood with calm hesitation and clear selection logic"
+  ],
+  details: [
+    "satin drape, lace texture, embroidery, and beadwork remain readable in soft light",
+    "neckline, shoulder, sleeve, and arm line are visible enough for fitting judgement",
+    "train length, skirt volume, and hem edge are not cropped out",
+    "veil, hair, shoes, and accessories support the gown instead of stealing focus",
+    "white fabric keeps layered texture without blown-out highlights",
+    "temporary fit marks, clips, or pinning details feel realistic and respectful",
+    "background mirror, curtain, rack, and waiting area stay clean but not showroom-fake",
+    "body proportion stays natural, with realistic hands and no beauty-filter distortion",
+    "scene details answer the copy's concern rather than acting as decoration",
+    "the image feels like a useful fitting record, not a luxury advertisement"
+  ]
+};
+
+const dressVisualRecipes = {
+  cameras: [
+    "full-length mirror framing with shoes and hemline visible for outfit proportion",
+    "normal walking-distance street or lobby crop that keeps the dress shape clear",
+    "seated lifestyle angle showing waist comfort and fabric behavior",
+    "three-quarter city view with clean shoulder, neckline, and skirt length",
+    "entryway mirror snapshot with believable home light and stable floor line",
+    "close-to-mid fabric proof frame connected to the full outfit",
+    "side-step movement frame showing drape, pleats, and skirt swing",
+    "quiet cafe or dinner-table crop where the dress remains readable",
+    "gallery or city negative-space frame that protects silhouette clarity",
+    "wardrobe-review sequence logic, pairing worn image with hanger or detail proof"
+  ],
+  evidence: [
+    "waistline, skirt length, and shoe proportion used as the main styling evidence",
+    "sitting and walking comfort shown through natural body posture",
+    "fabric drape and wrinkle behavior visible under real daily light",
+    "same dress shown with practical scene clues instead of empty mood styling",
+    "bag, shoes, and outerwear kept secondary so the dress remains the decision point",
+    "mirror proof used to make the outfit feel repeatable, not over-produced",
+    "city, cafe, gallery, or dinner context chosen to match the copy's use case",
+    "low-saturation color relationship that keeps the garment premium but wearable",
+    "one clear lifestyle action included to explain why the dress fits the day",
+    "hanger or wardrobe detail used only when it helps prove material and structure"
+  ],
+  details: [
+    "neckline, waist seam, sleeve edge, and hem finish stay sharp enough to inspect",
+    "knit, pleat, print, or solid-color texture remains realistic in natural light",
+    "skirt movement looks relaxed and not artificially wind-blown",
+    "body proportions stay believable, with no stretched legs or over-filtered skin",
+    "background props stay useful and sparse, never competing with the dress",
+    "outerwear, shoes, and bag support the scene while preserving dress silhouette",
+    "fabric weight and drape explain the outfit more than decorative styling",
+    "the crop leaves enough negative space for a real Xiaohongshu lifestyle record",
+    "the image answers the copy's practical concern with visible outfit evidence",
+    "the result feels like a saved wardrobe note, not a glossy campaign poster"
+  ]
+};
+
 function uniqueItems(items: string[]) {
   return Array.from(new Set(items.map(toPhrase).filter(Boolean)));
 }
@@ -1429,21 +1527,47 @@ function buildCopyVariationBank(topic: FashionSeedingTopic, kit: TopicCopyKit): 
 
 function getVariantAxes(variantIndex: number): VariantAxes {
   const safeIndex = ((variantIndex % TOPIC_VARIANT_COUNT) + TOPIC_VARIANT_COUNT) % TOPIC_VARIANT_COUNT;
+  const primary = safeIndex % VARIANT_AXIS_SIZE;
+  const secondary = Math.floor(safeIndex / VARIANT_AXIS_SIZE) % VARIANT_AXIS_SIZE;
+  const tertiary = Math.floor(safeIndex / (VARIANT_AXIS_SIZE * VARIANT_AXIS_SIZE)) % VARIANT_AXIS_SIZE;
 
   return {
-    primary: safeIndex % VARIANT_AXIS_SIZE,
-    secondary: Math.floor(safeIndex / VARIANT_AXIS_SIZE) % VARIANT_AXIS_SIZE,
-    tertiary: Math.floor(safeIndex / (VARIANT_AXIS_SIZE * VARIANT_AXIS_SIZE)) % VARIANT_AXIS_SIZE
+    variantIndex: safeIndex,
+    primary,
+    secondary,
+    tertiary,
+    audience: primary,
+    focus: secondary,
+    concern: tertiary,
+    proof: (primary + secondary * 3 + tertiary * 7) % VARIANT_AXIS_SIZE,
+    scene: (primary * 7 + secondary + tertiary * 3) % VARIANT_AXIS_SIZE,
+    material: (primary * 3 + secondary * 7 + tertiary) % VARIANT_AXIS_SIZE,
+    service: (primary * 5 + secondary * 2 + tertiary) % VARIANT_AXIS_SIZE,
+    takeaway: (primary * 2 + secondary + tertiary * 5) % VARIANT_AXIS_SIZE,
+    tone: (primary * 3 + secondary * 2 + tertiary) % VARIANT_AXIS_SIZE,
+    tagA: primary,
+    tagB: (secondary + tertiary) % VARIANT_AXIS_SIZE,
+    tagC: (primary + tertiary) % VARIANT_AXIS_SIZE
   };
 }
 
 function buildVariantTags(kit: TopicCopyKit, bank: CopyVariationBank, axes: VariantAxes) {
   return uniqueItems([
     ...kit.tags,
-    pick(bank.tagExtras, axes.primary),
-    pick(bank.tagExtras, axes.secondary),
-    pick(bank.tagExtras, axes.tertiary)
+    pick(bank.tagExtras, axes.tagA),
+    pick(bank.tagExtras, axes.tagB),
+    pick(bank.tagExtras, axes.tagC)
   ]).slice(0, 7);
+}
+
+function buildVisualRecipe(topic: FashionSeedingTopic, axes: VariantAxes): VisualRecipe {
+  const recipes = isBridalFashionTopic(topic) ? bridalVisualRecipes : dressVisualRecipes;
+
+  return {
+    camera: pick(recipes.cameras, axes.primary),
+    evidence: pick(recipes.evidence, axes.secondary),
+    detail: pick(recipes.details, axes.tertiary)
+  };
 }
 
 function buildHumanPromptContext(
@@ -1456,7 +1580,8 @@ function buildHumanPromptContext(
   material: string,
   service: string,
   takeaway: string,
-  tone: string
+  tone: string,
+  visualRecipe: VisualRecipe
 ): CopyAlignmentContext {
   return {
     topic,
@@ -1468,7 +1593,8 @@ function buildHumanPromptContext(
     material,
     service,
     takeaway,
-    tone
+    tone,
+    visualRecipe
   };
 }
 
@@ -1479,15 +1605,16 @@ function buildXiaohongshuDraftCopy(
   axes: VariantAxes
 ): TopicCopyDraft {
   const draft = pick(xiaohongshuBridalCopyDrafts[topic], axes.primary);
-  const audience = readableCue(pick(bank.audiences, axes.primary));
-  const focus = readableCue(pick(bank.focuses, axes.secondary));
-  const concern = readableCue(pick(bank.concerns, axes.tertiary));
-  const proof = readableCue(pick(bank.proofs, axes.primary));
-  const scene = readableCue(pick(bank.scenes, axes.secondary));
-  const material = readableCue(pick(bank.materials, axes.tertiary));
-  const service = softenAction(pick(bank.services, axes.primary));
-  const takeaway = readableCue(pick(bank.takeaways, axes.secondary));
-  const tone = readableCue(pick(bank.tones, axes.tertiary));
+  const audience = readableCue(pick(bank.audiences, axes.audience));
+  const focus = readableCue(pick(bank.focuses, axes.focus));
+  const concern = readableCue(pick(bank.concerns, axes.concern));
+  const proof = readableCue(pick(bank.proofs, axes.proof));
+  const scene = readableCue(pick(bank.scenes, axes.scene));
+  const material = readableCue(pick(bank.materials, axes.material));
+  const service = softenAction(pick(bank.services, axes.service));
+  const takeaway = readableCue(pick(bank.takeaways, axes.takeaway));
+  const tone = readableCue(pick(bank.tones, axes.tone));
+  const visualRecipe = buildVisualRecipe(topic, axes);
   const titleAudience = titleCue(audience, 11);
   const shortFocus = titleCue(focus, 11);
   const shortConcern = titleCue(concern, 11);
@@ -1505,7 +1632,19 @@ function buildXiaohongshuDraftCopy(
   const titleCloser = pick(titleClosers, axes.tertiary);
   const paragraphs = draft.paragraphs.map(toPhrase);
   const [p0, p1, p2, p3] = paragraphs;
-  const promptContext = buildHumanPromptContext(topic, audience, focus, concern, proof, scene, material, service, takeaway, tone);
+  const promptContext = buildHumanPromptContext(
+    topic,
+    audience,
+    focus,
+    concern,
+    proof,
+    scene,
+    material,
+    service,
+    takeaway,
+    tone,
+    visualRecipe
+  );
 
   return {
     titles: [
@@ -1534,15 +1673,16 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
     return buildXiaohongshuDraftCopy(topic, kit, bank, axes);
   }
 
-  const audience = readableCue(pick(bank.audiences, axes.primary));
-  const focus = readableCue(pick(bank.focuses, axes.secondary));
-  const concern = readableCue(pick(bank.concerns, axes.tertiary));
-  const proof = readableCue(pick(bank.proofs, axes.primary));
-  const scene = readableCue(pick(bank.scenes, axes.secondary));
-  const material = readableCue(pick(bank.materials, axes.tertiary));
-  const service = softenAction(pick(bank.services, axes.primary));
-  const takeaway = readableCue(pick(bank.takeaways, axes.secondary));
-  const tone = readableCue(pick(bank.tones, axes.tertiary));
+  const audience = readableCue(pick(bank.audiences, axes.audience));
+  const focus = readableCue(pick(bank.focuses, axes.focus));
+  const concern = readableCue(pick(bank.concerns, axes.concern));
+  const proof = readableCue(pick(bank.proofs, axes.proof));
+  const scene = readableCue(pick(bank.scenes, axes.scene));
+  const material = readableCue(pick(bank.materials, axes.material));
+  const service = softenAction(pick(bank.services, axes.service));
+  const takeaway = readableCue(pick(bank.takeaways, axes.takeaway));
+  const tone = readableCue(pick(bank.tones, axes.tone));
+  const visualRecipe = buildVisualRecipe(topic, axes);
   const shortAudience = titleCue(audience, 11);
   const shortFocus = titleCue(focus, 11);
   const shortConcern = titleCue(concern, 11);
@@ -1561,7 +1701,19 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
   const openingHook = toPhrase(pick(bodyOpeners, axes.primary));
   const transitionHook = toPhrase(pick(bodyTransitions, axes.secondary));
   const closingHook = toPhrase(pick(bodyClosers, axes.tertiary));
-  const promptContext = buildHumanPromptContext(topic, audience, focus, concern, proof, scene, material, service, takeaway, tone);
+  const promptContext = buildHumanPromptContext(
+    topic,
+    audience,
+    focus,
+    concern,
+    proof,
+    scene,
+    material,
+    service,
+    takeaway,
+    tone,
+    visualRecipe
+  );
 
   return {
     titles: [
@@ -2168,6 +2320,9 @@ function englishCueFromChinese(value: string) {
   if (/手机|自拍|相册/.test(value)) cues.push("handheld phone-camera evidence");
   if (/对镜|镜前|镜子|反射/.test(value)) cues.push("full-length mirror reflection");
   if (/广角|滤镜|拉腿|失真/.test(value)) cues.push("normal lens perspective without beauty-filter distortion");
+  if (/主纱|婚纱|白纱|礼服|裙子|裙身|上身|试穿|穿上/.test(value)) cues.push("worn garment fit evidence");
+  if (/压身|压人|撑不起|体量|显胖|显高|身高/.test(value)) cues.push("skirt volume and body-scale relationship");
+  if (/喜欢|确定|选择|判断|顾虑|犹豫|排除|适合/.test(value)) cues.push("clear visual decision evidence");
   if (/腰线|收腰|腰腹|比例/.test(value)) cues.push("clear waistline and real body proportion");
   if (/领口|肩颈|手臂|胸口/.test(value)) cues.push("visible neckline, shoulder, and arm line");
   if (/裙摆|拖尾|走动|视频/.test(value)) cues.push("skirt volume, train length, and natural walking evidence");
@@ -2190,7 +2345,8 @@ function buildEnglishVariantAlignment(context: CopyAlignmentContext) {
     `Variant-specific cues: focus on ${englishCueFromChinese(context.focus)}.`,
     `Resolve the viewer concern through ${englishCueFromChinese(context.concern)}.`,
     `Use visual proof such as ${englishCueFromChinese(context.proof)} in ${englishCueFromChinese(context.scene)}.`,
-    `Emphasize detail cues including ${englishCueFromChinese(context.material)}.`
+    `Emphasize detail cues including ${englishCueFromChinese(context.material)}.`,
+    `Visual recipe: ${context.visualRecipe.camera}; ${context.visualRecipe.evidence}; ${context.visualRecipe.detail}.`
   ].join(" ");
 }
 
@@ -2208,7 +2364,7 @@ function buildImagePlan(
   baseParams: PromptParams,
   draft: ImageDraft,
   index: number,
-  contentNonce: number,
+  variantIndex: number,
   context?: CopyAlignmentContext
 ): FashionSeedingImagePlan {
   const params: PromptParams = {
@@ -2217,7 +2373,7 @@ function buildImagePlan(
     modelChoice: resolveImageModelChoice(baseParams, draft),
     scenePreference: resolveAlignedScenePreference(baseParams, draft, context),
     extraRequirement: buildPromptAlignmentRequirement(draft, context),
-    generationNonce: baseParams.generationNonce + contentNonce * 10 + index + 1,
+    generationNonce: baseParams.generationNonce + variantIndex * 10 + index + 1,
     bridalKeywordProfileId: draft.bridalKeywordProfileId
   };
 
@@ -2245,7 +2401,7 @@ export function generateFashionSeedingContent(input: FashionSeedingInput): Fashi
   const copy = buildCopyFromKit(safeTopic, variantIndex);
   const images = getImageDrafts(input.productCategory, safeTopic)
     .slice(0, imageCount)
-    .map((draft, index) => buildImagePlan(input.baseParams, draft, index, contentNonce, copy.promptContext));
+    .map((draft, index) => buildImagePlan(input.baseParams, draft, index, variantIndex, copy.promptContext));
 
   return {
     topic: safeTopic,
