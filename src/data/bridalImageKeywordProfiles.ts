@@ -41,14 +41,14 @@ export const bridalImageKeywordProfiles: Record<BridalImageKeywordProfileId, Bri
   fittingPrep: {
     id: "fittingPrep",
     promptLine:
-      "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, phone fitting record, front and side comparison, fabric swatches, veil options, fitting clips, clean preparation table, no private information visible.",
+      "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, phone fitting record, front and side comparison, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
     negativeLine:
       "Avoid cluttered checklist, avoid readable personal data, avoid anxiety-driven body comparison, avoid cheap guide-card layout."
   },
   fittingServiceDetail: {
     id: "fittingServiceDetail",
     promptLine:
-      "Xiaohongshu boutique service keywords: bridal consultant, hands adjusting veil, hands pinning gown, train adjustment, waistline check, neckline explanation, gentle professional service, respectful distance, real appointment process.",
+      "Xiaohongshu boutique service keywords: bridal consultant, hands adjusting veil, hands using beading adjustment tools near the gown waistline, train adjustment, waistline check, neckline explanation, gentle professional service, respectful distance, real appointment process.",
     negativeLine:
       "Avoid broken hands, avoid hands merging into skirt, avoid hard-selling consultant body language, avoid factory inspection mood."
   },
@@ -111,7 +111,7 @@ export function getBridalPromptKeywordProfileForParams(
     return bridalImageKeywordProfiles.fittingPrep;
   }
 
-  if (includesAny(extra, ["consultant", "adjusting", "pinning", "顾问", "整理", "试穿夹"])) {
+  if (includesAny(extra, ["consultant", "adjusting", "beading adjustment", "beading tools", "顾问", "整理", "钉珠", "钉珠道具"])) {
     return bridalImageKeywordProfiles.fittingServiceDetail;
   }
 

@@ -287,7 +287,7 @@ const bridalVariationBank: CopyVariationBank = {
   ],
   proofs: [
     "正面、侧面和背影三张对比",
-    "顾问调整试穿夹的过程近景",
+    "顾问用钉珠道具调整腰线的过程近景",
     "低头看腰线时的自然停顿",
     "朋友手机里的十秒走动视频",
     "坐下时裙摆和腰部的状态",
@@ -316,7 +316,7 @@ const bridalVariationBank: CopyVariationBank = {
     "裙摆重量和拖尾边缘",
     "领口、袖口和肩线收口",
     "头纱边缘和主纱的衔接",
-    "试穿夹留下的临时调整痕迹",
+    "钉珠道具留下的临时调整痕迹",
     "挂装状态下的廓形",
     "面料在窗边光里的细节",
     "配饰与婚纱主线的关系"
@@ -549,7 +549,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "顾问蹲下整理裙摆",
       "朋友坐在旁边回看视频",
       "客人低头确认腰线",
-      "试穿夹临时调整的位置",
+      "钉珠道具临时调整的位置",
       "头纱和主纱一起上身",
       "坐下试敬茶动作的片刻",
       "试纱记录表旁边的面料小样",
@@ -562,7 +562,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "拖尾边缘和裙摆重量",
       "领口弧度和手臂线条",
       "头纱长度和主纱层次",
-      "试穿夹调整后的腰线",
+      "钉珠道具调整后的腰线",
       "坐下时腰腹处的余量",
       "背后拉链和背影完整度",
       "窗边光里的白纱纹理",
@@ -660,7 +660,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "侧身看裙摆体量的自拍",
       "同一个镜子前对比几件婚纱",
       "顾问调整后重新自拍",
-      "手机近拍腰线和试穿夹",
+      "手机近拍腰线和钉珠道具",
       "试纱间角落的自然手机记录",
       "回家看手机相册的桌面",
       "镜前轻轻走两步的视频感",
@@ -671,7 +671,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "镜子反射里的裙摆体量",
       "手机近拍下的缎面垂坠",
       "蕾丝在普通镜头里的纹理",
-      "试穿夹调整后的临时腰线",
+      "钉珠道具调整后的临时腰线",
       "拖尾边缘在镜子里的长度",
       "手臂拿手机时的肩颈线条",
       "侧身自拍里的腰腹余量",
@@ -684,7 +684,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "尽量不要开广角和拉腿滤镜",
       "让顾问调整后再拍一张同角度",
       "补一段十秒自然走动视频",
-      "近拍腰线、领口和试穿夹",
+      "近拍腰线、领口和钉珠道具",
       "不要露出手机里的聊天和隐私",
       "每件都保留一张最普通的自拍",
       "回家把自拍和店拍放在一起看",
@@ -785,7 +785,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "陪同者帮忙整理拖尾",
       "几个人一起看镜子的画面",
       "朋友从侧面拍走动视频",
-      "试纱间桌面上的记录和发夹",
+      "试纱间桌面上的记录和发饰",
       "候场区里轻声讨论的片刻"
     ],
     materials: [
@@ -847,7 +847,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "不知道怎么拍试纱记录的人",
       "想问清服务细节的人",
       "容易被试纱间情绪带着走的人",
-      "准备胸贴、鞋和发夹的人",
+      "准备胸贴、鞋和发饰的人",
       "想少踩坑但不想焦虑的人"
     ],
     focuses: [
@@ -895,7 +895,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "试纱间入口和衣架",
       "手机相册里的同角度记录",
       "坐下试敬茶动作的画面",
-      "试穿夹和改尺寸标记",
+      "钉珠道具和改尺寸标记",
       "回家复盘时的记录本"
     ],
     materials: [
@@ -903,7 +903,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "鞋高对腰线比例的影响",
       "头纱长度和发型关系",
       "拖尾重量和行动空间",
-      "试穿夹调整出的临时腰线",
+      "钉珠道具调整出的临时腰线",
       "蕾丝、缎面和白纱在光线下的差别",
       "坐下时腰腹处是否舒服",
       "改尺寸位置和背后拉链",
@@ -1127,7 +1127,7 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "顾问调整腰线时的手部动作",
       "橱窗柔光下的礼服质感",
       "客照里保留的自然姿态",
-      "试穿夹和改尺寸标记",
+      "钉珠道具和改尺寸标记",
       "等待区是否干净但不空"
     ],
     services: [
@@ -1294,7 +1294,7 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/顾问蹲下整理裙摆/g, "顾问整理裙摆")
     .replace(/朋友坐在旁边回看视频/g, "朋友回看视频")
     .replace(/客人低头确认腰线/g, "低头确认腰线")
-    .replace(/试穿夹临时调整的位置/g, "试穿夹位置")
+    .replace(/钉珠道具临时调整的位置/g, "钉珠道具位置")
     .replace(/头纱和主纱一起上身/g, "头纱主纱上身")
     .replace(/坐下试敬茶动作的片刻/g, "坐下敬茶动作")
     .replace(/试纱记录表旁边的面料小样/g, "记录表和面料")
@@ -1305,7 +1305,7 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/侧身看裙摆体量的自拍/g, "侧身裙摆自拍")
     .replace(/同一个镜子前对比几件婚纱/g, "同镜对比婚纱")
     .replace(/顾问调整后重新自拍/g, "调整后再自拍")
-    .replace(/手机近拍腰线和试穿夹/g, "近拍腰线试穿夹")
+    .replace(/手机近拍腰线和钉珠道具/g, "近拍腰线钉珠")
     .replace(/试纱间角落的自然手机记录/g, "自然手机记录")
     .replace(/回家看手机相册的桌面/g, "手机相册复盘")
     .replace(/镜前轻轻走两步的视频感/g, "镜前走动视频")
@@ -1324,7 +1324,7 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/拖尾边缘和裙摆重量/g, "拖尾和裙摆重量")
     .replace(/领口弧度和手臂线条/g, "领口和手臂线")
     .replace(/头纱长度和主纱层次/g, "头纱主纱层次")
-    .replace(/试穿夹调整后的腰线/g, "试穿夹后腰线")
+    .replace(/钉珠道具调整后的腰线/g, "钉珠调整腰线")
     .replace(/坐下时腰腹处的余量/g, "坐下腰腹余量")
     .replace(/背后拉链和背影完整度/g, "背影完整度")
     .replace(/窗边光里的白纱纹理/g, "窗边白纱纹理")
@@ -1425,7 +1425,7 @@ const bridalVisualRecipes = {
   ],
   evidence: [
     "same-angle front, side, and back comparison as the decision evidence",
-    "visible fitting clips or consultant adjustment proving the fit process",
+    "visible beading adjustment tools or consultant adjustment proving the fit process",
     "honest mirror reflection that shows the client posture before heavy styling",
     "phone album review feeling, as if the image helps the bride compare later",
     "waistline and hemline kept unobstructed so the dress structure can be judged",
@@ -1441,7 +1441,7 @@ const bridalVisualRecipes = {
     "train length, skirt volume, and hem edge are not cropped out",
     "veil, hair, shoes, and accessories support the gown instead of stealing focus",
     "white fabric keeps layered texture without blown-out highlights",
-    "temporary fit marks, clips, or pinning details feel realistic and respectful",
+    "temporary beading-tool adjustment marks feel realistic and respectful",
     "background mirror, curtain, rack, and waiting area stay clean but not showroom-fake",
     "body proportion stays natural, with realistic hands and no beauty-filter distortion",
     "scene details answer the copy's concern rather than acting as decoration",
@@ -2327,7 +2327,7 @@ function englishCueFromChinese(value: string) {
   if (/领口|肩颈|手臂|胸口/.test(value)) cues.push("visible neckline, shoulder, and arm line");
   if (/裙摆|拖尾|走动|视频/.test(value)) cues.push("skirt volume, train length, and natural walking evidence");
   if (/侧面|背影|正面|同角度/.test(value)) cues.push("same-angle front, side, and back comparison");
-  if (/顾问|试穿夹|调整|整理/.test(value)) cues.push("consultant adjustment and fitting clip evidence");
+  if (/顾问|钉珠|调整|整理/.test(value)) cues.push("consultant adjustment and beading-tool evidence");
   if (/缎面|蕾丝|白纱|面料|材质|珠绣|刺绣/.test(value)) cues.push("accurate fabric texture and white-gown detail");
   if (/头纱|配饰|耳饰|手套/.test(value)) cues.push("veil and accessory relationship");
   if (/坐下|敬茶|转身/.test(value)) cues.push("sitting, turning, and ceremony-movement comfort");

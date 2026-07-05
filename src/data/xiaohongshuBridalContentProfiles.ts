@@ -83,7 +83,7 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
       ],
       scenes: [
         "内容可以保留试纱间镜子、顾问整理裙摆、客人低头看腰线这些真实细节。",
-        "画面不需要拍成大片，轻微停顿、试穿夹和衣架反而让它更像真实试纱记录。"
+        "画面不需要拍成大片，轻微停顿、钉珠道具和衣架反而让它更像真实试纱记录。"
       ],
       closings: [
         "试纱体验的重点不是催促成交，而是帮她确认自己在婚礼那天想成为什么样子。",
@@ -106,12 +106,12 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
       {
         name: "图2｜过程｜顾问整理裙摆",
         purpose: "展示试纱服务和衣服结构被确认的过程。",
-        description: "手部整理裙摆、试穿夹或腰线，不要像硬广摆拍。",
+        description: "手部整理裙摆、用钉珠道具调整腰线，不要像硬广摆拍。",
         imageType: "拍摄花絮 / 材质图",
         scenePreference: "试纱间",
         keywordProfileId: "fittingServiceDetail",
         extraRequirement:
-          "Show a bridal consultant gently adjusting the gown train, waistline, fitting clips, or veil. Hands must look natural and professional, not staged."
+          "Show a bridal consultant gently adjusting the gown train, waistline, beading adjustment tools, or veil. Hands must look natural and professional, not staged."
       },
       {
         name: "图3｜情绪｜低头看细节",
@@ -198,33 +198,33 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
       },
       {
         name: "图3｜细节｜手机近拍腰线",
-        purpose: "用手机记录腰线、面料和试穿夹，说明真实试纱调整。",
-        description: "手机视角近拍腰线、试穿夹、缎面或蕾丝细节，有真实调整痕迹。",
+        purpose: "用手机记录腰线、面料和钉珠道具，说明真实试纱调整。",
+        description: "手机视角近拍腰线、钉珠道具、缎面或蕾丝细节，有真实调整痕迹。",
         imageType: "拍摄花絮 / 材质图",
         scenePreference: "试纱间",
         keywordProfileId: "phoneMirrorSelfieFitting",
         extraRequirement:
-          "Create a phone-camera close detail from a bridal fitting, waistline, fitting clips, fabric texture, satin or lace detail, natural hand-held framing, no readable text, no polished campaign retouching."
+          "Create a phone-camera close detail from a bridal fitting, waistline, beading adjustment tools, fabric texture, satin or lace detail, natural hand-held framing, no readable text, no polished campaign retouching."
       },
       {
         name: "图4｜过程｜自拍前顾问整理",
         purpose: "展示自拍记录前的真实试纱服务过程。",
-        description: "顾问整理裙摆、夹腰线或调整头纱，客人手里可拿手机但不抢画面。",
+        description: "顾问整理裙摆、用钉珠道具调整腰线或调整头纱，客人手里可拿手机但不抢画面。",
         imageType: "拍摄花絮 / 材质图",
         scenePreference: "试纱间",
         keywordProfileId: "fittingServiceDetail",
         extraRequirement:
-          "Show the moment before a phone mirror selfie, bridal consultant adjusting train, waistline, fitting clips, or veil, the client may hold a phone naturally, real appointment process, no hard-selling pose."
+          "Show the moment before a phone mirror selfie, bridal consultant adjusting train, waistline, beading adjustment tools, or veil, the client may hold a phone naturally, real appointment process, no hard-selling pose."
       },
       {
         name: "图5｜复盘｜手机相册试纱记录",
         purpose: "说明手机自拍用于回家复盘和对比，不露隐私。",
-        description: "桌面上手机相册预览、预约卡、面料小样和发夹，屏幕不能有可读隐私。",
+        description: "桌面上手机相册预览、预约卡、面料小样和发饰，屏幕不能有可读隐私。",
         imageType: "产品静物图",
         scenePreference: "材质工作台",
         keywordProfileId: "fittingPrep",
         extraRequirement:
-          "Create a fitting review still life with a phone showing non-readable mirror selfie thumbnails, appointment card, fabric swatches, hair clip, veil edge, and soft daylight. No readable personal information or chat content."
+          "Create a fitting review still life with a phone showing non-readable mirror selfie thumbnails, appointment card, fabric swatches, hair accessory, veil edge, and soft daylight. No readable personal information or chat content."
       }
     ]
   },
@@ -332,7 +332,7 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
       ],
       scenes: [
         "配图适合出现预约单、试纱清单、不同头纱、胸贴或高跟鞋提示，但不要拍得像杂乱攻略。",
-        "试纱间里可以保留试穿夹、衣架和镜子，让指南看起来来自真实经验。"
+        "试纱间里可以保留钉珠道具、衣架和镜子，让指南看起来来自真实经验。"
       ],
       closings: [
         "避坑内容的重点不是制造焦虑，而是让第一次试纱更有方向。",
@@ -568,7 +568,7 @@ export const xiaohongshuBridalCopyDrafts: Record<XiaohongshuBridalTopic, Xiaohon
       titles: ["第一次试纱，我没有选截图里那件", "试纱真的要上身才知道", "这件不是最夸张，但我最放松"],
       paragraphs: [
         "来之前我手机里存的几乎都是大拖尾和重工蕾丝，结果第一件穿上就发现自己一直在看肩膀和腰线。",
-        "顾问没有急着夸好看，先把腰后的夹子重新收了一点，又让我正常走两步。那一下挺明显，裙摆没有拖着我走，手臂也不用一直藏起来。",
+        "顾问没有急着夸好看，先用钉珠道具把腰后的余量重新调整了一点，又让我正常走两步。那一下挺明显，裙摆没有拖着我走，手臂也不用一直藏起来。",
         "朋友帮我拍了一段十秒视频，比正面照片有用。走路、转身、坐下的时候都自然，才是真的适合。",
         "最后留下的这件不是最贵，也不是最像网图的那件。是我站在镜子前不用再问大家会不会显胖的那件。"
       ],
@@ -653,7 +653,7 @@ export const xiaohongshuBridalCopyDrafts: Record<XiaohongshuBridalTopic, Xiaohon
       paragraphs: [
         "店里拍的那张我很喜欢，光线、裙摆、表情都刚刚好。",
         "但真正让我冷静的是自己手机里那张对镜自拍。没有精修，也没有特别找角度，能看到我站着是不是松、手臂是不是一直想藏、裙摆有没有压住腿。",
-        "顾问后来帮我把腰线重新夹了一下，我又用同一个位置拍了一张，前后变化比口头解释清楚很多。",
+        "顾问后来用钉珠道具帮我把腰线余量重新调整了一下，我又用同一个位置拍了一张，前后变化比口头解释清楚很多。",
         "如果你试纱时很容易上头，建议每件都留一张同角度手机自拍。回家看，会清醒很多。"
       ],
       note: "强调同角度前后对比和顾问调整后的可验证变化。"
@@ -738,7 +738,7 @@ export const xiaohongshuBridalCopyDrafts: Record<XiaohongshuBridalTopic, Xiaohon
     {
       titles: ["试纱当天别只带漂亮内衣", "这些小东西真的会影响判断", "试纱准备清单，给第一次去的人"],
       paragraphs: [
-        "胸贴、无痕内裤、接近婚礼高度的鞋、发夹，这些听起来很小，但会影响你看比例。",
+        "胸贴、无痕内裤、接近婚礼高度的鞋、发饰，这些听起来很小，但会影响你看比例。",
         "如果平时不常穿高跟，不要为了试纱硬穿特别高。婚礼当天能不能走路，比镜子里多高几厘米更重要。",
         "妆发不用做全套，但头发最好能简单收一下。很多婚纱看肩颈和领口，头发散着容易误判。",
         "还有一个很重要：提前吃点东西。试纱会累，饿着很容易把疲惫误会成不喜欢。"
