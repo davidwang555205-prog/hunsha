@@ -585,6 +585,128 @@ const xiaohongshuTopicOverrides: Partial<Record<FashionSeedingTopic, Partial<Cop
       "像备婚收藏夹里的经验笔记"
     ]
   },
+  手机对镜自拍试纱: {
+    audiences: [
+      "第一次想用手机记录试纱的人",
+      "不想只靠店里精修图的人",
+      "担心对镜自拍比例失真的新娘",
+      "想回家慢慢复盘试纱的人",
+      "容易被试纱间灯光带走的人",
+      "需要同角度对比几件婚纱的人",
+      "想看真实手机镜头状态的人",
+      "担心手机挡住婚纱细节的人",
+      "想把试纱记录拍得自然的人",
+      "不想被广角和滤镜骗到的人"
+    ],
+    focuses: [
+      "手机对镜全身有没有拍到腰线",
+      "手机有没有挡住领口和肩颈",
+      "正常镜头里比例是否自然",
+      "正面、侧面和背影是否同角度",
+      "手拿手机时肩颈是否紧张",
+      "裙摆在手机画面里是否压人",
+      "自拍里能不能看清拖尾长度",
+      "同一位置前后调整是否明显",
+      "手机视频里走动是否轻松",
+      "回家复盘时是否还能看懂差别"
+    ],
+    concerns: [
+      "手机自拍会不会把比例拍歪",
+      "开广角会不会误导真实身高",
+      "店拍好看但手机里会不会普通",
+      "手机挡住胸口会不会影响判断",
+      "试纱间镜子会不会让比例失真",
+      "自拍太随手会不会看不出细节",
+      "回家只剩精修会不会难判断",
+      "同角度对比会不会没有留够",
+      "滤镜和拉腿会不会骗到自己",
+      "手机屏幕会不会露出隐私信息"
+    ],
+    proofs: [
+      "手持手机的镜前全身自拍",
+      "同一镜子里的正侧背对比",
+      "顾问收腰前后的同角度自拍",
+      "手机里十秒自然走动视频",
+      "不拉腿的正常镜头比例",
+      "手机没挡住领口和腰线的画面",
+      "侧身自拍里的拖尾重量",
+      "低头看腰线时的手机近拍",
+      "回家相册里的几件婚纱对照",
+      "自拍和店拍放在一起复盘"
+    ],
+    scenes: [
+      "试纱间全身镜前自拍",
+      "手机拿在胸口旁边的镜前画面",
+      "侧身看裙摆体量的自拍",
+      "同一个镜子前对比几件婚纱",
+      "顾问调整后重新自拍",
+      "手机近拍腰线和试穿夹",
+      "试纱间角落的自然手机记录",
+      "回家看手机相册的桌面",
+      "镜前轻轻走两步的视频感",
+      "自拍前整理裙摆的片刻"
+    ],
+    materials: [
+      "手机画面里的腰线和领口",
+      "镜子反射里的裙摆体量",
+      "手机近拍下的缎面垂坠",
+      "蕾丝在普通镜头里的纹理",
+      "试穿夹调整后的临时腰线",
+      "拖尾边缘在镜子里的长度",
+      "手臂拿手机时的肩颈线条",
+      "侧身自拍里的腰腹余量",
+      "正常镜头下的白纱细节",
+      "手机相册里同角度的差别"
+    ],
+    services: [
+      "用同一个镜子拍正面、侧面和背影",
+      "把手机放到不挡腰线的位置",
+      "尽量不要开广角和拉腿滤镜",
+      "让顾问调整后再拍一张同角度",
+      "补一段十秒自然走动视频",
+      "近拍腰线、领口和试穿夹",
+      "不要露出手机里的聊天和隐私",
+      "每件都保留一张最普通的自拍",
+      "回家把自拍和店拍放在一起看",
+      "拍完先写下当时的身体感受"
+    ],
+    takeaways: [
+      "手机自拍是给自己复盘的证据",
+      "真实比例比当下出片更重要",
+      "普通镜头能帮人冷静下来",
+      "同角度记录让几件婚纱更好比较",
+      "不拉腿的自拍反而更有参考",
+      "试纱记录不需要完美但要诚实",
+      "手机别挡住婚纱关键结构",
+      "自拍和店拍一起看才更完整",
+      "回家复盘时能少一点上头",
+      "真实手机镜头能看出身体是否放松"
+    ],
+    tones: [
+      "像试纱后翻手机相册复盘",
+      "像真实新娘提醒自己别上头",
+      "像朋友教你怎么留试纱证据",
+      "像不加滤镜的备婚日记",
+      "像把手机自拍拍得有用而不是漂亮",
+      "像回家后冷静比较几件婚纱",
+      "像试纱间里顺手留下的真实记录",
+      "像给第一次试纱的人一条提醒",
+      "像把自拍误区说清楚",
+      "像收藏夹里的试纱记录方法"
+    ],
+    tagExtras: [
+      "#手机对镜自拍",
+      "#试纱自拍",
+      "#试纱记录",
+      "#对镜自拍",
+      "#备婚日记",
+      "#真实试纱",
+      "#试纱攻略",
+      "#婚纱试穿",
+      "#试纱复盘",
+      "#婚纱馆"
+    ]
+  },
   试纱陪同视角: {
     audiences: [
       "陪闺蜜试纱的人",
@@ -1080,9 +1202,29 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/想把顾虑说清楚再选择的人/g, "想先说清顾虑的人")
     .replace(/带妈妈一起看婚纱的人/g, "带妈妈试纱的人")
     .replace(/容易被精修图影响判断的人/g, "容易被精修带跑的人")
+    .replace(/第一次想用手机记录试纱的人/g, "手机记录试纱的人")
+    .replace(/不想只靠店里精修图的人/g, "不只看店拍的人")
+    .replace(/担心对镜自拍比例失真的新娘/g, "怕自拍比例失真的人")
+    .replace(/想回家慢慢复盘试纱的人/g, "想回家复盘的人")
+    .replace(/容易被试纱间灯光带走的人/g, "容易被灯光带跑的人")
+    .replace(/需要同角度对比几件婚纱的人/g, "需要同角度对比的人")
+    .replace(/想看真实手机镜头状态的人/g, "想看手机真实状态的人")
+    .replace(/担心手机挡住婚纱细节的人/g, "怕手机挡细节的人")
+    .replace(/想把试纱记录拍得自然的人/g, "想自然记录试纱的人")
+    .replace(/不想被广角和滤镜骗到的人/g, "怕被广角滤镜骗的人")
     .replace(/穿上后身体有没有先放松/g, "身体放松感")
     .replace(/截图款穿上后是不是和想象一样/g, "截图款上身落差")
     .replace(/截图款和真实上身有没有一致/g, "截图款上身落差")
+    .replace(/手机对镜全身有没有拍到腰线/g, "手机镜前腰线")
+    .replace(/手机有没有挡住领口和肩颈/g, "手机挡领口肩颈")
+    .replace(/正常镜头里比例是否自然/g, "正常镜头比例")
+    .replace(/正面、侧面和背影是否同角度/g, "正侧背同角度")
+    .replace(/手拿手机时肩颈是否紧张/g, "手持手机肩颈")
+    .replace(/裙摆在手机画面里是否压人/g, "手机里裙摆压身")
+    .replace(/自拍里能不能看清拖尾长度/g, "自拍拖尾长度")
+    .replace(/同一位置前后调整是否明显/g, "同位置前后变化")
+    .replace(/手机视频里走动是否轻松/g, "手机走动视频")
+    .replace(/回家复盘时是否还能看懂差别/g, "回家看得懂差别")
     .replace(/镜前停顿是不是来自喜欢/g, "镜前那一下停顿")
     .replace(/走动视频里状态有没有自然/g, "走动视频状态")
     .replace(/手臂、肩颈和腰线的真实反应/g, "手臂肩颈腰线")
@@ -1098,7 +1240,27 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/价格高的那件有没有真的更适合/g, "高价款适配度")
     .replace(/顾问建议和自己感受有没有一致/g, "顾问建议和体感")
     .replace(/回家复盘时还能不能说清喜欢哪里/g, "回家还说得清")
+    .replace(/手机自拍会不会把比例拍歪/g, "自拍比例拍歪")
+    .replace(/开广角会不会误导真实身高/g, "广角误导身高")
+    .replace(/店拍好看但手机里会不会普通/g, "店拍和手机落差")
+    .replace(/手机挡住胸口会不会影响判断/g, "手机挡胸口")
+    .replace(/试纱间镜子会不会让比例失真/g, "镜子比例失真")
+    .replace(/自拍太随手会不会看不出细节/g, "自拍看不出细节")
+    .replace(/回家只剩精修会不会难判断/g, "只剩精修难判断")
+    .replace(/同角度对比会不会没有留够/g, "同角度没留够")
+    .replace(/滤镜和拉腿会不会骗到自己/g, "滤镜拉腿骗自己")
+    .replace(/手机屏幕会不会露出隐私信息/g, "手机隐私信息")
     .replace(/正面、侧面和背影三张对比/g, "正侧背对比")
+    .replace(/手持手机的镜前全身自拍/g, "手机镜前全身")
+    .replace(/同一镜子里的正侧背对比/g, "同镜正侧背")
+    .replace(/顾问收腰前后的同角度自拍/g, "收腰前后自拍")
+    .replace(/手机里十秒自然走动视频/g, "十秒走动视频")
+    .replace(/不拉腿的正常镜头比例/g, "不拉腿比例")
+    .replace(/手机没挡住领口和腰线的画面/g, "不挡领口腰线")
+    .replace(/侧身自拍里的拖尾重量/g, "侧身拖尾重量")
+    .replace(/低头看腰线时的手机近拍/g, "手机近拍腰线")
+    .replace(/回家相册里的几件婚纱对照/g, "相册婚纱对照")
+    .replace(/自拍和店拍放在一起复盘/g, "自拍店拍复盘")
     .replace(/顾问重新收腰后的前后变化/g, "收腰前后变化")
     .replace(/低头看腰线时那几秒停顿/g, "低头看腰线")
     .replace(/朋友手机里的走动小视频/g, "朋友走动视频")
@@ -1118,7 +1280,26 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/试纱记录表旁边的面料小样/g, "记录表和面料")
     .replace(/衣架前重新对比上一件/g, "衣架前对比")
     .replace(/镜子里安静站住的那一刻/g, "镜前站住那刻")
+    .replace(/试纱间全身镜前自拍/g, "全身镜前自拍")
+    .replace(/手机拿在胸口旁边的镜前画面/g, "手机不挡胸口")
+    .replace(/侧身看裙摆体量的自拍/g, "侧身裙摆自拍")
+    .replace(/同一个镜子前对比几件婚纱/g, "同镜对比婚纱")
+    .replace(/顾问调整后重新自拍/g, "调整后再自拍")
+    .replace(/手机近拍腰线和试穿夹/g, "近拍腰线试穿夹")
+    .replace(/试纱间角落的自然手机记录/g, "自然手机记录")
+    .replace(/回家看手机相册的桌面/g, "手机相册复盘")
+    .replace(/镜前轻轻走两步的视频感/g, "镜前走动视频")
+    .replace(/自拍前整理裙摆的片刻/g, "自拍前整理裙摆")
     .replace(/缎面垂坠和腰部转折/g, "缎面腰线")
+    .replace(/手机画面里的腰线和领口/g, "手机里腰线领口")
+    .replace(/镜子反射里的裙摆体量/g, "镜中裙摆体量")
+    .replace(/手机近拍下的缎面垂坠/g, "手机近拍缎面")
+    .replace(/蕾丝在普通镜头里的纹理/g, "普通镜头蕾丝")
+    .replace(/拖尾边缘在镜子里的长度/g, "镜中拖尾长度")
+    .replace(/手臂拿手机时的肩颈线条/g, "手持手机肩颈线")
+    .replace(/侧身自拍里的腰腹余量/g, "侧身腰腹余量")
+    .replace(/正常镜头下的白纱细节/g, "正常镜头白纱")
+    .replace(/手机相册里同角度的差别/g, "相册同角度差别")
     .replace(/蕾丝花纹和肩颈留白/g, "蕾丝肩颈留白")
     .replace(/拖尾边缘和裙摆重量/g, "拖尾和裙摆重量")
     .replace(/领口弧度和手臂线条/g, "领口和手臂线")
@@ -1915,6 +2096,7 @@ function resolveImageModelChoice(baseParams: PromptParams, draft: ImageDraft): M
 
   if (
     draft.bridalKeywordProfileId === "realCustomerFitting" ||
+    draft.bridalKeywordProfileId === "phoneMirrorSelfieFitting" ||
     draft.bridalKeywordProfileId === "companionFitting" ||
     draft.bridalKeywordProfileId === "fittingServiceDetail" ||
     draft.bridalKeywordProfileId === "storePublishing"
@@ -1930,6 +2112,8 @@ const englishVisualAlignmentByTopic: Record<FashionSeedingTopic, string> = {
     "a realistic bridal fitting experience, focused on body comfort, silhouette confirmation, mirror records, and calm decision-making",
   真实客户试纱:
     "a real customer bridal fitting post, focused on authentic try-on evidence, fitting-room mirror moments, body comfort, and honest customer hesitation",
+  手机对镜自拍试纱:
+    "a phone mirror selfie bridal fitting post, focused on handheld phone-camera records, full-length fitting-room mirror reflection, real body proportion, clear waistline, hemline, and honest non-retouched review value",
   试纱陪同视角:
     "a companion-view bridal fitting post, focused on subtle friend or family reactions, quiet support, and real relationship details in the fitting room",
   试纱避坑准备:
@@ -1978,11 +2162,44 @@ const englishVisualAlignmentByTopic: Record<FashionSeedingTopic, string> = {
     "a multi-scene dress post, focused on one garment across commuting, cafe, gallery, and dinner moments with consistent structure"
 };
 
+function englishCueFromChinese(value: string) {
+  const cues: string[] = [];
+
+  if (/手机|自拍|相册/.test(value)) cues.push("handheld phone-camera evidence");
+  if (/对镜|镜前|镜子|反射/.test(value)) cues.push("full-length mirror reflection");
+  if (/广角|滤镜|拉腿|失真/.test(value)) cues.push("normal lens perspective without beauty-filter distortion");
+  if (/腰线|收腰|腰腹|比例/.test(value)) cues.push("clear waistline and real body proportion");
+  if (/领口|肩颈|手臂|胸口/.test(value)) cues.push("visible neckline, shoulder, and arm line");
+  if (/裙摆|拖尾|走动|视频/.test(value)) cues.push("skirt volume, train length, and natural walking evidence");
+  if (/侧面|背影|正面|同角度/.test(value)) cues.push("same-angle front, side, and back comparison");
+  if (/顾问|试穿夹|调整|整理/.test(value)) cues.push("consultant adjustment and fitting clip evidence");
+  if (/缎面|蕾丝|白纱|面料|材质|珠绣|刺绣/.test(value)) cues.push("accurate fabric texture and white-gown detail");
+  if (/头纱|配饰|耳饰|手套/.test(value)) cues.push("veil and accessory relationship");
+  if (/坐下|敬茶|转身/.test(value)) cues.push("sitting, turning, and ceremony-movement comfort");
+  if (/隐私|屏幕|聊天|授权/.test(value)) cues.push("no readable phone screen or private information");
+  if (/精修|店拍|漂亮|出片/.test(value)) cues.push("honest non-retouched review value");
+  if (/放松|紧张|自然|舒服/.test(value)) cues.push("relaxed real-client posture");
+  if (/场地|酒店|草坪|教堂|海边|登记|晚宴/.test(value)) cues.push("wedding-scene suitability");
+  if (/通勤|咖啡|艺术馆|花店|城市|约会|周末|度假|衣橱/.test(value)) cues.push("wearable lifestyle context");
+
+  return Array.from(new Set(cues)).slice(0, 4).join(", ") || "specific visual evidence from the generated post";
+}
+
+function buildEnglishVariantAlignment(context: CopyAlignmentContext) {
+  return [
+    `Variant-specific cues: focus on ${englishCueFromChinese(context.focus)}.`,
+    `Resolve the viewer concern through ${englishCueFromChinese(context.concern)}.`,
+    `Use visual proof such as ${englishCueFromChinese(context.proof)} in ${englishCueFromChinese(context.scene)}.`,
+    `Emphasize detail cues including ${englishCueFromChinese(context.material)}.`
+  ].join(" ");
+}
+
 function buildPromptAlignmentRequirement(draft: ImageDraft, context?: CopyAlignmentContext) {
   if (!context) return draft.extraRequirement;
 
   return [
     draft.extraRequirement,
+    buildEnglishVariantAlignment(context),
     `Create it as part of ${englishVisualAlignmentByTopic[context.topic]}. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image.`
   ].join(" ");
 }

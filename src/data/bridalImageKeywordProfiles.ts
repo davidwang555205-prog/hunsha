@@ -2,6 +2,7 @@ import type { ImageType, ProductCategory, PromptParams, ScenePreference } from "
 
 export type BridalImageKeywordProfileId =
   | "realCustomerFitting"
+  | "phoneMirrorSelfieFitting"
   | "companionFitting"
   | "fittingPrep"
   | "fittingServiceDetail"
@@ -22,6 +23,13 @@ export const bridalImageKeywordProfiles: Record<BridalImageKeywordProfileId, Bri
       "Xiaohongshu real customer fitting keywords: real bridal fitting client, authentic trial fitting, fitting room mirror, natural customer posture, subtle hesitation, body-comfort confirmation, consultant presence only when useful, real boutique appointment record.",
     negativeLine:
       "Avoid fake testimonial look, avoid influencer pose, avoid over-retouched customer face, avoid forced smile, avoid luxury showroom exaggeration, avoid making the customer look like a runway model."
+  },
+  phoneMirrorSelfieFitting: {
+    id: "phoneMirrorSelfieFitting",
+    promptLine:
+      "Xiaohongshu phone mirror selfie fitting keywords: handheld phone visible in mirror, full-length fitting-room mirror selfie, real bridal client, natural arm holding phone, honest phone-camera perspective, clear waistline and hemline, fitting room mirror reflection, subtle unfiltered trial fitting mood.",
+    negativeLine:
+      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection."
   },
   companionFitting: {
     id: "companionFitting",
@@ -86,6 +94,10 @@ export function getBridalPromptKeywordProfileForParams(
 
   const scene = resolvedScene ?? (params.scenePreference === "自动匹配" ? undefined : params.scenePreference);
   const extra = params.extraRequirement;
+
+  if (includesAny(extra, ["phone mirror selfie", "handheld phone", "mirror selfie", "selfie fitting", "手机", "对镜自拍"])) {
+    return bridalImageKeywordProfiles.phoneMirrorSelfieFitting;
+  }
 
   if (includesAny(extra, ["companion-view", "mother or close friend", "朋友", "妈妈", "陪试"])) {
     return bridalImageKeywordProfiles.companionFitting;

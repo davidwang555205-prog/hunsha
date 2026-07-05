@@ -3,6 +3,7 @@ import type { BridalImageKeywordProfileId } from "./bridalImageKeywordProfiles";
 
 export type XiaohongshuBridalTopic =
   | "真实客户试纱"
+  | "手机对镜自拍试纱"
   | "试纱陪同视角"
   | "试纱避坑准备"
   | "婚纱品牌发布"
@@ -10,6 +11,7 @@ export type XiaohongshuBridalTopic =
 
 export type XiaohongshuBridalContentIntent =
   | "realCustomerFitting"
+  | "phoneMirrorSelfieFitting"
   | "companionView"
   | "fittingPrep"
   | "brandLaunch"
@@ -52,6 +54,7 @@ export type XiaohongshuBridalContentProfile = {
 
 export const xiaohongshuBridalTopicOptions: XiaohongshuBridalTopic[] = [
   "真实客户试纱",
+  "手机对镜自拍试纱",
   "试纱陪同视角",
   "试纱避坑准备",
   "婚纱品牌发布",
@@ -139,6 +142,89 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
         keywordProfileId: "storePublishing",
         extraRequirement:
           "Show a calm bridal fitting room atmosphere with mirror, curtains, hanger, dress rack, appointment notes, and clean but lived-in boutique details."
+      }
+    ]
+  },
+  手机对镜自拍试纱: {
+    topic: "手机对镜自拍试纱",
+    intent: "phoneMirrorSelfieFitting",
+    sourcePattern: "真实顾客用手机对着试纱间镜子自拍，重点是手机镜头里的比例、腰线、裙摆、自然站姿和非精修记录感。",
+    copyKit: {
+      titles: [
+        "手机对镜自拍，比精修更能看出试纱状态",
+        "试纱间自拍，先看真实比例",
+        "别只看店拍照，手机镜子里更诚实",
+        "这组试纱自拍，适合回家慢慢复盘"
+      ],
+      openings: [
+        "试纱时手机对镜自拍不一定要拍得很好看，重点是留下真实比例。",
+        "店里拍的照片很重要，但自己手机里的镜前记录，常常更适合回家复盘。"
+      ],
+      observations: [
+        "手机不要挡住领口和腰线，正面、侧面、背影和走动都比单张精修更有参考。",
+        "自然站姿、手臂拿手机的位置、裙摆有没有跟着身体走，都会影响最后判断。"
+      ],
+      scenes: [
+        "配图要有试纱间全身镜、手持手机、真实客户站姿、裙摆和腰线清楚这些细节。",
+        "画面可以有一点试纱间的真实使用感，但不能乱，也不要拍成网红打卡自拍。"
+      ],
+      closings: [
+        "手机对镜自拍的价值不是出片，而是帮新娘回家看清自己当时的身体状态。",
+        "这类内容适合做真实试纱记录，不要写成滤镜自拍教程。"
+      ],
+      tags: ["#手机对镜自拍", "#试纱自拍", "#真实试纱", "#婚纱试穿", "#备婚日记"],
+      note: "手机对镜自拍试纱要强调真实比例、非精修记录和回家复盘价值，避免网红自拍和滤镜感。"
+    },
+    imageBlueprints: [
+      {
+        name: "图1｜自拍｜手机镜前全身",
+        purpose: "作为主题主图，呈现真实手机对镜试纱全身比例。",
+        description: "客人手持手机对着试纱间全身镜自拍，手机可见但不要挡住领口、腰线和裙摆。",
+        imageType: "对镜穿搭图",
+        scenePreference: "试纱间",
+        keywordProfileId: "phoneMirrorSelfieFitting",
+        extraRequirement:
+          "Create a handheld phone mirror selfie in a bridal fitting room, full-length mirror reflection, phone visible in hand, real fitting client, clear gown neckline, waistline, hemline, train, and natural posture. The phone must not block key dress structure."
+      },
+      {
+        name: "图2｜侧身｜手机自拍侧面比例",
+        purpose: "补充侧面比例和裙摆体量，避免只看正面。",
+        description: "手机镜前侧身或三分之二角度，腰线、臀胯、裙摆体量和拖尾清楚。",
+        imageType: "对镜穿搭图",
+        scenePreference: "试纱间",
+        keywordProfileId: "phoneMirrorSelfieFitting",
+        extraRequirement:
+          "Show a phone mirror selfie from a side or three-quarter angle in the fitting room, honest phone-camera perspective, clear waistline, hip line, skirt volume, hemline, and train movement, no leg stretching."
+      },
+      {
+        name: "图3｜细节｜手机近拍腰线",
+        purpose: "用手机记录腰线、面料和试穿夹，说明真实试纱调整。",
+        description: "手机视角近拍腰线、试穿夹、缎面或蕾丝细节，有真实调整痕迹。",
+        imageType: "拍摄花絮 / 材质图",
+        scenePreference: "试纱间",
+        keywordProfileId: "phoneMirrorSelfieFitting",
+        extraRequirement:
+          "Create a phone-camera close detail from a bridal fitting, waistline, fitting clips, fabric texture, satin or lace detail, natural hand-held framing, no readable text, no polished campaign retouching."
+      },
+      {
+        name: "图4｜过程｜自拍前顾问整理",
+        purpose: "展示自拍记录前的真实试纱服务过程。",
+        description: "顾问整理裙摆、夹腰线或调整头纱，客人手里可拿手机但不抢画面。",
+        imageType: "拍摄花絮 / 材质图",
+        scenePreference: "试纱间",
+        keywordProfileId: "fittingServiceDetail",
+        extraRequirement:
+          "Show the moment before a phone mirror selfie, bridal consultant adjusting train, waistline, fitting clips, or veil, the client may hold a phone naturally, real appointment process, no hard-selling pose."
+      },
+      {
+        name: "图5｜复盘｜手机相册试纱记录",
+        purpose: "说明手机自拍用于回家复盘和对比，不露隐私。",
+        description: "桌面上手机相册预览、预约卡、面料小样和发夹，屏幕不能有可读隐私。",
+        imageType: "产品静物图",
+        scenePreference: "材质工作台",
+        keywordProfileId: "fittingPrep",
+        extraRequirement:
+          "Create a fitting review still life with a phone showing non-readable mirror selfie thumbnails, appointment card, fabric swatches, hair clip, veil edge, and soft daylight. No readable personal information or chat content."
       }
     ]
   },
@@ -528,6 +614,59 @@ export const xiaohongshuBridalCopyDrafts: Record<XiaohongshuBridalTopic, Xiaohon
         "选婚纱不是在选一张图，是在选婚礼那天几个小时里的自己。"
       ],
       note: "从店铺转述角度写真实客照，适合配图方案。"
+    }
+  ],
+  手机对镜自拍试纱: [
+    {
+      titles: ["试纱时，我一定会留手机对镜自拍", "手机镜子里的比例，比精修更诚实", "别只等店里发图，自己也要拍一组"],
+      paragraphs: [
+        "试纱间灯光和店拍角度都很好看，但我现在一定会用自己手机对着镜子再拍一组。",
+        "不是为了发朋友圈，是为了回家看真实比例。手机不要挡住领口和腰线，正面、侧面、背影都尽量同一个角度。",
+        "有些婚纱在店拍里很仙，手机镜子里却能看出裙摆是不是压人、腰线有没有托住、手臂是不是一直紧着。",
+        "最后做决定时，我反而会先看这些不精修的自拍。它们没那么漂亮，但很诚实。"
+      ],
+      note: "第一人称真实试纱自拍记录，强调回家复盘价值。"
+    },
+    {
+      titles: ["对镜自拍别只拍好看，要拍能判断的", "试纱自拍这样留，回家不容易乱", "手机试纱记录，比想象中有用"],
+      paragraphs: [
+        "第一次试纱很容易被当下氛围带走，顾问夸、朋友夸、灯光也好看，脑子会有点热。",
+        "我会让自己用手机对镜拍一张自然站姿，再拍一张侧身，最后拍十秒走动。不要刻意凹腿，也不要开太重滤镜。",
+        "回家看的时候，重点不是哪张最出片，而是肩颈有没有放松、腰线有没有顺、裙摆走起来会不会拖着人。",
+        "手机自拍不是替代店拍，是给自己多一个冷静判断的证据。"
+      ],
+      tags: ["#手机对镜自拍", "#试纱自拍", "#试纱记录", "#真实试纱", "#备婚攻略"],
+      note: "攻略型自拍记录，提醒不要滤镜和拉腿。"
+    },
+    {
+      titles: ["试纱手机自拍，真的别开广角拉腿", "镜子里的你自然吗，比显高更重要", "这组自拍让我排除了一件婚纱"],
+      paragraphs: [
+        "我之前拍试纱自拍会下意识找显高角度，后来发现这样反而会骗自己。",
+        "婚礼当天没有广角，也不会一直站在最显瘦的位置。手机对镜要尽量保持正常视角，脚不要贴到画面边缘，手机也别挡住胸口和腰线。",
+        "有一件婚纱正面自拍很好看，但侧身一拍发现拖尾太重，整个人都被裙子往后拉。",
+        "所以试纱自拍不是为了证明自己好看，是为了确认这件婚纱在真实身体上能不能成立。"
+      ],
+      note: "具体讲手机镜头误差和排除理由，增强真实平台感。"
+    },
+    {
+      titles: ["店拍很美，但手机自拍帮我冷静下来", "试纱当天最该保存的不是精修", "手机里那张不完美的试纱照，反而最有用"],
+      paragraphs: [
+        "店里拍的那张我很喜欢，光线、裙摆、表情都刚刚好。",
+        "但真正让我冷静的是自己手机里那张对镜自拍。没有精修，也没有特别找角度，能看到我站着是不是松、手臂是不是一直想藏、裙摆有没有压住腿。",
+        "顾问后来帮我把腰线重新夹了一下，我又用同一个位置拍了一张，前后变化比口头解释清楚很多。",
+        "如果你试纱时很容易上头，建议每件都留一张同角度手机自拍。回家看，会清醒很多。"
+      ],
+      note: "强调同角度前后对比和顾问调整后的可验证变化。"
+    },
+    {
+      titles: ["手机对镜自拍，是给自己看的试纱证据", "试纱记录不用完美，但要真实", "我现在会这样拍试纱自拍"],
+      paragraphs: [
+        "试纱自拍不用追求特别漂亮，越像平时自己会拍的样子，越有参考。",
+        "我会先拍完整全身，再近一点拍腰线和领口，最后补一段自然走路。手机屏幕和聊天内容不要露出来，试纱间也尽量保持干净。",
+        "如果一件婚纱只有精修图好看，手机镜子里怎么都不放松，那我会先放一放。",
+        "真正适合的婚纱，不需要每个角度都完美，但至少在最普通的手机镜头里，也不会让你一直紧张。"
+      ],
+      note: "给出自拍流程，同时提醒隐私和真实感。"
     }
   ],
   试纱陪同视角: [
