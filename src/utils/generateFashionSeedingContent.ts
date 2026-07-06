@@ -150,6 +150,20 @@ type CopyAlignmentContext = {
   visualRecipe: VisualRecipe;
 };
 
+type NarrativeTemplateContext = CopyAlignmentContext & {
+  audienceCue: string;
+  focusCue: string;
+  concernCue: string;
+  proofCue: string;
+  sceneCue: string;
+  materialCue: string;
+  serviceCue: string;
+  takeawayCue: string;
+};
+
+type NarrativeTemplate = (context: NarrativeTemplateContext) => string;
+type NarrativePool = Record<"bridal" | "dress", NarrativeTemplate[]>;
+
 const TOPIC_VARIANT_COUNT = 1000;
 const VARIANT_AXIS_SIZE = 10;
 
@@ -1346,6 +1360,26 @@ function titleCue(value: string, maxLength = 12) {
   return `${cue.slice(0, maxLength).replace(/[，、：:]+$/g, "")}…`;
 }
 
+function narrativeCue(value: string, maxLength = 24) {
+  return titleCue(value, maxLength)
+    .replace(/走动视频状态/g, "走动状态")
+    .replace(/头纱主纱上身/g, "头纱上身后的层次")
+    .replace(/手机挡领口肩颈/g, "手机有没有挡住领口")
+    .replace(/手机里裙摆压身/g, "手机里裙摆会不会压身")
+    .replace(/鞋包换掉后场景迁移/g, "换鞋包后的比例")
+    .replace(/花店门口的自然光/g, "花店门口那束自然光")
+    .replace(/正常镜头白纱/g, "普通镜头里的白纱")
+    .replace(/回家后再用同角度照片再复盘/g, "回家同角度复盘")
+    .replace(/每件最好都记录一个喜欢和一个犹豫点/g, "记录喜欢和犹豫点")
+    .replace(/可以把婚礼场地告诉顾问再试下一件/g, "把场地先告诉顾问")
+    .replace(/可以把真实顾虑直接讲给顾问听/g, "把真实顾虑讲出来")
+    .replace(/手机挡没挡住领口/g, "手机有没有挡住领口")
+    .replace(/A 字/g, "A字")
+    .replace(/，+/g, "，")
+    .replace(/^，|，$/g, "")
+    .trim();
+}
+
 function softenAction(value: string) {
   return readableCue(value)
     .replace(/^让顾问/, "可以让顾问")
@@ -1371,44 +1405,140 @@ const titleAngles = ["不是越惊艳越适合", "比好看更重要", "回家�
 
 const titleClosers = ["这点真的会影响判断", "别等试完才发现", "很多人第一眼会看错", "看懂就不容易乱", "适合比惊艳更重要", "这才是能收藏的原因", "不是广告感，是参考感", "细节会自己说话", "别被一句好看带走", "越真实越有说服力"];
 
-const bodyOpeners = [
-  "先说结论：",
-  "这条想写得实在一点。",
-  "如果只看第一眼，真的很容易选偏。",
-  "我现在看这类图，会先看细节。",
-  "这不是那种只夸漂亮的笔记。",
-  "越到后面越觉得，判断不能只靠氛围。",
-  "有些差别，只有上身以后才明显。",
-  "这类内容最怕写得太满。",
-  "真实记录里，最有用的反而是小细节。",
-  "别急着下结论，先看这几个地方。"
-];
+const characterMoodOpenings: NarrativePool = {
+  bridal: [
+    ({ concernCue }) => `她刚换好衣服时没有马上看镜头，先低头把裙摆往前拨了一点，说自己其实还是担心${concernCue}。`,
+    ({ audienceCue }) => `如果是我在店里记录这组图，我会从${audienceCue}站到镜子前那几秒开始写。她手还扶着腰线，眼神没有立刻放松。`,
+    ({ focusCue }) => `那天她进试纱间前一直在翻手机相册，截图看了很多遍，真正上身后反而先摸了摸肩带，说想再看清${focusCue}。`,
+    ({ concernCue }) => `她不是一进来就说要哪件的人，换好婚纱以后先安静站了一会儿，像是在确认${concernCue}会不会真的影响自己。`,
+    ({ audienceCue }) => `这位${audienceCue}的状态很真实，嘴上说都可以试，身体却一直有点紧，手指会下意识去碰肩带和腰侧。`,
+    ({ focusCue }) => `我记得她走出来的时候没有笑得很夸张，只是先看镜子里的${focusCue}，然后轻轻问了一句这样会不会太满。`,
+    ({ concernCue }) => `试纱最容易被第一眼带走，但她那天没有急着说喜欢，先让顾问等等，自己低头看了看${concernCue}相关的位置。`,
+    ({ audienceCue }) => `有些${audienceCue}不是不确定审美，是还没找到身体放松的那一下。她站出来的时候，肩膀还是微微提着。`,
+    ({ focusCue }) => `这组内容我不想从“好美”开始写，想从她慢慢转身那一刻开始。那一下，${focusCue}比表情更先被看见。`,
+    ({ concernCue }) => `她说自己来之前做了很多功课，但换上以后第一个反应不是拍照，而是站在镜子前停住，看${concernCue}有没有被放大。`
+  ],
+  dress: [
+    ({ concernCue }) => `她出门前在入户镜前站了一会儿，没有急着拎包，先低头看裙摆和鞋子的距离，像是在确认${concernCue}。`,
+    ({ audienceCue }) => `这条内容更像${audienceCue}出门前的自检，不是摆好姿势拍一张，而是穿上以后先走两步。`,
+    ({ focusCue }) => `她把外套搭在手臂上，又回到镜子前看了一眼${focusCue}，表情不是惊喜，是终于不用再调整。`,
+    ({ concernCue }) => `很多日常裙装不是第一眼决定的，她那天先坐下，再站起来，才开始判断${concernCue}会不会打扰自己。`,
+    ({ audienceCue }) => `${audienceCue}最真实的状态，是早上没有太多时间纠结。她把头发随手别到耳后，先看裙子能不能跟上今天的日程。`,
+    ({ focusCue }) => `拍这组的时候，她没有故意凹姿势，只是在门口停了一下，用手顺了顺${focusCue}附近的线条。`,
+    ({ concernCue }) => `她原本担心${concernCue}，所以没有直接出门，先在镜子前转了半圈，看裙摆有没有跟着身体走。`,
+    ({ audienceCue }) => `如果写给${audienceCue}看，我会从换鞋那一步写起。鞋跟一变，裙长和腰线的感觉马上就不一样。`,
+    ({ focusCue }) => `这条裙子不是靠第一眼热闹留住人的，她站在窗边整理袖口时，反而更能看清${focusCue}。`,
+    ({ concernCue }) => `她试完没有马上说好看，只是把包换到另一边肩上，看${concernCue}在真实动作里还会不会出现。`
+  ]
+};
 
-const bodyTransitions = [
-  "所以这组图里，我会先留这一点：",
-  "真正有参考价值的，是",
-  "比起大词，我更想把镜头放到",
-  "如果要我选一张最该留下的图，我会选",
-  "这比单纯说好看更具体：",
-  "回头看最能说明问题的，其实是",
-  "别小看这个画面：",
-  "它能把判断从情绪拉回细节：",
-  "很多人会忽略，但我觉得该拍下来：",
-  "这一幕比精修照更诚实："
-];
+const environmentDetails: NarrativePool = {
+  bridal: [
+    ({ sceneCue }) => `试纱间里很安静，窗帘只拉到一半，软光落在镜子边缘。这一版要留住的${sceneCue}，不需要拍得很满。`,
+    ({ sceneCue }) => `顾问把灯调低了一点，镜子旁边只留了衣架和一张小凳子。${sceneCue}在这种环境里会更像真实记录。`,
+    ({ sceneCue }) => `窗边那一角有一点柔光，珠片轻轻反光，但不是刺眼的亮。站近了看，${sceneCue}也没有被环境抢走。`,
+    ({ sceneCue }) => `试纱间门关上以后，外面的声音变小，只剩裙摆拖过地毯的声音。${sceneCue}就在这个安静里慢慢出现。`,
+    ({ sceneCue }) => `镜子旁边的纱帘有一点褶，空间没有被收拾成样板间。这样看${sceneCue}，反而更像真实预约。`,
+    ({ sceneCue }) => `旁边的椅子上放着头纱和鞋，没有多余装饰。视线自然回到她身上，也回到${sceneCue}。`,
+    ({ sceneCue }) => `窗边光从侧面进来，白纱不会糊成一片，钉珠和蕾丝都有细小阴影。${sceneCue}也因此更清楚。`,
+    ({ sceneCue }) => `朋友坐在沙发边没有说话，房间里有一小段停顿。比起热闹地夸，${sceneCue}在这种时候更真实。`,
+    ({ sceneCue }) => `顾问蹲下整理拖尾时，镜面刚好照到侧面比例。这个角度适合看${sceneCue}，也比正面更诚实。`,
+    ({ sceneCue }) => `桌上有预约卡、面料小样和一束没拆开的头纱，都是很小的东西。它们让${sceneCue}像真的发生过。`
+  ],
+  dress: [
+    ({ sceneCue }) => `窗边的光不强，有一点灰调，裙子的颜色在日常光里反而更容易看准。${sceneCue}不用被拍成大片。`,
+    ({ sceneCue }) => `她没有把背景收得太干净，桌角、包带和鞋尖都留了一点生活痕迹。这样看${sceneCue}更可信。`,
+    ({ sceneCue }) => `地面线条和镜子边框都还在，比例没有被修得太完美。${sceneCue}在这种画面里更接近真实出门前。`,
+    ({ sceneCue }) => `咖啡杯放在手边，下午的光慢慢落下来。${sceneCue}有一点松弛，但没有甜到失真。`,
+    ({ sceneCue }) => `电梯门快合上时她看了一眼镜子，金属反光让线条更清楚，也让${sceneCue}像随手记录。`,
+    ({ sceneCue }) => `画面里没有太多道具，只有窗光、椅背和一小块地毯。少一点布置，${sceneCue}反而被看见。`,
+    ({ sceneCue }) => `街角风有一点轻，裙摆不是刻意甩起来的，是走路时自然晃了一下。${sceneCue}也跟着变得轻。`,
+    ({ sceneCue }) => `她坐下的时候没有刻意挺直，桌边高度刚好能看出腰腹会不会紧。${sceneCue}只是背景，真实动作才是这一段的重点。`,
+    ({ sceneCue }) => `衣帽间的门半开着，挂装和上身状态放在一起。这样看${sceneCue}，不像只为拍照存在。`,
+    ({ sceneCue }) => `白墙和留白很多，反而能把肩颈、腰线和裙长看得更稳。${sceneCue}不用靠复杂背景。`
+  ]
+};
 
-const bodyClosers = [
-  "不用把话说得太满，能让人看懂为什么，就已经很值得收藏。",
-  "好看的图很多，能帮人做判断的图更少。",
-  "我会更喜欢这种有过程的记录，看完知道下一步该怎么选。",
-  "真实感不是随便拍，是每张图都有一个能被验证的点。",
-  "这类笔记不用喊口号，细节讲清楚就会有人停下来。",
-  "如果看完能少一点纠结，这条内容就不是空的。",
-  "比起制造惊艳，我更想保留这种能复盘的证据。",
-  "它不需要特别热闹，但要让人觉得可信。",
-  "收藏价值就在这里：不是替你决定，而是帮你看清楚。",
-  "越真实的内容，越不需要把情绪推得很满。"
-];
+const productObservationDetails: NarrativePool = {
+  bridal: [
+    ({ materialCue, focusCue }) => `上身后先看方领和细肩带，领口没有顶住脖子，肩带也没有勒进肩膀。再回头看${focusCue}，会比第一眼更准。`,
+    ({ materialCue, focusCue }) => `腰线的位置比想象中重要，裙摆从腰侧往下落，没有立刻膨出去。${materialCue}也要放在这个比例里一起看。`,
+    ({ materialCue }) => `近一点会发现，白纱不是一整片平的白。蕾丝、钉珠和花朵层次在光里有起伏，${materialCue}也更容易被看见。`,
+    ({ focusCue }) => `她用手摸了一下肩带，又低头看拖尾边缘。${focusCue}不是靠修图判断的，站在那里就能看出一点。`,
+    ({ materialCue }) => `裙摆展开时没有很夸张，拖尾的长度刚好留在镜子里。灯光没有把${materialCue}吃掉，这点很重要。`,
+    ({ focusCue, materialCue }) => `顾问用钉珠道具调整腰线后，前后差别很明显。再看${focusCue}和${materialCue}，就不只是口头解释。`,
+    ({ materialCue }) => `如果只看远景会漏掉很多细节，胸口弧度、腰后的余量、钉珠和${materialCue}，都要近一点才看得出来。`,
+    ({ focusCue }) => `她转身的时候，背后拉链、腰线和拖尾会一起进入镜子。${focusCue}在这个动作里比站定时更真实。`,
+    ({ materialCue }) => `这件最耐看的地方不是裙摆多大，而是肩颈、腰线和${materialCue}之间有呼吸感，没有把人压住。`,
+    ({ focusCue }) => `手机拍到的那张没有特别精致，但领口、腰线、裙摆和拖尾都在。${focusCue}反而更容易回家复盘。`
+  ],
+  dress: [
+    ({ materialCue, focusCue }) => `上身后先看${materialCue}，再看${focusCue}，这两个地方决定它是日常好穿，还是只适合拍一张图。`,
+    ({ focusCue }) => `她低头顺了一下裙摆，腰线没有往上跑，${focusCue}在走路时也没有乱掉。`,
+    ({ materialCue }) => `${materialCue}不是那种很用力的质感，坐下以后还有自然褶皱，反而更像会被经常穿出门。`,
+    ({ focusCue, materialCue }) => `领口和肩线都很干净，${focusCue}没有抢掉人的状态，${materialCue}在窗边光里也不显廉价。`,
+    ({ materialCue }) => `裙长刚好露出鞋面一点，${materialCue}垂下来时没有贴得太死，走动会有很小的摆幅。`,
+    ({ focusCue }) => `换一双鞋再看，${focusCue}的差别就出来了，这比单独夸显瘦更有用。`,
+    ({ materialCue }) => `近景里能看见${materialCue}，线头和褶裥没有被过度磨皮，日常感保留得比较好。`,
+    ({ focusCue }) => `她坐下时没有一直拉裙摆，${focusCue}说明这条不是只能站着好看。`,
+    ({ materialCue }) => `外套搭上去以后，${materialCue}没有被压没，裙子的轮廓还在，场景就能自然切换。`,
+    ({ focusCue }) => `镜前那张最普通，但肩颈、腰线、裙长都清楚，${focusCue}比精修氛围更能说明问题。`
+  ]
+};
+
+const emotionalTurns: NarrativePool = {
+  bridal: [
+    ({ proofCue }) => `后来她没有急着换下一件，而是让朋友帮她拍了${proofCue}，看完才慢慢笑了一下。`,
+    ({ serviceCue }) => `顾问没有急着评价，只是把裙摆铺平，又提醒她按自己的节奏看。她后来记住的不是一句夸奖，而是${serviceCue}。`,
+    ({ proofCue }) => `真正变化是在她转身以后，${proofCue}让她自己也看见了，不用别人一直解释。`,
+    ({ concernCue }) => `她原本还在问${concernCue}，但走了两步以后，语气就轻了很多。`,
+    ({ serviceCue }) => `现场没有人催她决定，顾问只是陪她把正面、侧面和背影都看了一遍。${serviceCue}也变成了很具体的一步。`,
+    ({ proofCue }) => `看到${proofCue}那一刻，她没有说命定，只是很小声地说，这件好像不用一直调整。`,
+    ({ concernCue }) => `前面几件她都在纠结${concernCue}，这一件穿上后，她先问的是能不能再试一下头纱。`,
+    ({ proofCue }) => `${proofCue}留下来以后，朋友的意见也变具体了，不再只是“好看”两个字。`,
+    ({ serviceCue }) => `顾问蹲下整理拖尾的时候，她低头看了很久。比起一句夸奖，${serviceCue}留下的过程更能说明状态。`,
+    ({ concernCue }) => `她从镜子里看了正面，又侧过身看背影，关于${concernCue}的紧张慢慢少了一点。`
+  ],
+  dress: [
+    ({ proofCue }) => `后来她没有换姿势，只是自然走到门口，${proofCue}在这个动作里比摆拍更清楚。`,
+    ({ serviceCue }) => `拍到一半她停下来整理了一下包带，再抬头时整个人松了一点。${serviceCue}，也不需要写得太复杂。`,
+    ({ concernCue }) => `原本担心${concernCue}，但坐下又站起来以后，她没有再伸手去整理。`,
+    ({ proofCue }) => `${proofCue}留下来以后，这条裙子就不只是好看，而是知道能穿去哪里。`,
+    ({ serviceCue }) => `她没有马上下单式地夸自己，只是换了鞋再看一眼。${serviceCue}之后，她说今天这样就能出门。`,
+    ({ concernCue }) => `走到楼下时她又看了一眼玻璃反光，${concernCue}没有出现，表情就自然很多。`,
+    ({ proofCue }) => `比起正面照，${proofCue}更像真正会被保存的那张，因为动作没有被设计过。`,
+    ({ serviceCue }) => `朋友在旁边提醒她多走两步，她试了一下，发现裙摆没有卡住脚步。${serviceCue}这类细节，现场看更清楚。`,
+    ({ concernCue }) => `她之前一直问${concernCue}，后来换了包再看，反而没有那么纠结了。`,
+    ({ proofCue }) => `等到${proofCue}出现时，这条裙子的日常感才落下来，不像只为一张照片存在。`
+  ]
+};
+
+const humanClosings: NarrativePool = {
+  bridal: [
+    ({ takeawayCue }) => `所以这篇我不会写得很满，能把${takeawayCue}讲清楚，就已经够一个人回家慢慢想了。`,
+    ({ audienceCue }) => `给${audienceCue}看的内容，不一定要替她做决定，至少要让她记得自己在镜子前的那个反应。`,
+    ({ takeawayCue }) => `最后她也没有当场说死，只是把这组照片存下来。${takeawayCue}，有时候就是从这种小停顿开始的。`,
+    ({ audienceCue }) => `我更想保留这种不着急的试纱记录，${audienceCue}看完会知道，适合不是被夸出来的。`,
+    ({ takeawayCue }) => `如果只剩一句漂亮，回家很快就忘了；但${takeawayCue}，以后再翻相册也能看懂。`,
+    ({ audienceCue }) => `这不是热闹的客照，但对${audienceCue}来说，真实身体感受比热闹更有用。`,
+    ({ takeawayCue }) => `写到这里就够了，不需要把情绪推到很高，${takeawayCue}才是这组图该留下的原因。`,
+    ({ audienceCue }) => `${audienceCue}其实很需要这种慢一点的内容，不催她喜欢，也不催她立刻确定。`,
+    ({ takeawayCue }) => `最后那张手机照有点普通，但我会留下。因为${takeawayCue}，往往就藏在普通照片里。`,
+    ({ audienceCue }) => `如果这篇能让${audienceCue}试纱时少一点慌，多看一眼自己的身体状态，就够了。`
+  ],
+  dress: [
+    ({ takeawayCue }) => `这条内容不用写成种草，${takeawayCue}，比把话说得漂亮更重要。`,
+    ({ audienceCue }) => `给${audienceCue}看的裙装记录，最好像出门前随手拍下来的备注，真实一点就够了。`,
+    ({ takeawayCue }) => `最后她还是穿这条出了门。没有特别隆重，但${takeawayCue}，这就是日常裙子的意义。`,
+    ({ audienceCue }) => `${audienceCue}不会只因为一句高级就保存，她们更想知道这条裙子能不能进入自己的生活。`,
+    ({ takeawayCue }) => `如果看完只记得氛围，其实不够；能记住${takeawayCue}，这篇才有用。`,
+    ({ audienceCue }) => `这组图不需要太满，留一点真实动作，${audienceCue}反而更容易代入。`,
+    ({ takeawayCue }) => `收尾就写到这里，不拔高，也不催人买。${takeawayCue}，比口号更耐看。`,
+    ({ audienceCue }) => `我会把它发得像一条普通日程，给${audienceCue}一个可以照着判断的画面。`,
+    ({ takeawayCue }) => `有些裙子不是第一眼赢，是穿过一天以后还舒服。${takeawayCue}，这点就够具体。`,
+    ({ audienceCue }) => `如果${audienceCue}看完能想起自己衣柜里缺的那一种状态，这篇就没有写空。`
+  ]
+};
 
 const bridalVisualRecipes = {
   cameras: [
@@ -1570,6 +1700,33 @@ function buildVisualRecipe(topic: FashionSeedingTopic, axes: VariantAxes): Visua
   };
 }
 
+function buildNarrativeTemplateContext(context: CopyAlignmentContext): NarrativeTemplateContext {
+  return {
+    ...context,
+    audienceCue: narrativeCue(context.audience, 24),
+    focusCue: narrativeCue(context.focus, 24),
+    concernCue: narrativeCue(context.concern, 24),
+    proofCue: narrativeCue(context.proof, 24),
+    sceneCue: narrativeCue(context.scene, 24),
+    materialCue: narrativeCue(context.material, 24),
+    serviceCue: narrativeCue(context.service, 24),
+    takeawayCue: narrativeCue(context.takeaway, 24)
+  };
+}
+
+function buildNarrativeBody(context: CopyAlignmentContext, axes: VariantAxes) {
+  const narrativeType = isBridalFashionTopic(context.topic) ? "bridal" : "dress";
+  const narrativeContext = buildNarrativeTemplateContext(context);
+
+  return [
+    pick(characterMoodOpenings[narrativeType], axes.primary)(narrativeContext),
+    pick(environmentDetails[narrativeType], axes.secondary)(narrativeContext),
+    pick(productObservationDetails[narrativeType], axes.tertiary)(narrativeContext),
+    pick(emotionalTurns[narrativeType], axes.proof)(narrativeContext),
+    pick(humanClosings[narrativeType], axes.takeaway)(narrativeContext)
+  ].join("\n\n");
+}
+
 function buildHumanPromptContext(
   topic: FashionSeedingTopic,
   audience: string,
@@ -1621,17 +1778,8 @@ function buildXiaohongshuDraftCopy(
   const titleProof = titleCue(proof, 12);
   const titleScene = titleCue(scene, 10);
   const titleMaterial = titleCue(material, 10);
-  const bodyAudience = titleCue(audience, 24);
-  const bodyFocus = titleCue(focus, 24);
-  const bodyConcern = titleCue(concern, 24);
-  const bodyProof = titleCue(proof, 24);
-  const bodyScene = titleCue(scene, 24);
-  const bodyMaterial = titleCue(material, 24);
   const baseTitle = pick(draft.titles, axes.secondary);
   const titleStarter = pick(titleStarters, axes.primary);
-  const titleCloser = pick(titleClosers, axes.tertiary);
-  const paragraphs = draft.paragraphs.map(toPhrase);
-  const [p0, p1, p2, p3] = paragraphs;
   const promptContext = buildHumanPromptContext(
     topic,
     audience,
@@ -1652,12 +1800,7 @@ function buildXiaohongshuDraftCopy(
       `${titleStarter}，${titleScene}里的${titleProof}，比精修更能看出${titleMaterial}`,
       `${titleAudience}别被${shortConcern}带跑，先看${titleProof}和${shortFocus}`
     ],
-    body: [
-      `${p0}，对${bodyAudience}来说，我会先看${bodyFocus}，再看${bodyConcern}，因为这两点最容易被第一眼的氛围盖过去。`,
-      `${p1}，这组最该留下的是${bodyProof}，放在${bodyScene}里看，${bodyMaterial}比精修图更能说明问题。`,
-      `${p2}，现场${service}，顺手把${bodyProof}也拍下来，再补一眼${bodyFocus}和${bodyMaterial}，回家复盘时就不会只剩一句“好看”或“不好看”。`,
-      `${p3}，对${bodyAudience}来说，${takeaway}就够实用了；${titleCloser}。`
-    ].join("\n\n"),
+    body: buildNarrativeBody(promptContext, axes),
     tags: buildVariantTags(kit, bank, axes),
     note: `这一版主打${tone}，用${proof}和${material}回应${audience}最在意的${concern}。`,
     promptContext
@@ -1689,18 +1832,9 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
   const shortProof = titleCue(proof, 12);
   const shortScene = titleCue(scene, 10);
   const shortMaterial = titleCue(material, 10);
-  const bodyAudience = titleCue(audience, 24);
-  const bodyFocus = titleCue(focus, 24);
-  const bodyConcern = titleCue(concern, 24);
-  const bodyProof = titleCue(proof, 24);
-  const bodyScene = titleCue(scene, 24);
-  const bodyMaterial = titleCue(material, 24);
   const titleStarter = pick(titleStarters, axes.primary);
   const titleAngle = pick(titleAngles, axes.secondary);
   const titleCloser = pick(titleClosers, axes.tertiary);
-  const openingHook = toPhrase(pick(bodyOpeners, axes.primary));
-  const transitionHook = toPhrase(pick(bodyTransitions, axes.secondary));
-  const closingHook = toPhrase(pick(bodyClosers, axes.tertiary));
   const promptContext = buildHumanPromptContext(
     topic,
     audience,
@@ -1721,12 +1855,7 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
       `${shortScene}这张留好，${shortProof}能看出${shortMaterial}`,
       `${titleAngle}：${shortAudience}别忽略${shortConcern}，${titleCloser}`
     ],
-    body: [
-      `${openingHook}${bodyAudience}别只看第一眼，${bodyFocus}和${bodyConcern}才是后面会反复想起的点。`,
-      `${transitionHook}${bodyProof}，放在${bodyScene}里，${bodyMaterial}会比精修更说明问题。`,
-      `现场${service}，再补一眼${bodyFocus}和${bodyMaterial}，不要把判断全交给氛围。`,
-      `${takeaway}就够了，${bodyAudience}看完能少一点纠结，${closingHook}`
-    ].join("\n\n"),
+    body: buildNarrativeBody(promptContext, axes),
     tags: buildVariantTags(kit, bank, axes),
     note: `本版面向${audience}，核心是${focus}，用${proof}和${material}回应${concern}；同主题共有 ${TOPIC_VARIANT_COUNT} 组组合文案。`,
     promptContext
