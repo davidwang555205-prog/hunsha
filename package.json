@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "node server/index.mjs",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview"

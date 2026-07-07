@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ReferenceImageUploader } from "./components/ReferenceImageUploader";
 import { getCompatibleSceneOptions, isSceneCompatibleWithImageType } from "./data/bridalDressSceneOptions";
 import { FASHION_MODEL_OPTIONS } from "./data/fashionModelProfiles";
@@ -15,15 +15,76 @@ import type {
 } from "./types";
 import {
   fashionSeedingDailySlotOptions,
-  formatFashionSeedingContent,
-  formatFashionSeedingKeywords,
   generateFashionSeedingContent,
   getDailyFashionSeedingSelection,
   getFashionSeedingTopicOptions,
   type FashionSeedingDailySlot,
   type FashionSeedingTopic
 } from "./utils/generateFashionSeedingContent";
-import { generatePrompt } from "./utils/generatePrompt";
+
+type ApiUser = {
+  id: string;
+  username: string;
+  displayName: string;
+  role: "admin" | "user";
+};
+
+type Session = {
+  token: string;
+  user: ApiUser;
+};
+
+type AccountSummary = {
+  user: ApiUser;
+  requestCount: number;
+  successCount: number;
+  failedCount: number;
+  generatedImageCount: number;
+  lastGeneratedAt: string | null;
+};
+
+type GeneratedImage = {
+  id: string;
+  url: string;
+  downloadUrl: string;
+  source: "local" | "remote";
+};
+
+type HistoryRecord = {
+  id: string;
+  userId: string;
+  username: string;
+  createdAt: string;
+  status: "success" | "failed";
+  model: string;
+  mode: string;
+  title: string;
+  body: string;
+  tags: string[];
+  topic: string;
+  images: GeneratedImage[];
+  error?: string;
+  uploadedImageCount: number;
+};
+
+type MeResponse = {
+  user: ApiUser;
+  accounts?: AccountSummary[];
+  summary: {
+    requestCount: number;
+    successCount: number;
+    generatedImageCount: number;
+    retentionDays: number;
+  };
+};
+
+type HistoryResponse = {
+  history: HistoryRecord[];
+};
+
+type GenerateResponse = {
+  record: HistoryRecord;
+};
 
 const productCategoryOptions: ProductCategory[] = ["婚纱 / 礼服", "裙装 / 女装"];
 const bridalStyleOptions: BridalStyle[] = [
@@ -41,8 +102,10 @@ const dressStyleOptions: DressStyle[] = ["连衣裙", "衬衫裙", "针织裙", 
 const imageTypeOptions: ImageType[] = ["产品上身图", "对镜穿搭图", "生活场景图", "非产品氛围图", "拍摄花絮 / 材质图", "产品静物图"];
 const seasonOptions: Season[] = ["春", "夏", "秋", "冬"];
 const lightPreferenceOptions: LightPreference[] = ["自动匹配", "清晨自然光", "午后柔光", "傍晚金色光", "室内窗边光", "酒店暖光", "婚礼现场自然光"];
-const imageCountOptions: Array<3 | 5> = [3, 5];
+const sizeOptions = ["1024x1024", "1024x1536", "1536x1024"];
+const qualityOptions = ["low", "medium", "high", "auto"];
 const preferredBridalContentTopic: FashionSeedingTopic = "真实客户试纱";
+const sessionStorageKey = "bridal-content-studio-session";
 
 const initialParams: PromptParams = {
   productCategory: "婚纱 / 礼服",
@@ -61,24 +124,16 @@ const initialParams: PromptParams = {
 const initialDailySelection = getDailyFashionSeedingSelection(initialParams.productCategory, new Date(), 1);
 const initialContentTopic =
   initialParams.productCategory === "婚纱 / 礼服" ? preferredBridalContentTopic : initialDailySelection.topic;
-const initialGeneratedPrompt = generatePrompt(initialParams).prompt;
-const initialContent = generateFashionSeedingContent({
-  productCategory: initialParams.productCategory,
-  baseParams: initialParams,
-  imageCount: 3,
-  topic: initialContentTopic,
-  dailySlot: 1
-});
 
 const inputClass =
-  "w-full rounded-xl border border-aura-beige bg-white/80 px-3.5 py-3 text-sm text-aura-charcoal outline-none transition focus:border-aura-clay disabled:cursor-not-allowed disabled:bg-aura-cream disabled:text-aura-muted";
+  "w-full rounded-lg border border-aura-beige bg-white px-3 py-2.5 text-sm text-aura-charcoal outline-none transition focus:border-aura-clay disabled:cursor-not-allowed disabled:bg-aura-cream disabled:text-aura-muted";
 const labelClass = "text-sm font-medium text-aura-charcoal";
-const hintClass = "text-xs leading-5 text-aura-muted";
+const mutedClass = "text-sm leading-6 text-aura-muted";
+const panelClass = "rounded-lg bg-aura-porcelain p-5 shadow-aura ring-1 ring-aura-beige/70";
 const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-xl bg-aura-charcoal px-4 py-3 text-sm font-medium text-aura-porcelain shadow-sm transition hover:bg-aura-muted disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center rounded-lg bg-aura-charcoal px-4 py-2.5 text-sm font-medium text-aura-porcelain shadow-sm transition hover:bg-aura-muted disabled:cursor-not-allowed disabled:opacity-60";
 const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-medium text-aura-charcoal ring-1 ring-aura-beige transition hover:bg-aura-cream";
-const panelClass = "rounded-2xl bg-aura-porcelain/95 p-5 shadow-aura ring-1 ring-aura-beige/70";
+  "inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-aura-charcoal ring-1 ring-aura-beige transition hover:bg-aura-cream disabled:cursor-not-allowed disabled:opacity-60";
 
 function updateField<K extends keyof PromptParams>(params: PromptParams, key: K, value: PromptParams[K]) {
   return { ...params, [key]: value };
@@ -89,54 +144,154 @@ function getDefaultContentTopic(productCategory: ProductCategory, dailySlot: Fas
   return getDailyFashionSeedingSelection(productCategory, new Date(), dailySlot).topic;
 }
 
-function buildParameterSummary(params: PromptParams) {
-  const style = params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle;
-  return [params.productCategory, style, params.imageType, params.scenePreference, params.modelChoice, params.lightPreference].join("｜");
+function loadStoredSession(): Session | null {
+  try {
+    const raw = window.localStorage.getItem(sessionStorageKey);
+    return raw ? (JSON.parse(raw) as Session) : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`读取图片失败：${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
+
+function contentText(record: Pick<HistoryRecord, "title" | "body" | "tags">) {
+  return `${record.title}\n\n${record.body}\n\n${record.tags.join(" ")}`;
 }
 
 function App() {
+  const [session, setSession] = useState<Session | null>(loadStoredSession);
+  const [loginUsername, setLoginUsername] = useState("admin");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [params, setParams] = useState<PromptParams>(initialParams);
-  const [generatedPrompt, setGeneratedPrompt] = useState(initialGeneratedPrompt);
-  const [copyStatus, setCopyStatus] = useState("");
-  const [hasPendingChanges, setHasPendingChanges] = useState(false);
-  const [referenceImageCount, setReferenceImageCount] = useState(0);
   const [contentTopic, setContentTopic] = useState<FashionSeedingTopic>(initialContentTopic);
   const [dailySlot, setDailySlot] = useState<FashionSeedingDailySlot>(1);
-  const [imageCount, setImageCount] = useState<3 | 5>(3);
   const [contentNonce, setContentNonce] = useState(0);
-  const [content, setContent] = useState(initialContent);
-  const [contentCopyStatus, setContentCopyStatus] = useState("");
-  const [expandedPrompts, setExpandedPrompts] = useState<Record<number, boolean>>({});
+  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
+  const [size, setSize] = useState("1024x1024");
+  const [quality, setQuality] = useState("low");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [accounts, setAccounts] = useState<AccountSummary[]>([]);
+  const [summary, setSummary] = useState<MeResponse["summary"] | null>(null);
+  const [latestRecord, setLatestRecord] = useState<HistoryRecord | null>(null);
 
   const sceneOptions = useMemo(
     () => getCompatibleSceneOptions(params.productCategory, params.imageType),
     [params.productCategory, params.imageType]
   );
   const contentTopicOptions = useMemo(() => getFashionSeedingTopicOptions(params.productCategory), [params.productCategory]);
-  const parameterSummary = buildParameterSummary(params);
+  const contentPreview = useMemo(
+    () =>
+      generateFashionSeedingContent({
+        productCategory: params.productCategory,
+        baseParams: params,
+        imageCount: 3,
+        topic: contentTopic,
+        dailySlot,
+        contentNonce
+      }),
+    [contentNonce, contentTopic, dailySlot, params]
+  );
+
+  const primaryTitle = contentPreview.titles[0];
+
+  async function apiRequest<T>(path: string, options: RequestInit = {}, token = session?.token) {
+    const headers = new Headers(options.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+    const response = await fetch(path, { ...options, headers });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "请求失败。");
+    }
+    return payload as T;
+  }
+
+  async function refreshData(token = session?.token) {
+    if (!token) return;
+    const [me, historyPayload] = await Promise.all([
+      apiRequest<MeResponse>("/api/me", undefined, token),
+      apiRequest<HistoryResponse>("/api/history", undefined, token)
+    ]);
+    setSession((current) => (current ? { ...current, user: me.user } : current));
+    setSummary(me.summary);
+    setAccounts(me.accounts || []);
+    setHistory(historyPayload.history);
+  }
+
+  useEffect(() => {
+    if (!session) return;
+    refreshData(session.token).catch((error) => {
+      setStatusMessage(error.message);
+      setSession(null);
+      window.localStorage.removeItem(sessionStorageKey);
+    });
+  }, [session?.token]);
+
+  const handleLogin = async () => {
+    setLoginError("");
+    try {
+      const payload = await apiRequest<{ token: string; user: ApiUser; accounts?: AccountSummary[] }>("/api/login", {
+        method: "POST",
+        body: JSON.stringify({ username: loginUsername, password: loginPassword })
+      });
+      const nextSession = { token: payload.token, user: payload.user };
+      setSession(nextSession);
+      setAccounts(payload.accounts || []);
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
+      setLoginPassword("");
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "登录失败。");
+    }
+  };
+
+  const handleLogout = () => {
+    setSession(null);
+    setHistory([]);
+    setAccounts([]);
+    setSummary(null);
+    setLatestRecord(null);
+    window.localStorage.removeItem(sessionStorageKey);
+  };
 
   const updateParams = (updater: (current: PromptParams) => PromptParams) => {
     setParams((current) => updater(current));
-    setHasPendingChanges(true);
-    setCopyStatus("");
-    setContentCopyStatus("");
+    setStatusMessage("");
   };
 
   const handleCategoryChange = (productCategory: ProductCategory) => {
     const nextTopic = getDefaultContentTopic(productCategory, dailySlot);
     setContentTopic(nextTopic);
     setContentNonce(0);
-    updateParams((current) => {
-      const nextImageType = current.imageType;
-      return {
-        ...current,
-        productCategory,
-        modelChoice: productCategory === "婚纱 / 礼服" ? "亚洲新娘感模特 25–35" : "轻熟风裙装模特 28–40",
-        scenePreference: isSceneCompatibleWithImageType(productCategory, nextImageType, current.scenePreference)
-          ? current.scenePreference
-          : "自动匹配"
-      };
-    });
+    updateParams((current) => ({
+      ...current,
+      productCategory,
+      modelChoice: productCategory === "婚纱 / 礼服" ? "亚洲新娘感模特 25–35" : "轻熟风裙装模特 28–40",
+      scenePreference: isSceneCompatibleWithImageType(productCategory, current.imageType, current.scenePreference)
+        ? current.scenePreference
+        : "自动匹配"
+    }));
   };
 
   const handleImageTypeChange = (imageType: ImageType) => {
@@ -149,106 +304,196 @@ function App() {
     }));
   };
 
-  const handleGeneratePrompt = () => {
-    const nextParams = { ...params, generationNonce: params.generationNonce + 1 };
-    setParams(nextParams);
-    setGeneratedPrompt(generatePrompt(nextParams).prompt);
-    setHasPendingChanges(false);
-    setCopyStatus("");
-  };
-
-  const syncPromptParams = () => {
-    if (!hasPendingChanges) return params;
-    const nextParams = { ...params, generationNonce: params.generationNonce + 1 };
-    setParams(nextParams);
-    setGeneratedPrompt(generatePrompt(nextParams).prompt);
-    setHasPendingChanges(false);
-    return nextParams;
-  };
-
-  const copyText = async (text: string, successMessage: string, setStatus: (message: string) => void) => {
+  const copyText = async (text: string, message: string) => {
     await navigator.clipboard.writeText(text);
-    setStatus(successMessage);
+    setStatusMessage(message);
   };
 
-  const handleGenerateContent = () => {
-    const syncedParams = syncPromptParams();
-    const nextContentNonce = contentNonce + 1;
-    setContentNonce(nextContentNonce);
-    const nextContent = generateFashionSeedingContent({
-      productCategory: syncedParams.productCategory,
-      baseParams: syncedParams,
-      imageCount,
-      topic: contentTopic,
-      dailySlot,
-      contentNonce: nextContentNonce
-    });
-    setContent(nextContent);
-    setContentCopyStatus("");
-    setExpandedPrompts({});
+  const downloadImage = async (image: GeneratedImage, title: string) => {
+    const response = await fetch(image.downloadUrl);
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = `${title || "generated-image"}.png`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
   };
+
+  const handleGenerate = async () => {
+    if (!session) return;
+    if (!referenceFiles.length) {
+      setStatusMessage("请先上传至少一张参考图。");
+      return;
+    }
+
+    setIsGenerating(true);
+    setStatusMessage("");
+
+    try {
+      const nextNonce = contentNonce + 1;
+      const generationParams = { ...params, generationNonce: params.generationNonce + 1 };
+      const generatedContent = generateFashionSeedingContent({
+        productCategory: generationParams.productCategory,
+        baseParams: generationParams,
+        imageCount: 3,
+        topic: contentTopic,
+        dailySlot,
+        contentNonce: nextNonce
+      });
+      const imagePlan = generatedContent.images[0];
+      const uploads = await Promise.all(
+        referenceFiles.slice(0, 4).map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          dataUrl: await fileToDataUrl(file)
+        }))
+      );
+
+      const payload = await apiRequest<GenerateResponse>("/api/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          prompt: imagePlan.prompt,
+          title: generatedContent.titles[0],
+          body: generatedContent.body,
+          tags: generatedContent.tags,
+          topic: generatedContent.topic,
+          referenceImages: uploads,
+          size,
+          quality
+        })
+      });
+
+      setParams(generationParams);
+      setContentNonce(nextNonce);
+      setLatestRecord(payload.record);
+      setStatusMessage("生成完成。");
+      await refreshData();
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "生成失败。");
+      await refreshData().catch(() => undefined);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (!session) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-aura-cream px-4 py-8 text-aura-charcoal">
+        <section className="w-full max-w-md rounded-lg bg-aura-porcelain p-6 shadow-aura ring-1 ring-aura-beige">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-[0.18em] text-aura-muted">Bridal Content Studio</p>
+            <h1 className="mt-2 text-2xl font-semibold">账号登录</h1>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block space-y-2">
+              <span className={labelClass}>账号</span>
+              <input className={inputClass} value={loginUsername} onChange={(event) => setLoginUsername(event.target.value)} />
+            </label>
+            <label className="block space-y-2">
+              <span className={labelClass}>密码</span>
+              <input
+                className={inputClass}
+                type="password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handleLogin();
+                }}
+              />
+            </label>
+            {loginError && <p className="rounded-lg bg-[#F6ECEA] px-3 py-2 text-sm text-[#8b423a] ring-1 ring-[#E8CFC9]">{loginError}</p>}
+            <button className={`${primaryButtonClass} w-full`} type="button" onClick={handleLogin}>
+              登录
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-aura-cream px-4 py-7 text-aura-charcoal sm:px-7 lg:px-10">
-      <div className="mx-auto flex max-w-7xl flex-col gap-7">
-        <header className="grid gap-4 border-b border-aura-beige/80 pb-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl space-y-3">
-            <p className="text-xs uppercase tracking-[0.22em] text-aura-muted">Demo content workflow</p>
-            <h1 className="text-3xl font-semibold tracking-tight text-aura-charcoal sm:text-4xl">
-              Bridal & Dress Content Studio
-            </h1>
-            <p className="text-base leading-7 text-aura-muted">
-              为婚纱馆、礼服品牌和裙装品牌准备的内容生成 Demo。选择品类、场景、模特和光线，自动生成小红书文案与图片 Prompt。
-            </p>
+    <main className="min-h-screen bg-aura-cream px-4 py-6 text-aura-charcoal sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+        <header className="grid gap-4 border-b border-aura-beige pb-5 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-aura-muted">Bridal & Dress Content Studio</p>
+            <h1 className="mt-1 text-2xl font-semibold">生图工作台</h1>
           </div>
-          <div className="rounded-xl bg-[#F6ECEA] px-4 py-3 text-sm leading-6 text-aura-muted ring-1 ring-[#E8CFC9]">
-            前端本地演示，不登录，不接真实生图 API。
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-lg bg-white px-3 py-2 text-sm ring-1 ring-aura-beige">
+              {session.user.displayName} · {session.user.role === "admin" ? "管理员" : "账号"}
+            </span>
+            <button className={secondaryButtonClass} type="button" onClick={() => void refreshData()}>
+              刷新
+            </button>
+            <button className={secondaryButtonClass} type="button" onClick={handleLogout}>
+              退出
+            </button>
           </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className={panelClass}>
+            <p className="text-sm text-aura-muted">请求次数</p>
+            <p className="mt-2 text-2xl font-semibold">{summary?.requestCount ?? 0}</p>
+          </div>
+          <div className={panelClass}>
+            <p className="text-sm text-aura-muted">成功生成</p>
+            <p className="mt-2 text-2xl font-semibold">{summary?.generatedImageCount ?? 0}</p>
+          </div>
+          <div className={panelClass}>
+            <p className="text-sm text-aura-muted">历史保存</p>
+            <p className="mt-2 text-2xl font-semibold">{summary?.retentionDays ?? 180} 天</p>
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className={panelClass}>
             <div className="mb-5">
-              <h2 className="text-xl font-semibold text-aura-charcoal">参数选择</h2>
-              <p className="mt-2 text-sm leading-6 text-aura-muted">选择品类、款式、场景和光线，参考图只做本地预览。</p>
+              <h2 className="text-lg font-semibold">生成设置</h2>
+              <p className="mt-1 text-sm text-aura-muted">上传参考图后生成图片，生图关键词在后台处理。</p>
             </div>
 
             <div className="space-y-5">
-              <label className="block space-y-2">
-                <span className={labelClass}>品类</span>
-                <select
-                  className={inputClass}
-                  value={params.productCategory}
-                  onChange={(event) => handleCategoryChange(event.target.value as ProductCategory)}
-                >
-                  {productCategoryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <ReferenceImageUploader onChange={setReferenceFiles} />
 
-              <label className="block space-y-2">
-                <span className={labelClass}>款式</span>
-                <select
-                  className={inputClass}
-                  value={params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle}
-                  onChange={(event) => {
-                    if (params.productCategory === "婚纱 / 礼服") {
-                      updateParams((current) => updateField(current, "bridalStyle", event.target.value as BridalStyle));
-                    } else {
-                      updateParams((current) => updateField(current, "dressStyle", event.target.value as DressStyle));
-                    }
-                  }}
-                >
-                  {(params.productCategory === "婚纱 / 礼服" ? bridalStyleOptions : dressStyleOptions).map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className={labelClass}>品类</span>
+                  <select className={inputClass} value={params.productCategory} onChange={(event) => handleCategoryChange(event.target.value as ProductCategory)}>
+                    {productCategoryOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>款式</span>
+                  <select
+                    className={inputClass}
+                    value={params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle}
+                    onChange={(event) => {
+                      if (params.productCategory === "婚纱 / 礼服") {
+                        updateParams((current) => updateField(current, "bridalStyle", event.target.value as BridalStyle));
+                      } else {
+                        updateParams((current) => updateField(current, "dressStyle", event.target.value as DressStyle));
+                      }
+                    }}
+                  >
+                    {(params.productCategory === "婚纱 / 礼服" ? bridalStyleOptions : dressStyleOptions).map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
               <label className="block space-y-2">
                 <span className={labelClass}>自定义款式名称</span>
@@ -256,9 +501,39 @@ function App() {
                   className={inputClass}
                   value={params.customProductName}
                   onChange={(event) => updateParams((current) => updateField(current, "customProductName", event.target.value))}
-                  placeholder="例如：Pearl Satin A-line / 城市通勤针织裙"
+                  placeholder="Pearl Satin A-line"
                 />
               </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className={labelClass}>内容主题</span>
+                  <select
+                    className={inputClass}
+                    value={contentTopic}
+                    onChange={(event) => {
+                      setContentTopic(event.target.value as FashionSeedingTopic);
+                      setContentNonce(0);
+                    }}
+                  >
+                    {contentTopicOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>今日篇次</span>
+                  <select className={inputClass} value={dailySlot} onChange={(event) => setDailySlot(Number(event.target.value) as FashionSeedingDailySlot)}>
+                    {fashionSeedingDailySlotOptions.map((option) => (
+                      <option key={option} value={option}>
+                        第 {option} 篇
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-2">
@@ -271,56 +546,8 @@ function App() {
                     ))}
                   </select>
                 </label>
-
                 <label className="block space-y-2">
-                  <span className={labelClass}>季节</span>
-                  <select
-                    className={inputClass}
-                    value={params.season}
-                    onChange={(event) => updateParams((current) => updateField(current, "season", event.target.value as Season))}
-                  >
-                    {seasonOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <label className="block space-y-2">
-                <span className={labelClass}>模特选择</span>
-                <select
-                  className={inputClass}
-                  value={params.modelChoice}
-                  onChange={(event) => updateParams((current) => updateField(current, "modelChoice", event.target.value as ModelChoice))}
-                >
-                  {FASHION_MODEL_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className={labelClass}>光线</span>
-                  <select
-                    className={inputClass}
-                    value={params.lightPreference}
-                    onChange={(event) => updateParams((current) => updateField(current, "lightPreference", event.target.value as LightPreference))}
-                  >
-                    {lightPreferenceOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block space-y-2">
-                  <span className={labelClass}>场景偏好</span>
+                  <span className={labelClass}>场景</span>
                   <select
                     className={inputClass}
                     value={params.scenePreference}
@@ -335,222 +562,264 @@ function App() {
                 </label>
               </div>
 
-              <div className="space-y-2">
-                <span className={labelClass}>上传参考图 Demo</span>
-                <ReferenceImageUploader onChange={(files) => setReferenceImageCount(files.length)} />
-                {referenceImageCount > 0 && <p className={hintClass}>已选择 {referenceImageCount} 张参考图，仅用于当前页面预览。</p>}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className={labelClass}>模特</span>
+                  <select
+                    className={inputClass}
+                    value={params.modelChoice}
+                    onChange={(event) => updateParams((current) => updateField(current, "modelChoice", event.target.value as ModelChoice))}
+                  >
+                    {FASHION_MODEL_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>季节</span>
+                  <select className={inputClass} value={params.season} onChange={(event) => updateParams((current) => updateField(current, "season", event.target.value as Season))}>
+                    {seasonOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="block space-y-2">
+                  <span className={labelClass}>光线</span>
+                  <select
+                    className={inputClass}
+                    value={params.lightPreference}
+                    onChange={(event) => updateParams((current) => updateField(current, "lightPreference", event.target.value as LightPreference))}
+                  >
+                    {lightPreferenceOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>尺寸</span>
+                  <select className={inputClass} value={size} onChange={(event) => setSize(event.target.value)}>
+                    {sizeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>质量</span>
+                  <select className={inputClass} value={quality} onChange={(event) => setQuality(event.target.value)}>
+                    {qualityOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <label className="block space-y-2">
                 <span className={labelClass}>补充要求</span>
                 <textarea
-                  className={`${inputClass} min-h-28`}
+                  className={`${inputClass} min-h-24`}
                   value={params.extraRequirement}
                   onChange={(event) => updateParams((current) => updateField(current, "extraRequirement", event.target.value))}
-                  placeholder="例如：更强调缎面垂坠；不要夸张摆拍；背景保留酒店窗边晨光。"
+                  placeholder="例如：保留缎面垂坠，背景干净，避免夸张摆拍。"
                 />
               </label>
 
-              <button className={`${primaryButtonClass} w-full`} type="button" onClick={handleGeneratePrompt}>
-                生成 Prompt
+              <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
+                {isGenerating ? "生成中..." : "一键生图"}
               </button>
+              {statusMessage && <p className="rounded-lg bg-white px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
             </div>
           </div>
 
-          <div className={`${panelClass} flex flex-col`}>
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-aura-charcoal">最终英文 Prompt</h2>
-                <p className="mt-2 text-sm leading-6 text-aura-muted">{parameterSummary}</p>
+          <div className="space-y-6">
+            <section className={panelClass}>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">文案预览</h2>
+                  <p className="mt-1 text-sm text-aura-muted">
+                    {contentPreview.dateKey} · {contentPreview.topic} · {contentPreview.variantLabel}
+                  </p>
+                </div>
+                <button className={secondaryButtonClass} type="button" onClick={() => setContentNonce((current) => current + 1)}>
+                  换一版
+                </button>
               </div>
-              <button
-                className={secondaryButtonClass}
-                type="button"
-                onClick={() => copyText(generatedPrompt, "已复制最终英文 Prompt。", setCopyStatus)}
-              >
-                一键复制
-              </button>
-            </div>
 
-            {hasPendingChanges && (
-              <p className="mb-3 rounded-xl bg-[#F6ECEA] px-3 py-2 text-xs leading-5 text-aura-muted ring-1 ring-[#E8CFC9]">
-                参数已变化，点击生成 Prompt 后会刷新右侧内容。
-              </p>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">标题</p>
+                  <p className="mt-2 rounded-lg bg-white p-3 text-base font-medium ring-1 ring-aura-beige">{primaryTitle}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">正文</p>
+                  <p className="mt-2 whitespace-pre-line rounded-lg bg-white p-3 text-sm leading-7 ring-1 ring-aura-beige">{contentPreview.body}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">标签</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {contentPreview.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-[#EEF0E8] px-3 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {latestRecord && (
+              <section className={panelClass}>
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold">最新结果</h2>
+                    <p className={mutedClass}>{formatDate(latestRecord.createdAt)} · {latestRecord.model}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.title, "已复制标题。")}>
+                      复制标题
+                    </button>
+                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.body, "已复制正文。")}>
+                      复制正文
+                    </button>
+                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.tags.join(" "), "已复制标签。")}>
+                      复制标签
+                    </button>
+                  </div>
+                </div>
+
+                {latestRecord.images.length > 0 && (
+                  <div className="grid gap-4 sm:grid-cols-[220px_1fr]">
+                    <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={latestRecord.images[0].url} alt={latestRecord.title} />
+                    <div className="space-y-3">
+                      <p className="text-base font-medium">{latestRecord.title}</p>
+                      <p className={mutedClass}>{latestRecord.body}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button className={primaryButtonClass} type="button" onClick={() => downloadImage(latestRecord.images[0], latestRecord.title)}>
+                          一键下载
+                        </button>
+                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(contentText(latestRecord), "已复制标题、正文和标签。")}>
+                          复制全部文案
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
             )}
-
-            <pre className="aura-scrollbar min-h-[520px] flex-1 whitespace-pre-wrap rounded-xl bg-white/75 p-4 text-sm leading-7 text-aura-charcoal ring-1 ring-aura-beige">
-              {generatedPrompt}
-            </pre>
-            {copyStatus && <p className="mt-3 text-sm text-aura-muted">{copyStatus}</p>}
           </div>
         </section>
 
-        <section className="space-y-5 border-t border-aura-beige/80 pt-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-aura-charcoal">小红书内容 Demo</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-aura-muted">
-                基于当前参数生成中文文案和 3 / 5 张配图方案。每张配图都有独立英文 Prompt，不调用真实生图 API。
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                className={secondaryButtonClass}
-                type="button"
-                onClick={() => copyText(formatFashionSeedingContent(content), "已复制小红书内容全文。", setContentCopyStatus)}
-              >
-                复制全文
-              </button>
-              <button
-                className={secondaryButtonClass}
-                type="button"
-                onClick={() => copyText(formatFashionSeedingKeywords(content), "已复制生图关键词。", setContentCopyStatus)}
-              >
-                复制关键词
-              </button>
-              <button className={primaryButtonClass} type="button" onClick={handleGenerateContent}>
-                生成内容
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.7fr_0.7fr]">
-            <label className="block space-y-2">
-              <span className={labelClass}>内容主题</span>
-              <select
-                className={inputClass}
-                value={contentTopic}
-                onChange={(event) => {
-                  setContentTopic(event.target.value as FashionSeedingTopic);
-                  setContentNonce(0);
-                }}
-              >
-                {contentTopicOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-2">
-              <span className={labelClass}>今日篇次</span>
-              <select
-                className={inputClass}
-                value={dailySlot}
-                onChange={(event) => {
-                  setDailySlot(Number(event.target.value) as FashionSeedingDailySlot);
-                  setContentNonce(0);
-                }}
-              >
-                {fashionSeedingDailySlotOptions.map((option) => (
-                  <option key={option} value={option}>
-                    今日第 {option} 篇
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-2">
-              <span className={labelClass}>配图数量</span>
-              <select className={inputClass} value={imageCount} onChange={(event) => setImageCount(Number(event.target.value) as 3 | 5)}>
-                {imageCountOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option} 张
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-            <div className="space-y-4 rounded-2xl bg-white/75 p-5 ring-1 ring-aura-beige/70">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-aura-muted">
-                  {content.dateKey}｜今日第 {content.dailySlot} 篇｜{content.variantLabel}
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-aura-charcoal">{content.topic}</h3>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-aura-charcoal">标题备选</h4>
-                {content.titles.map((title) => (
-                  <p key={title} className="rounded-xl bg-aura-cream px-3 py-2 text-sm text-aura-charcoal ring-1 ring-aura-beige/70">
-                    {title}
-                  </p>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-aura-charcoal">正文</h4>
-                <p className="whitespace-pre-line rounded-xl bg-aura-cream px-4 py-3 text-sm leading-7 text-aura-charcoal ring-1 ring-aura-beige/70">
-                  {content.body}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-aura-charcoal">标签</h4>
-                <div className="flex flex-wrap gap-2">
-                  {content.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-[#EEF0E8] px-3 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
-                      {tag}
-                    </span>
+        {session.user.role === "admin" && accounts.length > 0 && (
+          <section className={panelClass}>
+            <h2 className="mb-4 text-lg font-semibold">账号使用情况</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                <thead className="text-aura-muted">
+                  <tr>
+                    <th className="border-b border-aura-beige py-2">账号</th>
+                    <th className="border-b border-aura-beige py-2">角色</th>
+                    <th className="border-b border-aura-beige py-2">请求</th>
+                    <th className="border-b border-aura-beige py-2">成功</th>
+                    <th className="border-b border-aura-beige py-2">失败</th>
+                    <th className="border-b border-aura-beige py-2">图片</th>
+                    <th className="border-b border-aura-beige py-2">最近生成</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {accounts.map((account) => (
+                    <tr key={account.user.id}>
+                      <td className="border-b border-aura-beige/70 py-3">{account.user.username}</td>
+                      <td className="border-b border-aura-beige/70 py-3">{account.user.role}</td>
+                      <td className="border-b border-aura-beige/70 py-3">{account.requestCount}</td>
+                      <td className="border-b border-aura-beige/70 py-3">{account.successCount}</td>
+                      <td className="border-b border-aura-beige/70 py-3">{account.failedCount}</td>
+                      <td className="border-b border-aura-beige/70 py-3">{account.generatedImageCount}</td>
+                      <td className="border-b border-aura-beige/70 py-3">{formatDate(account.lastGeneratedAt)}</td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-aura-charcoal">内容逻辑</h4>
-                <p className="rounded-xl bg-[#F6ECEA] px-4 py-3 text-sm leading-6 text-aura-muted ring-1 ring-[#E8CFC9]">{content.note}</p>
-              </div>
-
-              {contentCopyStatus && <p className="text-sm text-aura-muted">{contentCopyStatus}</p>}
+                </tbody>
+              </table>
             </div>
+          </section>
+        )}
 
+        <section className={panelClass}>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">生图历史</h2>
+            <span className="text-sm text-aura-muted">最近 {history.length} 条</span>
+          </div>
+
+          {history.length === 0 ? (
+            <p className={mutedClass}>暂无记录。</p>
+          ) : (
             <div className="grid gap-4">
-              {content.images.map((image, index) => (
-                <article key={`${image.name}-${index}`} className="rounded-2xl bg-white/80 p-5 ring-1 ring-aura-beige/70">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              {history.map((record) => (
+                <article key={record.id} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                  <div className="grid gap-4 lg:grid-cols-[150px_1fr_auto]">
                     <div>
-                      <h3 className="text-lg font-semibold text-aura-charcoal">{image.name}</h3>
-                      <p className="mt-1 text-sm leading-6 text-aura-muted">{image.purpose}</p>
+                      {record.images[0] ? (
+                        <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={record.images[0].url} alt={record.title} />
+                      ) : (
+                        <div className="flex aspect-square items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
+                          {record.status === "failed" ? "失败" : "无图"}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      className={secondaryButtonClass}
-                      type="button"
-                      onClick={() => copyText(image.prompt, `已复制 ${image.name} 的英文 Prompt。`, setContentCopyStatus)}
-                    >
-                      复制这张 Prompt
-                    </button>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                          {formatDate(record.createdAt)}
+                        </span>
+                        <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                          {record.username}
+                        </span>
+                        <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                          {record.status}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-semibold">{record.title}</h3>
+                      <p className="line-clamp-3 text-sm leading-6 text-aura-muted">{record.status === "failed" ? record.error : record.body}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {record.tags.slice(0, 8).map((tag) => (
+                          <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-row flex-wrap gap-2 lg:flex-col">
+                      <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.title, "已复制标题。")}>
+                        复制标题
+                      </button>
+                      <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.body, "已复制正文。")}>
+                        复制正文
+                      </button>
+                      <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.tags.join(" "), "已复制标签。")}>
+                        复制标签
+                      </button>
+                      {record.images[0] && (
+                        <button className={primaryButtonClass} type="button" onClick={() => downloadImage(record.images[0], record.title)}>
+                          下载图片
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="mt-4 grid gap-3 text-sm leading-6 text-aura-muted sm:grid-cols-2">
-                    <p className="rounded-xl bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">配图建议：{image.description}</p>
-                    <p className="rounded-xl bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">
-                      参数：{image.params.imageType}｜{image.params.scenePreference}｜{image.params.lightPreference}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <button
-                      className={secondaryButtonClass}
-                      type="button"
-                      onClick={() => setExpandedPrompts((current) => ({ ...current, [index]: !current[index] }))}
-                    >
-                      {expandedPrompts[index] ? "收起完整英文 Prompt" : "查看完整英文 Prompt"}
-                    </button>
-                    <span className="text-xs text-aura-muted">暂不接入真实生图 API。</span>
-                  </div>
-
-                  {expandedPrompts[index] && (
-                    <pre className="aura-scrollbar mt-4 max-h-80 overflow-auto whitespace-pre-wrap rounded-xl bg-aura-cream p-4 text-xs leading-6 text-aura-charcoal ring-1 ring-aura-beige/70">
-                      {image.prompt}
-                    </pre>
-                  )}
                 </article>
               ))}
             </div>
-          </div>
+          )}
         </section>
       </div>
     </main>
