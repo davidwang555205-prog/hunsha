@@ -31,6 +31,10 @@ applyDotEnv(path.join(rootDir, ".env"));
 const port = Number(process.env.PORT || 8787);
 const apiBaseUrl = (process.env.WALA_API_BASE_URL || "https://walaapi.net/v1").replace(/\/+$/, "");
 const imageModel = process.env.WALA_IMAGE_MODEL || "gpt-image-2";
+const supportedImageQualities = new Set(["low", "medium", "high", "auto"]);
+const defaultImageQuality = supportedImageQualities.has(process.env.WALA_IMAGE_QUALITY)
+  ? process.env.WALA_IMAGE_QUALITY
+  : "medium";
 const retentionDays = Number(process.env.HISTORY_RETENTION_DAYS || 180);
 const imageTimeoutMs = Number(process.env.WALA_IMAGE_TIMEOUT_MS || 180000);
 const maxBodyBytes = 80 * 1024 * 1024;
@@ -209,6 +213,10 @@ function extensionFromMime(type) {
   return "png";
 }
 
+function resolveImageQuality(quality) {
+  return supportedImageQualities.has(quality) ? quality : defaultImageQuality;
+}
+
 function extractGeneratedImages(payload) {
   const candidates = [];
   if (Array.isArray(payload?.data)) candidates.push(...payload.data);
@@ -259,6 +267,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
     throw Object.assign(new Error("服务端缺少 WALA_API_KEY 环境变量。"), { statusCode: 500 });
   }
 
+  const resolvedQuality = resolveImageQuality(quality);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), imageTimeoutMs);
 
@@ -272,7 +281,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
       form.append("prompt", prompt);
       form.append("model", imageModel);
       form.append("size", size || "1024x1024");
-      form.append("quality", quality || "low");
+      form.append("quality", resolvedQuality);
 
       return await fetch(`${apiBaseUrl}/images/edits`, {
         method: "POST",
@@ -301,7 +310,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
         model: imageModel,
         prompt,
         size: size || "1024x1024",
-        quality: quality || "low"
+        quality: resolvedQuality
       }),
       signal: controller.signal
     });

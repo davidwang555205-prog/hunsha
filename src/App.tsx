@@ -103,7 +103,13 @@ const imageTypeOptions: ImageType[] = ["产品上身图", "对镜穿搭图", "�
 const seasonOptions: Season[] = ["春", "夏", "秋", "冬"];
 const lightPreferenceOptions: LightPreference[] = ["自动匹配", "清晨自然光", "午后柔光", "傍晚金色光", "室内窗边光", "酒店暖光", "婚礼现场自然光"];
 const sizeOptions = ["1024x1024", "1024x1536", "1536x1024"];
-const qualityOptions = ["low", "medium", "high", "auto"];
+const qualityOptions = [
+  { value: "medium", label: "M / standard" },
+  { value: "low", label: "L / low" },
+  { value: "high", label: "H / high" },
+  { value: "auto", label: "Auto" }
+];
+const defaultImageQuality = "medium";
 const preferredBridalContentTopic: FashionSeedingTopic = "真实客户试纱";
 const sessionStorageKey = "bridal-content-studio-session";
 
@@ -187,7 +193,7 @@ function App() {
   const [contentNonce, setContentNonce] = useState(0);
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [size, setSize] = useState("1024x1024");
-  const [quality, setQuality] = useState("low");
+  const [quality, setQuality] = useState(defaultImageQuality);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [history, setHistory] = useState<HistoryRecord[]>([]);
@@ -618,8 +624,8 @@ function App() {
                   <span className={labelClass}>质量</span>
                   <select className={inputClass} value={quality} onChange={(event) => setQuality(event.target.value)}>
                     {qualityOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
                     ))}
                   </select>
