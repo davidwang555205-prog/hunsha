@@ -37,6 +37,7 @@ const defaultImageQuality = supportedImageQualities.has(process.env.WALA_IMAGE_Q
   : "medium";
 const retentionDays = Number(process.env.HISTORY_RETENTION_DAYS || 180);
 const imageTimeoutMs = Number(process.env.WALA_IMAGE_TIMEOUT_MS || 180000);
+const imageRetryAttempts = Math.max(1, Number(process.env.WALA_IMAGE_RETRY_ATTEMPTS || 3));
 const maxBodyBytes = 80 * 1024 * 1024;
 const sessionTtlMs = 24 * 60 * 60 * 1000;
 
@@ -221,6 +222,24 @@ function resolveImageQuality(quality) {
   return supportedImageQualities.has(quality) ? quality : defaultImageQuality;
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryDelayMs(attempt) {
+  return Math.min(30000, 4000 * 2 ** (attempt - 1));
+}
+
+function isRetryableWalaResponse(status, bodyText = "") {
+  if ([429, 502, 503, 504].includes(status)) return true;
+  return bodyText.includes("当前分组上游负载已饱和") || bodyText.includes("当前分组负载已饱和");
+}
+
+function buildWalaOverloadMessage(message) {
+  const prefix = `WalaAPI 上游负载已饱和，已自动重试 ${imageRetryAttempts} 次仍未成功。请稍后再试，或在 WalaAPI 后台切换可用分组/模型后重试。`;
+  return message ? `${prefix} 原始错误：${message}` : prefix;
+}
+
 function extractGeneratedImages(payload) {
   const candidates = [];
   if (Array.isArray(payload?.data)) candidates.push(...payload.data);
@@ -328,6 +347,32 @@ async function callWalaApi({ prompt, files, size, quality }) {
   }
 }
 
+async function callWalaApiWithRetries(request) {
+  for (let attempt = 1; attempt <= imageRetryAttempts; attempt += 1) {
+    try {
+      const response = await callWalaApi(request);
+      if (response.ok || attempt >= imageRetryAttempts) return response;
+
+      const bodyText = await response.clone().text();
+      if (!isRetryableWalaResponse(response.status, bodyText)) return response;
+
+      const waitMs = retryDelayMs(attempt);
+      console.log(`[wala:retry] attempt=${attempt}/${imageRetryAttempts} status=${response.status} waitMs=${waitMs}`);
+      await delay(waitMs);
+    } catch (error) {
+      if (attempt >= imageRetryAttempts || !isRetryableWalaResponse(error.statusCode || 500, error.message || "")) {
+        throw error;
+      }
+
+      const waitMs = retryDelayMs(attempt);
+      console.log(`[wala:retry] attempt=${attempt}/${imageRetryAttempts} status=${error.statusCode || 500} waitMs=${waitMs}`);
+      await delay(waitMs);
+    }
+  }
+
+  throw Object.assign(new Error(buildWalaOverloadMessage("")), { statusCode: 503 });
+}
+
 async function handleLogin(req, res) {
   const db = await readDb();
   const body = await parseJsonBody(req);
@@ -399,7 +444,7 @@ async function handleGenerate(req, res) {
   console.log(`[generate:start] id=${recordId} user=${user.username} mode=${mode} files=${files.length} model=${imageModel}`);
 
   try {
-    const apiResponse = await callWalaApi({
+    const apiResponse = await callWalaApiWithRetries({
       prompt,
       files,
       size: body.size,
@@ -415,7 +460,8 @@ async function handleGenerate(req, res) {
 
     if (!apiResponse.ok) {
       const message = responsePayload?.error?.message || responsePayload?.message || responseText || "生图接口调用失败。";
-      throw Object.assign(new Error(message), { statusCode: apiResponse.status });
+      const friendlyMessage = isRetryableWalaResponse(apiResponse.status, message) ? buildWalaOverloadMessage(message) : message;
+      throw Object.assign(new Error(friendlyMessage), { statusCode: apiResponse.status });
     }
 
     const generatedImages = extractGeneratedImages(responsePayload);
