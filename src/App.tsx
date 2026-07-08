@@ -239,7 +239,8 @@ function App() {
   const [contentNonce, setContentNonce] = useState(0);
   const [imageCount, setImageCount] = useState<3 | 5>(3);
   const [contentMessage, setContentMessage] = useState("");
-  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
+  const [settingsReferenceFiles, setSettingsReferenceFiles] = useState<File[]>([]);
+  const [contentReferenceFiles, setContentReferenceFiles] = useState<File[]>([]);
   const [size, setSize] = useState("1024x1024");
   const [quality, setQuality] = useState(defaultImageQuality);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -358,6 +359,8 @@ function App() {
     setSummary(null);
     setLatestRecord(null);
     setSettingsLatestRecord(null);
+    setSettingsReferenceFiles([]);
+    setContentReferenceFiles([]);
     setNewAccountUsername("");
     setNewAccountDisplayName("");
     setNewAccountPassword("");
@@ -524,8 +527,9 @@ function App() {
 
   const handleGenerate = async (panel: "settings" | "content") => {
     if (!session) return;
-    if (!referenceFiles.length) {
-      setStatusMessage("请先上传至少一张参考图。");
+    const activeReferenceFiles = panel === "settings" ? settingsReferenceFiles : contentReferenceFiles;
+    if (!activeReferenceFiles.length) {
+      setStatusMessage(panel === "settings" ? "请先上传生成设置参考图。" : "请先上传小红书参考图。");
       return;
     }
 
@@ -553,7 +557,7 @@ function App() {
     try {
       const generationParams = { ...params, generationNonce: params.generationNonce + 1 };
       const uploads = await Promise.all(
-        referenceFiles.slice(0, 4).map(async (file) => ({
+        activeReferenceFiles.slice(0, 4).map(async (file) => ({
           name: file.name,
           type: file.type,
           size: file.size,
@@ -596,47 +600,61 @@ function App() {
     }
   };
 
-  const renderImageGenerationActions = (panel: "settings" | "content") => (
-    <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-      <ReferenceImageUploader files={referenceFiles} onChange={setReferenceFiles} />
-      <button
-        className={`${primaryButtonClass} w-full`}
-        type="button"
-        disabled={isGenerating}
-        onClick={() => {
-          setGenerationFeedbackPanel(panel);
-          void handleGenerate(panel);
-        }}
-      >
-        {isGenerating && generationFeedbackPanel === panel
-          ? "生成中..."
-          : panel === "settings"
-            ? "生成设置生图（1 张）"
-            : `小红书内容生图（${imageCount} 张）`}
-      </button>
-      {generationFeedbackPanel === panel && statusMessage && (
-        <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
-      )}
-      {panel === "settings" && settingsLatestRecord?.images.length ? (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-aura-charcoal">生成设置图片</h3>
-            <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsLatestRecord.images, settingsLatestRecord.title)}>
-              下载全部图片
-            </button>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {settingsLatestRecord.images.map((image, index) => (
-              <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
-                <img className="aspect-square w-full object-cover" src={image.url} alt={`${settingsLatestRecord.title} ${index + 1}`} />
-                <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
-              </figure>
-            ))}
-          </div>
+  const renderImageGenerationActions = (panel: "settings" | "content") => {
+    const isSettingsPanel = panel === "settings";
+    const files = isSettingsPanel ? settingsReferenceFiles : contentReferenceFiles;
+    const setFiles = isSettingsPanel ? setSettingsReferenceFiles : setContentReferenceFiles;
+
+    return (
+      <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+        <div>
+          <h3 className="text-sm font-semibold text-aura-charcoal">
+            {isSettingsPanel ? "生成设置参考图" : "小红书参考图"}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-aura-muted">
+            {isSettingsPanel ? "仅用于上方生成设置生图，不影响小红书内容配图。" : "仅用于下方小红书内容生图，不影响生成设置生图。"}
+          </p>
         </div>
-      ) : null}
-    </div>
-  );
+        <ReferenceImageUploader files={files} onChange={setFiles} />
+        <button
+          className={`${primaryButtonClass} w-full`}
+          type="button"
+          disabled={isGenerating}
+          onClick={() => {
+            setGenerationFeedbackPanel(panel);
+            void handleGenerate(panel);
+          }}
+        >
+          {isGenerating && generationFeedbackPanel === panel
+            ? "生成中..."
+            : isSettingsPanel
+              ? "生成设置生图（1 张）"
+              : `小红书内容生图（${imageCount} 张）`}
+        </button>
+        {generationFeedbackPanel === panel && statusMessage && (
+          <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
+        )}
+        {isSettingsPanel && settingsLatestRecord?.images.length ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-aura-charcoal">生成设置图片</h3>
+              <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsLatestRecord.images, settingsLatestRecord.title)}>
+                下载全部图片
+              </button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {settingsLatestRecord.images.map((image, index) => (
+                <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
+                  <img className="aspect-square w-full object-cover" src={image.url} alt={`${settingsLatestRecord.title} ${index + 1}`} />
+                  <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   const renderHistorySection = () => (
     <section className={panelClass}>
