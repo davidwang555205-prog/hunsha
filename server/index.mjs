@@ -135,7 +135,11 @@ async function parseJsonBody(req) {
   }
 
   if (!chunks.length) return {};
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw Object.assign(new Error("请求 JSON 格式不正确。"), { statusCode: 400 });
+  }
 }
 
 function getBearerToken(req) {
@@ -533,14 +537,14 @@ async function handleRequest(req, res) {
       return res.end();
     }
 
-    if (url.pathname === "/api/login" && req.method === "POST") return handleLogin(req, res);
-    if (url.pathname === "/api/me" && req.method === "GET") return handleMe(req, res);
-    if (url.pathname === "/api/history" && req.method === "GET") return handleHistory(req, res);
-    if (url.pathname === "/api/generate" && req.method === "POST") return handleGenerate(req, res);
-    if (url.pathname.startsWith("/api/generated/") && req.method === "GET") return serveGenerated(req, res, url.pathname);
+    if (url.pathname === "/api/login" && req.method === "POST") return await handleLogin(req, res);
+    if (url.pathname === "/api/me" && req.method === "GET") return await handleMe(req, res);
+    if (url.pathname === "/api/history" && req.method === "GET") return await handleHistory(req, res);
+    if (url.pathname === "/api/generate" && req.method === "POST") return await handleGenerate(req, res);
+    if (url.pathname.startsWith("/api/generated/") && req.method === "GET") return await serveGenerated(req, res, url.pathname);
     if (url.pathname.startsWith("/api/")) return sendError(res, 404, "接口不存在。");
 
-    return serveStatic(res, decodeURIComponent(url.pathname));
+    return await serveStatic(res, decodeURIComponent(url.pathname));
   } catch (error) {
     if (error instanceof SyntaxError) return sendError(res, 400, "请求 JSON 格式不正确。");
     return sendError(res, error.statusCode || 500, error.message || "服务器错误。");
