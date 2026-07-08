@@ -31,7 +31,7 @@ applyDotEnv(path.join(rootDir, ".env"));
 
 const port = Number(process.env.PORT || 8787);
 const apiBaseUrl = (process.env.WALA_API_BASE_URL || "https://walaapi.net/v1").replace(/\/+$/, "");
-const imageModel = process.env.WALA_IMAGE_MODEL || "gpt-image-2";
+const imageModel = process.env.WALA_IMAGE_MODEL || "gpt-image-2-c";
 const supportedImageQualities = new Set(["low", "medium", "high", "auto"]);
 const defaultImageQuality = supportedImageQualities.has(process.env.WALA_IMAGE_QUALITY)
   ? process.env.WALA_IMAGE_QUALITY
