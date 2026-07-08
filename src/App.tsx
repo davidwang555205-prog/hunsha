@@ -15,6 +15,7 @@ import type {
 } from "./types";
 import {
   fashionSeedingDailySlotOptions,
+  formatFashionSeedingContent,
   generateFashionSeedingContent,
   getDailyFashionSeedingSelection,
   getFashionSeedingTopicOptions,
@@ -196,6 +197,8 @@ function App() {
   const [contentTopic, setContentTopic] = useState<FashionSeedingTopic>(initialContentTopic);
   const [dailySlot, setDailySlot] = useState<FashionSeedingDailySlot>(1);
   const [contentNonce, setContentNonce] = useState(0);
+  const [imageCount, setImageCount] = useState<3 | 5>(3);
+  const [contentMessage, setContentMessage] = useState("");
   const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
   const [size, setSize] = useState("1024x1024");
   const [quality, setQuality] = useState(defaultImageQuality);
@@ -221,15 +224,13 @@ function App() {
       generateFashionSeedingContent({
         productCategory: params.productCategory,
         baseParams: params,
-        imageCount: 3,
+        imageCount,
         topic: contentTopic,
         dailySlot,
         contentNonce
       }),
-    [contentNonce, contentTopic, dailySlot, params]
+    [contentNonce, contentTopic, dailySlot, imageCount, params]
   );
-
-  const primaryTitle = contentPreview.titles[0];
 
   async function apiRequest<T>(path: string, options: RequestInit = {}, token = session?.token) {
     const headers = new Headers(options.headers);
@@ -351,9 +352,9 @@ function App() {
     }));
   };
 
-  const copyText = async (text: string, message: string) => {
+  const copyText = async (text: string, message: string, setMessage: (nextMessage: string) => void = setStatusMessage) => {
     await navigator.clipboard.writeText(text);
-    setStatusMessage(message);
+    setMessage(message);
   };
 
   const downloadImage = async (image: GeneratedImage, title: string) => {
@@ -385,7 +386,7 @@ function App() {
       const generatedContent = generateFashionSeedingContent({
         productCategory: generationParams.productCategory,
         baseParams: generationParams,
-        imageCount: 3,
+        imageCount,
         topic: contentTopic,
         dailySlot,
         contentNonce: nextNonce
@@ -554,36 +555,6 @@ function App() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-2">
-                  <span className={labelClass}>内容主题</span>
-                  <select
-                    className={inputClass}
-                    value={contentTopic}
-                    onChange={(event) => {
-                      setContentTopic(event.target.value as FashionSeedingTopic);
-                      setContentNonce(0);
-                    }}
-                  >
-                    {contentTopicOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-2">
-                  <span className={labelClass}>今日篇次</span>
-                  <select className={inputClass} value={dailySlot} onChange={(event) => setDailySlot(Number(event.target.value) as FashionSeedingDailySlot)}>
-                    {fashionSeedingDailySlotOptions.map((option) => (
-                      <option key={option} value={option}>
-                        第 {option} 篇
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-2">
                   <span className={labelClass}>图片类型</span>
                   <select className={inputClass} value={params.imageType} onChange={(event) => handleImageTypeChange(event.target.value as ImageType)}>
                     {imageTypeOptions.map((option) => (
@@ -692,36 +663,163 @@ function App() {
 
           <div className="space-y-6">
             <section className={panelClass}>
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">文案预览</h2>
-                  <p className="mt-1 text-sm text-aura-muted">
-                    {contentPreview.dateKey} · {contentPreview.topic} · {contentPreview.variantLabel}
+                  <h2 className="text-lg font-semibold">每日小红书内容</h2>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-aura-muted">
+                    选择一个内容主题，自动生成标题、正文、标签和配图方案。生图提示词已隐藏，仅在服务端用于调用 API。
                   </p>
                 </div>
-                <button className={secondaryButtonClass} type="button" onClick={() => setContentNonce((current) => current + 1)}>
-                  换一版
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    className={secondaryButtonClass}
+                    type="button"
+                    onClick={() => copyText(formatFashionSeedingContent(contentPreview), "已复制小红书内容全文。", setContentMessage)}
+                  >
+                    复制全文
+                  </button>
+                  <button
+                    className={primaryButtonClass}
+                    type="button"
+                    onClick={() => {
+                      setContentMessage("");
+                      setContentNonce((current) => current + 1);
+                    }}
+                  >
+                    生成小红书内容
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">标题</p>
-                  <p className="mt-2 rounded-lg bg-white p-3 text-base font-medium ring-1 ring-aura-beige">{primaryTitle}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">正文</p>
-                  <p className="mt-2 whitespace-pre-line rounded-lg bg-white p-3 text-sm leading-7 ring-1 ring-aura-beige">{contentPreview.body}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">标签</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {contentPreview.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-[#EEF0E8] px-3 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
-                        {tag}
-                      </span>
+              <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_0.7fr_0.7fr]">
+                <label className="block space-y-2">
+                  <span className={labelClass}>内容主题</span>
+                  <select
+                    className={inputClass}
+                    value={contentTopic}
+                    onChange={(event) => {
+                      setContentTopic(event.target.value as FashionSeedingTopic);
+                      setContentMessage("");
+                      setContentNonce(0);
+                    }}
+                  >
+                    {contentTopicOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>今日篇次</span>
+                  <select
+                    className={inputClass}
+                    value={dailySlot}
+                    onChange={(event) => {
+                      setDailySlot(Number(event.target.value) as FashionSeedingDailySlot);
+                      setContentMessage("");
+                      setContentNonce(0);
+                    }}
+                  >
+                    {fashionSeedingDailySlotOptions.map((option) => (
+                      <option key={option} value={option}>
+                        今日第 {option} 篇
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>配图数量</span>
+                  <select
+                    className={inputClass}
+                    value={imageCount}
+                    onChange={(event) => {
+                      setImageCount(Number(event.target.value) as 3 | 5);
+                      setContentMessage("");
+                    }}
+                  >
+                    <option value={3}>3 张</option>
+                    <option value={5}>5 张</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+                <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">
+                      {contentPreview.dateKey}｜今日第 {contentPreview.dailySlot} 篇｜{contentPreview.variantLabel}
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-aura-charcoal">{contentPreview.topic}</h3>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-aura-charcoal">标题备选</h4>
+                    {contentPreview.titles.map((title) => (
+                      <p key={title} className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-charcoal ring-1 ring-aura-beige/70">
+                        {title}
+                      </p>
                     ))}
                   </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-aura-charcoal">正文</h4>
+                    <p className="whitespace-pre-line rounded-lg bg-aura-cream px-4 py-3 text-sm leading-7 text-aura-charcoal ring-1 ring-aura-beige/70">
+                      {contentPreview.body}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-aura-charcoal">标签</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {contentPreview.tags.map((tag) => (
+                        <span key={tag} className="rounded-full bg-[#EEF0E8] px-3 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-aura-charcoal">内容逻辑</h4>
+                    <p className="rounded-lg bg-[#F6ECEA] px-4 py-3 text-sm leading-6 text-aura-muted ring-1 ring-[#E8CFC9]">
+                      {contentPreview.note}
+                    </p>
+                  </div>
+
+                  {contentMessage && <p className="text-sm text-aura-muted">{contentMessage}</p>}
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                    <p className="text-sm font-semibold">配图卡片</p>
+                    <p className="mt-2 text-sm leading-6 text-aura-muted">
+                      每张卡片都有独立的服务端生图参数。提示词不在前端展示，也不提供复制入口。
+                    </p>
+                  </div>
+
+                  {contentPreview.images.map((image, index) => (
+                    <article key={`${image.name}-${index}`} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-aura-charcoal">{image.name}</h3>
+                          <p className="mt-1 text-sm leading-6 text-aura-muted">{image.purpose}</p>
+                        </div>
+                        <span className="rounded-full bg-aura-cream px-3 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                          提示词已隐藏
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 text-sm leading-6 text-aura-muted sm:grid-cols-2">
+                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">配图建议：{image.description}</p>
+                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">
+                          参数：{image.params.imageType}｜{image.params.scenePreference}｜{image.params.lightPreference}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 text-xs text-aura-muted">生图提示词仅在服务端生成和调用，不在前端展示。</div>
+                    </article>
+                  ))}
                 </div>
               </div>
             </section>
