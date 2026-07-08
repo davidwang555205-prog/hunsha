@@ -573,11 +573,199 @@ function App() {
         ) : (
           <>
             <section className={panelClass}>
+              <div className="mb-5">
+                <h2 className="text-lg font-semibold">生成设置</h2>
+                <p className="mt-1 text-sm text-aura-muted">上传参考图后生成图片，最终生图提示词只在服务端生成和调用。</p>
+              </div>
+
+              <div className="space-y-5">
+                <ReferenceImageUploader onChange={setReferenceFiles} />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-2">
+                    <span className={labelClass}>品类</span>
+                    <select className={inputClass} value={params.productCategory} onChange={(event) => handleCategoryChange(event.target.value as ProductCategory)}>
+                      {productCategoryOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className={labelClass}>款式</span>
+                    <select
+                      className={inputClass}
+                      value={params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle}
+                      onChange={(event) => {
+                        if (params.productCategory === "婚纱 / 礼服") {
+                          updateParams((current) => updateField(current, "bridalStyle", event.target.value as BridalStyle));
+                        } else {
+                          updateParams((current) => updateField(current, "dressStyle", event.target.value as DressStyle));
+                        }
+                      }}
+                    >
+                      {(params.productCategory === "婚纱 / 礼服" ? bridalStyleOptions : dressStyleOptions).map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <label className="block space-y-2">
+                  <span className={labelClass}>自定义款式名称</span>
+                  <input
+                    className={inputClass}
+                    value={params.customProductName}
+                    onChange={(event) => updateParams((current) => updateField(current, "customProductName", event.target.value))}
+                    placeholder="Pearl Satin A-line"
+                  />
+                </label>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-2">
+                    <span className={labelClass}>图片类型</span>
+                    <select className={inputClass} value={params.imageType} onChange={(event) => handleImageTypeChange(event.target.value as ImageType)}>
+                      {imageTypeOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className={labelClass}>场景</span>
+                    <select
+                      className={inputClass}
+                      value={params.scenePreference}
+                      onChange={(event) => updateParams((current) => updateField(current, "scenePreference", event.target.value as ScenePreference))}
+                    >
+                      {sceneOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-2">
+                    <span className={labelClass}>模特</span>
+                    <select
+                      className={inputClass}
+                      value={params.modelChoice}
+                      onChange={(event) => updateParams((current) => updateField(current, "modelChoice", event.target.value as ModelChoice))}
+                    >
+                      {FASHION_MODEL_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className={labelClass}>季节</span>
+                    <select className={inputClass} value={params.season} onChange={(event) => updateParams((current) => updateField(current, "season", event.target.value as Season))}>
+                      {seasonOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="block space-y-2">
+                    <span className={labelClass}>光线</span>
+                    <select
+                      className={inputClass}
+                      value={params.lightPreference}
+                      onChange={(event) => updateParams((current) => updateField(current, "lightPreference", event.target.value as LightPreference))}
+                    >
+                      {lightPreferenceOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className={labelClass}>尺寸</span>
+                    <select className={inputClass} value={size} onChange={(event) => setSize(event.target.value)}>
+                      {sizeOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className={labelClass}>质量</span>
+                    <select className={inputClass} value={quality} onChange={(event) => setQuality(event.target.value)}>
+                      {qualityOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <label className="block space-y-2">
+                  <span className={labelClass}>补充要求</span>
+                  <textarea
+                    className={`${inputClass} min-h-24`}
+                    value={params.extraRequirement}
+                    onChange={(event) => updateParams((current) => updateField(current, "extraRequirement", event.target.value))}
+                    placeholder="例如：保留缎面垂坠，背景干净，避免夸张摆拍。"
+                  />
+                </label>
+
+                <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
+                  {isGenerating ? "生成中..." : "一键生图"}
+                </button>
+                {statusMessage && <p className="rounded-lg bg-white px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
+
+                {latestRecord?.images.length ? (
+                  <div className="space-y-3 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
+                      {latestRecord.images.length > 1 && (
+                        <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
+                          保存全部图片
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {latestRecord.images.map((image, index) => (
+                        <button
+                          key={image.id}
+                          className="group block overflow-hidden rounded-lg bg-aura-cream text-left ring-1 ring-aura-beige transition hover:ring-aura-clay focus:outline-none focus:ring-2 focus:ring-aura-clay"
+                          type="button"
+                          onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}
+                        >
+                          <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
+                          <span className="block px-3 py-2 text-xs font-medium text-aura-muted group-hover:text-aura-charcoal">
+                            图 {index + 1} · 点击保存
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className={panelClass}>
               <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">每日小红书内容</h2>
                   <p className="mt-1 max-w-3xl text-sm leading-6 text-aura-muted">
-                    选择一个内容主题，自动生成标题、正文、标签和配图方案。生图提示词已隐藏，仅在服务端用于调用 API。
+                    选择一个内容主题，自动生成标题、正文、标签和配图方案。最终生图提示词已隐藏。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -654,46 +842,6 @@ function App() {
                 </label>
               </div>
 
-              <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_220px] lg:items-end">
-                <ReferenceImageUploader onChange={setReferenceFiles} />
-                <div className="space-y-2">
-                  <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
-                    {isGenerating ? "生成中..." : "一键生图"}
-                  </button>
-                  <p className="text-xs leading-5 text-aura-muted">按当前内容和配图数量生成 {contentPreview.images.length} 张图片。</p>
-                </div>
-              </div>
-
-              {statusMessage && <p className="mb-5 rounded-lg bg-white px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
-
-              {latestRecord?.images.length ? (
-                <div className="mb-6 space-y-3 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
-                    {latestRecord.images.length > 1 && (
-                      <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
-                        保存全部图片
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {latestRecord.images.map((image, index) => (
-                      <button
-                        key={image.id}
-                        className="group block overflow-hidden rounded-lg bg-aura-cream text-left ring-1 ring-aura-beige transition hover:ring-aura-clay focus:outline-none focus:ring-2 focus:ring-aura-clay"
-                        type="button"
-                        onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}
-                      >
-                        <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
-                        <span className="block px-3 py-2 text-xs font-medium text-aura-muted group-hover:text-aura-charcoal">
-                          图 {index + 1} · 点击保存
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
               <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
                 <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
                   <div>
@@ -733,6 +881,45 @@ function App() {
                       ))}
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-aura-charcoal">内容逻辑</h4>
+                    <p className="rounded-lg bg-[#F6ECEA] px-4 py-3 text-sm leading-6 text-aura-muted ring-1 ring-[#E8CFC9]">
+                      {contentPreview.note}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                  <p className="text-sm font-semibold">配图方案</p>
+                  <p className="mt-2 text-sm leading-6 text-aura-muted">
+                    每张配图保留独立的生成方向和参数摘要。最终英文生图提示词只在服务端生成和调用，不在前端展示。
+                  </p>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {contentPreview.images.map((image, index) => (
+                    <article key={`${image.name}-${index}`} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-aura-charcoal">{image.name}</h3>
+                          <p className="mt-1 text-sm leading-6 text-aura-muted">{image.purpose}</p>
+                        </div>
+                        <span className="rounded-full bg-aura-cream px-3 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                          最终提示词已隐藏
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 text-sm leading-6 text-aura-muted sm:grid-cols-2">
+                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">配图建议：{image.description}</p>
+                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">
+                          参数：{image.params.imageType}｜{image.params.scenePreference}｜{image.params.lightPreference}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </div>
             </section>
