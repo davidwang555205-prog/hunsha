@@ -2,15 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 
 type ReferenceImageUploaderProps = {
+  files?: File[];
   onChange?: (files: File[]) => void;
 };
 
 const maxFileSize = 10 * 1024 * 1024;
 const acceptedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-export function ReferenceImageUploader({ onChange }: ReferenceImageUploaderProps) {
-  const [files, setFiles] = useState<File[]>([]);
+export function ReferenceImageUploader({ files: controlledFiles, onChange }: ReferenceImageUploaderProps) {
+  const [internalFiles, setInternalFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
+  const files = controlledFiles ?? internalFiles;
 
   const previews = useMemo(
     () =>
@@ -28,7 +30,9 @@ export function ReferenceImageUploader({ onChange }: ReferenceImageUploaderProps
   }, [previews]);
 
   const commitFiles = (nextFiles: File[]) => {
-    setFiles(nextFiles);
+    if (!controlledFiles) {
+      setInternalFiles(nextFiles);
+    }
     onChange?.(nextFiles);
   };
 

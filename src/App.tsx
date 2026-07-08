@@ -214,6 +214,7 @@ function App() {
   const [quality, setQuality] = useState(defaultImageQuality);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [generationFeedbackPanel, setGenerationFeedbackPanel] = useState<"settings" | "content">("content");
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [summary, setSummary] = useState<MeResponse["summary"] | null>(null);
@@ -466,6 +467,54 @@ function App() {
       setIsGenerating(false);
     }
   };
+
+  const renderImageGenerationActions = (panel: "settings" | "content") => (
+    <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+      <ReferenceImageUploader files={referenceFiles} onChange={setReferenceFiles} />
+      <button
+        className={`${primaryButtonClass} w-full`}
+        type="button"
+        disabled={isGenerating}
+        onClick={() => {
+          setGenerationFeedbackPanel(panel);
+          void handleGenerate();
+        }}
+      >
+        {isGenerating ? "生成中..." : "一键生图"}
+      </button>
+      {generationFeedbackPanel === panel && statusMessage && (
+        <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
+      )}
+
+      {generationFeedbackPanel === panel && latestRecord?.images.length ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
+            {latestRecord.images.length > 1 && (
+              <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
+                保存全部图片
+              </button>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {latestRecord.images.map((image, index) => (
+              <button
+                key={image.id}
+                className="group block overflow-hidden rounded-lg bg-aura-cream text-left ring-1 ring-aura-beige transition hover:ring-aura-clay focus:outline-none focus:ring-2 focus:ring-aura-clay"
+                type="button"
+                onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}
+              >
+                <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
+                <span className="block px-3 py-2 text-xs font-medium text-aura-muted group-hover:text-aura-charcoal">
+                  图 {index + 1} · 点击保存
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 
   if (!session) {
     return (
@@ -722,6 +771,8 @@ function App() {
                     placeholder="例如：保留缎面垂坠，背景干净，避免夸张摆拍。"
                   />
                 </label>
+
+                {renderImageGenerationActions("settings")}
               </div>
             </section>
 
@@ -807,41 +858,7 @@ function App() {
                 </label>
               </div>
 
-              <div className="mb-5 space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                <ReferenceImageUploader onChange={setReferenceFiles} />
-                <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
-                  {isGenerating ? "生成中..." : "一键生图"}
-                </button>
-                {statusMessage && <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
-
-                {latestRecord?.images.length ? (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
-                      {latestRecord.images.length > 1 && (
-                        <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
-                          保存全部图片
-                        </button>
-                      )}
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {latestRecord.images.map((image, index) => (
-                        <button
-                          key={image.id}
-                          className="group block overflow-hidden rounded-lg bg-aura-cream text-left ring-1 ring-aura-beige transition hover:ring-aura-clay focus:outline-none focus:ring-2 focus:ring-aura-clay"
-                          type="button"
-                          onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}
-                        >
-                          <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
-                          <span className="block px-3 py-2 text-xs font-medium text-aura-muted group-hover:text-aura-charcoal">
-                            图 {index + 1} · 点击保存
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              <div className="mb-5">{renderImageGenerationActions("content")}</div>
 
               <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
                 <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
