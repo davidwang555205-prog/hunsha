@@ -658,13 +658,41 @@ function App() {
                 <ReferenceImageUploader onChange={setReferenceFiles} />
                 <div className="space-y-2">
                   <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
-                    {isGenerating ? "生成中..." : `生成 ${contentPreview.images.length} 张图`}
+                    {isGenerating ? "生成中..." : "一键生图"}
                   </button>
-                  <p className="text-xs leading-5 text-aura-muted">按当前内容和配图数量生成对应图片。</p>
+                  <p className="text-xs leading-5 text-aura-muted">按当前内容和配图数量生成 {contentPreview.images.length} 张图片。</p>
                 </div>
               </div>
 
               {statusMessage && <p className="mb-5 rounded-lg bg-white px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
+
+              {latestRecord?.images.length ? (
+                <div className="mb-6 space-y-3 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
+                    {latestRecord.images.length > 1 && (
+                      <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
+                        保存全部图片
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {latestRecord.images.map((image, index) => (
+                      <button
+                        key={image.id}
+                        className="group block overflow-hidden rounded-lg bg-aura-cream text-left ring-1 ring-aura-beige transition hover:ring-aura-clay focus:outline-none focus:ring-2 focus:ring-aura-clay"
+                        type="button"
+                        onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}
+                      >
+                        <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
+                        <span className="block px-3 py-2 text-xs font-medium text-aura-muted group-hover:text-aura-charcoal">
+                          图 {index + 1} · 点击保存
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
                 <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
@@ -708,61 +736,6 @@ function App() {
                 </div>
               </div>
             </section>
-            {latestRecord && (
-              <section className={panelClass}>
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">最新结果</h2>
-                    <p className={mutedClass}>{formatDate(latestRecord.createdAt)} · {latestRecord.model}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.title, "已复制标题。")}>
-                      复制标题
-                    </button>
-                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.body, "已复制正文。")}>
-                      复制正文
-                    </button>
-                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.tags.join(" "), "已复制标签。")}>
-                      复制标签
-                    </button>
-                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(contentText(latestRecord), "已复制标题、正文和标签。")}>
-                      复制全部文案
-                    </button>
-                    {latestRecord.images.length > 0 && (
-                      <button className={primaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
-                        下载全部图片
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mb-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                  <h3 className="text-base font-semibold">{latestRecord.title}</h3>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-aura-muted">{latestRecord.body}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {latestRecord.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {latestRecord.images.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {latestRecord.images.map((image, index) => (
-                      <article key={image.id} className="rounded-lg bg-white p-3 ring-1 ring-aura-beige">
-                        <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
-                        <p className="mt-2 truncate text-xs text-aura-muted">{image.name || `图片 ${index + 1}`}</p>
-                        <button className={`${primaryButtonClass} mt-3 w-full`} type="button" onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}>
-                          下载图 {index + 1}
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
           </>
         )}
 
