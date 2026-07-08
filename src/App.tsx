@@ -406,6 +406,12 @@ function App() {
     URL.revokeObjectURL(objectUrl);
   };
 
+  const downloadImages = async (images: GeneratedImage[], title: string) => {
+    for (const [index, image] of images.entries()) {
+      await downloadImage(image, `${title}-${index + 1}`);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!session) return;
     if (!referenceFiles.length) {
@@ -566,27 +572,12 @@ function App() {
           </section>
         ) : (
           <>
-            <section className="grid gap-4 md:grid-cols-3">
-              <div className={panelClass}>
-                <p className="text-sm text-aura-muted">请求次数</p>
-                <p className="mt-2 text-2xl font-semibold">{summary?.requestCount ?? 0}</p>
-              </div>
-              <div className={panelClass}>
-                <p className="text-sm text-aura-muted">成功生成</p>
-                <p className="mt-2 text-2xl font-semibold">{summary?.generatedImageCount ?? 0}</p>
-              </div>
-              <div className={panelClass}>
-                <p className="text-sm text-aura-muted">历史保存</p>
-                <p className="mt-2 text-2xl font-semibold">{summary?.retentionDays ?? 180} 天</p>
-              </div>
-            </section>
-
             <section className={panelClass}>
               <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">每日小红书内容</h2>
                   <p className="mt-1 max-w-3xl text-sm leading-6 text-aura-muted">
-                    选择一个内容主题，自动生成标题、正文、标签和配图方案。
+                    选择一个内容主题，自动生成标题、正文、标签和配图方案。生图提示词已隐藏，仅在服务端用于调用 API。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -714,49 +705,9 @@ function App() {
                       ))}
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-aura-charcoal">内容逻辑</h4>
-                    <p className="rounded-lg bg-[#F6ECEA] px-4 py-3 text-sm leading-6 text-aura-muted ring-1 ring-[#E8CFC9]">
-                      {contentPreview.note}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                <div className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                  <p className="text-sm font-semibold">配图方案</p>
-                  <p className="mt-2 text-sm leading-6 text-aura-muted">
-                    每张配图保留独立的生成方向和参数摘要。生图关键词只在服务端生成和调用，不在前端展示。
-                  </p>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {contentPreview.images.map((image, index) => (
-                    <article key={`${image.name}-${index}`} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-aura-charcoal">{image.name}</h3>
-                          <p className="mt-1 text-sm leading-6 text-aura-muted">{image.purpose}</p>
-                        </div>
-                        <span className="rounded-full bg-aura-cream px-3 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                          提示词已隐藏
-                        </span>
-                      </div>
-
-                      <div className="mt-4 grid gap-3 text-sm leading-6 text-aura-muted sm:grid-cols-2">
-                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">配图建议：{image.description}</p>
-                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">
-                          参数：{image.params.imageType}｜{image.params.scenePreference}｜{image.params.lightPreference}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
                 </div>
               </div>
             </section>
-
             {latestRecord && (
               <section className={panelClass}>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -777,6 +728,11 @@ function App() {
                     <button className={secondaryButtonClass} type="button" onClick={() => copyText(contentText(latestRecord), "已复制标题、正文和标签。")}>
                       复制全部文案
                     </button>
+                    {latestRecord.images.length > 0 && (
+                      <button className={primaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
+                        下载全部图片
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -810,7 +766,8 @@ function App() {
           </>
         )}
 
-        <section className={panelClass}>
+        {activeView === "admin" && isAdmin && (
+          <section className={panelClass}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">账号管理</h2>
               <span className="text-sm text-aura-muted">共 {accounts.length} 个账号</span>
@@ -893,11 +850,12 @@ function App() {
                 </tbody>
               </table>
             </div>
-        </section>
+          </section>
+        )}
 
         {activeView === "admin" && isAdmin && (
           <section className={panelClass}>
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">生图历史</h2>
               <span className="text-sm text-aura-muted">最近 {history.length} 条</span>
             </div>
@@ -957,6 +915,11 @@ function App() {
                         <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.tags.join(" "), "已复制标签。")}>
                           复制标签
                         </button>
+                        {record.images.length > 0 && (
+                          <button className={primaryButtonClass} type="button" onClick={() => downloadImages(record.images, record.title)}>
+                            下载全部图片
+                          </button>
+                        )}
                         {record.images.map((image, index) => (
                           <button key={image.id} className={primaryButtonClass} type="button" onClick={() => downloadImage(image, `${record.title}-${index + 1}`)}>
                             下载图 {index + 1}
