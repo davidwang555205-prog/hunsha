@@ -41,6 +41,11 @@ const imageTimeoutMs = Number(process.env.WALA_IMAGE_TIMEOUT_MS || 180000);
 const imageRetryAttempts = Math.max(1, Number(process.env.WALA_IMAGE_RETRY_ATTEMPTS || 3));
 const maxBodyBytes = 80 * 1024 * 1024;
 const sessionTtlMs = 24 * 60 * 60 * 1000;
+const maxDailyImageLimit = 1000;
+const defaultDailyImageLimit = (() => {
+  const value = Number(process.env.DEFAULT_DAILY_IMAGE_LIMIT || 20);
+  return Number.isFinite(value) ? Math.max(0, Math.min(maxDailyImageLimit, Math.floor(value))) : 20;
+})();
 const sessionSecret =
   process.env.APP_SESSION_SECRET || process.env.APP_ADMIN_PASSWORD || "bridal-content-studio-session-secret";
 
@@ -58,13 +63,20 @@ function verifyPassword(password, user) {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(user.passwordHash, "hex"));
 }
 
-function makeUser(id, username, displayName, role, password) {
+function normalizeDailyImageLimit(value, fallback = defaultDailyImageLimit) {
+  const limit = Number(value);
+  if (!Number.isFinite(limit)) return fallback;
+  return Math.max(0, Math.min(maxDailyImageLimit, Math.floor(limit)));
+}
+
+function makeUser(id, username, displayName, role, password, dailyImageLimit = defaultDailyImageLimit) {
   const passwordParts = hashPassword(password);
   return {
     id,
     username,
     displayName,
     role,
+    dailyImageLimit: normalizeDailyImageLimit(dailyImageLimit),
     passwordSalt: passwordParts.salt,
     passwordHash: passwordParts.hash,
     createdAt: nowIso()
@@ -88,7 +100,12 @@ async function ensureDataFiles() {
 async function readDb() {
   await ensureDataFiles();
   const db = JSON.parse(await readFile(dbPath, "utf8"));
-  return purgeExpiredHistory(db);
+  const normalizedDb = purgeExpiredHistory(normalizeDb(db));
+  if (normalizedDb.__changed) {
+    delete normalizedDb.__changed;
+    await writeDb(normalizedDb);
+  }
+  return normalizedDb;
 }
 
 async function writeDb(db) {
@@ -102,12 +119,26 @@ function purgeExpiredHistory(db) {
   return db;
 }
 
+function normalizeDb(db) {
+  db.users = Array.isArray(db.users) ? db.users : [];
+  db.history = Array.isArray(db.history) ? db.history : [];
+  for (const user of db.users) {
+    const nextLimit = normalizeDailyImageLimit(user.dailyImageLimit);
+    if (user.dailyImageLimit !== nextLimit) {
+      user.dailyImageLimit = nextLimit;
+      db.__changed = true;
+    }
+  }
+  return db;
+}
+
 function publicUser(user) {
   return {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
-    role: user.role
+    role: user.role,
+    dailyImageLimit: normalizeDailyImageLimit(user.dailyImageLimit)
   };
 }
 
@@ -203,6 +234,17 @@ function historyForUser(db, user) {
   return db.history.filter((record) => record.userId === user.id);
 }
 
+function shanghaiDateKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function generatedImagesForDate(db, userId, dateKey = shanghaiDateKey()) {
+  return (db.history || [])
+    .filter((record) => record.userId === userId && shanghaiDateKey(record.createdAt) === dateKey)
+    .reduce((count, record) => count + (record.images?.length || 0), 0);
+}
+
 function buildAccountSummaries(db) {
   return db.users.map((user) => {
     const records = db.history.filter((record) => record.userId === user.id);
@@ -213,6 +255,7 @@ function buildAccountSummaries(db) {
       successCount: successfulRecords.length,
       failedCount: records.length - successfulRecords.length,
       generatedImageCount: records.reduce((count, record) => count + (record.images?.length || 0), 0),
+      dailyGeneratedImageCount: generatedImagesForDate(db, user.id),
       lastGeneratedAt: records[0]?.createdAt || null
     };
   });
@@ -462,6 +505,7 @@ async function handleCreateUser(req, res) {
   const username = normalizeUsername(body.username);
   const displayName = String(body.displayName || username).trim() || username;
   const password = String(body.password || "");
+  const dailyImageLimit = normalizeDailyImageLimit(body.dailyImageLimit);
 
   if (!/^[a-z0-9_.-]{3,32}$/.test(username)) {
     return sendError(res, 400, "账号只能使用 3-32 位小写字母、数字、下划线、点或短横线。");
@@ -475,12 +519,36 @@ async function handleCreateUser(req, res) {
     return sendError(res, 409, "该账号已存在。");
   }
 
-  const user = makeUser(crypto.randomUUID(), username, displayName.slice(0, 40), "user", password);
+  const user = makeUser(crypto.randomUUID(), username, displayName.slice(0, 40), "user", password, dailyImageLimit);
   db.users.push(user);
   await writeDb(db);
 
   return sendJson(res, 201, {
     user: publicUser(user),
+    accounts: buildAccountSummaries(db)
+  });
+}
+
+async function handleUpdateUser(req, res, userId) {
+  const db = await readDb();
+  const currentUser = getSessionUser(req, db);
+  if (!currentUser) return sendError(res, 401, "登录已失效。");
+  if (currentUser.role !== "admin") return sendError(res, 403, "只有管理员可以修改账号设置。");
+
+  const targetUser = db.users.find((user) => user.id === userId);
+  if (!targetUser) return sendError(res, 404, "账号不存在。");
+
+  const body = await parseJsonBody(req);
+  const rawLimit = Number(body.dailyImageLimit);
+  if (!Number.isFinite(rawLimit) || rawLimit < 0 || rawLimit > maxDailyImageLimit) {
+    return sendError(res, 400, `每日生成图片上限需要在 0-${maxDailyImageLimit} 之间。`);
+  }
+
+  targetUser.dailyImageLimit = normalizeDailyImageLimit(rawLimit);
+  await writeDb(db);
+
+  return sendJson(res, 200, {
+    user: publicUser(targetUser),
     accounts: buildAccountSummaries(db)
   });
 }
@@ -513,6 +581,18 @@ async function handleGenerate(req, res) {
 
   if (!promptParamsList.length) return sendError(res, 400, "缺少生图参数。");
   if (!title || !textBody || !tags.length) return sendError(res, 400, "缺少标题、正文或标签。");
+
+  const dailyImageLimit = normalizeDailyImageLimit(user.dailyImageLimit);
+  const generatedToday = generatedImagesForDate(db, user.id);
+  const requestedImageCount = promptParamsList.length;
+  if (generatedToday + requestedImageCount > dailyImageLimit) {
+    const remaining = Math.max(0, dailyImageLimit - generatedToday);
+    return sendError(
+      res,
+      429,
+      `今日生成图片额度不足。当前账号每日上限 ${dailyImageLimit} 张，今日已生成 ${generatedToday} 张，剩余 ${remaining} 张，本次需要 ${requestedImageCount} 张。请联系管理员调整上限或明天再试。`
+    );
+  }
 
   const recordId = crypto.randomUUID();
   const promptPlans = promptParamsList.map((promptParams, index) => ({
@@ -675,6 +755,10 @@ async function handleRequest(req, res) {
     if (url.pathname === "/api/login" && req.method === "POST") return await handleLogin(req, res);
     if (url.pathname === "/api/me" && req.method === "GET") return await handleMe(req, res);
     if (url.pathname === "/api/admin/users" && req.method === "POST") return await handleCreateUser(req, res);
+    if (url.pathname.startsWith("/api/admin/users/") && req.method === "PATCH") {
+      const userId = decodeURIComponent(url.pathname.slice("/api/admin/users/".length));
+      return await handleUpdateUser(req, res, userId);
+    }
     if (url.pathname === "/api/history" && req.method === "GET") return await handleHistory(req, res);
     if (url.pathname === "/api/generate" && req.method === "POST") return await handleGenerate(req, res);
     if (url.pathname.startsWith("/api/generated/") && req.method === "GET") return await serveGenerated(req, res, url.pathname);

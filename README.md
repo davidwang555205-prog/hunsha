@@ -6,6 +6,7 @@
 
 - 账号密码登录
 - 管理员查看各账号生图使用情况
+- 新账号默认每日生成图片上限 20 张，管理员可在后台调整
 - 上传参考图
 - 服务端代理调用 WalaAPI 生图接口
 - 隐藏生图 Prompt，不在前台展示关键词
@@ -25,6 +26,7 @@ WALA_IMAGE_MODEL=gpt-image-2
 WALA_IMAGE_QUALITY=medium
 APP_ADMIN_PASSWORD=admin123
 APP_USER_PASSWORD=user123
+DEFAULT_DAILY_IMAGE_LIMIT=20
 HISTORY_RETENTION_DAYS=180
 WALA_IMAGE_TIMEOUT_MS=180000
 WALA_IMAGE_RETRY_ATTEMPTS=3

@@ -28,6 +28,7 @@ type ApiUser = {
   username: string;
   displayName: string;
   role: "admin" | "user";
+  dailyImageLimit: number;
 };
 
 type Session = {
@@ -41,6 +42,7 @@ type AccountSummary = {
   successCount: number;
   failedCount: number;
   generatedImageCount: number;
+  dailyGeneratedImageCount: number;
   lastGeneratedAt: string | null;
 };
 
@@ -89,6 +91,11 @@ type GenerateResponse = {
 };
 
 type CreateUserResponse = {
+  user: ApiUser;
+  accounts: AccountSummary[];
+};
+
+type UpdateUserResponse = {
   user: ApiUser;
   accounts: AccountSummary[];
 };
@@ -222,8 +229,11 @@ function App() {
   const [newAccountUsername, setNewAccountUsername] = useState("");
   const [newAccountDisplayName, setNewAccountDisplayName] = useState("");
   const [newAccountPassword, setNewAccountPassword] = useState("");
+  const [newAccountDailyImageLimit, setNewAccountDailyImageLimit] = useState("20");
   const [newAccountMessage, setNewAccountMessage] = useState("");
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [limitDrafts, setLimitDrafts] = useState<Record<string, string>>({});
+  const [updatingLimitUserId, setUpdatingLimitUserId] = useState("");
 
   const sceneOptions = useMemo(
     () => getCompatibleSceneOptions(params.productCategory, params.imageType),
@@ -334,19 +344,22 @@ function App() {
     setIsCreatingAccount(true);
 
     try {
+      const dailyImageLimit = Math.max(0, Math.floor(Number(newAccountDailyImageLimit)));
       const payload = await apiRequest<CreateUserResponse>("/api/admin/users", {
         method: "POST",
         body: JSON.stringify({
           username: newAccountUsername,
           displayName: newAccountDisplayName,
-          password: newAccountPassword
+          password: newAccountPassword,
+          dailyImageLimit
         })
       });
       setAccounts(payload.accounts || []);
       setNewAccountUsername("");
       setNewAccountDisplayName("");
       setNewAccountPassword("");
-      setNewAccountMessage(`已开通账号：${payload.user.username}`);
+      setNewAccountDailyImageLimit("20");
+      setNewAccountMessage(`已开通账号：${payload.user.username}，每日上限 ${payload.user.dailyImageLimit} 张。`);
       await refreshData();
     } catch (error) {
       if (isUnauthorizedError(error)) {
@@ -357,6 +370,41 @@ function App() {
       setNewAccountMessage(error instanceof Error ? error.message : "开通账号失败。");
     } finally {
       setIsCreatingAccount(false);
+    }
+  };
+
+  const handleUpdateDailyImageLimit = async (userId: string) => {
+    if (!session || session.user.role !== "admin") return;
+    const account = accounts.find((item) => item.user.id === userId);
+    if (!account) return;
+
+    const draft = limitDrafts[userId] ?? String(account.user.dailyImageLimit);
+    const dailyImageLimit = Math.max(0, Math.floor(Number(draft)));
+    setNewAccountMessage("");
+    setUpdatingLimitUserId(userId);
+
+    try {
+      const payload = await apiRequest<UpdateUserResponse>(`/api/admin/users/${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ dailyImageLimit })
+      });
+      setAccounts(payload.accounts || []);
+      setLimitDrafts((current) => {
+        const next = { ...current };
+        delete next[userId];
+        return next;
+      });
+      setNewAccountMessage(`已更新 ${payload.user.username} 的每日上限为 ${payload.user.dailyImageLimit} 张。`);
+      await refreshData();
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        handleLogout();
+        setLoginError(error.message);
+        return;
+      }
+      setNewAccountMessage(error instanceof Error ? error.message : "更新每日上限失败。");
+    } finally {
+      setUpdatingLimitUserId("");
     }
   };
 
@@ -1002,7 +1050,7 @@ function App() {
 
             <div className="mb-6 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
               <h3 className="text-sm font-semibold text-aura-charcoal">开通使用者账号</h3>
-              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_1fr_150px_auto]">
                 <label className="block space-y-2">
                   <span className={labelClass}>账号</span>
                   <input
@@ -1034,12 +1082,31 @@ function App() {
                     disabled={isCreatingAccount}
                   />
                 </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>每日图片上限</span>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min={0}
+                    max={1000}
+                    value={newAccountDailyImageLimit}
+                    onChange={(event) => setNewAccountDailyImageLimit(event.target.value)}
+                    disabled={isCreatingAccount}
+                  />
+                </label>
                 <div className="flex items-end">
                   <button
                     className={primaryButtonClass}
                     type="button"
                     onClick={handleCreateAccount}
-                    disabled={isCreatingAccount || !newAccountUsername.trim() || newAccountPassword.length < 6}
+                    disabled={
+                      isCreatingAccount ||
+                      !newAccountUsername.trim() ||
+                      newAccountPassword.length < 6 ||
+                      !Number.isFinite(Number(newAccountDailyImageLimit)) ||
+                      Number(newAccountDailyImageLimit) < 0 ||
+                      Number(newAccountDailyImageLimit) > 1000
+                    }
                   >
                     {isCreatingAccount ? "开通中..." : "开通账号"}
                   </button>
@@ -1050,7 +1117,7 @@ function App() {
 
             <h3 className="mb-4 text-sm font-semibold text-aura-charcoal">账号使用情况</h3>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[980px] border-collapse text-left text-sm">
                 <thead className="text-aura-muted">
                   <tr>
                     <th className="border-b border-aura-beige py-2">账号</th>
@@ -1059,6 +1126,7 @@ function App() {
                     <th className="border-b border-aura-beige py-2">成功</th>
                     <th className="border-b border-aura-beige py-2">失败</th>
                     <th className="border-b border-aura-beige py-2">图片</th>
+                    <th className="border-b border-aura-beige py-2">今日 / 上限</th>
                     <th className="border-b border-aura-beige py-2">最近生成</th>
                   </tr>
                 </thead>
@@ -1071,6 +1139,32 @@ function App() {
                       <td className="border-b border-aura-beige/70 py-3">{account.successCount}</td>
                       <td className="border-b border-aura-beige/70 py-3">{account.failedCount}</td>
                       <td className="border-b border-aura-beige/70 py-3">{account.generatedImageCount}</td>
+                      <td className="border-b border-aura-beige/70 py-3">
+                        <div className="flex min-w-[190px] items-center gap-2">
+                          <span className="text-aura-muted">{account.dailyGeneratedImageCount} /</span>
+                          <input
+                            className="w-20 rounded-lg border border-aura-beige bg-white px-2 py-1.5 text-sm text-aura-charcoal outline-none transition focus:border-aura-clay"
+                            type="number"
+                            min={0}
+                            max={1000}
+                            value={limitDrafts[account.user.id] ?? String(account.user.dailyImageLimit)}
+                            onChange={(event) => setLimitDrafts((current) => ({ ...current, [account.user.id]: event.target.value }))}
+                          />
+                          <button
+                            className={secondaryButtonClass}
+                            type="button"
+                            disabled={
+                              updatingLimitUserId === account.user.id ||
+                              !Number.isFinite(Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit)) ||
+                              Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit) < 0 ||
+                              Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit) > 1000
+                            }
+                            onClick={() => void handleUpdateDailyImageLimit(account.user.id)}
+                          >
+                            {updatingLimitUserId === account.user.id ? "保存中" : "保存"}
+                          </button>
+                        </div>
+                      </td>
                       <td className="border-b border-aura-beige/70 py-3">{formatDate(account.lastGeneratedAt)}</td>
                     </tr>
                   ))}
