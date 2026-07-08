@@ -1104,7 +1104,7 @@ function App() {
                       <h4 className="text-sm font-semibold text-aura-charcoal">小红书生成图片</h4>
                       {latestRecord?.images.length ? (
                         <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
-                          下载全部图片
+                          一键下载{latestRecord.images.length}张图
                         </button>
                       ) : null}
                     </div>
@@ -1118,9 +1118,7 @@ function App() {
                         ))}
                       </div>
                     ) : (
-                      <div className="flex min-h-[240px] items-center justify-center rounded-lg bg-white text-sm text-aura-muted ring-1 ring-aura-beige/70">
-                        小红书内容生成后的图片放在这里
-                      </div>
+                      <div className="min-h-[240px] rounded-lg bg-white ring-1 ring-aura-beige/70" aria-label="小红书生成图片占位" />
                     )}
                   </div>
 
