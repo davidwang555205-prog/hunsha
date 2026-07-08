@@ -46,6 +46,7 @@ type AccountSummary = {
 
 type GeneratedImage = {
   id: string;
+  name?: string;
   url: string;
   downloadUrl: string;
   source: "local" | "remote";
@@ -413,20 +414,10 @@ function App() {
     }
 
     setIsGenerating(true);
-    setStatusMessage("");
+    setStatusMessage(`正在生成 ${contentPreview.images.length} 张图，可能需要数分钟...`);
 
     try {
-      const nextNonce = contentNonce + 1;
       const generationParams = { ...params, generationNonce: params.generationNonce + 1 };
-      const generatedContent = generateFashionSeedingContent({
-        productCategory: generationParams.productCategory,
-        baseParams: generationParams,
-        imageCount,
-        topic: contentTopic,
-        dailySlot,
-        contentNonce: nextNonce
-      });
-      const imagePlan = generatedContent.images[0];
       const uploads = await Promise.all(
         referenceFiles.slice(0, 4).map(async (file) => ({
           name: file.name,
@@ -439,11 +430,14 @@ function App() {
       const payload = await apiRequest<GenerateResponse>("/api/generate", {
         method: "POST",
         body: JSON.stringify({
-          promptParams: imagePlan.params,
-          title: generatedContent.titles[0],
-          body: generatedContent.body,
-          tags: generatedContent.tags,
-          topic: generatedContent.topic,
+          promptParamsList: contentPreview.images.map((image) => ({
+            ...image.params,
+            generatedImageName: image.name
+          })),
+          title: contentPreview.titles[0],
+          body: contentPreview.body,
+          tags: contentPreview.tags,
+          topic: contentPreview.topic,
           referenceImages: uploads,
           size,
           quality
@@ -451,9 +445,8 @@ function App() {
       });
 
       setParams(generationParams);
-      setContentNonce(nextNonce);
       setLatestRecord(payload.record);
-      setStatusMessage("生成完成。");
+      setStatusMessage(`生成完成，共 ${payload.record.images.length} 张。`);
       await refreshData();
     } catch (error) {
       if (isUnauthorizedError(error)) {
@@ -588,174 +581,12 @@ function App() {
               </div>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className={panelClass}>
-                <div className="mb-5">
-                  <h2 className="text-lg font-semibold">生成设置</h2>
-                  <p className="mt-1 text-sm text-aura-muted">上传参考图后生成图片，生图关键词在后台处理。</p>
-                </div>
-
-            <div className="space-y-5">
-              <ReferenceImageUploader onChange={setReferenceFiles} />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className={labelClass}>品类</span>
-                  <select className={inputClass} value={params.productCategory} onChange={(event) => handleCategoryChange(event.target.value as ProductCategory)}>
-                    {productCategoryOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-2">
-                  <span className={labelClass}>款式</span>
-                  <select
-                    className={inputClass}
-                    value={params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle}
-                    onChange={(event) => {
-                      if (params.productCategory === "婚纱 / 礼服") {
-                        updateParams((current) => updateField(current, "bridalStyle", event.target.value as BridalStyle));
-                      } else {
-                        updateParams((current) => updateField(current, "dressStyle", event.target.value as DressStyle));
-                      }
-                    }}
-                  >
-                    {(params.productCategory === "婚纱 / 礼服" ? bridalStyleOptions : dressStyleOptions).map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <label className="block space-y-2">
-                <span className={labelClass}>自定义款式名称</span>
-                <input
-                  className={inputClass}
-                  value={params.customProductName}
-                  onChange={(event) => updateParams((current) => updateField(current, "customProductName", event.target.value))}
-                  placeholder="Pearl Satin A-line"
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className={labelClass}>图片类型</span>
-                  <select className={inputClass} value={params.imageType} onChange={(event) => handleImageTypeChange(event.target.value as ImageType)}>
-                    {imageTypeOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-2">
-                  <span className={labelClass}>场景</span>
-                  <select
-                    className={inputClass}
-                    value={params.scenePreference}
-                    onChange={(event) => updateParams((current) => updateField(current, "scenePreference", event.target.value as ScenePreference))}
-                  >
-                    {sceneOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className={labelClass}>模特</span>
-                  <select
-                    className={inputClass}
-                    value={params.modelChoice}
-                    onChange={(event) => updateParams((current) => updateField(current, "modelChoice", event.target.value as ModelChoice))}
-                  >
-                    {FASHION_MODEL_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-2">
-                  <span className={labelClass}>季节</span>
-                  <select className={inputClass} value={params.season} onChange={(event) => updateParams((current) => updateField(current, "season", event.target.value as Season))}>
-                    {seasonOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <label className="block space-y-2">
-                  <span className={labelClass}>光线</span>
-                  <select
-                    className={inputClass}
-                    value={params.lightPreference}
-                    onChange={(event) => updateParams((current) => updateField(current, "lightPreference", event.target.value as LightPreference))}
-                  >
-                    {lightPreferenceOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-2">
-                  <span className={labelClass}>尺寸</span>
-                  <select className={inputClass} value={size} onChange={(event) => setSize(event.target.value)}>
-                    {sizeOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-2">
-                  <span className={labelClass}>质量</span>
-                  <select className={inputClass} value={quality} onChange={(event) => setQuality(event.target.value)}>
-                    {qualityOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <label className="block space-y-2">
-                <span className={labelClass}>补充要求</span>
-                <textarea
-                  className={`${inputClass} min-h-24`}
-                  value={params.extraRequirement}
-                  onChange={(event) => updateParams((current) => updateField(current, "extraRequirement", event.target.value))}
-                  placeholder="例如：保留缎面垂坠，背景干净，避免夸张摆拍。"
-                />
-              </label>
-
-              <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
-                {isGenerating ? "生成中..." : "一键生图"}
-              </button>
-              {statusMessage && <p className="rounded-lg bg-white px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
-            </div>
-          </div>
-
-          <div className="space-y-6">
             <section className={panelClass}>
               <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">每日小红书内容</h2>
                   <p className="mt-1 max-w-3xl text-sm leading-6 text-aura-muted">
-                    选择一个内容主题，自动生成标题、正文、标签和配图方案。生图提示词已隐藏，仅在服务端用于调用 API。
+                    选择一个内容主题，自动生成标题、正文、标签和配图方案。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -832,7 +663,19 @@ function App() {
                 </label>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_220px] lg:items-end">
+                <ReferenceImageUploader onChange={setReferenceFiles} />
+                <div className="space-y-2">
+                  <button className={`${primaryButtonClass} w-full`} type="button" disabled={isGenerating} onClick={handleGenerate}>
+                    {isGenerating ? "生成中..." : `生成 ${contentPreview.images.length} 张图`}
+                  </button>
+                  <p className="text-xs leading-5 text-aura-muted">按当前内容和配图数量生成对应图片。</p>
+                </div>
+              </div>
+
+              {statusMessage && <p className="mb-5 rounded-lg bg-white px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>}
+
+              <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
                 <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
                   <div>
                     <p className="text-xs uppercase tracking-[0.14em] text-aura-muted">
@@ -850,6 +693,10 @@ function App() {
                     ))}
                   </div>
 
+                  {contentMessage && <p className="text-sm text-aura-muted">{contentMessage}</p>}
+                </div>
+
+                <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-aura-charcoal">正文</h4>
                     <p className="whitespace-pre-line rounded-lg bg-aura-cream px-4 py-3 text-sm leading-7 text-aura-charcoal ring-1 ring-aura-beige/70">
@@ -874,18 +721,18 @@ function App() {
                       {contentPreview.note}
                     </p>
                   </div>
+                </div>
+              </div>
 
-                  {contentMessage && <p className="text-sm text-aura-muted">{contentMessage}</p>}
+              <div className="mt-5 space-y-4">
+                <div className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                  <p className="text-sm font-semibold">配图方案</p>
+                  <p className="mt-2 text-sm leading-6 text-aura-muted">
+                    每张配图保留独立的生成方向和参数摘要。生图关键词只在服务端生成和调用，不在前端展示。
+                  </p>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                    <p className="text-sm font-semibold">配图卡片</p>
-                    <p className="mt-2 text-sm leading-6 text-aura-muted">
-                      每张卡片都有独立的服务端生图参数。提示词不在前端展示，也不提供复制入口。
-                    </p>
-                  </div>
-
+                <div className="grid gap-4 lg:grid-cols-2">
                   {contentPreview.images.map((image, index) => (
                     <article key={`${image.name}-${index}`} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -904,8 +751,6 @@ function App() {
                           参数：{image.params.imageType}｜{image.params.scenePreference}｜{image.params.lightPreference}
                         </p>
                       </div>
-
-                      <div className="mt-4 text-xs text-aura-muted">生图提示词仅在服务端生成和调用，不在前端展示。</div>
                     </article>
                   ))}
                 </div>
@@ -929,35 +774,43 @@ function App() {
                     <button className={secondaryButtonClass} type="button" onClick={() => copyText(latestRecord.tags.join(" "), "已复制标签。")}>
                       复制标签
                     </button>
+                    <button className={secondaryButtonClass} type="button" onClick={() => copyText(contentText(latestRecord), "已复制标题、正文和标签。")}>
+                      复制全部文案
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                  <h3 className="text-base font-semibold">{latestRecord.title}</h3>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-aura-muted">{latestRecord.body}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {latestRecord.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
                 {latestRecord.images.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-[220px_1fr]">
-                    <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={latestRecord.images[0].url} alt={latestRecord.title} />
-                    <div className="space-y-3">
-                      <p className="text-base font-medium">{latestRecord.title}</p>
-                      <p className={mutedClass}>{latestRecord.body}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button className={primaryButtonClass} type="button" onClick={() => downloadImage(latestRecord.images[0], latestRecord.title)}>
-                          一键下载
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {latestRecord.images.map((image, index) => (
+                      <article key={image.id} className="rounded-lg bg-white p-3 ring-1 ring-aura-beige">
+                        <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
+                        <p className="mt-2 truncate text-xs text-aura-muted">{image.name || `图片 ${index + 1}`}</p>
+                        <button className={`${primaryButtonClass} mt-3 w-full`} type="button" onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}>
+                          下载图 {index + 1}
                         </button>
-                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(contentText(latestRecord), "已复制标题、正文和标签。")}>
-                          复制全部文案
-                        </button>
-                      </div>
-                    </div>
+                      </article>
+                    ))}
                   </div>
                 )}
               </section>
             )}
-          </div>
-        </section>
           </>
         )}
 
-        {activeView === "admin" && isAdmin && (
-          <section className={panelClass}>
+        <section className={panelClass}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">账号管理</h2>
               <span className="text-sm text-aura-muted">共 {accounts.length} 个账号</span>
@@ -1040,75 +893,83 @@ function App() {
                 </tbody>
               </table>
             </div>
-          </section>
-        )}
+        </section>
 
-        <section className={panelClass}>
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">生图历史</h2>
-            <span className="text-sm text-aura-muted">最近 {history.length} 条</span>
-          </div>
+        {activeView === "admin" && isAdmin && (
+          <section className={panelClass}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">生图历史</h2>
+              <span className="text-sm text-aura-muted">最近 {history.length} 条</span>
+            </div>
 
-          {history.length === 0 ? (
-            <p className={mutedClass}>暂无记录。</p>
-          ) : (
-            <div className="grid gap-4">
-              {history.map((record) => (
-                <article key={record.id} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                  <div className="grid gap-4 lg:grid-cols-[150px_1fr_auto]">
-                    <div>
-                      {record.images[0] ? (
-                        <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={record.images[0].url} alt={record.title} />
-                      ) : (
-                        <div className="flex aspect-square items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
-                          {record.status === "failed" ? "失败" : "无图"}
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                          {formatDate(record.createdAt)}
-                        </span>
-                        <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                          {record.username}
-                        </span>
-                        <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                          {record.status}
-                        </span>
+            {history.length === 0 ? (
+              <p className={mutedClass}>暂无记录。</p>
+            ) : (
+              <div className="grid gap-4">
+                {history.map((record) => (
+                  <article key={record.id} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+                    <div className="grid gap-4 lg:grid-cols-[220px_1fr_auto]">
+                      <div>
+                        {record.images.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            {record.images.map((image, index) => (
+                              <figure key={image.id} className="min-w-0">
+                                <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${record.title} ${index + 1}`} />
+                                <figcaption className="mt-1 truncate text-[11px] text-aura-muted">{image.name || `图片 ${index + 1}`}</figcaption>
+                              </figure>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex aspect-square items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
+                            {record.status === "failed" ? "失败" : "无图"}
+                          </div>
+                        )}
                       </div>
-                      <h3 className="text-base font-semibold">{record.title}</h3>
-                      <p className="line-clamp-3 text-sm leading-6 text-aura-muted">{record.status === "failed" ? record.error : record.body}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {record.tags.slice(0, 8).map((tag) => (
-                          <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
-                            {tag}
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                            {formatDate(record.createdAt)}
                           </span>
+                          <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                            {record.username}
+                          </span>
+                          <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                            {record.status}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-semibold">{record.title}</h3>
+                        <p className="line-clamp-3 text-sm leading-6 text-aura-muted">{record.status === "failed" ? record.error : record.body}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {record.tags.slice(0, 8).map((tag) => (
+                            <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-row flex-wrap gap-2 lg:flex-col">
+                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.title, "已复制标题。")}>
+                          复制标题
+                        </button>
+                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.body, "已复制正文。")}>
+                          复制正文
+                        </button>
+                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.tags.join(" "), "已复制标签。")}>
+                          复制标签
+                        </button>
+                        {record.images.map((image, index) => (
+                          <button key={image.id} className={primaryButtonClass} type="button" onClick={() => downloadImage(image, `${record.title}-${index + 1}`)}>
+                            下载图 {index + 1}
+                          </button>
                         ))}
                       </div>
                     </div>
-                    <div className="flex flex-row flex-wrap gap-2 lg:flex-col">
-                      <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.title, "已复制标题。")}>
-                        复制标题
-                      </button>
-                      <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.body, "已复制正文。")}>
-                        复制正文
-                      </button>
-                      <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.tags.join(" "), "已复制标签。")}>
-                        复制标签
-                      </button>
-                      {record.images[0] && (
-                        <button className={primaryButtonClass} type="button" onClick={() => downloadImage(record.images[0], record.title)}>
-                          下载图片
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </main>
   );

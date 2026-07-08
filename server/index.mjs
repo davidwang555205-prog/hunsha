@@ -212,7 +212,7 @@ function buildAccountSummaries(db) {
       requestCount: records.length,
       successCount: successfulRecords.length,
       failedCount: records.length - successfulRecords.length,
-      generatedImageCount: successfulRecords.reduce((count, record) => count + (record.images?.length || 0), 0),
+      generatedImageCount: records.reduce((count, record) => count + (record.images?.length || 0), 0),
       lastGeneratedAt: records[0]?.createdAt || null
     };
   });
@@ -292,13 +292,16 @@ function extractGeneratedImages(payload) {
     .filter((item) => item.b64 || item.url);
 }
 
-async function saveGeneratedImages(recordId, images) {
+async function saveGeneratedImages(recordId, images, startIndex = 0, imageName = "") {
   const saved = [];
 
   for (const [index, image] of images.entries()) {
+    const imageNumber = startIndex + index + 1;
+    const name = imageName || `图片 ${imageNumber}`;
     if (image.url) {
       saved.push({
-        id: `${recordId}-${index + 1}`,
+        id: `${recordId}-${imageNumber}`,
+        name,
         url: image.url,
         downloadUrl: image.url,
         source: "remote"
@@ -307,11 +310,12 @@ async function saveGeneratedImages(recordId, images) {
     }
 
     const base64 = image.b64.replace(/^data:[^;]+;base64,/i, "");
-    const filename = `${recordId}-${index + 1}.png`;
+    const filename = `${recordId}-${imageNumber}.png`;
     const filePath = path.join(generatedDir, filename);
     await writeFile(filePath, Buffer.from(base64, "base64"));
     saved.push({
-      id: `${recordId}-${index + 1}`,
+      id: `${recordId}-${imageNumber}`,
+      name,
       url: `/api/generated/${filename}`,
       downloadUrl: `/api/generated/${filename}`,
       source: "local"
@@ -497,49 +501,64 @@ async function handleGenerate(req, res) {
   if (!user) return sendError(res, 401, "登录已失效。");
 
   const body = await parseJsonBody(req);
-  const promptParams = body.promptParams && typeof body.promptParams === "object" ? body.promptParams : null;
+  const promptParamsList = Array.isArray(body.promptParamsList)
+    ? body.promptParamsList.filter((item) => item && typeof item === "object").slice(0, 5)
+    : body.promptParams && typeof body.promptParams === "object"
+      ? [body.promptParams]
+      : [];
   const title = String(body.title || "").trim();
   const textBody = String(body.body || "").trim();
   const tags = Array.isArray(body.tags) ? body.tags.map((tag) => String(tag)).filter(Boolean).slice(0, 20) : [];
   const files = Array.isArray(body.referenceImages) ? body.referenceImages.slice(0, 4) : [];
 
-  if (!promptParams) return sendError(res, 400, "缺少生图参数。");
+  if (!promptParamsList.length) return sendError(res, 400, "缺少生图参数。");
   if (!title || !textBody || !tags.length) return sendError(res, 400, "缺少标题、正文或标签。");
 
   const recordId = crypto.randomUUID();
-  const prompt = generatePrompt(promptParams);
-  const promptHash = crypto.createHash("sha256").update(prompt).digest("hex");
+  const promptPlans = promptParamsList.map((promptParams, index) => ({
+    prompt: generatePrompt(promptParams),
+    name: String(promptParams.generatedImageName || `图片 ${index + 1}`).trim().slice(0, 60) || `图片 ${index + 1}`
+  }));
+  const prompts = promptPlans.map((plan) => plan.prompt);
+  const promptHash = crypto.createHash("sha256").update(prompts.join("\n---\n")).digest("hex");
   const startedAt = Date.now();
   const mode = files.length ? "image-edit" : "text-to-image";
-  console.log(`[generate:start] id=${recordId} user=${user.username} mode=${mode} files=${files.length} model=${imageModel}`);
+  const savedImages = [];
+  console.log(
+    `[generate:start] id=${recordId} user=${user.username} mode=${mode} files=${files.length} prompts=${prompts.length} model=${imageModel}`
+  );
 
   try {
-    const apiResponse = await callWalaApiWithRetries({
-      prompt,
-      files,
-      size: body.size,
-      quality: body.quality
-    });
-    const responseText = await apiResponse.text();
-    let responsePayload = {};
-    try {
-      responsePayload = JSON.parse(responseText);
-    } catch {
-      responsePayload = { raw: responseText };
+    for (const [promptIndex, promptPlan] of promptPlans.entries()) {
+      const apiResponse = await callWalaApiWithRetries({
+        prompt: promptPlan.prompt,
+        files,
+        size: body.size,
+        quality: body.quality
+      });
+      const responseText = await apiResponse.text();
+      let responsePayload = {};
+      try {
+        responsePayload = JSON.parse(responseText);
+      } catch {
+        responsePayload = { raw: responseText };
+      }
+
+      if (!apiResponse.ok) {
+        const message = responsePayload?.error?.message || responsePayload?.message || responseText || "生图接口调用失败。";
+        const friendlyMessage = isRetryableWalaResponse(apiResponse.status, message) ? buildWalaOverloadMessage(message) : message;
+        throw Object.assign(new Error(friendlyMessage), { statusCode: apiResponse.status });
+      }
+
+      const generatedImages = extractGeneratedImages(responsePayload);
+      if (!generatedImages.length) {
+        throw Object.assign(new Error(`第 ${promptIndex + 1} 张图未返回图片。`), { statusCode: 502 });
+      }
+
+      const nextImages = await saveGeneratedImages(recordId, generatedImages, savedImages.length, promptPlan.name);
+      savedImages.push(...nextImages);
     }
 
-    if (!apiResponse.ok) {
-      const message = responsePayload?.error?.message || responsePayload?.message || responseText || "生图接口调用失败。";
-      const friendlyMessage = isRetryableWalaResponse(apiResponse.status, message) ? buildWalaOverloadMessage(message) : message;
-      throw Object.assign(new Error(friendlyMessage), { statusCode: apiResponse.status });
-    }
-
-    const generatedImages = extractGeneratedImages(responsePayload);
-    if (!generatedImages.length) {
-      throw Object.assign(new Error("生图接口未返回图片。"), { statusCode: 502 });
-    }
-
-    const savedImages = await saveGeneratedImages(recordId, generatedImages);
     const record = {
       id: recordId,
       userId: user.id,
@@ -575,7 +594,7 @@ async function handleGenerate(req, res) {
       body: textBody,
       tags,
       topic: String(body.topic || ""),
-      images: [],
+      images: savedImages,
       promptHash,
       uploadedImageCount: files.length,
       error: error.message || "生图失败。",
