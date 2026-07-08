@@ -539,12 +539,23 @@ async function handleUpdateUser(req, res, userId) {
   if (!targetUser) return sendError(res, 404, "账号不存在。");
 
   const body = await parseJsonBody(req);
-  const rawLimit = Number(body.dailyImageLimit);
-  if (!Number.isFinite(rawLimit) || rawLimit < 0 || rawLimit > maxDailyImageLimit) {
-    return sendError(res, 400, `每日生成图片上限需要在 0-${maxDailyImageLimit} 之间。`);
+  if (Object.prototype.hasOwnProperty.call(body, "dailyImageLimit")) {
+    const rawLimit = Number(body.dailyImageLimit);
+    if (!Number.isFinite(rawLimit) || rawLimit < 0 || rawLimit > maxDailyImageLimit) {
+      return sendError(res, 400, `每日生成图片上限需要在 0-${maxDailyImageLimit} 之间。`);
+    }
+    targetUser.dailyImageLimit = normalizeDailyImageLimit(rawLimit);
   }
 
-  targetUser.dailyImageLimit = normalizeDailyImageLimit(rawLimit);
+  if (Object.prototype.hasOwnProperty.call(body, "password")) {
+    const password = String(body.password || "");
+    if (password.length < 6 || password.length > 72) {
+      return sendError(res, 400, "新密码长度需要在 6-72 位之间。");
+    }
+    const passwordParts = hashPassword(password);
+    targetUser.passwordSalt = passwordParts.salt;
+    targetUser.passwordHash = passwordParts.hash;
+  }
   await writeDb(db);
 
   return sendJson(res, 200, {

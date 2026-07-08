@@ -258,6 +258,8 @@ function App() {
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [limitDrafts, setLimitDrafts] = useState<Record<string, string>>({});
   const [updatingLimitUserId, setUpdatingLimitUserId] = useState("");
+  const [passwordDrafts, setPasswordDrafts] = useState<Record<string, string>>({});
+  const [updatingPasswordUserId, setUpdatingPasswordUserId] = useState("");
 
   const sceneOptions = useMemo(
     () => getCompatibleSceneOptions(params.productCategory, params.imageType),
@@ -430,6 +432,40 @@ function App() {
       setNewAccountMessage(error instanceof Error ? error.message : "更新每日上限失败。");
     } finally {
       setUpdatingLimitUserId("");
+    }
+  };
+
+  const handleUpdatePassword = async (userId: string) => {
+    if (!session || session.user.role !== "admin") return;
+    const account = accounts.find((item) => item.user.id === userId);
+    if (!account) return;
+
+    const password = passwordDrafts[userId] || "";
+    setNewAccountMessage("");
+    setUpdatingPasswordUserId(userId);
+
+    try {
+      const payload = await apiRequest<UpdateUserResponse>(`/api/admin/users/${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ password })
+      });
+      setAccounts(payload.accounts || []);
+      setPasswordDrafts((current) => {
+        const next = { ...current };
+        delete next[userId];
+        return next;
+      });
+      setNewAccountMessage(`已修改 ${payload.user.username} 的密码。`);
+      await refreshData();
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        handleLogout();
+        setLoginError(error.message);
+        return;
+      }
+      setNewAccountMessage(error instanceof Error ? error.message : "修改密码失败。");
+    } finally {
+      setUpdatingPasswordUserId("");
     }
   };
 
@@ -1183,7 +1219,7 @@ function App() {
 
             <h3 className="mb-4 text-sm font-semibold text-aura-charcoal">账号使用情况</h3>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
                 <thead className="text-aura-muted">
                   <tr>
                     <th className="border-b border-aura-beige py-2">账号</th>
@@ -1193,6 +1229,7 @@ function App() {
                     <th className="border-b border-aura-beige py-2">失败</th>
                     <th className="border-b border-aura-beige py-2">图片</th>
                     <th className="border-b border-aura-beige py-2">今日 / 上限</th>
+                    <th className="border-b border-aura-beige py-2">修改密码</th>
                     <th className="border-b border-aura-beige py-2">最近生成</th>
                   </tr>
                 </thead>
@@ -1228,6 +1265,29 @@ function App() {
                             onClick={() => void handleUpdateDailyImageLimit(account.user.id)}
                           >
                             {updatingLimitUserId === account.user.id ? "保存中" : "保存"}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="border-b border-aura-beige/70 py-3">
+                        <div className="flex min-w-[220px] items-center gap-2">
+                          <input
+                            className="w-32 rounded-lg border border-aura-beige bg-white px-2 py-1.5 text-sm text-aura-charcoal outline-none transition focus:border-aura-clay"
+                            type="text"
+                            value={passwordDrafts[account.user.id] || ""}
+                            onChange={(event) => setPasswordDrafts((current) => ({ ...current, [account.user.id]: event.target.value }))}
+                            placeholder="新密码"
+                          />
+                          <button
+                            className={secondaryButtonClass}
+                            type="button"
+                            disabled={
+                              updatingPasswordUserId === account.user.id ||
+                              (passwordDrafts[account.user.id] || "").length < 6 ||
+                              (passwordDrafts[account.user.id] || "").length > 72
+                            }
+                            onClick={() => void handleUpdatePassword(account.user.id)}
+                          >
+                            {updatingPasswordUserId === account.user.id ? "修改中" : "修改"}
                           </button>
                         </div>
                       </td>
