@@ -190,6 +190,7 @@ function contentText(record: Pick<HistoryRecord, "title" | "body" | "tags">) {
 
 function App() {
   const [session, setSession] = useState<Session | null>(loadStoredSession);
+  const [activeView, setActiveView] = useState<"studio" | "admin">("studio");
   const [loginUsername, setLoginUsername] = useState("admin");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -231,6 +232,19 @@ function App() {
       }),
     [contentNonce, contentTopic, dailySlot, imageCount, params]
   );
+  const accountUsageTotals = useMemo(
+    () =>
+      accounts.reduce(
+        (totals, account) => ({
+          requestCount: totals.requestCount + account.requestCount,
+          successCount: totals.successCount + account.successCount,
+          failedCount: totals.failedCount + account.failedCount,
+          generatedImageCount: totals.generatedImageCount + account.generatedImageCount
+        }),
+        { requestCount: 0, successCount: 0, failedCount: 0, generatedImageCount: 0 }
+      ),
+    [accounts]
+  );
 
   async function apiRequest<T>(path: string, options: RequestInit = {}, token = session?.token) {
     const headers = new Headers(options.headers);
@@ -266,6 +280,12 @@ function App() {
     });
   }, [session?.token]);
 
+  useEffect(() => {
+    if (session?.user.role !== "admin" && activeView === "admin") {
+      setActiveView("studio");
+    }
+  }, [activeView, session?.user.role]);
+
   const handleLogin = async () => {
     setLoginError("");
     try {
@@ -285,6 +305,7 @@ function App() {
 
   const handleLogout = () => {
     setSession(null);
+    setActiveView("studio");
     setHistory([]);
     setAccounts([]);
     setSummary(null);
@@ -464,17 +485,44 @@ function App() {
     );
   }
 
+  const isAdmin = session.user.role === "admin";
+  const pageTitle = activeView === "admin" && isAdmin ? "后台管理" : "生图工作台";
+
   return (
     <main className="min-h-screen bg-aura-cream px-4 py-6 text-aura-charcoal sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="grid gap-4 border-b border-aura-beige pb-5 lg:grid-cols-[1fr_auto] lg:items-center">
+        <header className="grid gap-4 border-b border-aura-beige pb-5 lg:grid-cols-[1fr_auto_auto] lg:items-center">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-aura-muted">Bridal & Dress Content Studio</p>
-            <h1 className="mt-1 text-2xl font-semibold">生图工作台</h1>
+            <h1 className="mt-1 text-2xl font-semibold">{pageTitle}</h1>
           </div>
+          {isAdmin && (
+            <nav className="flex w-fit rounded-lg bg-white p-1 ring-1 ring-aura-beige" aria-label="页面切换">
+              <button
+                className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+                  activeView === "studio" ? "bg-aura-charcoal text-aura-porcelain" : "text-aura-muted hover:bg-aura-cream"
+                }`}
+                type="button"
+                aria-pressed={activeView === "studio"}
+                onClick={() => setActiveView("studio")}
+              >
+                生图工作台
+              </button>
+              <button
+                className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+                  activeView === "admin" ? "bg-aura-charcoal text-aura-porcelain" : "text-aura-muted hover:bg-aura-cream"
+                }`}
+                type="button"
+                aria-pressed={activeView === "admin"}
+                onClick={() => setActiveView("admin")}
+              >
+                后台管理
+              </button>
+            </nav>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-lg bg-white px-3 py-2 text-sm ring-1 ring-aura-beige">
-              {session.user.displayName} · {session.user.role === "admin" ? "管理员" : "账号"}
+              {session.user.displayName} · {isAdmin ? "管理员" : "账号"}
             </span>
             <button className={secondaryButtonClass} type="button" onClick={() => void refreshData()}>
               刷新
@@ -485,27 +533,48 @@ function App() {
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className={panelClass}>
-            <p className="text-sm text-aura-muted">请求次数</p>
-            <p className="mt-2 text-2xl font-semibold">{summary?.requestCount ?? 0}</p>
-          </div>
-          <div className={panelClass}>
-            <p className="text-sm text-aura-muted">成功生成</p>
-            <p className="mt-2 text-2xl font-semibold">{summary?.generatedImageCount ?? 0}</p>
-          </div>
-          <div className={panelClass}>
-            <p className="text-sm text-aura-muted">历史保存</p>
-            <p className="mt-2 text-2xl font-semibold">{summary?.retentionDays ?? 180} 天</p>
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className={panelClass}>
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold">生成设置</h2>
-              <p className="mt-1 text-sm text-aura-muted">上传参考图后生成图片，生图关键词在后台处理。</p>
+        {activeView === "admin" && isAdmin ? (
+          <section className="grid gap-4 md:grid-cols-4">
+            <div className={panelClass}>
+              <p className="text-sm text-aura-muted">账号数量</p>
+              <p className="mt-2 text-2xl font-semibold">{accounts.length}</p>
             </div>
+            <div className={panelClass}>
+              <p className="text-sm text-aura-muted">总请求</p>
+              <p className="mt-2 text-2xl font-semibold">{accountUsageTotals.requestCount}</p>
+            </div>
+            <div className={panelClass}>
+              <p className="text-sm text-aura-muted">成功请求</p>
+              <p className="mt-2 text-2xl font-semibold">{accountUsageTotals.successCount}</p>
+            </div>
+            <div className={panelClass}>
+              <p className="text-sm text-aura-muted">失败请求</p>
+              <p className="mt-2 text-2xl font-semibold">{accountUsageTotals.failedCount}</p>
+            </div>
+          </section>
+        ) : (
+          <>
+            <section className="grid gap-4 md:grid-cols-3">
+              <div className={panelClass}>
+                <p className="text-sm text-aura-muted">请求次数</p>
+                <p className="mt-2 text-2xl font-semibold">{summary?.requestCount ?? 0}</p>
+              </div>
+              <div className={panelClass}>
+                <p className="text-sm text-aura-muted">成功生成</p>
+                <p className="mt-2 text-2xl font-semibold">{summary?.generatedImageCount ?? 0}</p>
+              </div>
+              <div className={panelClass}>
+                <p className="text-sm text-aura-muted">历史保存</p>
+                <p className="mt-2 text-2xl font-semibold">{summary?.retentionDays ?? 180} 天</p>
+              </div>
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className={panelClass}>
+                <div className="mb-5">
+                  <h2 className="text-lg font-semibold">生成设置</h2>
+                  <p className="mt-1 text-sm text-aura-muted">上传参考图后生成图片，生图关键词在后台处理。</p>
+                </div>
 
             <div className="space-y-5">
               <ReferenceImageUploader onChange={setReferenceFiles} />
@@ -865,8 +934,10 @@ function App() {
             )}
           </div>
         </section>
+          </>
+        )}
 
-        {session.user.role === "admin" && (
+        {activeView === "admin" && isAdmin && (
           <section className={panelClass}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">账号管理</h2>
