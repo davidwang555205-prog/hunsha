@@ -4,7 +4,7 @@ set -euo pipefail
 APP_NAME="${APP_NAME:-bridal-studio}"
 APP_USER="${APP_USER:-ubuntu}"
 APP_DIR="${APP_DIR:-/var/www/bridal-dress-content-studio}"
-REPO_SSH="${REPO_SSH:-git@github.com:davidwang555205-prog/bridal-dress-content-studio.git}"
+REPO_URL="${REPO_URL:-${REPO_SSH:-git@github.com:davidwang555205-prog/bridal-dress-content-studio.git}}"
 DEPLOY_KEY="${DEPLOY_KEY:-$HOME/.ssh/github_bridal_deploy}"
 DOMAIN="${DOMAIN:-bridaldress.top}"
 WWW_DOMAIN="${WWW_DOMAIN:-www.bridaldress.top}"
@@ -22,10 +22,16 @@ if [ -z "$WALA_KEY" ]; then
   exit 1
 fi
 
-if [ ! -f "$DEPLOY_KEY" ]; then
-  echo "ERROR: Deploy key not found at $DEPLOY_KEY" >&2
-  exit 1
-fi
+USE_DEPLOY_KEY="false"
+case "$REPO_URL" in
+  git@*|ssh://*)
+    USE_DEPLOY_KEY="true"
+    if [ ! -f "$DEPLOY_KEY" ]; then
+      echo "ERROR: Deploy key not found at $DEPLOY_KEY" >&2
+      exit 1
+    fi
+    ;;
+esac
 
 echo "Installing system packages..."
 sudo apt-get update
@@ -38,23 +44,33 @@ if [ "$node_major" -lt 20 ]; then
   sudo apt-get install -y nodejs
 fi
 
-echo "Preparing Git SSH access..."
+echo "Preparing Git access..."
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 touch "$HOME/.ssh/known_hosts"
 ssh-keygen -F github.com >/dev/null || ssh-keyscan github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
-chmod 600 "$DEPLOY_KEY"
+if [ "$USE_DEPLOY_KEY" = "true" ]; then
+  chmod 600 "$DEPLOY_KEY"
+fi
 
 echo "Fetching application source..."
 sudo mkdir -p "$(dirname "$APP_DIR")"
 sudo chown -R "$APP_USER:$APP_USER" "$(dirname "$APP_DIR")"
 
 if [ ! -d "$APP_DIR/.git" ]; then
-  GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=accept-new" \
-    git clone "$REPO_SSH" "$APP_DIR"
+  if [ "$USE_DEPLOY_KEY" = "true" ]; then
+    GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=accept-new" git clone "$REPO_URL" "$APP_DIR"
+  else
+    git clone "$REPO_URL" "$APP_DIR"
+  fi
 else
   cd "$APP_DIR"
-  GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=accept-new" git fetch origin main
+  git remote set-url origin "$REPO_URL"
+  if [ "$USE_DEPLOY_KEY" = "true" ]; then
+    GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=accept-new" git fetch origin main
+  else
+    git fetch origin main
+  fi
   git reset --hard origin/main
 fi
 
