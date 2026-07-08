@@ -163,6 +163,29 @@ function updateField<K extends keyof PromptParams>(params: PromptParams, key: K,
   return { ...params, [key]: value };
 }
 
+function getSelectedStyle(params: PromptParams) {
+  return params.productCategory === "婚纱 / 礼服" ? params.bridalStyle : params.dressStyle;
+}
+
+function getSettingsGenerationTitle(params: PromptParams) {
+  return params.customProductName.trim() || getSelectedStyle(params) || params.imageType;
+}
+
+function getSettingsGenerationBody(params: PromptParams) {
+  const rows = [
+    `品类：${params.productCategory}`,
+    `款式：${getSelectedStyle(params)}`,
+    `图片类型：${params.imageType}`,
+    `场景：${params.scenePreference}`,
+    `模特：${params.modelChoice}`,
+    `季节：${params.season}`,
+    `光线：${params.lightPreference}`
+  ];
+  if (params.customProductName.trim()) rows.push(`自定义款式：${params.customProductName.trim()}`);
+  if (params.extraRequirement.trim()) rows.push(`补充要求：${params.extraRequirement.trim()}`);
+  return rows.join("\n");
+}
+
 function getDefaultContentTopic(productCategory: ProductCategory, dailySlot: FashionSeedingDailySlot) {
   if (productCategory === "婚纱 / 礼服") return preferredBridalContentTopic;
   return getDailyFashionSeedingSelection(productCategory, new Date(), dailySlot).topic;
@@ -226,6 +249,7 @@ function App() {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [summary, setSummary] = useState<MeResponse["summary"] | null>(null);
   const [latestRecord, setLatestRecord] = useState<HistoryRecord | null>(null);
+  const [settingsLatestRecord, setSettingsLatestRecord] = useState<HistoryRecord | null>(null);
   const [newAccountUsername, setNewAccountUsername] = useState("");
   const [newAccountDisplayName, setNewAccountDisplayName] = useState("");
   const [newAccountPassword, setNewAccountPassword] = useState("");
@@ -331,6 +355,7 @@ function App() {
     setAccounts([]);
     setSummary(null);
     setLatestRecord(null);
+    setSettingsLatestRecord(null);
     setNewAccountUsername("");
     setNewAccountDisplayName("");
     setNewAccountPassword("");
@@ -461,15 +486,29 @@ function App() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (panel: "settings" | "content") => {
     if (!session) return;
     if (!referenceFiles.length) {
       setStatusMessage("请先上传至少一张参考图。");
       return;
     }
 
+    const isSettingsGeneration = panel === "settings";
+    const promptParamsList = isSettingsGeneration
+      ? [{ ...params, generatedImageName: getSettingsGenerationTitle(params) }]
+      : contentPreview.images.map((image) => ({
+          ...image.params,
+          generatedImageName: image.name
+        }));
+    const requestTitle = isSettingsGeneration ? getSettingsGenerationTitle(params) : contentPreview.titles[0];
+    const requestBody = isSettingsGeneration ? getSettingsGenerationBody(params) : contentPreview.body;
+    const requestTags = isSettingsGeneration
+      ? ["#生图", params.productCategory === "婚纱 / 礼服" ? "#婚纱礼服" : "#裙装穿搭", `#${params.imageType}`]
+      : contentPreview.tags;
+    const requestTopic = isSettingsGeneration ? "生成设置" : contentPreview.topic;
+
     setIsGenerating(true);
-    setStatusMessage(`正在生成 ${contentPreview.images.length} 张图，可能需要数分钟...`);
+    setStatusMessage(`正在生成 ${promptParamsList.length} 张图，可能需要数分钟...`);
 
     try {
       const generationParams = { ...params, generationNonce: params.generationNonce + 1 };
@@ -485,14 +524,11 @@ function App() {
       const payload = await apiRequest<GenerateResponse>("/api/generate", {
         method: "POST",
         body: JSON.stringify({
-          promptParamsList: contentPreview.images.map((image) => ({
-            ...image.params,
-            generatedImageName: image.name
-          })),
-          title: contentPreview.titles[0],
-          body: contentPreview.body,
-          tags: contentPreview.tags,
-          topic: contentPreview.topic,
+          promptParamsList,
+          title: requestTitle,
+          body: requestBody,
+          tags: requestTags,
+          topic: requestTopic,
           referenceImages: uploads,
           size,
           quality
@@ -500,7 +536,11 @@ function App() {
       });
 
       setParams(generationParams);
-      setLatestRecord(payload.record);
+      if (isSettingsGeneration) {
+        setSettingsLatestRecord(payload.record);
+      } else {
+        setLatestRecord(payload.record);
+      }
       setStatusMessage(`生成完成，共 ${payload.record.images.length} 张。`);
       await refreshData();
     } catch (error) {
@@ -525,7 +565,7 @@ function App() {
         disabled={isGenerating}
         onClick={() => {
           setGenerationFeedbackPanel(panel);
-          void handleGenerate();
+          void handleGenerate(panel);
         }}
       >
         {isGenerating ? "生成中..." : "一键生图"}
@@ -533,6 +573,24 @@ function App() {
       {generationFeedbackPanel === panel && statusMessage && (
         <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
       )}
+      {panel === "settings" && settingsLatestRecord?.images.length ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
+            <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsLatestRecord.images, settingsLatestRecord.title)}>
+              下载全部图片
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {settingsLatestRecord.images.map((image, index) => (
+              <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
+                <img className="aspect-square w-full object-cover" src={image.url} alt={`${settingsLatestRecord.title} ${index + 1}`} />
+                <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 
