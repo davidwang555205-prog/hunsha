@@ -445,6 +445,10 @@ function App() {
 
     const password = passwordDrafts[userId] || "";
     setNewAccountMessage("");
+    if (password.length < 6 || password.length > 72) {
+      setNewAccountMessage("新密码长度需要在 6-72 位之间。");
+      return;
+    }
     setUpdatingPasswordUserId(userId);
 
     try {
@@ -1296,11 +1300,7 @@ function App() {
                           <button
                             className={secondaryButtonClass}
                             type="button"
-                            disabled={
-                              updatingPasswordUserId === account.user.id ||
-                              (passwordDrafts[account.user.id] || "").length < 6 ||
-                              (passwordDrafts[account.user.id] || "").length > 72
-                            }
+                            disabled={updatingPasswordUserId === account.user.id}
                             onClick={() => void handleUpdatePassword(account.user.id)}
                           >
                             {updatingPasswordUserId === account.user.id ? "修改中" : "修改"}
