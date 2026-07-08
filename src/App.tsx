@@ -440,6 +440,7 @@ function App() {
 
   const handleUpdatePassword = async (userId: string) => {
     if (!session || session.user.role !== "admin") return;
+    if (updatingPasswordUserId === userId) return;
     const account = accounts.find((item) => item.user.id === userId);
     if (!account) return;
 
@@ -1295,12 +1296,11 @@ function App() {
                             type="text"
                             value={passwordDrafts[account.user.id] || ""}
                             onChange={(event) => setPasswordDrafts((current) => ({ ...current, [account.user.id]: event.target.value }))}
-                            placeholder="新密码"
+                            placeholder="至少 6 位"
                           />
                           <button
                             className={secondaryButtonClass}
                             type="button"
-                            disabled={updatingPasswordUserId === account.user.id}
                             onClick={() => void handleUpdatePassword(account.user.id)}
                           >
                             {updatingPasswordUserId === account.user.id ? "修改中" : "修改"}
