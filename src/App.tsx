@@ -508,7 +508,11 @@ function App() {
     const requestTopic = isSettingsGeneration ? "生成设置" : contentPreview.topic;
 
     setIsGenerating(true);
-    setStatusMessage(`正在生成 ${promptParamsList.length} 张图，可能需要数分钟...`);
+    setStatusMessage(
+      isSettingsGeneration
+        ? "正在按生成设置生成 1 张图，可能需要数分钟..."
+        : `正在按小红书内容生成 ${promptParamsList.length} 张图，可能需要数分钟...`
+    );
 
     try {
       const generationParams = { ...params, generationNonce: params.generationNonce + 1 };
@@ -568,7 +572,11 @@ function App() {
           void handleGenerate(panel);
         }}
       >
-        {isGenerating ? "生成中..." : "一键生图"}
+        {isGenerating && generationFeedbackPanel === panel
+          ? "生成中..."
+          : panel === "settings"
+            ? "生成设置生图（1 张）"
+            : `小红书内容生图（${imageCount} 张）`}
       </button>
       {generationFeedbackPanel === panel && statusMessage && (
         <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
@@ -576,7 +584,7 @@ function App() {
       {panel === "settings" && settingsLatestRecord?.images.length ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
+            <h3 className="text-sm font-semibold text-aura-charcoal">生成设置图片</h3>
             <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsLatestRecord.images, settingsLatestRecord.title)}>
               下载全部图片
             </button>
@@ -783,7 +791,7 @@ function App() {
             <section className={panelClass}>
               <div className="mb-5">
                 <h2 className="text-lg font-semibold">生成设置</h2>
-                <p className="mt-1 text-sm text-aura-muted">调整生图基础参数，最终生图提示词只在服务端生成和调用。</p>
+                <p className="mt-1 text-sm text-aura-muted">调整生图基础参数，本模块只按上方设置生成 1 张图。</p>
               </div>
 
               <div className="space-y-5">
@@ -940,7 +948,7 @@ function App() {
                 <div>
                   <h2 className="text-lg font-semibold">每日小红书内容</h2>
                   <p className="mt-1 max-w-3xl text-sm leading-6 text-aura-muted">
-                    选择一个内容主题，自动生成标题、正文和标签。最终生图提示词已隐藏。
+                    选择一个内容主题，自动生成标题、正文和标签。本模块按当前小红书内容生成 3 张或 5 张配图。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -1039,7 +1047,7 @@ function App() {
 
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h4 className="text-sm font-semibold text-aura-charcoal">生成图片</h4>
+                      <h4 className="text-sm font-semibold text-aura-charcoal">小红书生成图片</h4>
                       {latestRecord?.images.length ? (
                         <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
                           下载全部图片
@@ -1057,7 +1065,7 @@ function App() {
                       </div>
                     ) : (
                       <div className="flex min-h-[240px] items-center justify-center rounded-lg bg-white text-sm text-aura-muted ring-1 ring-aura-beige/70">
-                        生成后的图片放在这里
+                        小红书内容生成后的图片放在这里
                       </div>
                     )}
                   </div>
