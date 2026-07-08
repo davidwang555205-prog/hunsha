@@ -162,7 +162,8 @@ type NarrativeTemplateContext = CopyAlignmentContext & {
 };
 
 type NarrativeTemplate = (context: NarrativeTemplateContext) => string;
-type NarrativePool = Record<"bridal" | "dress", NarrativeTemplate[]>;
+type NarrativeType = "bridal" | "phone" | "prep" | "companion" | "brand" | "store" | "dress";
+type NarrativePool = Partial<Record<NarrativeType, NarrativeTemplate[]>> & Record<"bridal" | "dress", NarrativeTemplate[]>;
 
 const TOPIC_VARIANT_COUNT = 1000;
 const VARIANT_AXIS_SIZE = 10;
@@ -1217,6 +1218,8 @@ function readableCue(value: string) {
     .replace(/^让场景/, "场景")
     .replace(/^让面料/, "面料")
     .replace(/^让裙装/, "裙装")
+    .replace(/把收藏价值放在可复穿上/g, "把重点放在可复穿")
+    .replace(/收藏价值/g, "可复穿")
     .replace(/^，+/, "")
     .trim();
 }
@@ -1246,9 +1249,39 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/担心手机挡住婚纱细节的人/g, "怕手机挡细节的人")
     .replace(/想把试纱记录拍得自然的人/g, "想自然记录试纱的人")
     .replace(/不想被广角和滤镜骗到的人/g, "怕被广角滤镜骗的人")
+    .replace(/正在对比新品系列的新娘/g, "对比新品的人")
+    .replace(/想看懂主纱设计逻辑的人/g, "想看懂版型的人")
+    .replace(/偏爱克制品牌审美的人/g, "喜欢克制款的人")
+    .replace(/想知道一件婚纱适合谁的人/g, "想知道适合谁的人")
+    .replace(/关注面料证据而不是口号的人/g, "想看面料证据的人")
+    .replace(/看新品但怕被大片误导的人/g, "怕被大片带跑的人")
+    .replace(/想理解系列差异的备婚人/g, "想看系列差异的人")
+    .replace(/预约前想了解店铺体验的人/g, "想先了解店的人")
+    .replace(/担心进店后被催定的新娘/g, "怕进店被催的人")
+    .replace(/在意顾问沟通方式的备婚人/g, "在意顾问沟通的人")
+    .replace(/准备探店但还没下定的人/g, "准备探店的人")
+    .replace(/想知道试纱流程是否舒服的人/g, "想看试纱流程的人")
+    .replace(/需要一个安心预约理由的人/g, "想安心预约的人")
     .replace(/穿上后身体有没有先放松/g, "身体放松感")
     .replace(/截图款穿上后是不是和想象一样/g, "截图款上身落差")
     .replace(/截图款和真实上身有没有一致/g, "截图款上身落差")
+    .replace(/新品为什么适合这一类新娘/g, "适合哪类新娘")
+    .replace(/穿上后会不会一直想整理胸口/g, "胸口总想整理")
+    .replace(/系列里每件婚纱的功能差异/g, "系列差异")
+    .replace(/领口、腰线和拖尾的设计关系/g, "领腰拖尾关系")
+    .replace(/完整上身和挂装图是否互相补充/g, "上身挂装对照")
+    .replace(/品牌审美是否落在可判断细节上/g, "细节能否判断")
+    .replace(/发布内容是否帮用户排除不适合/g, "能否排除不适合")
+    .replace(/lookbook 感和真实参考是否平衡/g, "lookbook参考感")
+    .replace(/进店后会不会被理解/g, "进店被理解")
+    .replace(/顾问是否先听需求再拿款/g, "先听需求再拿款")
+    .replace(/试纱间空间和镜子是否真实/g, "试纱间和镜子")
+    .replace(/客照授权有没有被尊重/g, "客照授权")
+    .replace(/预约卡和试穿记录是否清楚/g, "预约卡和记录")
+    .replace(/服务过程有没有压迫感/g, "服务压迫感")
+    .replace(/每张图是否对应一个体验节点/g, "每张图有节点")
+    .replace(/门店内容有没有真实过程/g, "门店真实过程")
+    .replace(/用户能不能预约前就知道会被怎样对待/g, "预约前看懂体验")
     .replace(/手机对镜全身有没有拍到腰线/g, "手机镜前腰线")
     .replace(/手机有没有挡住领口和肩颈/g, "手机挡领口肩颈")
     .replace(/正常镜头里比例是否自然/g, "正常镜头比例")
@@ -1343,6 +1376,53 @@ function titleCue(value: string, maxLength = 12) {
     .replace(/背后拉链和背影完整度/g, "背影完整度")
     .replace(/窗边光里的白纱纹理/g, "窗边白纱纹理")
     .replace(/走动时裙摆的跟随感/g, "裙摆跟随感")
+    .replace(/完整上身和侧面结构/g, "上身侧面结构")
+    .replace(/领口、腰线和拖尾的连续关系/g, "领腰拖尾")
+    .replace(/面料近景里的纹理和光泽/g, "面料纹理光泽")
+    .replace(/挂装静物和上身图的对照/g, "挂装上身对照")
+    .replace(/系列 mood board 里的设计线索/g, "mood board线索")
+    .replace(/强光下白纱没有丢掉细节/g, "强光白纱细节")
+    .replace(/背影和拖尾展开后的比例/g, "背影拖尾比例")
+    .replace(/不同场地里的同一件婚纱/g, "不同场地上身")
+    .replace(/样衣调整前后的结构确认/g, "样衣调整前后")
+    .replace(/不是命定款口号而是适配理由/g, "不是命定口号")
+    .replace(/品牌 lookbook 完整上身/g, "lookbook上身")
+    .replace(/婚纱店橱窗里的新品挂装/g, "橱窗新品挂装")
+    .replace(/材质工作台上的面料小样/g, "面料小样")
+    .replace(/模特轻微转身看拖尾/g, "转身看拖尾")
+    .replace(/系列 mood board 和草图/g, "mood board草图")
+    .replace(/酒店晨光下的主纱比例/g, "酒店晨光主纱")
+    .replace(/草坪自然光里的轻婚纱/g, "草坪轻婚纱")
+    .replace(/教堂门口的背影和拖尾/g, "教堂背影拖尾")
+    .replace(/橱窗柔光里的静物细节/g, "橱窗静物细节")
+    .replace(/发布前最后一次样衣确认/g, "样衣最后确认")
+    .replace(/到店后会不会被一直催定/g, "到店被催定")
+    .replace(/试纱间是不是只在照片里好看/g, "试纱间只会拍照")
+    .replace(/客照授权和隐私有没有被尊重/g, "客照授权隐私")
+    .replace(/预约流程会不会让人紧张/g, "预约流程紧张")
+    .replace(/店铺日常是不是只有空间美图/g, "只有空间美图")
+    .replace(/试纱记录能不能帮人做决定/g, "试纱记录有用")
+    .replace(/配饰和头纱搭配是否专业/g, "配饰头纱搭配")
+    .replace(/真实客照有没有过度精修/g, "客照过度精修")
+    .replace(/用户预约前能不能看懂体验/g, "预约前看懂体验")
+    .replace(/预约卡、试穿记录和授权说明/g, "预约卡和记录")
+    .replace(/顾问先听需求再拿款的过程/g, "先听需求拿款")
+    .replace(/试纱间镜子和真实光线/g, "试纱间真实光")
+    .replace(/顾问整理裙摆时的服务距离/g, "整理裙摆距离")
+    .replace(/客人看镜子时的自然表情/g, "镜前自然表情")
+    .replace(/头纱和配饰区的有序细节/g, "头纱配饰区")
+    .replace(/衣架、面料小样和改尺寸记录/g, "衣架面料记录")
+    .replace(/不露隐私的手机记录桌面/g, "不露隐私桌面")
+    .replace(/试纱结束后的温和确认/g, "试后确认")
+    .replace(/顾问和客人一起看镜子/g, "顾问一起看镜")
+    .replace(/婚纱店橱窗的第一印象/g, "橱窗第一眼")
+    .replace(/头纱与配饰工作台/g, "头纱配饰台")
+    .replace(/客人授权后的真实试穿瞬间/g, "授权客照瞬间")
+    .replace(/预约卡和面料小样桌面/g, "预约卡桌面")
+    .replace(/候场区里的衣架和纱帘/g, "候场衣架纱帘")
+    .replace(/顾问整理拖尾的服务过程/g, "整理拖尾过程")
+    .replace(/朋友陪同回看照片/g, "陪同回看照片")
+    .replace(/试纱结束后记录选择理由/g, "试后记录理由")
     .replace(/有没有/g, "")
     .replace(/是不是/g, "")
     .replace(/会不会/g, "")
@@ -1357,7 +1437,7 @@ function titleCue(value: string, maxLength = 12) {
 
   if (cue.length <= maxLength) return cue;
 
-  return `${cue.slice(0, maxLength).replace(/[，、：:]+$/g, "")}…`;
+  return cue.slice(0, maxLength).replace(/[，、：:]+$/g, "");
 }
 
 function narrativeCue(value: string, maxLength = 24) {
@@ -1374,6 +1454,13 @@ function narrativeCue(value: string, maxLength = 24) {
     .replace(/可以把婚礼场地告诉顾问再试下一件/g, "把场地先告诉顾问")
     .replace(/可以把真实顾虑直接讲给顾问听/g, "把真实顾虑讲出来")
     .replace(/手机挡没挡住领口/g, "手机有没有挡住领口")
+    .replace(/知道该保存哪几张试纱图/g, "哪几张试纱图该留")
+    .replace(/新品发布应该帮人看懂选择/g, "看懂这件适合谁")
+    .replace(/门店发布要让人预约前就安心/g, "预约前能安心一点")
+    .replace(/让人预约前就安心/g, "预约前能安心一点")
+    .replace(/试纱准备是为了少一点慌/g, "出门前少一点慌")
+    .replace(/真实比例比当下出片更重要/g, "先看真实比例")
+    .replace(/场景切换比单张美图更有说服力/g, "不同场景都说得通")
     .replace(/A 字/g, "A字")
     .replace(/，+/g, "，")
     .replace(/^，|，$/g, "")
@@ -1399,11 +1486,92 @@ function softenAction(value: string) {
     .trim();
 }
 
-const titleStarters = ["说实话", "别急着定", "试完才懂", "这点很容易忽略", "建议收藏", "别只看精修", "真的有差", "这组更像真实记录", "先别被大片带跑", "我会先看"];
+const titleStarters = ["先别急", "试完再说", "我会多看一眼", "这张别删", "回家再看才明显", "别只看店拍", "那天我注意到", "这一点很容易漏", "留一张普通的", "先看身体反应"];
 
-const titleAngles = ["不是越惊艳越适合", "比好看更重要", "回家复盘才看出来", "一眼看懂差别", "不想踩坑先看这点", "拍照前先确认", "真实感在这些细节里", "别让情绪替你做决定", "收藏这几个判断点", "越具体越安心"];
+const titleAngles = ["别只听一句好看", "普通照片反而有用", "镜子前那几秒很说明问题", "看细节比看氛围稳", "先把顾虑拍下来", "有些答案在侧面", "别让灯光替你决定", "试纱可以慢一点", "上身以后再判断", "越普通越能复盘"];
 
-const titleClosers = ["这点真的会影响判断", "别等试完才发现", "很多人第一眼会看错", "看懂就不容易乱", "适合比惊艳更重要", "这才是能收藏的原因", "不是广告感，是参考感", "细节会自己说话", "别被一句好看带走", "越真实越有说服力"];
+const titleClosers = ["回家还能看懂", "当场别急着定", "比精修更诚实", "这张我会留下", "先别删手机照", "能少纠结一点", "看完再换下一件", "比口头夸奖有用", "适合自己最要紧", "这次别被氛围带走"];
+
+type TitleContext = {
+  topic: FashionSeedingTopic;
+  baseTitle?: string;
+  audienceCue: string;
+  focusCue: string;
+  concernCue: string;
+  proofCue: string;
+  sceneCue: string;
+  materialCue: string;
+  starter: string;
+  angle: string;
+  closer: string;
+};
+
+function cleanTitle(value: string) {
+  return value
+    .replace(/\s+/g, "")
+    .replace(/，+/g, "，")
+    .replace(/：+/g, "：")
+    .replace(/^，|，$/g, "")
+    .slice(0, 34);
+}
+
+function buildNaturalTitles(context: TitleContext) {
+  const { topic, baseTitle, audienceCue, focusCue, concernCue, proofCue, sceneCue, materialCue, starter, angle, closer } = context;
+
+  if (topic === "婚纱品牌发布") {
+    return [
+      cleanTitle(`${materialCue}先看清，别急着喊命定`),
+      cleanTitle(`${proofCue}放前面，回应${concernCue}`),
+      cleanTitle(`${sceneCue}看${focusCue}，${closer}`)
+    ];
+  }
+
+  if (topic === "婚纱店发布") {
+    return [
+      cleanTitle(`${baseTitle || "婚纱店日常"}，今天拍了${sceneCue}`),
+      cleanTitle(`预约前我会先看${proofCue}`),
+      cleanTitle(`${starter}，别只看装修，也看${focusCue}`)
+    ];
+  }
+
+  if (topic === "手机对镜自拍试纱") {
+    return [
+      cleanTitle(`${baseTitle || "试纱自拍"}，手机这张别急着删`),
+      cleanTitle(`${starter}，先看${focusCue}`),
+      cleanTitle(`${proofCue}留好，${closer}`)
+    ];
+  }
+
+  if (topic === "试纱避坑准备") {
+    return [
+      cleanTitle(`${baseTitle || "试纱前一天"}，出门前看一遍`),
+      cleanTitle(`${sceneCue}这张留好，明天会用到`),
+      cleanTitle(`${audienceCue}别怕${concernCue}`)
+    ];
+  }
+
+  if (topic === "试纱陪同视角") {
+    return [
+      cleanTitle(baseTitle || "陪她试纱，旁边人先看见变化"),
+      cleanTitle(`${sceneCue}别删，${proofCue}能对上`),
+      cleanTitle(`${audienceCue}看${materialCue}，少说都好看`)
+    ];
+  }
+
+  if (isBridalFashionTopic(topic)) {
+    return [
+      cleanTitle(`${baseTitle || starter}，试纱时先看${focusCue}`),
+      cleanTitle(`${sceneCue}这张别删，${proofCue}很有用`),
+      cleanTitle(`${audienceCue}先别纠结${concernCue}`)
+    ];
+  }
+
+  return [
+    cleanTitle(`${starter}，今天先看${focusCue}`),
+    cleanTitle(`${sceneCue}这张我会留下`),
+    cleanTitle(`${angle}，尤其是${materialCue}`)
+  ];
+}
 
 const characterMoodOpenings: NarrativePool = {
   bridal: [
@@ -1415,12 +1583,72 @@ const characterMoodOpenings: NarrativePool = {
     ({ focusCue }) => `我记得她走出来的时候没有笑得很夸张，只是先看镜子里的${focusCue}，然后轻轻问了一句这样会不会太满。`,
     ({ concernCue }) => `试纱最容易被第一眼带走，但她那天没有急着说喜欢，先让顾问等等，自己低头看了看${concernCue}相关的位置。`,
     ({ audienceCue }) => `有些${audienceCue}不是不确定审美，是还没找到身体放松的那一下。她站出来的时候，肩膀还是微微提着。`,
-    ({ focusCue }) => `这组内容我不想从“好美”开始写，想从她慢慢转身那一刻开始。那一下，${focusCue}比表情更先被看见。`,
+    ({ focusCue }) => `这组记录我不想从“好美”开始写，想从她慢慢转身那一刻开始。那一下，${focusCue}比表情更先被看见。`,
     ({ concernCue }) => `她说自己来之前做了很多功课，但换上以后第一个反应不是拍照，而是站在镜子前停住，看${concernCue}有没有被放大。`
+  ],
+  phone: [
+    ({ concernCue }) => `她拿起手机时先往旁边挪了一点，不是为了找最好看的角度，是怕${concernCue}。`,
+    ({ focusCue }) => `这组自拍没有开广角。她站到镜子前，先确认手机没有挡住${focusCue}，才按下第一张。`,
+    ({ audienceCue }) => `给${audienceCue}看的试纱记录，开头就应该普通一点。手机举起来，裙摆还没完全铺好，这反而像真的。`,
+    ({ concernCue }) => `她说店拍当然好看，但回家真正反复看的，还是手机里那几张能看清${concernCue}的照片。`,
+    ({ focusCue }) => `第一张自拍有点歪，她没删。因为那张刚好拍到了${focusCue}，比摆好的照片更能复盘。`,
+    ({ audienceCue }) => `${audienceCue}很容易在试纱间上头，所以我会先让她拍一张最普通的镜前全身。`,
+    ({ concernCue }) => `她把手机从胸口旁边移开一点，又重新站直。这个小动作，是为了别让${concernCue}干扰判断。`,
+    ({ focusCue }) => `试纱自拍不需要像大片。手机拿稳、脚别往前伸，先把${focusCue}留下来。`,
+    ({ concernCue }) => `她原本担心${concernCue}，所以没有只拍正面，又补了一张侧身和一段走动。`,
+    ({ audienceCue }) => `如果是${audienceCue}第一次试纱，我会提醒她：先拍给自己看，不是拍给别人夸。`
+  ],
+  prep: [
+    ({ concernCue }) => `试纱前一天，她把胸贴、鞋和发圈都放到包旁边，才发现自己最担心的其实是${concernCue}。`,
+    ({ focusCue }) => `这类准备不用写得很吓人。先把${focusCue}记下来，第二天到店就不会全靠临场反应。`,
+    ({ audienceCue }) => `${audienceCue}出门前最需要的不是一长串攻略，是几件真的会用到的小东西。`,
+    ({ concernCue }) => `她本来想一天约三家，写清${concernCue}以后，反而把行程删掉了一半。`,
+    ({ focusCue }) => `准备清单摊在桌上时，最有用的不是东西多，而是${focusCue}有没有先想好。`,
+    ({ audienceCue }) => `给${audienceCue}的提醒可以简单一点：吃点东西，穿舒服的鞋，把问题写下来。`,
+    ({ concernCue }) => `很多慌乱不是因为不懂婚纱，是到店后才想起${concernCue}还没问。`,
+    ({ focusCue }) => `她把手机备忘录打开，只写了三行：场地、预算、${focusCue}。够用了。`,
+    ({ concernCue }) => `试纱当天情绪很容易满，提前面对${concernCue}，到店后会轻一点。`,
+    ({ audienceCue }) => `${audienceCue}不用把自己准备成完美状态，只要带着问题去。`
+  ],
+  companion: [
+    () => `陪她试纱那天，我先看见的不是裙摆，是她一直回头确认大家的反应。`,
+    ({ focusCue }) => `朋友坐在旁边其实很容易看出来，${focusCue}出现时，她整个人会先松一下。`,
+    ({ audienceCue }) => `${audienceCue}不要急着给答案，先看她站到镜子前有没有自然一点。`,
+    ({ concernCue }) => `妈妈没有马上评价好不好看，只是先帮她理头纱。那一下，${concernCue}反而没那么重。`,
+    ({ focusCue }) => `我负责拍视频，所以会比她更清楚${focusCue}是不是只在正面成立。`,
+    ({ audienceCue }) => `给${audienceCue}的记录，不用拍成剧情。旁边人的安静反应就够真实。`,
+    ({ concernCue }) => `她一开始很在意${concernCue}，后来走了两步，自己先笑了一下。`,
+    ({ focusCue }) => `陪试的人最好少说“都好看”，多帮她看${focusCue}这种具体地方。`,
+    () => `伴侣坐在旁边没有插话，只在她反复问意见时提醒她刚才一直在笑。`,
+    ({ audienceCue }) => `${audienceCue}其实是帮她留证据的人，不是替她决定的人。`
+  ],
+  brand: [
+    ({ focusCue }) => `这组新品我不想从“高级”两个字开始。先把${focusCue}放出来，能看懂再谈喜欢。`,
+    ({ concernCue }) => `拍发布图前，我们先把${concernCue}拿出来看了一遍，避免一组图只剩漂亮。`,
+    ({ materialCue }) => `样衣挂在架子上时很安静，真正需要说清的是${materialCue}，不是给它套一句命定。`,
+    ({ focusCue }) => `这件上身以后，团队先看${focusCue}，没有急着定主图。婚纱发布不能只靠第一眼。`,
+    ({ concernCue }) => `如果一组新品让人看完还在想${concernCue}，那文案再漂亮也没用。`,
+    ({ materialCue }) => `我会先发一张没那么热闹的图，让${materialCue}自己露出来，少一点口号。`,
+    ({ focusCue }) => `这一季的线条不复杂，所以更要把${focusCue}拍清楚。简单款最怕说空话。`,
+    ({ concernCue }) => `发布前我们删掉了几句太满的描述，留下能回答${concernCue}的画面。`,
+    ({ materialCue }) => `近看${materialCue}时，才知道这件该怎么讲。远景负责好看，近景负责诚实。`,
+    ({ focusCue }) => `这不是一组只求氛围的新品图。第一张要让人看见${focusCue}，后面才接得住。`
+  ],
+  store: [
+    ({ concernCue }) => `今天店里第一组图没有拍满墙婚纱，先拍了她说起自己怕${concernCue}的那几分钟。`,
+    ({ focusCue }) => `顾问没有急着拿最贵的款，先坐下来听她说完。这个过程里，${focusCue}比空间图更值得拍。`,
+    ({ audienceCue }) => `给${audienceCue}看的门店记录，开头不用太热闹。预约卡、镜子和一段沟通就够了。`,
+    ({ concernCue }) => `她进门前其实有点担心${concernCue}，所以顾问先把流程说清楚，没有马上推进试穿。`,
+    ({ focusCue }) => `这组想记录的不是店有多大，而是${focusCue}有没有发生在真实服务里。`,
+    ({ audienceCue }) => `${audienceCue}最想知道的不是橱窗有多美，是进店以后会不会被好好听见。`,
+    ({ concernCue }) => `拍到一半我停了一下，把会露出隐私的东西移开。门店日常再真实，也要照顾${concernCue}。`,
+    ({ focusCue }) => `客人站在镜前时，顾问退后了半步。这个距离感，刚好能说明${focusCue}。`,
+    ({ concernCue }) => `她没有被催着马上定，先把${concernCue}讲出来。这个片段比一排裙子更像店里的真实一天。`,
+    ({ audienceCue }) => `如果我是${audienceCue}，我会想先看到试纱间的光、镜子和顾问怎么说话。`
   ],
   dress: [
     ({ concernCue }) => `她出门前在入户镜前站了一会儿，没有急着拎包，先低头看裙摆和鞋子的距离，像是在确认${concernCue}。`,
-    ({ audienceCue }) => `这条内容更像${audienceCue}出门前的自检，不是摆好姿势拍一张，而是穿上以后先走两步。`,
+    ({ audienceCue }) => `这条记录更像${audienceCue}出门前的自检，不是摆好姿势拍一张，而是穿上以后先走两步。`,
     ({ focusCue }) => `她把外套搭在手臂上，又回到镜子前看了一眼${focusCue}，表情不是惊喜，是终于不用再调整。`,
     ({ concernCue }) => `很多日常裙装不是第一眼决定的，她那天先坐下，再站起来，才开始判断${concernCue}会不会打扰自己。`,
     ({ audienceCue }) => `${audienceCue}最真实的状态，是早上没有太多时间纠结。她把头发随手别到耳后，先看裙子能不能跟上今天的日程。`,
@@ -1444,6 +1672,66 @@ const environmentDetails: NarrativePool = {
     ({ sceneCue }) => `朋友坐在沙发边没有说话，房间里有一小段停顿。比起热闹地夸，${sceneCue}在这种时候更真实。`,
     ({ sceneCue }) => `顾问蹲下整理拖尾时，镜面刚好照到侧面比例。这个角度适合看${sceneCue}，也比正面更诚实。`,
     ({ sceneCue }) => `桌上有预约卡、面料小样和一束没拆开的头纱，都是很小的东西。它们让${sceneCue}像真的发生过。`
+  ],
+  phone: [
+    ({ sceneCue }) => `镜子旁边有一点窗帘影子，地面线也在，没有被修得太干净。${sceneCue}放在这样的画面里才有参考。`,
+    ({ sceneCue }) => `试纱间灯光偏软，手机拍出来不是特别亮，但腰线和裙摆还清楚。${sceneCue}不用追求完美。`,
+    ({ sceneCue }) => `她把手机举到胸口旁边，镜子里能看到完整拖尾。${sceneCue}看起来很普通，却适合回家慢慢看。`,
+    ({ sceneCue }) => `背景里能看到衣架和纱帘，空间不乱，也不像刻意布景。${sceneCue}因此更像真实试纱。`,
+    ({ sceneCue }) => `顾问退到画面外，只留一点手部整理裙摆的痕迹。${sceneCue}还是主角，手机也没有挡住结构。`,
+    ({ sceneCue }) => `镜前那块地毯没有被裁掉，脚和裙摆的位置都能看见。判断${sceneCue}时，这些小地方很有用。`,
+    ({ sceneCue }) => `手机相册里的缩略图排在一起，正面、侧面和走动都有。${sceneCue}不是为了出片，是为了对比。`,
+    ({ sceneCue }) => `那天店里不算吵，只有顾问整理拖尾的声音。${sceneCue}就在这种很日常的间隙里留下来。`,
+    ({ sceneCue }) => `镜子边缘有一点反光，手机画面没有开滤镜。这样看${sceneCue}，比例比较接近真实。`,
+    ({ sceneCue }) => `她拍完没有立刻发出去，而是坐到旁边翻了几张。${sceneCue}在相册里并排看，差别会更明显。`
+  ],
+  prep: [
+    ({ sceneCue }) => `桌面上没有摆太多东西，只有预约卡、鞋、胸贴和一支笔。${sceneCue}放在这里，很像出门前最后看一遍。`,
+    ({ sceneCue }) => `试纱前的房间很安静，手机备忘录还亮着。${sceneCue}不是攻略封面，是明天真的要用的记录。`,
+    ({ sceneCue }) => `鞋盒开着，头纱照片存在相册里，包还没拉上。${sceneCue}就停在这个出门前的小空隙。`,
+    ({ sceneCue }) => `她把清单写在便签纸上，没有做得很精致。${sceneCue}越普通，越像真的会被带去店里。`,
+    ({ sceneCue }) => `桌角有一杯水，旁边是无痕内裤和接近婚礼高度的鞋。${sceneCue}看起来琐碎，但很实用。`,
+    ({ sceneCue }) => `预约时间、预算和场地被写在同一页上。${sceneCue}让试纱当天少一点临时慌乱。`,
+    ({ sceneCue }) => `镜前先试了一下鞋高，裙子还没穿上，比例问题已经能提前想一遍。${sceneCue}就从这里开始。`,
+    ({ sceneCue }) => `包里留了一个小文件夹，放试纱记录和面料小样。${sceneCue}不漂亮，但会帮上忙。`,
+    ({ sceneCue }) => `她没有把一天排得很满，日历上只留了两家店。${sceneCue}看起来松一点，判断也会清楚一点。`,
+    ({ sceneCue }) => `试纱间入口还没出现，准备已经开始了。${sceneCue}不是焦虑，是给自己留一点余地。`
+  ],
+  companion: [
+    ({ sceneCue }) => `试纱间沙发不大，朋友坐在侧面，手机一直横着拿。${sceneCue}就在这种角度里更真实。`,
+    ({ sceneCue }) => `妈妈坐在旁边，没有急着说话，手里还拿着刚取下来的头纱。${sceneCue}不需要很热闹。`,
+    ({ sceneCue }) => `顾问整理裙摆时，陪试的人刚好能看到背影。${sceneCue}比正面照多了一层判断。`,
+    ({ sceneCue }) => `镜子里除了她，还有旁边人安静看着的影子。${sceneCue}像真实试纱，不像排练好的剧情。`,
+    ({ sceneCue }) => `手机里回放上一件婚纱时，几个人都凑近了一点。${sceneCue}让意见变得具体。`,
+    ({ sceneCue }) => `候场区的灯不亮，声音也低。${sceneCue}在这种环境里不会被夸张情绪盖掉。`,
+    ({ sceneCue }) => `朋友从侧面拍她走两步，脚下地毯和拖尾都在画面里。${sceneCue}能看出真实行动感。`,
+    ({ sceneCue }) => `配饰台上头纱还没收回去，旁边放着试纱记录表。${sceneCue}看起来像刚刚发生。`,
+    ({ sceneCue }) => `伴侣坐得有点拘谨，但看得很认真。${sceneCue}里那一点不熟练，反而很真实。`,
+    ({ sceneCue }) => `几个人一起看镜子时，没有人抢着下结论。${sceneCue}就在这个停顿里。`
+  ],
+  brand: [
+    ({ sceneCue }) => `拍摄台上只放了样衣、面料卡和一张草图，东西不多。${sceneCue}留一点空，系列线索反而更清楚。`,
+    ({ sceneCue }) => `窗边光落在挂装上，白纱没有糊成一片。${sceneCue}不需要布置得很华丽，先把结构拍准。`,
+    ({ sceneCue }) => `lookbook 的背景压得很干净，但没有把房间修到失真。${sceneCue}要看得出是婚纱，不是海报。`,
+    ({ sceneCue }) => `样衣最后确认时，桌上还有没收起来的钉珠道具和线剪。${sceneCue}在这种过程里更可信。`,
+    ({ sceneCue }) => `橱窗光很轻，挂装的影子落在地面上。${sceneCue}不吵，适合把新品慢慢看完。`,
+    ({ sceneCue }) => `拍完整上身前，团队先看了侧面和背影。${sceneCue}不是补充图，它会影响这件怎么被理解。`,
+    ({ sceneCue }) => `mood board 没有占满画面，只露出一点纸张边缘。${sceneCue}还是围着衣服走。`,
+    ({ sceneCue }) => `酒店晨光那组保留了窗框和地毯线，婚纱的比例没有被拉长。${sceneCue}因此更像可参考的新品图。`,
+    ({ sceneCue }) => `草坪那张没有把绿色调得很浓，白纱边缘还能看见层次。${sceneCue}也没有被背景吞掉。`,
+    ({ sceneCue }) => `发布图里可以有一点安静，不必每张都像封面。${sceneCue}留给人慢慢看就好。`
+  ],
+  store: [
+    ({ sceneCue }) => `试纱间门半开着，里面能看到镜子、纱帘和一排衣架。${sceneCue}不豪华，但看着让人知道会怎么开始。`,
+    ({ sceneCue }) => `桌上放着预约卡和面料小样，手机屏幕被避开了。${sceneCue}看起来普通，反而让人安心。`,
+    ({ sceneCue }) => `顾问整理裙摆时没有贴得太近，画面里留了距离。${sceneCue}能看见服务，也不会让人紧张。`,
+    ({ sceneCue }) => `候场区的椅子、鞋盒和头纱都在原位，干净但没有装成样板间。${sceneCue}像真实营业的一天。`,
+    ({ sceneCue }) => `橱窗那一面光很柔，挂着的婚纱没有被拍成一片白。${sceneCue}让人先看清款式。`,
+    ({ sceneCue }) => `朋友坐在旁边翻视频，顾问在等客人自己开口。${sceneCue}里那点停顿很重要。`,
+    ({ sceneCue }) => `配饰台上有头纱、耳饰和手套，摆得清楚，不抢画面。${sceneCue}是服务的一部分。`,
+    ({ sceneCue }) => `试纱结束后，记录表还放在桌边。${sceneCue}不是摆拍道具，是刚刚用过的东西。`,
+    ({ sceneCue }) => `镜子前的光没有过曝，白纱和人的肤色都正常。${sceneCue}能让预约前的人少猜一点。`,
+    ({ sceneCue }) => `这家店的日常不需要拍得很忙。${sceneCue}干净、具体，就比空口说专业更好。`
   ],
   dress: [
     ({ sceneCue }) => `窗边的光不强，有一点灰调，裙子的颜色在日常光里反而更容易看准。${sceneCue}不用被拍成大片。`,
@@ -1472,6 +1760,66 @@ const productObservationDetails: NarrativePool = {
     ({ materialCue }) => `这件最耐看的地方不是裙摆多大，而是肩颈、腰线和${materialCue}之间有呼吸感，没有把人压住。`,
     ({ focusCue }) => `手机拍到的那张没有特别精致，但领口、腰线、裙摆和拖尾都在。${focusCue}反而更容易回家复盘。`
   ],
+  phone: [
+    ({ focusCue }) => `手机别举得太中间，领口和腰线要露出来。${focusCue}如果被手机挡住，回家就很难判断。`,
+    ({ materialCue }) => `普通镜头下，缎面和蕾丝不会像店拍那么亮，但${materialCue}还在，这张就值得留。`,
+    ({ focusCue, materialCue }) => `侧身自拍会把${focusCue}和${materialCue}一起带出来，尤其是拖尾有没有压人，一眼就能看见。`,
+    ({ materialCue }) => `近拍腰线时能看到钉珠道具的位置，也能看到${materialCue}。这些小细节比滤镜更有用。`,
+    ({ focusCue }) => `她补了一段十秒走动，裙摆有没有跟着身体走，${focusCue}会比静态自拍更清楚。`,
+    ({ materialCue }) => `自拍里不要把裙摆裁掉，拖尾边缘和${materialCue}都要留在画面里。`,
+    ({ focusCue }) => `如果开广角，腿会被拉长，${focusCue}也会跟着失真。正常镜头虽然普通，但更接近现场。`,
+    ({ materialCue }) => `手机相册里几张放在一起看，${materialCue}的差别会比单独看一张明显很多。`,
+    ({ focusCue }) => `她把手机换到另一只手，又拍了一张不挡胸口的。${focusCue}终于完整了。`,
+    ({ materialCue }) => `屏幕不要露聊天，也不要露预约信息。画面只需要留下婚纱、镜子和${materialCue}。`
+  ],
+  prep: [
+    ({ focusCue, materialCue }) => `清单里最该写清的是${focusCue}，旁边再放${materialCue}，到店后顾问会更快理解你。`,
+    ({ materialCue }) => `鞋高、胸贴和无痕内裤不是小事，${materialCue}会直接影响试出来的比例。`,
+    ({ focusCue }) => `每件婚纱都拍同角度，才看得出${focusCue}有没有变化，不然回家很容易乱。`,
+    ({ materialCue }) => `头纱、发型和鞋一起试，${materialCue}会更接近婚礼当天，不会只停在试纱间。`,
+    ({ focusCue }) => `先把预算和场地说清楚，再看款式。${focusCue}不写下来，到店很容易被漂亮裙子带走。`,
+    ({ materialCue }) => `近看蕾丝、缎面和白纱，不是挑刺，是确认${materialCue}在现场也能成立。`,
+    ({ focusCue }) => `坐下、转身、走两步都要试。${focusCue}如果只靠站定判断，会漏掉很多。`,
+    ({ materialCue }) => `钉珠道具调整出的临时腰线可以拍下来，${materialCue}和最终改尺寸会有关。`,
+    ({ focusCue }) => `每试完一件写两句话就够：喜欢哪里，犹豫哪里。${focusCue}会慢慢浮出来。`,
+    ({ materialCue }) => `客照授权和隐私边界也提前问，${materialCue}之外，这些细节也会影响体验。`
+  ],
+  companion: [
+    () => `陪试的人更容易看到背影和侧面，头纱、肩线和拖尾不能只靠她自己在镜子里猜。`,
+    ({ materialCue }) => `妈妈会先注意头纱、敬茶动作和${materialCue}，这些往往比一句好看更实际。`,
+    ({ focusCue }) => `朋友拍的走动视频很有用，${focusCue}在动作里会比站定时清楚。`,
+    ({ materialCue }) => `伴侣可能说不出专业词，但能看见${materialCue}是不是和场地搭。`,
+    ({ focusCue }) => `她自己看不到背后的拉链和拖尾，${focusCue}就需要旁边的人补一眼。`,
+    ({ materialCue }) => `同一角度拍几件以后，${materialCue}的差别不用争，翻相册就能看出来。`,
+    ({ focusCue }) => `如果她一直整理肩带，${focusCue}大概率还没让她真正放松。`,
+    ({ materialCue }) => `头纱叠上去以后，肩颈和${materialCue}会一起变化，陪试的人最好也拍下来。`,
+    ({ focusCue }) => `少说“显瘦”，多说${focusCue}。具体一点，她才不会越听越乱。`,
+    ({ materialCue }) => `坐下那一刻很容易被漏掉，${materialCue}在这个动作里会变得很诚实。`
+  ],
+  brand: [
+    ({ focusCue, materialCue }) => `这件的重点在${focusCue}，不是把裙摆拍大。近景里的${materialCue}要接得上完整上身。`,
+    ({ materialCue }) => `挂装时先看${materialCue}，上身后再看腰线。两张图能对上，发布才不空。`,
+    ({ focusCue }) => `方领、细肩带、收腰和拖尾要连着看。${focusCue}如果只靠一句形容，很快就会飘。`,
+    ({ materialCue }) => `蕾丝和钉珠不能只在远处闪一下，${materialCue}近看也要干净。`,
+    ({ focusCue }) => `侧面图保留下来，是因为${focusCue}在正面不一定看得全。`,
+    ({ materialCue }) => `强光下白纱最容易糊掉，所以这组把${materialCue}压在柔光里拍。`,
+    ({ focusCue }) => `新品不需要每件都说适合所有人。看完${focusCue}，适不适合其实会清楚很多。`,
+    ({ materialCue }) => `样衣调整后的腰线和${materialCue}放在一起，能看出这件不是只为封面存在。`,
+    ({ focusCue }) => `背影不是补图。拉链、肩线和拖尾展开以后，${focusCue}才算完整。`,
+    ({ materialCue }) => `如果一组发布没有${materialCue}，只剩氛围，备婚的人很难拿它做判断。`
+  ],
+  store: [
+    ({ focusCue }) => `顾问拿款前先问场地和预算，${focusCue}不是写在文案里的，是这几分钟里发生的。`,
+    ({ materialCue }) => `试纱间的光要正常，镜子也要正常。${materialCue}如果在现场看不清，照片再美都没用。`,
+    ({ focusCue, materialCue }) => `整理裙摆时，顾问会顺手检查${materialCue}。这个动作能看出${focusCue}是不是落到细节里。`,
+    ({ materialCue }) => `头纱、耳饰和手套放在台面上，不需要堆满。${materialCue}清楚，搭配就不会乱。`,
+    ({ focusCue }) => `客照发布前确认授权，这一步很小，但${focusCue}会让人放心很多。`,
+    ({ materialCue }) => `面料小样和改尺寸记录留在桌上，${materialCue}不是摆设，是沟通时真的会用到。`,
+    ({ focusCue }) => `如果店铺只拍空间，${focusCue}就会缺一块。顾问怎么听、怎么调整，都要被看见一点。`,
+    ({ materialCue }) => `橱窗图负责第一眼，${materialCue}负责让人知道进店后能看到什么。`,
+    ({ focusCue }) => `朋友回看视频时，顾问没有插话催单。${focusCue}有时候就在这种安静里。`,
+    ({ materialCue }) => `试完以后记录理由，比只说好看更实在。${materialCue}和选择原因放在一起，才像真实门店。`
+  ],
   dress: [
     ({ materialCue, focusCue }) => `上身后先看${materialCue}，再看${focusCue}，这两个地方决定它是日常好穿，还是只适合拍一张图。`,
     ({ focusCue }) => `她低头顺了一下裙摆，腰线没有往上跑，${focusCue}在走路时也没有乱掉。`,
@@ -1499,6 +1847,66 @@ const emotionalTurns: NarrativePool = {
     ({ serviceCue }) => `顾问蹲下整理拖尾的时候，她低头看了很久。比起一句夸奖，${serviceCue}留下的过程更能说明状态。`,
     ({ concernCue }) => `她从镜子里看了正面，又侧过身看背影，关于${concernCue}的紧张慢慢少了一点。`
   ],
+  phone: [
+    ({ proofCue }) => `拍到${proofCue}以后，她没有马上发给朋友，而是自己先看了一遍，语气明显稳了。`,
+    ({ concernCue }) => `原本一直担心${concernCue}，等正面和侧身放在一起看，她反而没那么慌。`,
+    ({ serviceCue }) => `顾问调整完以后，她按${serviceCue}又补了一张。前后差别不用别人解释。`,
+    ({ proofCue }) => `${proofCue}留下来以后，店拍和自拍终于能一起看，不会只记得哪张最漂亮。`,
+    ({ concernCue }) => `她前面还在问${concernCue}，走动视频拍完以后，自己先说这件好像轻一点。`,
+    ({ serviceCue }) => `手机位置换了两次，最后按${serviceCue}拍出来的那张最普通，却最能说明问题。`,
+    ({ proofCue }) => `看到${proofCue}时，她才发现刚才站得太僵，于是又放松肩膀拍了一张。`,
+    ({ concernCue }) => `关于${concernCue}的判断，不是在镜子前立刻有答案，是回到相册里慢慢变清楚。`,
+    ({ serviceCue }) => `她没有忙着修图，先按${serviceCue}把该留的角度补齐。这个顺序挺重要。`,
+    ({ proofCue }) => `${proofCue}不一定最好看，但后来回家复盘，她反而最常打开这一张。`
+  ],
+  prep: [
+    ({ proofCue }) => `后来她把${proofCue}也写进备忘录，第二天试纱时少问了很多重复问题。`,
+    ({ concernCue }) => `原本担心${concernCue}，但东西收好以后，那种慌张少了一半。`,
+    ({ serviceCue }) => `她没有把清单做得很复杂，只提醒自己${serviceCue}。到店后反而更能听进去顾问的话。`,
+    ({ proofCue }) => `${proofCue}留下来以后，回家复盘不再只靠记忆。`,
+    ({ concernCue }) => `关于${concernCue}，提前想一遍，不是制造焦虑，是给现场留一点余地。`,
+    ({ serviceCue }) => `试纱当天她真的按${serviceCue}做了，最直接的变化是没那么容易被第一件带跑。`,
+    ({ proofCue }) => `看到${proofCue}那一页时，顾问也更快知道她在意什么。`,
+    ({ concernCue }) => `她以前觉得${concernCue}很丢脸，写下来以后，反而能正常说出口。`,
+    ({ serviceCue }) => `准备到最后，最有用的不是塞满包，而是记得${serviceCue}。`,
+    ({ proofCue }) => `${proofCue}不是为了显得专业，是为了试完以后还能想起当时的判断。`
+  ],
+  companion: [
+    ({ proofCue }) => `后来看到${proofCue}，她自己也安静了一下，不再急着问我们哪件更好。`,
+    ({ concernCue }) => `前面她总问${concernCue}，但这件走出来以后，先看镜子的人变成了她自己。`,
+    ({ serviceCue }) => `朋友没有急着夸，只是按${serviceCue}补了一段视频，意见就具体多了。`,
+    ({ proofCue }) => `${proofCue}留下来以后，妈妈的那句“这件舒服吗”终于有了画面。`,
+    ({ concernCue }) => `关于${concernCue}，旁边人看得出来她什么时候是真的放松，不用说太满。`,
+    ({ serviceCue }) => `伴侣后来也学会了${serviceCue}，虽然动作有点笨，但她笑了。`,
+    ({ proofCue }) => `比起大家一起喊好看，${proofCue}更能让她回家后继续判断。`,
+    ({ concernCue }) => `她前面一直绕着${concernCue}打转，朋友把视频递过去以后，她反而没再追问。`,
+    ({ serviceCue }) => `陪试到后面，最有用的事就是${serviceCue}，少一点情绪，多一点证据。`,
+    ({ proofCue }) => `${proofCue}放进相册以后，那天的变化就不只存在大家的记忆里。`
+  ],
+  brand: [
+    ({ proofCue }) => `后来我们把${proofCue}放到第二张，主图反而不用说太多。看的人会自己接上。`,
+    ({ concernCue }) => `原本担心${concernCue}，所以这组没有只留远景。细节补上以后，发布才站得住。`,
+    ({ serviceCue }) => `拍完第一轮，团队又按${serviceCue}补了一组。不是为了更满，是为了更清楚。`,
+    ({ proofCue }) => `${proofCue}出现以后，这件的适配人群就好讲了，不必硬写成所有人都适合。`,
+    ({ concernCue }) => `如果${concernCue}没有被回答，再温柔的标题也会显得虚。`,
+    ({ serviceCue }) => `这组最后保留了${serviceCue}，因为它能让新品从“好看”落到“我能不能穿”。`,
+    ({ proofCue }) => `${proofCue}让侧面和背影有了位置，不再只是封面图的陪衬。`,
+    ({ concernCue }) => `关于${concernCue}，最好的回答不是形容词，是一张不修得太狠的近景。`,
+    ({ serviceCue }) => `发布前删掉了几句过满的卖点，改成${serviceCue}。读起来轻多了。`,
+    ({ proofCue }) => `等${proofCue}排进去以后，这组图才像一个系列，而不是几张漂亮婚纱。`
+  ],
+  store: [
+    ({ proofCue }) => `后来客人看到${proofCue}，才开始把自己的顾虑说得更具体。顾问也就能接住。`,
+    ({ concernCue }) => `她一开始担心${concernCue}，试完第一件后发现没人催，肩膀才慢慢放下来。`,
+    ({ serviceCue }) => `顾问按${serviceCue}做完以后，没有马上推进下一件，只是等她自己看镜子。`,
+    ({ proofCue }) => `${proofCue}被拍下来以后，这条门店日常就不只是在展示空间。`,
+    ({ concernCue }) => `关于${concernCue}，一张试纱间照片不够，流程里的停顿也要看见。`,
+    ({ serviceCue }) => `那天最让人放松的不是夸奖，是${serviceCue}这一步做得很自然。`,
+    ({ proofCue }) => `看到${proofCue}，预约前的人至少能知道进店后不是只站着被评价。`,
+    ({ concernCue }) => `她把${concernCue}问出口以后，顾问没有打断。这个小反应，我会留下。`,
+    ({ serviceCue }) => `服务感不是喊出来的，${serviceCue}这类动作拍到一点就够。`,
+    ({ proofCue }) => `${proofCue}放进组图里，店铺的信任感就不靠装修撑着了。`
+  ],
   dress: [
     ({ proofCue }) => `后来她没有换姿势，只是自然走到门口，${proofCue}在这个动作里比摆拍更清楚。`,
     ({ serviceCue }) => `拍到一半她停下来整理了一下包带，再抬头时整个人松了一点。${serviceCue}，也不需要写得太复杂。`,
@@ -1515,28 +1923,88 @@ const emotionalTurns: NarrativePool = {
 
 const humanClosings: NarrativePool = {
   bridal: [
-    ({ takeawayCue }) => `所以这篇我不会写得很满，能把${takeawayCue}讲清楚，就已经够一个人回家慢慢想了。`,
-    ({ audienceCue }) => `给${audienceCue}看的内容，不一定要替她做决定，至少要让她记得自己在镜子前的那个反应。`,
+    ({ takeawayCue }) => `所以我会停在这里。能记住${takeawayCue}，就够一个人回家慢慢想了。`,
+    ({ audienceCue }) => `给${audienceCue}看的记录，不一定要替她做决定，至少要让她记得自己在镜子前的那个反应。`,
     ({ takeawayCue }) => `最后她也没有当场说死，只是把这组照片存下来。${takeawayCue}，有时候就是从这种小停顿开始的。`,
     ({ audienceCue }) => `我更想保留这种不着急的试纱记录，${audienceCue}看完会知道，适合不是被夸出来的。`,
     ({ takeawayCue }) => `如果只剩一句漂亮，回家很快就忘了；但${takeawayCue}，以后再翻相册也能看懂。`,
     ({ audienceCue }) => `这不是热闹的客照，但对${audienceCue}来说，真实身体感受比热闹更有用。`,
-    ({ takeawayCue }) => `写到这里就够了，不需要把情绪推到很高，${takeawayCue}才是这组图该留下的原因。`,
-    ({ audienceCue }) => `${audienceCue}其实很需要这种慢一点的内容，不催她喜欢，也不催她立刻确定。`,
+    ({ takeawayCue }) => `到这里就够了，不需要把情绪推到很高，${takeawayCue}才是这组图该留下的原因。`,
+    ({ audienceCue }) => `${audienceCue}其实很需要这种慢一点的记录，不催她喜欢，也不催她立刻确定。`,
     ({ takeawayCue }) => `最后那张手机照有点普通，但我会留下。因为${takeawayCue}，往往就藏在普通照片里。`,
-    ({ audienceCue }) => `如果这篇能让${audienceCue}试纱时少一点慌，多看一眼自己的身体状态，就够了。`
+    ({ audienceCue }) => `如果${audienceCue}试纱时能少一点慌，多看一眼自己的身体状态，就够了。`
+  ],
+  phone: [
+    ({ takeawayCue }) => `所以这组自拍不用修得太漂亮。能留下${takeawayCue}，就已经够回家看了。`,
+    ({ audienceCue }) => `给${audienceCue}的小提醒：拍给自己复盘的照片，普通一点没关系。`,
+    ({ takeawayCue }) => `最后我会留那张没开滤镜的，因为${takeawayCue}，比一张很好看的店拍更实在。`,
+    () => `试纱时别只等别人发图，自己的手机也要有几张能看懂的。`,
+    ({ takeawayCue }) => `这组到这里就够了。${takeawayCue}，回家再看时会感谢自己多拍了一张。`,
+    ({ audienceCue }) => `如果${audienceCue}看完记得关掉广角、别挡腰线，就很有用了。`,
+    ({ takeawayCue }) => `试纱那天情绪很容易满，${takeawayCue}能把人稍微拉回来一点。`,
+    ({ audienceCue }) => `别嫌手机照太普通。对${audienceCue}来说，普通照片常常最诚实。`,
+    ({ takeawayCue }) => `收尾不讲大道理，留好正面、侧面和走动。${takeawayCue}就藏在这里。`,
+    ({ audienceCue }) => `下次${audienceCue}进试纱间，先拍一张正常镜头的全身，再慢慢选。`
+  ],
+  prep: [
+    ({ takeawayCue }) => `准备做到这里就够了。${takeawayCue}，比临时抱佛脚有用。`,
+    ({ audienceCue }) => `给${audienceCue}一句很小的提醒：别饿着去，也别把一天排太满。`,
+    ({ takeawayCue }) => `如果这张清单能留下${takeawayCue}，试纱当天就会轻一点。`,
+    ({ audienceCue }) => `${audienceCue}不用带着完美状态出门，带着问题就可以。`,
+    ({ takeawayCue }) => `最后把鞋和手机充电器放进包里。${takeawayCue}，很多时候就靠这些小事。`,
+    ({ audienceCue }) => `下次${audienceCue}预约试纱前，先写三句话：场地、预算、最担心哪里。`,
+    ({ takeawayCue }) => `这不是让人更紧张的攻略。${takeawayCue}，才是准备的目的。`,
+    ({ audienceCue }) => `如果${audienceCue}到店后能慢慢说出顾虑，这份准备就够了。`,
+    ({ takeawayCue }) => `试纱准备不用做得很漂亮。能带走${takeawayCue}，就已经很好。`,
+    ({ audienceCue }) => `收尾就到这里。${audienceCue}记得留点体力给真正上身的那一刻。`
+  ],
+  companion: [
+    () => `陪试纱的人不用负责拍板，能把真实反应和走动视频留下来就已经很帮忙。`,
+    ({ audienceCue }) => `给${audienceCue}一句提醒：先听她怎么说，再说自己看见了什么。`,
+    ({ takeawayCue }) => `最后我会留那段走动视频。${takeawayCue}，回家看时比口头意见稳。`,
+    ({ audienceCue }) => `${audienceCue}别急着把气氛推高，安静陪她看完也很好。`,
+    ({ takeawayCue }) => `这组陪试记录不用写得很满。${takeawayCue}，就藏在旁边人的小动作里。`,
+    ({ audienceCue }) => `如果${audienceCue}能少说“都好看”，多说一个具体差别，她会轻松很多。`,
+    ({ takeawayCue }) => `几个人一起确认的过程很小，但${takeawayCue}，以后翻相册会想起来。`,
+    ({ audienceCue }) => `陪${audienceCue}试纱，不是替她喜欢，是帮她看见自己有没有放松。`,
+    ({ takeawayCue }) => `收尾就停在这里。${takeawayCue}，比一场夸张见证更像真实试纱。`,
+    ({ audienceCue }) => `下次${audienceCue}陪试，记得拍侧面和背影，也记得问她自己舒服吗。`
+  ],
+  brand: [
+    ({ takeawayCue }) => `这组发布我会写到这里。${takeawayCue}，比把每件都夸满更有分寸。`,
+    ({ audienceCue }) => `给${audienceCue}看的新品图，最好能帮她少翻几遍，也少猜一点。`,
+    ({ takeawayCue }) => `如果看完能记住${takeawayCue}，这件婚纱就不用靠口号撑着。`,
+    ({ audienceCue }) => `${audienceCue}不缺漂亮图，缺的是能判断自己适不适合的那几张。`,
+    ({ takeawayCue }) => `最后一张留给面料近景。${takeawayCue}，往往就是从近处看出来的。`,
+    ({ audienceCue }) => `新品发布不用替${audienceCue}下结论，把该看的地方拍清楚就够。`,
+    ({ takeawayCue }) => `这组不急着喊命定。${takeawayCue}，比热闹的形容词更耐看。`,
+    ({ audienceCue }) => `如果${audienceCue}看完能排除一件不适合的，也算这组图有用。`,
+    ({ takeawayCue }) => `发布到最后，还是回到衣服本身。${takeawayCue}，别让氛围盖过去。`,
+    ({ audienceCue }) => `我更愿意让${audienceCue}慢一点看完，而不是被第一张图推着立刻喜欢。`
+  ],
+  store: [
+    ({ takeawayCue }) => `所以门店日常不用拍得很吵。${takeawayCue}，比一句欢迎预约实在。`,
+    ({ audienceCue }) => `给${audienceCue}看的东西，先让她知道进店后会被怎么对待。`,
+    ({ takeawayCue }) => `这组图到这里就够了。${takeawayCue}，藏在顾问的小动作里。`,
+    ({ audienceCue }) => `${audienceCue}预约前会紧张，那就把流程拍清楚一点，别只拍漂亮角落。`,
+    ({ takeawayCue }) => `最后我会留一张记录表和面料小样。${takeawayCue}，比空间照更有用。`,
+    ({ audienceCue }) => `如果${audienceCue}看完愿意把顾虑说出来，这条门店记录就没有白发。`,
+    ({ takeawayCue }) => `店铺的可信度不是靠热闹堆出来的。${takeawayCue}，慢慢看得见。`,
+    ({ audienceCue }) => `给还没到店的${audienceCue}留一点真实流程，比只发客片更安心。`,
+    ({ takeawayCue }) => `这组不需要夸自己专业。${takeawayCue}，画面里已经有答案。`,
+    ({ audienceCue }) => `下次${audienceCue}翻到这类门店笔记，先看服务过程，再看装修。`
   ],
   dress: [
-    ({ takeawayCue }) => `这条内容不用写成种草，${takeawayCue}，比把话说得漂亮更重要。`,
+    ({ takeawayCue }) => `这条记录不用写成种草，${takeawayCue}，比把话说得漂亮更重要。`,
     ({ audienceCue }) => `给${audienceCue}看的裙装记录，最好像出门前随手拍下来的备注，真实一点就够了。`,
     ({ takeawayCue }) => `最后她还是穿这条出了门。没有特别隆重，但${takeawayCue}，这就是日常裙子的意义。`,
     ({ audienceCue }) => `${audienceCue}不会只因为一句高级就保存，她们更想知道这条裙子能不能进入自己的生活。`,
-    ({ takeawayCue }) => `如果看完只记得氛围，其实不够；能记住${takeawayCue}，这篇才有用。`,
+    ({ takeawayCue }) => `如果看完只记得氛围，其实不够；能记住${takeawayCue}，才有用。`,
     ({ audienceCue }) => `这组图不需要太满，留一点真实动作，${audienceCue}反而更容易代入。`,
     ({ takeawayCue }) => `收尾就写到这里，不拔高，也不催人买。${takeawayCue}，比口号更耐看。`,
     ({ audienceCue }) => `我会把它发得像一条普通日程，给${audienceCue}一个可以照着判断的画面。`,
     ({ takeawayCue }) => `有些裙子不是第一眼赢，是穿过一天以后还舒服。${takeawayCue}，这点就够具体。`,
-    ({ audienceCue }) => `如果${audienceCue}看完能想起自己衣柜里缺的那一种状态，这篇就没有写空。`
+    ({ audienceCue }) => `如果${audienceCue}看完能想起自己衣柜里缺的那一种状态，就没有写空。`
   ]
 };
 
@@ -1714,16 +2182,30 @@ function buildNarrativeTemplateContext(context: CopyAlignmentContext): Narrative
   };
 }
 
+function getNarrativeType(topic: FashionSeedingTopic): NarrativeType {
+  if (topic === "手机对镜自拍试纱") return "phone";
+  if (topic === "试纱避坑准备") return "prep";
+  if (topic === "试纱陪同视角") return "companion";
+  if (topic === "婚纱品牌发布") return "brand";
+  if (topic === "婚纱店发布") return "store";
+  return isBridalFashionTopic(topic) ? "bridal" : "dress";
+}
+
 function buildNarrativeBody(context: CopyAlignmentContext, axes: VariantAxes) {
-  const narrativeType = isBridalFashionTopic(context.topic) ? "bridal" : "dress";
+  const narrativeType = getNarrativeType(context.topic);
   const narrativeContext = buildNarrativeTemplateContext(context);
+  const openingTemplates = characterMoodOpenings[narrativeType] ?? characterMoodOpenings.bridal;
+  const environmentTemplates = environmentDetails[narrativeType] ?? environmentDetails.bridal;
+  const productTemplates = productObservationDetails[narrativeType] ?? productObservationDetails.bridal;
+  const turnTemplates = emotionalTurns[narrativeType] ?? emotionalTurns.bridal;
+  const closingTemplates = humanClosings[narrativeType] ?? humanClosings.bridal;
 
   return [
-    pick(characterMoodOpenings[narrativeType], axes.primary)(narrativeContext),
-    pick(environmentDetails[narrativeType], axes.secondary)(narrativeContext),
-    pick(productObservationDetails[narrativeType], axes.tertiary)(narrativeContext),
-    pick(emotionalTurns[narrativeType], axes.proof)(narrativeContext),
-    pick(humanClosings[narrativeType], axes.takeaway)(narrativeContext)
+    pick(openingTemplates, axes.primary)(narrativeContext),
+    pick(environmentTemplates, axes.secondary)(narrativeContext),
+    pick(productTemplates, axes.tertiary)(narrativeContext),
+    pick(turnTemplates, axes.proof)(narrativeContext),
+    pick(closingTemplates, axes.takeaway)(narrativeContext)
   ].join("\n\n");
 }
 
@@ -1772,14 +2254,16 @@ function buildXiaohongshuDraftCopy(
   const takeaway = readableCue(pick(bank.takeaways, axes.takeaway));
   const tone = readableCue(pick(bank.tones, axes.tone));
   const visualRecipe = buildVisualRecipe(topic, axes);
-  const titleAudience = titleCue(audience, 11);
-  const shortFocus = titleCue(focus, 11);
-  const shortConcern = titleCue(concern, 11);
+  const titleAudience = titleCue(audience, 10);
+  const shortFocus = titleCue(focus, 10);
+  const shortConcern = titleCue(concern, 10);
   const titleProof = titleCue(proof, 12);
   const titleScene = titleCue(scene, 10);
   const titleMaterial = titleCue(material, 10);
   const baseTitle = pick(draft.titles, axes.secondary);
   const titleStarter = pick(titleStarters, axes.primary);
+  const titleAngle = pick(titleAngles, axes.secondary);
+  const titleCloser = pick(titleClosers, axes.tertiary);
   const promptContext = buildHumanPromptContext(
     topic,
     audience,
@@ -1795,11 +2279,19 @@ function buildXiaohongshuDraftCopy(
   );
 
   return {
-    titles: [
-      `${baseTitle}，${titleAudience}先看${shortFocus}，别急着纠结${shortConcern}`,
-      `${titleStarter}，${titleScene}里的${titleProof}，比精修更能看出${titleMaterial}`,
-      `${titleAudience}别被${shortConcern}带跑，先看${titleProof}和${shortFocus}`
-    ],
+    titles: buildNaturalTitles({
+      topic,
+      baseTitle,
+      audienceCue: titleAudience,
+      focusCue: shortFocus,
+      concernCue: shortConcern,
+      proofCue: titleProof,
+      sceneCue: titleScene,
+      materialCue: titleMaterial,
+      starter: titleStarter,
+      angle: titleAngle,
+      closer: titleCloser
+    }),
     body: buildNarrativeBody(promptContext, axes),
     tags: buildVariantTags(kit, bank, axes),
     note: `这一版主打${tone}，用${proof}和${material}回应${audience}最在意的${concern}。`,
@@ -1826,9 +2318,9 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
   const takeaway = readableCue(pick(bank.takeaways, axes.takeaway));
   const tone = readableCue(pick(bank.tones, axes.tone));
   const visualRecipe = buildVisualRecipe(topic, axes);
-  const shortAudience = titleCue(audience, 11);
-  const shortFocus = titleCue(focus, 11);
-  const shortConcern = titleCue(concern, 11);
+  const shortAudience = titleCue(audience, 10);
+  const shortFocus = titleCue(focus, 10);
+  const shortConcern = titleCue(concern, 10);
   const shortProof = titleCue(proof, 12);
   const shortScene = titleCue(scene, 10);
   const shortMaterial = titleCue(material, 10);
@@ -1850,11 +2342,18 @@ function buildCopyFromKit(topic: FashionSeedingTopic, variantIndex: number): Top
   );
 
   return {
-    titles: [
-      `${titleStarter}，${shortAudience}先看${shortFocus}，别被${shortConcern}带跑`,
-      `${shortScene}这张留好，${shortProof}能看出${shortMaterial}`,
-      `${titleAngle}：${shortAudience}别忽略${shortConcern}，${titleCloser}`
-    ],
+    titles: buildNaturalTitles({
+      topic,
+      audienceCue: shortAudience,
+      focusCue: shortFocus,
+      concernCue: shortConcern,
+      proofCue: shortProof,
+      sceneCue: shortScene,
+      materialCue: shortMaterial,
+      starter: titleStarter,
+      angle: titleAngle,
+      closer: titleCloser
+    }),
     body: buildNarrativeBody(promptContext, axes),
     tags: buildVariantTags(kit, bank, axes),
     note: `本版面向${audience}，核心是${focus}，用${proof}和${material}回应${concern}；同主题共有 ${TOPIC_VARIANT_COUNT} 组组合文案。`,
