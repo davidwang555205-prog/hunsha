@@ -488,6 +488,87 @@ function App() {
     </div>
   );
 
+  const renderHistorySection = () => (
+    <section className={panelClass}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">生图历史</h2>
+        <span className="text-sm text-aura-muted">最近 {history.length} 条</span>
+      </div>
+
+      {history.length === 0 ? (
+        <p className={mutedClass}>暂无记录。</p>
+      ) : (
+        <div className="grid gap-4">
+          {history.map((record) => (
+            <article key={record.id} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+              <div className="grid gap-4 lg:grid-cols-[220px_1fr_auto]">
+                <div>
+                  {record.images.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {record.images.map((image, index) => (
+                        <figure key={image.id} className="min-w-0">
+                          <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${record.title} ${index + 1}`} />
+                          <figcaption className="mt-1 truncate text-[11px] text-aura-muted">{image.name || `图片 ${index + 1}`}</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex aspect-square items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
+                      {record.status === "failed" ? "失败" : "无图"}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                      {formatDate(record.createdAt)}
+                    </span>
+                    <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                      {record.username}
+                    </span>
+                    <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
+                      {record.status}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-semibold">{record.title}</h3>
+                  <p className="line-clamp-3 text-sm leading-6 text-aura-muted">{record.status === "failed" ? record.error : record.body}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {record.tags.slice(0, 8).map((tag) => (
+                      <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-row flex-wrap gap-2 lg:flex-col">
+                  <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.title, "已复制标题。")}>
+                    复制标题
+                  </button>
+                  <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.body, "已复制正文。")}>
+                    复制正文
+                  </button>
+                  <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.tags.join(" "), "已复制标签。")}>
+                    复制标签
+                  </button>
+                  {record.images.length > 0 && (
+                    <button className={primaryButtonClass} type="button" onClick={() => downloadImages(record.images, record.title)}>
+                      下载全部图片
+                    </button>
+                  )}
+                  {record.images.map((image, index) => (
+                    <button key={image.id} className={primaryButtonClass} type="button" onClick={() => downloadImage(image, `${record.title}-${index + 1}`)}>
+                      下载图 {index + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
   if (!session) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-aura-cream px-4 py-8 text-aura-charcoal">
@@ -907,6 +988,8 @@ function App() {
               </div>
 
             </section>
+
+            {renderHistorySection()}
           </>
         )}
 
@@ -997,86 +1080,6 @@ function App() {
           </section>
         )}
 
-        {activeView === "admin" && isAdmin && (
-          <section className={panelClass}>
-          <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">生图历史</h2>
-              <span className="text-sm text-aura-muted">最近 {history.length} 条</span>
-            </div>
-
-            {history.length === 0 ? (
-              <p className={mutedClass}>暂无记录。</p>
-            ) : (
-              <div className="grid gap-4">
-                {history.map((record) => (
-                  <article key={record.id} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                    <div className="grid gap-4 lg:grid-cols-[220px_1fr_auto]">
-                      <div>
-                        {record.images.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
-                            {record.images.map((image, index) => (
-                              <figure key={image.id} className="min-w-0">
-                                <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${record.title} ${index + 1}`} />
-                                <figcaption className="mt-1 truncate text-[11px] text-aura-muted">{image.name || `图片 ${index + 1}`}</figcaption>
-                              </figure>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex aspect-square items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
-                            {record.status === "failed" ? "失败" : "无图"}
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                            {formatDate(record.createdAt)}
-                          </span>
-                          <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                            {record.username}
-                          </span>
-                          <span className="rounded-full bg-aura-cream px-2.5 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                            {record.status}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-semibold">{record.title}</h3>
-                        <p className="line-clamp-3 text-sm leading-6 text-aura-muted">{record.status === "failed" ? record.error : record.body}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {record.tags.slice(0, 8).map((tag) => (
-                            <span key={tag} className="rounded-full bg-[#EEF0E8] px-2.5 py-1 text-xs text-aura-muted ring-1 ring-[#DDE1D1]">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex flex-row flex-wrap gap-2 lg:flex-col">
-                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.title, "已复制标题。")}>
-                          复制标题
-                        </button>
-                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.body, "已复制正文。")}>
-                          复制正文
-                        </button>
-                        <button className={secondaryButtonClass} type="button" onClick={() => copyText(record.tags.join(" "), "已复制标签。")}>
-                          复制标签
-                        </button>
-                        {record.images.length > 0 && (
-                          <button className={primaryButtonClass} type="button" onClick={() => downloadImages(record.images, record.title)}>
-                            下载全部图片
-                          </button>
-                        )}
-                        {record.images.map((image, index) => (
-                          <button key={image.id} className={primaryButtonClass} type="button" onClick={() => downloadImage(image, `${record.title}-${index + 1}`)}>
-                            下载图 {index + 1}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
       </div>
     </main>
   );
