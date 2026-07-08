@@ -86,6 +86,11 @@ type GenerateResponse = {
   record: HistoryRecord;
 };
 
+type CreateUserResponse = {
+  user: ApiUser;
+  accounts: AccountSummary[];
+};
+
 const productCategoryOptions: ProductCategory[] = ["婚纱 / 礼服", "裙装 / 女装"];
 const bridalStyleOptions: BridalStyle[] = [
   "极简缎面婚纱",
@@ -200,6 +205,11 @@ function App() {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [summary, setSummary] = useState<MeResponse["summary"] | null>(null);
   const [latestRecord, setLatestRecord] = useState<HistoryRecord | null>(null);
+  const [newAccountUsername, setNewAccountUsername] = useState("");
+  const [newAccountDisplayName, setNewAccountDisplayName] = useState("");
+  const [newAccountPassword, setNewAccountPassword] = useState("");
+  const [newAccountMessage, setNewAccountMessage] = useState("");
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const sceneOptions = useMemo(
     () => getCompatibleSceneOptions(params.productCategory, params.imageType),
@@ -278,7 +288,38 @@ function App() {
     setAccounts([]);
     setSummary(null);
     setLatestRecord(null);
+    setNewAccountUsername("");
+    setNewAccountDisplayName("");
+    setNewAccountPassword("");
+    setNewAccountMessage("");
     window.localStorage.removeItem(sessionStorageKey);
+  };
+
+  const handleCreateAccount = async () => {
+    if (!session || session.user.role !== "admin") return;
+    setNewAccountMessage("");
+    setIsCreatingAccount(true);
+
+    try {
+      const payload = await apiRequest<CreateUserResponse>("/api/admin/users", {
+        method: "POST",
+        body: JSON.stringify({
+          username: newAccountUsername,
+          displayName: newAccountDisplayName,
+          password: newAccountPassword
+        })
+      });
+      setAccounts(payload.accounts || []);
+      setNewAccountUsername("");
+      setNewAccountDisplayName("");
+      setNewAccountPassword("");
+      setNewAccountMessage(`已开通账号：${payload.user.username}`);
+      await refreshData();
+    } catch (error) {
+      setNewAccountMessage(error instanceof Error ? error.message : "开通账号失败。");
+    } finally {
+      setIsCreatingAccount(false);
+    }
   };
 
   const updateParams = (updater: (current: PromptParams) => PromptParams) => {
@@ -727,9 +768,62 @@ function App() {
           </div>
         </section>
 
-        {session.user.role === "admin" && accounts.length > 0 && (
+        {session.user.role === "admin" && (
           <section className={panelClass}>
-            <h2 className="mb-4 text-lg font-semibold">账号使用情况</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">账号管理</h2>
+              <span className="text-sm text-aura-muted">共 {accounts.length} 个账号</span>
+            </div>
+
+            <div className="mb-6 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
+              <h3 className="text-sm font-semibold text-aura-charcoal">开通使用者账号</h3>
+              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+                <label className="block space-y-2">
+                  <span className={labelClass}>账号</span>
+                  <input
+                    className={inputClass}
+                    value={newAccountUsername}
+                    onChange={(event) => setNewAccountUsername(event.target.value)}
+                    placeholder="例如：lili01"
+                    disabled={isCreatingAccount}
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>显示名</span>
+                  <input
+                    className={inputClass}
+                    value={newAccountDisplayName}
+                    onChange={(event) => setNewAccountDisplayName(event.target.value)}
+                    placeholder="例如：Lili"
+                    disabled={isCreatingAccount}
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className={labelClass}>初始密码</span>
+                  <input
+                    className={inputClass}
+                    type="text"
+                    value={newAccountPassword}
+                    onChange={(event) => setNewAccountPassword(event.target.value)}
+                    placeholder="至少 6 位"
+                    disabled={isCreatingAccount}
+                  />
+                </label>
+                <div className="flex items-end">
+                  <button
+                    className={primaryButtonClass}
+                    type="button"
+                    onClick={handleCreateAccount}
+                    disabled={isCreatingAccount || !newAccountUsername.trim() || newAccountPassword.length < 6}
+                  >
+                    {isCreatingAccount ? "开通中..." : "开通账号"}
+                  </button>
+                </div>
+              </div>
+              {newAccountMessage && <p className="mt-3 rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{newAccountMessage}</p>}
+            </div>
+
+            <h3 className="mb-4 text-sm font-semibold text-aura-charcoal">账号使用情况</h3>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                 <thead className="text-aura-muted">

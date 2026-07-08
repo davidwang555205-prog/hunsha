@@ -110,6 +110,10 @@ function publicUser(user) {
   };
 }
 
+function normalizeUsername(username) {
+  return String(username || "").trim().toLowerCase();
+}
+
 function sendJson(res, statusCode, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(statusCode, {
@@ -412,6 +416,39 @@ async function handleMe(req, res) {
   });
 }
 
+async function handleCreateUser(req, res) {
+  const db = await readDb();
+  const currentUser = getSessionUser(req, db);
+  if (!currentUser) return sendError(res, 401, "登录已失效。");
+  if (currentUser.role !== "admin") return sendError(res, 403, "只有管理员可以开通使用者账号。");
+
+  const body = await parseJsonBody(req);
+  const username = normalizeUsername(body.username);
+  const displayName = String(body.displayName || username).trim() || username;
+  const password = String(body.password || "");
+
+  if (!/^[a-z0-9_.-]{3,32}$/.test(username)) {
+    return sendError(res, 400, "账号只能使用 3-32 位小写字母、数字、下划线、点或短横线。");
+  }
+
+  if (password.length < 6 || password.length > 72) {
+    return sendError(res, 400, "初始密码长度需要在 6-72 位之间。");
+  }
+
+  if (db.users.some((user) => normalizeUsername(user.username) === username)) {
+    return sendError(res, 409, "该账号已存在。");
+  }
+
+  const user = makeUser(crypto.randomUUID(), username, displayName.slice(0, 40), "user", password);
+  db.users.push(user);
+  await writeDb(db);
+
+  return sendJson(res, 201, {
+    user: publicUser(user),
+    accounts: buildAccountSummaries(db)
+  });
+}
+
 async function handleHistory(req, res) {
   const db = await readDb();
   const user = getSessionUser(req, db);
@@ -585,6 +622,7 @@ async function handleRequest(req, res) {
 
     if (url.pathname === "/api/login" && req.method === "POST") return await handleLogin(req, res);
     if (url.pathname === "/api/me" && req.method === "GET") return await handleMe(req, res);
+    if (url.pathname === "/api/admin/users" && req.method === "POST") return await handleCreateUser(req, res);
     if (url.pathname === "/api/history" && req.method === "GET") return await handleHistory(req, res);
     if (url.pathname === "/api/generate" && req.method === "POST") return await handleGenerate(req, res);
     if (url.pathname.startsWith("/api/generated/") && req.method === "GET") return await serveGenerated(req, res, url.pathname);
