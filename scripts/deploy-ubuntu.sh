@@ -18,6 +18,10 @@ WALA_IMAGE_TIMEOUT_MS="${WALA_IMAGE_TIMEOUT_MS:-180000}"
 WALA_IMAGE_RETRY_ATTEMPTS="${WALA_IMAGE_RETRY_ATTEMPTS:-3}"
 WALA_KEY="${WALA_API_KEY_VALUE:-${WALA_API_KEY:-}}"
 
+if [ -z "$WALA_KEY" ] && [ -f "$APP_DIR/.env" ]; then
+  WALA_KEY="$(grep -E '^WALA_API_KEY=' "$APP_DIR/.env" | tail -n 1 | cut -d= -f2-)"
+fi
+
 if [ -z "$WALA_KEY" ]; then
   echo "ERROR: Set WALA_API_KEY_VALUE before running this script." >&2
   exit 1
@@ -121,7 +125,39 @@ sudo systemctl enable --now "$APP_NAME"
 sudo systemctl restart "$APP_NAME"
 
 echo "Installing nginx site..."
-sudo tee "/etc/nginx/sites-available/$APP_NAME" >/dev/null <<EOF
+if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+  sudo tee "/etc/nginx/sites-available/$APP_NAME" >/dev/null <<EOF
+server {
+  listen 80;
+  server_name $DOMAIN $WWW_DOMAIN $SERVER_IP;
+  return 301 https://\$host\$request_uri;
+}
+
+server {
+  listen 443 ssl;
+  server_name $DOMAIN $WWW_DOMAIN;
+
+  ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+  client_max_body_size 80m;
+
+  location / {
+    proxy_pass http://127.0.0.1:$PORT;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 240s;
+    proxy_send_timeout 240s;
+  }
+}
+EOF
+else
+  sudo tee "/etc/nginx/sites-available/$APP_NAME" >/dev/null <<EOF
 server {
   listen 80;
   server_name $DOMAIN $WWW_DOMAIN $SERVER_IP;
@@ -140,6 +176,7 @@ server {
   }
 }
 EOF
+fi
 
 sudo ln -sf "/etc/nginx/sites-available/$APP_NAME" "/etc/nginx/sites-enabled/$APP_NAME"
 sudo rm -f /etc/nginx/sites-enabled/default
