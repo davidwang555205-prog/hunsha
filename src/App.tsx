@@ -609,6 +609,7 @@ function App() {
     const isSettingsPanel = panel === "settings";
     const files = isSettingsPanel ? settingsReferenceFiles : contentReferenceFiles;
     const setFiles = isSettingsPanel ? setSettingsReferenceFiles : setContentReferenceFiles;
+    const settingsGeneratedImages = settingsLatestRecord?.images || [];
 
     return (
       <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
@@ -639,22 +640,28 @@ function App() {
         {generationFeedbackPanel === panel && statusMessage && (
           <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
         )}
-        {isSettingsPanel && settingsLatestRecord?.images.length ? (
+        {isSettingsPanel ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-aura-charcoal">生成设置图片</h3>
-              <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsLatestRecord.images, settingsLatestRecord.title)}>
-                下载全部图片
-              </button>
+              {settingsGeneratedImages.length ? (
+                <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsGeneratedImages, settingsLatestRecord?.title || "生成设置图片")}>
+                  下载图片
+                </button>
+              ) : null}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {settingsLatestRecord.images.map((image, index) => (
-                <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
-                  <img className="aspect-square w-full object-cover" src={image.url} alt={`${settingsLatestRecord.title} ${index + 1}`} />
-                  <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
-                </figure>
-              ))}
-            </div>
+            {settingsGeneratedImages.length ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {settingsGeneratedImages.map((image, index) => (
+                  <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
+                    <img className="aspect-square w-full object-cover" src={image.url} alt={`${settingsLatestRecord?.title || "生成设置图片"} ${index + 1}`} />
+                    <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            ) : (
+              <div className="min-h-[240px] rounded-lg bg-white ring-1 ring-aura-beige/70" aria-label="生成设置图片占位" />
+            )}
           </div>
         ) : null}
       </div>
