@@ -485,34 +485,6 @@ function App() {
       {generationFeedbackPanel === panel && statusMessage && (
         <p className="rounded-lg bg-aura-cream px-3 py-2 text-sm text-aura-muted ring-1 ring-aura-beige">{statusMessage}</p>
       )}
-
-      {generationFeedbackPanel === panel && latestRecord?.images.length ? (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-aura-charcoal">生成图片</h3>
-            {latestRecord.images.length > 1 && (
-              <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
-                保存全部图片
-              </button>
-            )}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {latestRecord.images.map((image, index) => (
-              <button
-                key={image.id}
-                className="group block overflow-hidden rounded-lg bg-aura-cream text-left ring-1 ring-aura-beige transition hover:ring-aura-clay focus:outline-none focus:ring-2 focus:ring-aura-clay"
-                type="button"
-                onClick={() => downloadImage(image, `${latestRecord.title}-${index + 1}`)}
-              >
-                <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
-                <span className="block px-3 py-2 text-xs font-medium text-aura-muted group-hover:text-aura-charcoal">
-                  图 {index + 1} · 点击保存
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 
@@ -876,6 +848,31 @@ function App() {
                         {title}
                       </p>
                     ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h4 className="text-sm font-semibold text-aura-charcoal">生成图片</h4>
+                      {latestRecord?.images.length ? (
+                        <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
+                          下载全部图片
+                        </button>
+                      ) : null}
+                    </div>
+                    {latestRecord?.images.length ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {latestRecord.images.map((image, index) => (
+                          <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
+                            <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
+                            <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
+                          </figure>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex min-h-[240px] items-center justify-center rounded-lg bg-white text-sm text-aura-muted ring-1 ring-aura-beige/70">
+                        生成后的图片放在这里
+                      </div>
+                    )}
                   </div>
 
                   {contentMessage && <p className="text-sm text-aura-muted">{contentMessage}</p>}
