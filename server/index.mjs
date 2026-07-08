@@ -41,8 +41,8 @@ const imageTimeoutMs = Number(process.env.WALA_IMAGE_TIMEOUT_MS || 180000);
 const imageRetryAttempts = Math.max(1, Number(process.env.WALA_IMAGE_RETRY_ATTEMPTS || 3));
 const maxBodyBytes = 80 * 1024 * 1024;
 const sessionTtlMs = 24 * 60 * 60 * 1000;
-
-const sessions = new Map();
+const sessionSecret =
+  process.env.APP_SESSION_SECRET || process.env.APP_ADMIN_PASSWORD || "bridal-content-studio-session-secret";
 
 function nowIso() {
   return new Date().toISOString();
@@ -154,13 +154,45 @@ function getBearerToken(req) {
   return header.slice("Bearer ".length).trim();
 }
 
-function getSessionUser(req, db) {
-  const token = getBearerToken(req);
-  const session = sessions.get(token);
-  if (!session || session.expiresAt < Date.now()) {
-    if (token) sessions.delete(token);
+function signSessionPayload(payload) {
+  return crypto.createHmac("sha256", sessionSecret).update(payload).digest("base64url");
+}
+
+function createSessionToken(userId) {
+  const payload = Buffer.from(
+    JSON.stringify({
+      userId,
+      expiresAt: Date.now() + sessionTtlMs
+    }),
+    "utf8"
+  ).toString("base64url");
+  return `${payload}.${signSessionPayload(payload)}`;
+}
+
+function parseSessionToken(token) {
+  const [payload, signature] = String(token || "").split(".");
+  if (!payload || !signature) return null;
+
+  const expectedSignature = signSessionPayload(payload);
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
     return null;
   }
+
+  try {
+    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!session.userId || !session.expiresAt || session.expiresAt < Date.now()) return null;
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function getSessionUser(req, db) {
+  const token = getBearerToken(req);
+  const session = parseSessionToken(token);
+  if (!session) return null;
 
   const user = db.users.find((candidate) => candidate.id === session.userId);
   return user || null;
@@ -389,8 +421,7 @@ async function handleLogin(req, res) {
     return sendError(res, 401, "账号或密码不正确。");
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  sessions.set(token, { userId: user.id, expiresAt: Date.now() + sessionTtlMs });
+  const token = createSessionToken(user.id);
 
   return sendJson(res, 200, {
     token,

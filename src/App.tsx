@@ -92,6 +92,10 @@ type CreateUserResponse = {
   accounts: AccountSummary[];
 };
 
+type ApiRequestError = Error & {
+  statusCode?: number;
+};
+
 const productCategoryOptions: ProductCategory[] = ["婚纱 / 礼服", "裙装 / 女装"];
 const bridalStyleOptions: BridalStyle[] = [
   "极简缎面婚纱",
@@ -188,6 +192,10 @@ function contentText(record: Pick<HistoryRecord, "title" | "body" | "tags">) {
   return `${record.title}\n\n${record.body}\n\n${record.tags.join(" ")}`;
 }
 
+function isUnauthorizedError(error: unknown): error is ApiRequestError {
+  return error instanceof Error && (error as ApiRequestError).statusCode === 401;
+}
+
 function App() {
   const [session, setSession] = useState<Session | null>(loadStoredSession);
   const [activeView, setActiveView] = useState<"studio" | "admin">("studio");
@@ -254,7 +262,7 @@ function App() {
     const response = await fetch(path, { ...options, headers });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(payload.error || "请求失败。");
+      throw Object.assign(new Error(payload.error || "请求失败。"), { statusCode: response.status });
     }
     return payload as T;
   }
@@ -274,8 +282,9 @@ function App() {
   useEffect(() => {
     if (!session) return;
     refreshData(session.token).catch((error) => {
-      setStatusMessage(error.message);
       setSession(null);
+      setActiveView("studio");
+      setLoginError(error instanceof Error ? error.message : "登录已失效。");
       window.localStorage.removeItem(sessionStorageKey);
     });
   }, [session?.token]);
@@ -338,6 +347,11 @@ function App() {
       setNewAccountMessage(`已开通账号：${payload.user.username}`);
       await refreshData();
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        handleLogout();
+        setLoginError(error.message);
+        return;
+      }
       setNewAccountMessage(error instanceof Error ? error.message : "开通账号失败。");
     } finally {
       setIsCreatingAccount(false);
@@ -442,6 +456,11 @@ function App() {
       setStatusMessage("生成完成。");
       await refreshData();
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        handleLogout();
+        setLoginError(error.message);
+        return;
+      }
       setStatusMessage(error instanceof Error ? error.message : "生成失败。");
       await refreshData().catch(() => undefined);
     } finally {
