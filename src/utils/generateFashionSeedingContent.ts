@@ -8,7 +8,6 @@ import {
 } from "../data/xiaohongshuBridalContentProfiles";
 import { isSceneCompatibleWithImageType } from "../data/bridalDressSceneOptions";
 import type { ImageType, ModelChoice, ProductCategory, PromptParams, ScenePreference } from "../types";
-import { generatePrompt } from "./generatePrompt";
 
 export type BridalFashionTopic =
   | "试纱体验"
@@ -43,7 +42,6 @@ export type FashionSeedingImagePlan = {
   purpose: string;
   description: string;
   params: PromptParams;
-  prompt: string;
 };
 
 export type FashionSeedingContent = {
@@ -3009,8 +3007,7 @@ function buildImagePlan(
     name: draft.name,
     purpose: draft.purpose,
     description: draft.description,
-    params,
-    prompt: generatePrompt(params).prompt
+    params
   };
 }
 
@@ -3074,5 +3071,10 @@ export function formatFashionSeedingContent(content: FashionSeedingContent) {
 }
 
 export function formatFashionSeedingKeywords(content: FashionSeedingContent) {
-  return content.images.map((image, index) => `Prompt ${index + 1}\n${image.prompt}`).join("\n\n---\n\n");
+  return content.images
+    .map(
+      (image, index) =>
+        `配图 ${index + 1}\n用途：${image.purpose}\n配图建议：${image.description}\n参数：${image.params.productCategory}｜${image.params.imageType}｜${image.params.scenePreference}｜${image.params.modelChoice}｜${image.params.lightPreference}`
+    )
+    .join("\n\n---\n\n");
 }

@@ -92,7 +92,3 @@ export type PromptParams = {
   generationNonce: number;
   bridalKeywordProfileId?: BridalImageKeywordProfileId;
 };
-
-export type PromptOutput = {
-  prompt: string;
-};

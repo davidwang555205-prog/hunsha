@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
+import { generatePrompt } from "./prompt.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -465,16 +466,17 @@ async function handleGenerate(req, res) {
   if (!user) return sendError(res, 401, "登录已失效。");
 
   const body = await parseJsonBody(req);
-  const prompt = String(body.prompt || "").trim();
+  const promptParams = body.promptParams && typeof body.promptParams === "object" ? body.promptParams : null;
   const title = String(body.title || "").trim();
   const textBody = String(body.body || "").trim();
   const tags = Array.isArray(body.tags) ? body.tags.map((tag) => String(tag)).filter(Boolean).slice(0, 20) : [];
   const files = Array.isArray(body.referenceImages) ? body.referenceImages.slice(0, 4) : [];
 
-  if (!prompt) return sendError(res, 400, "缺少生图参数。");
+  if (!promptParams) return sendError(res, 400, "缺少生图参数。");
   if (!title || !textBody || !tags.length) return sendError(res, 400, "缺少标题、正文或标签。");
 
   const recordId = crypto.randomUUID();
+  const prompt = generatePrompt(promptParams);
   const promptHash = crypto.createHash("sha256").update(prompt).digest("hex");
   const startedAt = Date.now();
   const mode = files.length ? "image-edit" : "text-to-image";

@@ -403,7 +403,7 @@ function App() {
       const payload = await apiRequest<GenerateResponse>("/api/generate", {
         method: "POST",
         body: JSON.stringify({
-          prompt: imagePlan.prompt,
+          promptParams: imagePlan.params,
           title: generatedContent.titles[0],
           body: generatedContent.body,
           tags: generatedContent.tags,
