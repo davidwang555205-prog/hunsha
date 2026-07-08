@@ -125,7 +125,7 @@ sudo systemctl enable --now "$APP_NAME"
 sudo systemctl restart "$APP_NAME"
 
 echo "Installing nginx site..."
-if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+if sudo test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" && sudo test -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem"; then
   sudo tee "/etc/nginx/sites-available/$APP_NAME" >/dev/null <<EOF
 server {
   listen 80;
