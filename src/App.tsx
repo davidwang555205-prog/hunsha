@@ -765,7 +765,7 @@ function App() {
                 <div>
                   <h2 className="text-lg font-semibold">每日小红书内容</h2>
                   <p className="mt-1 max-w-3xl text-sm leading-6 text-aura-muted">
-                    选择一个内容主题，自动生成标题、正文、标签和配图方案。最终生图提示词已隐藏。
+                    选择一个内容主题，自动生成标题、正文和标签。最终生图提示词已隐藏。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -891,37 +891,6 @@ function App() {
                 </div>
               </div>
 
-              <div className="mt-5 space-y-4">
-                <div className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                  <p className="text-sm font-semibold">配图方案</p>
-                  <p className="mt-2 text-sm leading-6 text-aura-muted">
-                    每张配图保留独立的生成方向和参数摘要。最终英文生图提示词只在服务端生成和调用，不在前端展示。
-                  </p>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {contentPreview.images.map((image, index) => (
-                    <article key={`${image.name}-${index}`} className="rounded-lg bg-white p-4 ring-1 ring-aura-beige">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-aura-charcoal">{image.name}</h3>
-                          <p className="mt-1 text-sm leading-6 text-aura-muted">{image.purpose}</p>
-                        </div>
-                        <span className="rounded-full bg-aura-cream px-3 py-1 text-xs text-aura-muted ring-1 ring-aura-beige">
-                          最终提示词已隐藏
-                        </span>
-                      </div>
-
-                      <div className="mt-4 grid gap-3 text-sm leading-6 text-aura-muted sm:grid-cols-2">
-                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">配图建议：{image.description}</p>
-                        <p className="rounded-lg bg-aura-cream px-3 py-2 ring-1 ring-aura-beige/70">
-                          参数：{image.params.imageType}｜{image.params.scenePreference}｜{image.params.lightPreference}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
             </section>
           </>
         )}
