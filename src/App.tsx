@@ -29,6 +29,7 @@ type ApiUser = {
   displayName: string;
   role: "admin" | "user";
   dailyImageLimit: number;
+  hasUnlimitedImageGeneration: boolean;
 };
 
 type Session = {
@@ -1291,30 +1292,36 @@ function App() {
                       <td className="border-b border-aura-beige/70 py-3">{account.failedCount}</td>
                       <td className="border-b border-aura-beige/70 py-3">{account.generatedImageCount}</td>
                       <td className="border-b border-aura-beige/70 py-3">
-                        <div className="flex min-w-[190px] items-center gap-2">
-                          <span className="text-aura-muted">{account.dailyGeneratedImageCount} /</span>
-                          <input
-                            className="w-20 rounded-lg border border-aura-beige bg-white px-2 py-1.5 text-sm text-aura-charcoal outline-none transition focus:border-aura-clay"
-                            type="number"
-                            min={0}
-                            max={1000}
-                            value={limitDrafts[account.user.id] ?? String(account.user.dailyImageLimit)}
-                            onChange={(event) => setLimitDrafts((current) => ({ ...current, [account.user.id]: event.target.value }))}
-                          />
-                          <button
-                            className={secondaryButtonClass}
-                            type="button"
-                            disabled={
-                              updatingLimitUserId === account.user.id ||
-                              !Number.isFinite(Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit)) ||
-                              Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit) < 0 ||
-                              Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit) > 1000
-                            }
-                            onClick={() => void handleUpdateDailyImageLimit(account.user.id)}
-                          >
-                            {updatingLimitUserId === account.user.id ? "保存中" : "保存"}
-                          </button>
-                        </div>
+                        {account.user.hasUnlimitedImageGeneration ? (
+                          <span className="font-medium text-aura-charcoal">
+                            今日 {account.dailyGeneratedImageCount} 张 / 不限量
+                          </span>
+                        ) : (
+                          <div className="flex min-w-[190px] items-center gap-2">
+                            <span className="text-aura-muted">{account.dailyGeneratedImageCount} /</span>
+                            <input
+                              className="w-20 rounded-lg border border-aura-beige bg-white px-2 py-1.5 text-sm text-aura-charcoal outline-none transition focus:border-aura-clay"
+                              type="number"
+                              min={0}
+                              max={1000}
+                              value={limitDrafts[account.user.id] ?? String(account.user.dailyImageLimit)}
+                              onChange={(event) => setLimitDrafts((current) => ({ ...current, [account.user.id]: event.target.value }))}
+                            />
+                            <button
+                              className={secondaryButtonClass}
+                              type="button"
+                              disabled={
+                                updatingLimitUserId === account.user.id ||
+                                !Number.isFinite(Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit)) ||
+                                Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit) < 0 ||
+                                Number(limitDrafts[account.user.id] ?? account.user.dailyImageLimit) > 1000
+                              }
+                              onClick={() => void handleUpdateDailyImageLimit(account.user.id)}
+                            >
+                              {updatingLimitUserId === account.user.id ? "保存中" : "保存"}
+                            </button>
+                          </div>
+                        )}
                       </td>
                       <td className="border-b border-aura-beige/70 py-3">
                         <div className="flex min-w-[220px] items-center gap-2">

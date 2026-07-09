@@ -70,6 +70,10 @@ function normalizeDailyImageLimit(value, fallback = defaultDailyImageLimit) {
   return Math.max(0, Math.min(maxDailyImageLimit, Math.floor(limit)));
 }
 
+function hasUnlimitedImageGeneration(user) {
+  return user.role === "admin";
+}
+
 function makeUser(id, username, displayName, role, password, dailyImageLimit = defaultDailyImageLimit) {
   const passwordParts = hashPassword(password);
   return {
@@ -139,7 +143,8 @@ function publicUser(user) {
     username: user.username,
     displayName: user.displayName,
     role: user.role,
-    dailyImageLimit: normalizeDailyImageLimit(user.dailyImageLimit)
+    dailyImageLimit: normalizeDailyImageLimit(user.dailyImageLimit),
+    hasUnlimitedImageGeneration: hasUnlimitedImageGeneration(user)
   };
 }
 
@@ -574,6 +579,9 @@ async function handleUpdateUser(req, res, userId) {
 
   const body = await parseJsonBody(req);
   if (Object.prototype.hasOwnProperty.call(body, "dailyImageLimit")) {
+    if (hasUnlimitedImageGeneration(targetUser)) {
+      return sendError(res, 400, "管理员账号不受每日生图数量限制，无需设置额度。");
+    }
     const rawLimit = Number(body.dailyImageLimit);
     if (!Number.isFinite(rawLimit) || rawLimit < 0 || rawLimit > maxDailyImageLimit) {
       return sendError(res, 400, `每日生成图片上限需要在 0-${maxDailyImageLimit} 之间。`);
@@ -630,7 +638,7 @@ async function handleGenerate(req, res) {
   const dailyImageLimit = normalizeDailyImageLimit(user.dailyImageLimit);
   const generatedToday = generatedImagesForDate(db, user.id);
   const requestedImageCount = promptParamsList.length;
-  if (generatedToday + requestedImageCount > dailyImageLimit) {
+  if (!hasUnlimitedImageGeneration(user) && generatedToday + requestedImageCount > dailyImageLimit) {
     const remaining = Math.max(0, dailyImageLimit - generatedToday);
     return sendError(
       res,
