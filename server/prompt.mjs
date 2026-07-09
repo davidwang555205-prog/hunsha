@@ -60,6 +60,7 @@ const negativeRules = [
   "Avoid cheap bridal studio look.",
   "Avoid influencer filter.",
   "Avoid AI-looking face or body proportions.",
+  "Avoid collage, split screen, triptych, diptych, contact sheet, before-and-after layout, repeated person, or multiple viewpoints in one image.",
   "Avoid runway exaggeration unless specified.",
   "Avoid messy background.",
   "Avoid product deformation."
@@ -167,7 +168,7 @@ const bridalImageKeywordProfiles = {
     promptLine:
       "Xiaohongshu phone mirror selfie fitting keywords: handheld phone visible in mirror, full-length fitting-room mirror selfie, real bridal client, natural arm holding phone, honest phone-camera perspective, clear waistline and hemline, fitting room mirror reflection, subtle unfiltered trial fitting mood.",
     negativeLine:
-      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection."
+      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection, avoid collage, avoid split screen, avoid triptych, avoid contact sheet, avoid repeated person, avoid multiple viewpoints in one image."
   },
   companionFitting: {
     promptLine:
@@ -176,7 +177,7 @@ const bridalImageKeywordProfiles = {
   },
   fittingPrep: {
     promptLine:
-      "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, phone fitting record, front and side comparison, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
+      "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, one non-readable phone fitting preview, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
     negativeLine: "Avoid cluttered checklist, avoid readable personal data, avoid anxiety-driven body comparison, avoid cheap guide-card layout."
   },
   fittingServiceDetail: {
@@ -293,11 +294,43 @@ function buildBridalKeywordLine(promptLine) {
   return `Include visual cues such as ${visualKeywords}`;
 }
 
+function buildPhoneMirrorCompositionLine(params) {
+  if (params.bridalKeywordProfileId !== "phoneMirrorSelfieFitting" || !shouldIncludePerson(params)) return "";
+
+  return (
+    "Phone mirror composition: use a wider environmental shot. Reduce the person's apparent frame scale by 20 percent compared with conventional full-body selfie framing, so the full person occupies about 60 to 65 percent of the image height. " +
+    "Include substantially more of the fitting-room mirror, curtains, floor around the train, garment rack, and surrounding environment. Keep normal adult anatomy, head-to-body ratio, limb length, and body proportions; create the smaller on-canvas subject only through greater camera distance and wider framing, never by shrinking or distorting the body."
+  );
+}
+
+function buildSeriesContinuityLine(params, seriesContext) {
+  const total = Number(seriesContext?.total || 1);
+  if (total <= 1) return "";
+
+  const index = Number(seriesContext?.index || 0);
+  const leadPersonIndex = Number(seriesContext?.leadPersonIndex ?? -1);
+  const sharedSceneLine =
+    `Series continuity (hard requirement, image ${index + 1} of ${total}): this is one uninterrupted shoot in the exact same physical location described above. ` +
+    "Preserve identical room architecture, mirror, curtains, furniture, background objects, object placement, light direction, color temperature, time of day, garment design, styling, and fitting-session atmosphere across the complete image set. " +
+    "This request must output exactly one continuous photograph with one camera viewpoint and one instance of the main person. It is one frame in a separately generated series, not a collage, split screen, triptych, diptych, contact sheet, or before-and-after layout. " +
+    "Change only camera distance, crop, the single assigned angle, pose, or the detail being documented. Any conflicting request to move to another room, worktable, storefront, or outdoor location must be ignored.";
+
+  if (!shouldIncludePerson(params)) {
+    return `${sharedSceneLine} Do not introduce a new model. Any visible hands, hair, body fragment, or reflection must belong to the established series model.`;
+  }
+
+  if (index === leadPersonIndex) {
+    return `${sharedSceneLine} Establish the one model identity used by the full series: one clearly identifiable woman with fixed facial structure, age, skin tone, hairstyle, hair color, and body proportions.`;
+  }
+
+  return `${sharedSceneLine} The supplied continuity image is a strict identity and location reference. Show the exact same woman, not a similar-looking replacement: identical facial structure, age, skin tone, hairstyle, hair color, and body proportions.`;
+}
+
 function cleanJoin(lines) {
   return lines.filter(Boolean).join("\n");
 }
 
-export function generatePrompt(params) {
+export function generatePrompt(params, seriesContext = undefined) {
   const resolvedScene = resolveScene(params);
   const extraRequirement = String(params.extraRequirement || "").trim();
   const bridalKeywordProfile = params.bridalKeywordProfileId
@@ -316,6 +349,8 @@ export function generatePrompt(params) {
     seasonLines[params.season] || seasonLines.春,
     lightLines[params.lightPreference] || lightLines.自动匹配,
     bridalKeywordProfile ? buildBridalKeywordLine(bridalKeywordProfile.promptLine) : undefined,
+    buildPhoneMirrorCompositionLine(params),
+    buildSeriesContinuityLine(params, seriesContext),
     brandDirection,
     "Composition: balanced crop, natural posture if a person appears, clear waistline and hemline, visible fabric detail, no chaotic props, no excessive retouching.",
     "Camera feel: editorial but believable, real lens perspective, soft texture, realistic skin and hands, premium e-commerce and social content quality.",

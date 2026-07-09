@@ -2020,10 +2020,10 @@ const bridalVisualRecipes = {
     "detail-to-full-body sequence logic, with close fabric proof supporting the main image"
   ],
   evidence: [
-    "same-angle front, side, and back comparison as the decision evidence",
+    "one clearly assigned viewpoint for this frame, with other comparison angles reserved for separate images in the series",
     "visible beading adjustment tools or consultant adjustment proving the fit process",
     "honest mirror reflection that shows the client posture before heavy styling",
-    "phone album review feeling, as if the image helps the bride compare later",
+    "one non-readable phone preview record, with comparison angles reserved for separate images in the series",
     "waistline and hemline kept unobstructed so the dress structure can be judged",
     "fabric close-up evidence connected to the worn gown, not a detached product shot",
     "natural sitting, turning, or walking comfort clue included when possible",
@@ -2952,7 +2952,9 @@ function englishCueFromChinese(value: string) {
   if (/腰线|收腰|腰腹|比例/.test(value)) cues.push("clear waistline and real body proportion");
   if (/领口|肩颈|手臂|胸口/.test(value)) cues.push("visible neckline, shoulder, and arm line");
   if (/裙摆|拖尾|走动|视频/.test(value)) cues.push("skirt volume, train length, and natural walking evidence");
-  if (/侧面|背影|正面|同角度/.test(value)) cues.push("same-angle front, side, and back comparison");
+  if (/侧面|背影|正面|同角度/.test(value)) {
+    cues.push("one clearly assigned viewpoint in this frame, with other angles shown only in separate series images");
+  }
   if (/顾问|钉珠|调整|整理/.test(value)) cues.push("consultant adjustment and beading-tool evidence");
   if (/缎面|蕾丝|白纱|面料|材质|珠绣|刺绣/.test(value)) cues.push("accurate fabric texture and white-gown detail");
   if (/头纱|配饰|耳饰|手套/.test(value)) cues.push("veil and accessory relationship");
@@ -2986,19 +2988,50 @@ function buildPromptAlignmentRequirement(draft: ImageDraft, context?: CopyAlignm
   ].join(" ");
 }
 
+const personImageTypes: ImageType[] = ["产品上身图", "对镜穿搭图", "生活场景图"];
+
+function buildSeriesContinuityRequirement(
+  draft: ImageDraft,
+  index: number,
+  imageCount: number,
+  leadPersonIndex: number
+) {
+  const seriesLine =
+    `Series continuity is a hard requirement for image ${index + 1} of ${imageCount}. ` +
+    "Keep the exact same physical location, room architecture, mirror, curtains, furniture, background layout, light direction, color temperature, time of day, and garment design established by the series cover. " +
+    "Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. " +
+    "Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one.";
+
+  if (!personImageTypes.includes(draft.imageType)) {
+    return `${seriesLine} This frame may omit the face, but any visible person, hands, hair, or garment must belong to the same model and the same fitting session. Do not introduce another model.`;
+  }
+
+  if (index === leadPersonIndex) {
+    return `${seriesLine} Establish one clearly identifiable woman for the complete series. Keep her exact facial identity, age, facial structure, skin tone, hairstyle, hair color, and body proportions unchanged in every later frame where a face appears.`;
+  }
+
+  return `${seriesLine} Use the supplied series identity reference as a strict character reference. Show the exact same woman as the cover, with identical facial identity, age, facial structure, skin tone, hairstyle, hair color, and body proportions. Do not generate a lookalike or a different model.`;
+}
+
 function buildImagePlan(
   baseParams: PromptParams,
   draft: ImageDraft,
   index: number,
   variantIndex: number,
-  context?: CopyAlignmentContext
+  context: CopyAlignmentContext | undefined,
+  seriesScenePreference: ScenePreference,
+  imageCount: number,
+  leadPersonIndex: number
 ): FashionSeedingImagePlan {
   const params: PromptParams = {
     ...baseParams,
     imageType: draft.imageType,
     modelChoice: resolveImageModelChoice(baseParams, draft),
-    scenePreference: resolveAlignedScenePreference(baseParams, draft, context),
-    extraRequirement: buildPromptAlignmentRequirement(draft, context),
+    scenePreference: seriesScenePreference,
+    extraRequirement: [
+      buildPromptAlignmentRequirement(draft, context),
+      buildSeriesContinuityRequirement(draft, index, imageCount, leadPersonIndex)
+    ].join(" "),
     generationNonce: baseParams.generationNonce + variantIndex * 10 + index + 1,
     bridalKeywordProfileId: draft.bridalKeywordProfileId
   };
@@ -3024,9 +3057,26 @@ export function generateFashionSeedingContent(input: FashionSeedingInput): Fashi
       ? contentNonce % variantCount
       : (daily.variantIndex + contentNonce) % variantCount;
   const copy = buildCopyFromKit(safeTopic, variantIndex);
-  const images = getImageDrafts(input.productCategory, safeTopic)
-    .slice(0, imageCount)
-    .map((draft, index) => buildImagePlan(input.baseParams, draft, index, variantIndex, copy.promptContext));
+  const imageDrafts = getImageDrafts(input.productCategory, safeTopic).slice(0, imageCount);
+  const leadPersonIndex = imageDrafts.findIndex((draft) => personImageTypes.includes(draft.imageType));
+  const sceneLeadDraft = imageDrafts[leadPersonIndex >= 0 ? leadPersonIndex : 0];
+  const seriesScenePreference = resolveAlignedScenePreference(
+    input.baseParams,
+    sceneLeadDraft,
+    copy.promptContext
+  );
+  const images = imageDrafts.map((draft, index) =>
+    buildImagePlan(
+      input.baseParams,
+      draft,
+      index,
+      variantIndex,
+      copy.promptContext,
+      seriesScenePreference,
+      imageCount,
+      leadPersonIndex
+    )
+  );
 
   return {
     topic: safeTopic,

@@ -120,7 +120,7 @@ const dressStyleOptions: DressStyle[] = ["连衣裙", "衬衫裙", "针织裙", 
 const imageTypeOptions: ImageType[] = ["产品上身图", "对镜穿搭图", "生活场景图", "非产品氛围图", "拍摄花絮 / 材质图", "产品静物图"];
 const seasonOptions: Season[] = ["春", "夏", "秋", "冬"];
 const lightPreferenceOptions: LightPreference[] = ["自动匹配", "清晨自然光", "午后柔光", "傍晚金色光", "室内窗边光", "酒店暖光", "婚礼现场自然光"];
-const sizeOptions = ["1024x1536", "1024x1024", "1536x1024"];
+const sizeOptions = ["1152x1536", "1024x1024", "1024x1536", "1536x1024"];
 const qualityOptions = [
   { value: "medium", label: "M / standard" },
   { value: "low", label: "L / low" },
@@ -253,7 +253,7 @@ function App() {
   const [contentMessage, setContentMessage] = useState("");
   const [settingsReferenceFiles, setSettingsReferenceFiles] = useState<File[]>([]);
   const [contentReferenceFiles, setContentReferenceFiles] = useState<File[]>([]);
-  const [size, setSize] = useState("1024x1536");
+  const [size, setSize] = useState("1152x1536");
   const [quality, setQuality] = useState(defaultImageQuality);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");

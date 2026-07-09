@@ -29,7 +29,7 @@ export const bridalImageKeywordProfiles: Record<BridalImageKeywordProfileId, Bri
     promptLine:
       "Xiaohongshu phone mirror selfie fitting keywords: handheld phone visible in mirror, full-length fitting-room mirror selfie, real bridal client, natural arm holding phone, honest phone-camera perspective, clear waistline and hemline, fitting room mirror reflection, subtle unfiltered trial fitting mood.",
     negativeLine:
-      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection."
+      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection, avoid collage, avoid split screen, avoid triptych, avoid contact sheet, avoid repeated person, avoid multiple viewpoints in one image."
   },
   companionFitting: {
     id: "companionFitting",
@@ -41,7 +41,7 @@ export const bridalImageKeywordProfiles: Record<BridalImageKeywordProfileId, Bri
   fittingPrep: {
     id: "fittingPrep",
     promptLine:
-      "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, phone fitting record, front and side comparison, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
+      "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, one non-readable phone fitting preview, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
     negativeLine:
       "Avoid cluttered checklist, avoid readable personal data, avoid anxiety-driven body comparison, avoid cheap guide-card layout."
   },

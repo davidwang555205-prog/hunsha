@@ -40,6 +40,7 @@ const retentionDays = Number(process.env.HISTORY_RETENTION_DAYS || 180);
 const imageTimeoutMs = Number(process.env.WALA_IMAGE_TIMEOUT_MS || 180000);
 const imageRetryAttempts = Math.max(1, Number(process.env.WALA_IMAGE_RETRY_ATTEMPTS || 3));
 const maxBodyBytes = 80 * 1024 * 1024;
+const maxContinuityReferenceBytes = 20 * 1024 * 1024;
 const sessionTtlMs = 24 * 60 * 60 * 1000;
 const maxDailyImageLimit = 1000;
 const defaultDailyImageLimit = (() => {
@@ -335,6 +336,39 @@ function extractGeneratedImages(payload) {
     .filter((item) => item.b64 || item.url);
 }
 
+async function generatedImageToReferenceFile(image, recordId, referenceKind) {
+  let type = "image/png";
+  let buffer;
+
+  if (image.b64) {
+    const dataUrlMatch = /^data:([^;]+);base64,(.+)$/s.exec(image.b64);
+    if (dataUrlMatch) {
+      type = dataUrlMatch[1];
+      buffer = Buffer.from(dataUrlMatch[2], "base64");
+    } else {
+      buffer = Buffer.from(image.b64, "base64");
+    }
+  } else if (image.url) {
+    const response = await fetch(image.url);
+    if (!response.ok) {
+      throw Object.assign(new Error(`无法读取首张${referenceKind}参考图，图组连续性生成已停止。`), { statusCode: 502 });
+    }
+    type = response.headers.get("content-type")?.split(";")[0] || type;
+    buffer = Buffer.from(await response.arrayBuffer());
+  }
+
+  if (!buffer?.length || buffer.length > maxContinuityReferenceBytes) {
+    throw Object.assign(new Error(`首张${referenceKind}参考图无效或超过 20MB，图组连续性生成已停止。`), { statusCode: 502 });
+  }
+
+  return {
+    name: `${recordId}-${referenceKind === "人物" ? "identity" : "scene"}.${extensionFromMime(type)}`,
+    type,
+    size: buffer.length,
+    dataUrl: `data:${type};base64,${buffer.toString("base64")}`
+  };
+}
+
 async function saveGeneratedImages(recordId, images, startIndex = 0, imageName = "") {
   const saved = [];
 
@@ -387,7 +421,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
       }
       form.append("prompt", prompt);
       form.append("model", imageModel);
-      form.append("size", size || "1024x1536");
+      form.append("size", size || "1152x1536");
       form.append("quality", resolvedQuality);
 
       return await fetch(`${apiBaseUrl}/images/edits`, {
@@ -416,7 +450,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
       body: JSON.stringify({
         model: imageModel,
         prompt,
-        size: size || "1024x1536",
+        size: size || "1152x1536",
         quality: resolvedQuality
       }),
       signal: controller.signal
@@ -606,8 +640,23 @@ async function handleGenerate(req, res) {
   }
 
   const recordId = crypto.randomUUID();
-  const promptPlans = promptParamsList.map((promptParams, index) => ({
-    prompt: generatePrompt(promptParams),
+  const personImageTypes = new Set(["产品上身图", "对镜穿搭图", "生活场景图"]);
+  const leadPersonIndex = promptParamsList.findIndex((promptParams) => personImageTypes.has(promptParams.imageType));
+  const leadParams = promptParamsList[leadPersonIndex >= 0 ? leadPersonIndex : 0];
+  const sharedScenePreference = leadParams.scenePreference || "自动匹配";
+  const sharedModelChoice = leadParams.modelChoice;
+  const normalizedPromptParamsList = promptParamsList.map((promptParams) => ({
+    ...promptParams,
+    scenePreference: sharedScenePreference,
+    modelChoice: personImageTypes.has(promptParams.imageType) ? sharedModelChoice : promptParams.modelChoice
+  }));
+  const promptPlans = normalizedPromptParamsList.map((promptParams, index) => ({
+    prompt: generatePrompt(promptParams, {
+      index,
+      total: normalizedPromptParamsList.length,
+      leadPersonIndex
+    }),
+    includesPerson: personImageTypes.has(promptParams.imageType),
     name: String(promptParams.generatedImageName || `图片 ${index + 1}`).trim().slice(0, 60) || `图片 ${index + 1}`
   }));
   const prompts = promptPlans.map((plan) => plan.prompt);
@@ -615,15 +664,25 @@ async function handleGenerate(req, res) {
   const startedAt = Date.now();
   const mode = files.length ? "image-edit" : "text-to-image";
   const savedImages = [];
+  let sceneContinuityReference = null;
+  let identityContinuityReference = null;
   console.log(
     `[generate:start] id=${recordId} user=${user.username} mode=${mode} files=${files.length} prompts=${prompts.length} model=${imageModel}`
   );
 
   try {
     for (const [promptIndex, promptPlan] of promptPlans.entries()) {
+      const continuityReferences = [
+        identityContinuityReference,
+        sceneContinuityReference && sceneContinuityReference !== identityContinuityReference ? sceneContinuityReference : null
+      ].filter(Boolean);
+      const requestFiles =
+        promptIndex === 0
+          ? files
+          : [...continuityReferences, ...files.slice(0, Math.max(0, 4 - continuityReferences.length))].slice(0, 4);
       const apiResponse = await callWalaApiWithRetries({
         prompt: promptPlan.prompt,
-        files,
+        files: requestFiles,
         size: body.size,
         quality: body.quality
       });
@@ -644,6 +703,16 @@ async function handleGenerate(req, res) {
       const generatedImages = extractGeneratedImages(responsePayload);
       if (!generatedImages.length) {
         throw Object.assign(new Error(`第 ${promptIndex + 1} 张图未返回图片。`), { statusCode: 502 });
+      }
+
+      if (promptPlans.length > 1 && !sceneContinuityReference) {
+        sceneContinuityReference = await generatedImageToReferenceFile(generatedImages[0], recordId, "场景");
+      }
+      if (promptPlans.length > 1 && promptPlan.includesPerson && !identityContinuityReference) {
+        identityContinuityReference =
+          promptIndex === 0
+            ? sceneContinuityReference
+            : await generatedImageToReferenceFile(generatedImages[0], recordId, "人物");
       }
 
       const nextImages = await saveGeneratedImages(recordId, generatedImages, savedImages.length, promptPlan.name);
