@@ -2969,12 +2969,17 @@ function englishCueFromChinese(value: string) {
 }
 
 function buildEnglishVariantAlignment(context: CopyAlignmentContext) {
+  const visualRecipeLine =
+    context.topic === "手机对镜自拍试纱"
+      ? `Visual evidence: ${context.visualRecipe.evidence}; ${context.visualRecipe.detail}. The camera viewpoint is assigned separately for this frame and must not be replaced by a different angle.`
+      : `Visual recipe: ${context.visualRecipe.camera}; ${context.visualRecipe.evidence}; ${context.visualRecipe.detail}.`;
+
   return [
     `Variant-specific cues: focus on ${englishCueFromChinese(context.focus)}.`,
     `Resolve the viewer concern through ${englishCueFromChinese(context.concern)}.`,
     `Use visual proof such as ${englishCueFromChinese(context.proof)} in ${englishCueFromChinese(context.scene)}.`,
     `Emphasize detail cues including ${englishCueFromChinese(context.material)}.`,
-    `Visual recipe: ${context.visualRecipe.camera}; ${context.visualRecipe.evidence}; ${context.visualRecipe.detail}.`
+    visualRecipeLine
   ].join(" ");
 }
 
@@ -2998,7 +3003,7 @@ function buildSeriesContinuityRequirement(
 ) {
   const seriesLine =
     `Series continuity is a hard requirement for image ${index + 1} of ${imageCount}. ` +
-    "Keep the exact same physical location, room architecture, mirror, curtains, furniture, background layout, light direction, color temperature, time of day, and garment design established by the series cover. " +
+    "Keep the exact same physical location and preserve its permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, and garment design established by the series cover. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. " +
     "Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. " +
     "Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one.";
 

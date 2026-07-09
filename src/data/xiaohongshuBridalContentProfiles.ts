@@ -184,7 +184,7 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
         scenePreference: "试纱间",
         keywordProfileId: "phoneMirrorSelfieFitting",
         extraRequirement:
-          "Create one straight-on handheld phone mirror selfie in a bridal fitting room, using one continuous full-length frame and one camera viewpoint. Use a wider environmental composition: reduce the person's apparent frame scale by 20 percent compared with conventional full-body selfie framing, so the full person occupies about 60 to 65 percent of the image height. Show more of the mirror, curtains, floor around the train, garment rack, and fitting-room context. Keep normal adult anatomy and body proportions; achieve the smaller subject only through greater camera distance and wider framing. Keep the phone visible in hand without blocking the gown neckline, waistline, hemline, or train."
+          "Create one straight-on handheld phone mirror selfie in a bridal fitting room, using one continuous full-length frame and one camera viewpoint. Establish one fixed phone for the complete series: an unbranded modern smartphone with a matte graphite back, slim transparent case with dark edges, three separate circular rear camera lenses in a triangular arrangement, one small flash beside the lenses, no logo, and no charm. Use a wider environmental composition: reduce the person's apparent frame scale by 20 percent compared with conventional full-body selfie framing, so the full person occupies about 60 to 65 percent of the image height. Show more of the mirror, curtains, floor around the train, garment rack, and fitting-room context. Keep normal adult anatomy and body proportions; achieve the smaller subject only through greater camera distance and wider framing. Keep the phone visible in hand without blocking the gown neckline, waistline, hemline, or train."
       },
       {
         name: "图2｜侧身｜手机自拍侧面比例",
@@ -194,7 +194,7 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
         scenePreference: "试纱间",
         keywordProfileId: "phoneMirrorSelfieFitting",
         extraRequirement:
-          "Show exactly one side-profile phone mirror selfie in the fitting room, using one continuous frame and one camera viewpoint. Use a wider environmental composition: reduce the person's apparent frame scale by 20 percent compared with conventional full-body selfie framing, so the full person occupies about 60 to 65 percent of the image height. Show more of the mirror, curtains, floor around the train, garment rack, and fitting-room context. Keep normal adult anatomy and body proportions; achieve the smaller subject only through greater camera distance and wider framing. Keep an honest phone-camera perspective with clear waistline, hip line, skirt volume, hemline, and train movement, with no leg stretching."
+          "Show exactly one side-profile phone mirror selfie in the fitting room, using one continuous frame and one camera viewpoint. Use the exact same physical phone established in the first selfie frame, preserving its matte graphite back, slim transparent case with dark edges, three-lens triangular camera arrangement, flash position, dimensions, and lack of accessories. Use a wider environmental composition: reduce the person's apparent frame scale by 20 percent compared with conventional full-body selfie framing, so the full person occupies about 60 to 65 percent of the image height. Show more of the mirror, curtains, floor around the train, garment rack, and fitting-room context. Keep normal adult anatomy and body proportions; achieve the smaller subject only through greater camera distance and wider framing. Keep an honest phone-camera perspective with clear waistline, hip line, skirt volume, hemline, and train movement, with no leg stretching."
       },
       {
         name: "图3｜细节｜手机近拍腰线",
@@ -202,29 +202,29 @@ export const xiaohongshuBridalContentProfiles: Record<XiaohongshuBridalTopic, Xi
         description: "手机视角近拍腰线、钉珠道具、缎面或蕾丝细节，有真实调整痕迹。",
         imageType: "拍摄花絮 / 材质图",
         scenePreference: "试纱间",
-        keywordProfileId: "phoneMirrorSelfieFitting",
+        keywordProfileId: "fittingServiceDetail",
         extraRequirement:
-          "Create a phone-camera close detail from a bridal fitting, waistline, beading adjustment tools, fabric texture, satin or lace detail, natural hand-held framing, no readable text, no polished campaign retouching."
+          "Create exactly one close-up waistline and fabric-detail view from a single oblique angle. Show beading adjustment tools, fabric texture, satin or lace detail, and natural phone-camera framing without displaying multiple angles. The phone is being used as the camera and does not need to appear; if any reflection reveals it, preserve the exact same series phone. No readable text and no polished campaign retouching."
       },
       {
-        name: "图4｜过程｜自拍前顾问整理",
-        purpose: "展示自拍记录前的真实试纱服务过程。",
-        description: "顾问整理裙摆、用钉珠道具调整腰线或调整头纱，客人手里可拿手机但不抢画面。",
-        imageType: "拍摄花絮 / 材质图",
+        name: "图4｜后侧｜顾问整理拖尾",
+        purpose: "用后侧三分之二角度展示试纱服务和婚纱背面。",
+        description: "从后侧三分之二角度记录顾问整理拖尾、头纱或腰线，人物和环境保持连续。",
+        imageType: "生活场景图",
         scenePreference: "试纱间",
         keywordProfileId: "fittingServiceDetail",
         extraRequirement:
-          "Show the moment before a phone mirror selfie, bridal consultant adjusting train, waistline, beading adjustment tools, or veil, the client may hold a phone naturally, real appointment process, no hard-selling pose."
+          "Create exactly one rear three-quarter documentary view of the same client in the same fitting room while the bridal consultant adjusts the train, waistline, beading adjustment tools, or veil. Keep the bride as the main subject and preserve her exact identity, gown, and fitting-room environment. If the client holds a phone, it must be the exact same physical phone established in the first selfie frame, with identical case, color, camera layout, and dimensions. No front-facing angle, no repeated person, and no hard-selling pose."
       },
       {
-        name: "图5｜复盘｜单张手机试纱记录",
-        purpose: "用一张手机预览说明回家复盘，不露隐私。",
-        description: "桌面手机只显示一张不可读的试纱预览，搭配预约卡、面料小样和发饰。",
+        name: "图5｜俯拍｜单张手机试纱记录",
+        purpose: "用试纱间边桌俯拍说明回家复盘，不露隐私。",
+        description: "俯拍试纱间边桌，同一部手机只显示一张不可读预览，搭配预约卡、面料小样和发饰。",
         imageType: "产品静物图",
         scenePreference: "材质工作台",
         keywordProfileId: "fittingPrep",
         extraRequirement:
-          "Create one continuous fitting-review still life. The phone screen may show exactly one non-readable mirror-selfie preview, never a gallery, grid, contact sheet, or multiple thumbnails. Include an appointment card, fabric swatches, hair accessory, veil edge, and soft daylight, with no readable personal information or chat content."
+          "Create exactly one top-down fitting-review still life on a side table inside the same fitting room. Use the exact same physical phone established in the first selfie frame, preserving its case, color, camera layout, dimensions, and lack of accessories. The phone screen may show exactly one non-readable mirror-selfie preview, never a gallery, grid, contact sheet, or multiple thumbnails. Include an appointment card, fabric swatches, hair accessory, veil edge, and soft daylight, with no readable personal information or chat content."
       }
     ]
   },

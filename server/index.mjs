@@ -650,6 +650,9 @@ async function handleGenerate(req, res) {
   const recordId = crypto.randomUUID();
   const personImageTypes = new Set(["产品上身图", "对镜穿搭图", "生活场景图"]);
   const leadPersonIndex = promptParamsList.findIndex((promptParams) => personImageTypes.has(promptParams.imageType));
+  const leadPhoneIndex = promptParamsList.findIndex(
+    (promptParams) => promptParams.bridalKeywordProfileId === "phoneMirrorSelfieFitting"
+  );
   const leadParams = promptParamsList[leadPersonIndex >= 0 ? leadPersonIndex : 0];
   const sharedScenePreference = leadParams.scenePreference || "自动匹配";
   const sharedModelChoice = leadParams.modelChoice;
@@ -662,7 +665,8 @@ async function handleGenerate(req, res) {
     prompt: generatePrompt(promptParams, {
       index,
       total: normalizedPromptParamsList.length,
-      leadPersonIndex
+      leadPersonIndex,
+      leadPhoneIndex
     }),
     includesPerson: personImageTypes.has(promptParams.imageType),
     name: String(promptParams.generatedImageName || `图片 ${index + 1}`).trim().slice(0, 60) || `图片 ${index + 1}`

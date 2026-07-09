@@ -168,7 +168,7 @@ const bridalImageKeywordProfiles = {
     promptLine:
       "Xiaohongshu phone mirror selfie fitting keywords: handheld phone visible in mirror, full-length fitting-room mirror selfie, real bridal client, natural arm holding phone, honest phone-camera perspective, clear waistline and hemline, fitting room mirror reflection, subtle unfiltered trial fitting mood.",
     negativeLine:
-      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection, avoid collage, avoid split screen, avoid triptych, avoid contact sheet, avoid repeated person, avoid multiple viewpoints in one image."
+      "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection, avoid collage, avoid split screen, avoid triptych, avoid contact sheet, avoid repeated person, avoid multiple viewpoints in one image, avoid changing the phone color, case, lens count, camera layout, dimensions, or accessories between frames."
   },
   companionFitting: {
     promptLine:
@@ -303,6 +303,46 @@ function buildPhoneMirrorCompositionLine(params) {
   );
 }
 
+function buildSeriesPhoneContinuityLine(seriesContext) {
+  const leadPhoneIndex = Number(seriesContext?.leadPhoneIndex ?? -1);
+  if (leadPhoneIndex < 0) return "";
+
+  const index = Number(seriesContext?.index || 0);
+  const phoneSpecification =
+    "one unbranded modern smartphone with a matte graphite back, a slim transparent case with dark edges, three separate circular rear camera lenses in a triangular arrangement, one small flash beside the lenses, no logo, no charm, and fixed dimensions";
+
+  if (index === leadPhoneIndex) {
+    return `Phone identity continuity (hard requirement): establish exactly ${phoneSpecification} as the only phone used throughout this series.`;
+  }
+
+  return (
+    `Phone identity continuity (hard requirement): if a phone appears anywhere in this frame, it must be the exact same physical device established in the first selfie frame: ${phoneSpecification}. ` +
+    "Use the supplied continuity image as the strict phone reference. Preserve the identical back color, case material and edge color, lens count, lens size, triangular camera arrangement, flash position, dimensions, and lack of accessories. Never substitute a similar phone or redesign it."
+  );
+}
+
+const phoneSeriesShotPlans = [
+  "a straight-on full-length mirror selfie at eye level",
+  "a single clean side-profile mirror selfie",
+  "a close-up waistline and fabric-detail view from one oblique angle",
+  "a rear three-quarter documentary view showing the client, consultant, veil, and train",
+  "a top-down still-life review view of the same phone and fitting details on a side table"
+];
+
+function buildPhoneSeriesShotLine(seriesContext) {
+  const leadPhoneIndex = Number(seriesContext?.leadPhoneIndex ?? -1);
+  if (leadPhoneIndex < 0) return "";
+
+  const index = Number(seriesContext?.index || 0);
+  const assignedShot = phoneSeriesShotPlans[index];
+  if (!assignedShot) return "";
+
+  return (
+    `Assigned camera viewpoint (hard requirement): create only ${assignedShot}. ` +
+    `This viewpoint is unique to frame ${index + 1}; do not reuse the viewpoint assigned to another frame, and do not combine multiple viewpoints in one image.`
+  );
+}
+
 function buildSeriesContinuityLine(params, seriesContext) {
   const total = Number(seriesContext?.total || 1);
   if (total <= 1) return "";
@@ -311,7 +351,7 @@ function buildSeriesContinuityLine(params, seriesContext) {
   const leadPersonIndex = Number(seriesContext?.leadPersonIndex ?? -1);
   const sharedSceneLine =
     `Series continuity (hard requirement, image ${index + 1} of ${total}): this is one uninterrupted shoot in the exact same physical location described above. ` +
-    "Preserve identical room architecture, mirror, curtains, furniture, background objects, object placement, light direction, color temperature, time of day, garment design, styling, and fitting-session atmosphere across the complete image set. " +
+    "Preserve the permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, garment design, styling, and fitting-session atmosphere across the complete image set. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. " +
     "This request must output exactly one continuous photograph with one camera viewpoint and one instance of the main person. It is one frame in a separately generated series, not a collage, split screen, triptych, diptych, contact sheet, or before-and-after layout. " +
     "Change only camera distance, crop, the single assigned angle, pose, or the detail being documented. Any conflicting request to move to another room, worktable, storefront, or outdoor location must be ignored.";
 
@@ -350,6 +390,8 @@ export function generatePrompt(params, seriesContext = undefined) {
     lightLines[params.lightPreference] || lightLines.自动匹配,
     bridalKeywordProfile ? buildBridalKeywordLine(bridalKeywordProfile.promptLine) : undefined,
     buildPhoneMirrorCompositionLine(params),
+    buildSeriesPhoneContinuityLine(seriesContext),
+    buildPhoneSeriesShotLine(seriesContext),
     buildSeriesContinuityLine(params, seriesContext),
     brandDirection,
     "Composition: balanced crop, natural posture if a person appears, clear waistline and hemline, visible fabric detail, no chaotic props, no excessive retouching.",
