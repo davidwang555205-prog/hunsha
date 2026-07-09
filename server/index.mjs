@@ -387,7 +387,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
       }
       form.append("prompt", prompt);
       form.append("model", imageModel);
-      form.append("size", size || "1024x1024");
+      form.append("size", size || "1024x1536");
       form.append("quality", resolvedQuality);
 
       return await fetch(`${apiBaseUrl}/images/edits`, {
@@ -416,7 +416,7 @@ async function callWalaApi({ prompt, files, size, quality }) {
       body: JSON.stringify({
         model: imageModel,
         prompt,
-        size: size || "1024x1024",
+        size: size || "1024x1536",
         quality: resolvedQuality
       }),
       signal: controller.signal

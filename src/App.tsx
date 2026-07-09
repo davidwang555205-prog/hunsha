@@ -120,7 +120,7 @@ const dressStyleOptions: DressStyle[] = ["连衣裙", "衬衫裙", "针织裙", 
 const imageTypeOptions: ImageType[] = ["产品上身图", "对镜穿搭图", "生活场景图", "非产品氛围图", "拍摄花絮 / 材质图", "产品静物图"];
 const seasonOptions: Season[] = ["春", "夏", "秋", "冬"];
 const lightPreferenceOptions: LightPreference[] = ["自动匹配", "清晨自然光", "午后柔光", "傍晚金色光", "室内窗边光", "酒店暖光", "婚礼现场自然光"];
-const sizeOptions = ["1024x1024", "1024x1536", "1536x1024"];
+const sizeOptions = ["1024x1536", "1024x1024", "1536x1024"];
 const qualityOptions = [
   { value: "medium", label: "M / standard" },
   { value: "low", label: "L / low" },
@@ -223,6 +223,18 @@ function contentText(record: Pick<HistoryRecord, "title" | "body" | "tags">) {
   return `${record.title}\n\n${record.body}\n\n${record.tags.join(" ")}`;
 }
 
+function hasGeneratedImages(record: HistoryRecord) {
+  return record.status === "success" && record.images.length > 0;
+}
+
+function isSettingsGenerationRecord(record: HistoryRecord) {
+  return hasGeneratedImages(record) && record.topic === "生成设置";
+}
+
+function isContentGenerationRecord(record: HistoryRecord) {
+  return hasGeneratedImages(record) && record.topic !== "生成设置";
+}
+
 function isUnauthorizedError(error: unknown): error is ApiRequestError {
   return error instanceof Error && (error as ApiRequestError).statusCode === 401;
 }
@@ -241,7 +253,7 @@ function App() {
   const [contentMessage, setContentMessage] = useState("");
   const [settingsReferenceFiles, setSettingsReferenceFiles] = useState<File[]>([]);
   const [contentReferenceFiles, setContentReferenceFiles] = useState<File[]>([]);
-  const [size, setSize] = useState("1024x1024");
+  const [size, setSize] = useState("1024x1536");
   const [quality, setQuality] = useState(defaultImageQuality);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -291,6 +303,14 @@ function App() {
         { requestCount: 0, successCount: 0, failedCount: 0, generatedImageCount: 0 }
       ),
     [accounts]
+  );
+  const latestSettingsDisplayRecord = useMemo(
+    () => (settingsLatestRecord && hasGeneratedImages(settingsLatestRecord) ? settingsLatestRecord : history.find(isSettingsGenerationRecord) || null),
+    [history, settingsLatestRecord]
+  );
+  const latestContentDisplayRecord = useMemo(
+    () => (latestRecord && hasGeneratedImages(latestRecord) ? latestRecord : history.find(isContentGenerationRecord) || null),
+    [history, latestRecord]
   );
 
   async function apiRequest<T>(path: string, options: RequestInit = {}, token = session?.token) {
@@ -609,7 +629,7 @@ function App() {
     const isSettingsPanel = panel === "settings";
     const files = isSettingsPanel ? settingsReferenceFiles : contentReferenceFiles;
     const setFiles = isSettingsPanel ? setSettingsReferenceFiles : setContentReferenceFiles;
-    const settingsGeneratedImages = settingsLatestRecord?.images || [];
+    const settingsGeneratedImages = latestSettingsDisplayRecord?.images || [];
 
     return (
       <div className="space-y-4 rounded-lg bg-white p-4 ring-1 ring-aura-beige">
@@ -645,7 +665,7 @@ function App() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-aura-charcoal">生成设置图片</h3>
               {settingsGeneratedImages.length ? (
-                <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsGeneratedImages, settingsLatestRecord?.title || "生成设置图片")}>
+                <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(settingsGeneratedImages, latestSettingsDisplayRecord?.title || "生成设置图片")}>
                   下载图片
                 </button>
               ) : null}
@@ -654,7 +674,7 @@ function App() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {settingsGeneratedImages.map((image, index) => (
                   <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
-                    <img className="aspect-square w-full object-cover" src={image.url} alt={`${settingsLatestRecord?.title || "生成设置图片"} ${index + 1}`} />
+                    <img className="aspect-[3/4] w-full object-cover" src={image.url} alt={`${latestSettingsDisplayRecord?.title || "生成设置图片"} ${index + 1}`} />
                     <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
                   </figure>
                 ))}
@@ -687,13 +707,13 @@ function App() {
                     <div className="grid grid-cols-2 gap-2">
                       {record.images.map((image, index) => (
                         <figure key={image.id} className="min-w-0">
-                          <img className="aspect-square w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${record.title} ${index + 1}`} />
+                          <img className="aspect-[3/4] w-full rounded-lg object-cover ring-1 ring-aura-beige" src={image.url} alt={`${record.title} ${index + 1}`} />
                           <figcaption className="mt-1 truncate text-[11px] text-aura-muted">{image.name || `图片 ${index + 1}`}</figcaption>
                         </figure>
                       ))}
                     </div>
                   ) : (
-                    <div className="flex aspect-square items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
+                    <div className="flex aspect-[3/4] items-center justify-center rounded-lg bg-aura-cream text-sm text-aura-muted ring-1 ring-aura-beige">
                       {record.status === "failed" ? "失败" : "无图"}
                     </div>
                   )}
@@ -1114,17 +1134,17 @@ function App() {
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h4 className="text-sm font-semibold text-aura-charcoal">小红书生成图片</h4>
-                      {latestRecord?.images.length ? (
-                        <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestRecord.images, latestRecord.title)}>
-                          一键下载{latestRecord.images.length}张图
+                      {latestContentDisplayRecord?.images.length ? (
+                        <button className={secondaryButtonClass} type="button" onClick={() => downloadImages(latestContentDisplayRecord.images, latestContentDisplayRecord.title)}>
+                          一键下载{latestContentDisplayRecord.images.length}张图
                         </button>
                       ) : null}
                     </div>
-                    {latestRecord?.images.length ? (
+                    {latestContentDisplayRecord?.images.length ? (
                       <div className="grid gap-3 sm:grid-cols-2">
-                        {latestRecord.images.map((image, index) => (
+                        {latestContentDisplayRecord.images.map((image, index) => (
                           <figure key={image.id} className="overflow-hidden rounded-lg bg-aura-cream ring-1 ring-aura-beige">
-                            <img className="aspect-square w-full object-cover" src={image.url} alt={`${latestRecord.title} ${index + 1}`} />
+                            <img className="aspect-[3/4] w-full object-cover" src={image.url} alt={`${latestContentDisplayRecord.title} ${index + 1}`} />
                             <figcaption className="px-3 py-2 text-xs text-aura-muted">图 {index + 1}</figcaption>
                           </figure>
                         ))}
