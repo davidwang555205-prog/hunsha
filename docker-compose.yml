@@ -1,0 +1,41 @@
+# PostgreSQL + MinIO 本地开发环境
+# 启动：docker compose up -d
+# 停止：docker compose down（数据保留在 volume）
+# 清空数据：docker compose down -v
+# 端口均绑 127.0.0.1，不暴露公网；变量从同目录 .env 读取
+services:
+  postgres:
+    image: postgres:16
+    container_name: bridal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB:-bridal}
+      POSTGRES_USER: ${PG_USER:-bridal}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-change_me}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-bridal} -d ${PG_DB:-bridal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    container_name: bridal-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-change_me}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+volumes:
+  pg_data:
+  minio_data:

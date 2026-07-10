@@ -1,17 +1,37 @@
 import { createServer } from "node:http";
 import { createReadStream, existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { generatePrompt } from "./prompt.mjs";
+import {
+  ensureSchema,
+  findUserByName,
+  getUserById,
+  createUser,
+  updateUser,
+  insertHistory,
+  listHistoryForUser,
+  countImagesForDate,
+  purgeExpiredHistory,
+  buildAccountSummaries,
+  verifyPassword,
+  hashPassword,
+  makeUser,
+  publicUser,
+  normalizeDailyImageLimit,
+  hasUnlimitedImageGeneration,
+  maxDailyImageLimit,
+  nowIso
+} from "./db.mjs";
+import { ensureBucket, putImage, getImageStream } from "./storage.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const distDir = path.join(rootDir, "dist");
 const dataDir = path.join(__dirname, "data");
 const generatedDir = path.join(dataDir, "generated");
-const dbPath = path.join(dataDir, "db.json");
 
 function applyDotEnv(filePath) {
   if (!existsSync(filePath)) return;
@@ -42,111 +62,8 @@ const imageRetryAttempts = Math.max(1, Number(process.env.WALA_IMAGE_RETRY_ATTEM
 const maxBodyBytes = 80 * 1024 * 1024;
 const maxContinuityReferenceBytes = 20 * 1024 * 1024;
 const sessionTtlMs = 24 * 60 * 60 * 1000;
-const maxDailyImageLimit = 1000;
-const defaultDailyImageLimit = (() => {
-  const value = Number(process.env.DEFAULT_DAILY_IMAGE_LIMIT || 20);
-  return Number.isFinite(value) ? Math.max(0, Math.min(maxDailyImageLimit, Math.floor(value))) : 20;
-})();
 const sessionSecret =
   process.env.APP_SESSION_SECRET || process.env.APP_ADMIN_PASSWORD || "bridal-content-studio-session-secret";
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-  return { salt, hash };
-}
-
-function verifyPassword(password, user) {
-  const { hash } = hashPassword(password, user.passwordSalt);
-  return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(user.passwordHash, "hex"));
-}
-
-function normalizeDailyImageLimit(value, fallback = defaultDailyImageLimit) {
-  const limit = Number(value);
-  if (!Number.isFinite(limit)) return fallback;
-  return Math.max(0, Math.min(maxDailyImageLimit, Math.floor(limit)));
-}
-
-function hasUnlimitedImageGeneration(user) {
-  return user.role === "admin";
-}
-
-function makeUser(id, username, displayName, role, password, dailyImageLimit = defaultDailyImageLimit) {
-  const passwordParts = hashPassword(password);
-  return {
-    id,
-    username,
-    displayName,
-    role,
-    dailyImageLimit: normalizeDailyImageLimit(dailyImageLimit),
-    passwordSalt: passwordParts.salt,
-    passwordHash: passwordParts.hash,
-    createdAt: nowIso()
-  };
-}
-
-async function ensureDataFiles() {
-  await mkdir(generatedDir, { recursive: true });
-  if (existsSync(dbPath)) return;
-
-  const db = {
-    users: [
-      makeUser("admin", "admin", "管理员", "admin", process.env.APP_ADMIN_PASSWORD || "admin123"),
-      makeUser("wang", "wang", "wang", "user", process.env.APP_USER_PASSWORD || "user123")
-    ],
-    history: []
-  };
-  await writeDb(db);
-}
-
-async function readDb() {
-  await ensureDataFiles();
-  const db = JSON.parse(await readFile(dbPath, "utf8"));
-  const normalizedDb = purgeExpiredHistory(normalizeDb(db));
-  if (normalizedDb.__changed) {
-    delete normalizedDb.__changed;
-    await writeDb(normalizedDb);
-  }
-  return normalizedDb;
-}
-
-async function writeDb(db) {
-  await mkdir(dataDir, { recursive: true });
-  await writeFile(dbPath, `${JSON.stringify(db, null, 2)}\n`, "utf8");
-}
-
-function purgeExpiredHistory(db) {
-  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
-  db.history = (db.history || []).filter((record) => new Date(record.createdAt).getTime() >= cutoff);
-  return db;
-}
-
-function normalizeDb(db) {
-  db.users = Array.isArray(db.users) ? db.users : [];
-  db.history = Array.isArray(db.history) ? db.history : [];
-  for (const user of db.users) {
-    const nextLimit = normalizeDailyImageLimit(user.dailyImageLimit);
-    if (user.dailyImageLimit !== nextLimit) {
-      user.dailyImageLimit = nextLimit;
-      db.__changed = true;
-    }
-  }
-  return db;
-}
-
-function publicUser(user) {
-  return {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
-    role: user.role,
-    dailyImageLimit: normalizeDailyImageLimit(user.dailyImageLimit),
-    hasUnlimitedImageGeneration: hasUnlimitedImageGeneration(user)
-  };
-}
 
 function normalizeUsername(username) {
   return String(username || "").trim().toLowerCase();
@@ -226,45 +143,11 @@ function parseSessionToken(token) {
   }
 }
 
-function getSessionUser(req, db) {
+async function getSessionUser(req) {
   const token = getBearerToken(req);
   const session = parseSessionToken(token);
   if (!session) return null;
-
-  const user = db.users.find((candidate) => candidate.id === session.userId);
-  return user || null;
-}
-
-function historyForUser(db, user) {
-  if (user.role === "admin") return db.history;
-  return db.history.filter((record) => record.userId === user.id);
-}
-
-function shanghaiDateKey(value = new Date()) {
-  const date = value instanceof Date ? value : new Date(value);
-  return new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
-function generatedImagesForDate(db, userId, dateKey = shanghaiDateKey()) {
-  return (db.history || [])
-    .filter((record) => record.userId === userId && shanghaiDateKey(record.createdAt) === dateKey)
-    .reduce((count, record) => count + (record.images?.length || 0), 0);
-}
-
-function buildAccountSummaries(db) {
-  return db.users.map((user) => {
-    const records = db.history.filter((record) => record.userId === user.id);
-    const successfulRecords = records.filter((record) => record.status === "success");
-    return {
-      user: publicUser(user),
-      requestCount: records.length,
-      successCount: successfulRecords.length,
-      failedCount: records.length - successfulRecords.length,
-      generatedImageCount: records.reduce((count, record) => count + (record.images?.length || 0), 0),
-      dailyGeneratedImageCount: generatedImagesForDate(db, user.id),
-      lastGeneratedAt: records[0]?.createdAt || null
-    };
-  });
+  return await getUserById(session.userId);
 }
 
 function sanitizeHistory(record) {
@@ -392,14 +275,13 @@ async function saveGeneratedImages(recordId, images, startIndex = 0, imageName =
     }
 
     const base64 = image.b64.replace(/^data:[^;]+;base64,/i, "");
-    const filename = `${recordId}-${imageNumber}.png`;
-    const filePath = path.join(generatedDir, filename);
-    await writeFile(filePath, Buffer.from(base64, "base64"));
+    const key = `${recordId}-${imageNumber}.png`;
+    await putImage(key, Buffer.from(base64, "base64"), "image/png");
     saved.push({
       id: `${recordId}-${imageNumber}`,
       name,
-      url: `/api/generated/${filename}`,
-      downloadUrl: `/api/generated/${filename}`,
+      url: `/api/generated/${key}`,
+      downloadUrl: `/api/generated/${key}`,
       source: "local"
     });
   }
@@ -497,11 +379,10 @@ async function callWalaApiWithRetries(request) {
 }
 
 async function handleLogin(req, res) {
-  const db = await readDb();
   const body = await parseJsonBody(req);
   const username = String(body.username || "").trim();
   const password = String(body.password || "");
-  const user = db.users.find((candidate) => candidate.username === username);
+  const user = await findUserByName(username);
 
   if (!user || !verifyPassword(password, user)) {
     return sendError(res, 401, "账号或密码不正确。");
@@ -512,19 +393,18 @@ async function handleLogin(req, res) {
   return sendJson(res, 200, {
     token,
     user: publicUser(user),
-    accounts: user.role === "admin" ? buildAccountSummaries(db) : undefined
+    accounts: user.role === "admin" ? await buildAccountSummaries() : undefined
   });
 }
 
 async function handleMe(req, res) {
-  const db = await readDb();
-  const user = getSessionUser(req, db);
+  const user = await getSessionUser(req);
   if (!user) return sendError(res, 401, "登录已失效。");
 
-  const records = historyForUser(db, user);
+  const records = await listHistoryForUser(user.id, user.role);
   return sendJson(res, 200, {
     user: publicUser(user),
-    accounts: user.role === "admin" ? buildAccountSummaries(db) : undefined,
+    accounts: user.role === "admin" ? await buildAccountSummaries() : undefined,
     summary: {
       requestCount: records.length,
       successCount: records.filter((record) => record.status === "success").length,
@@ -535,8 +415,7 @@ async function handleMe(req, res) {
 }
 
 async function handleCreateUser(req, res) {
-  const db = await readDb();
-  const currentUser = getSessionUser(req, db);
+  const currentUser = await getSessionUser(req);
   if (!currentUser) return sendError(res, 401, "登录已失效。");
   if (currentUser.role !== "admin") return sendError(res, 403, "只有管理员可以开通使用者账号。");
 
@@ -554,30 +433,29 @@ async function handleCreateUser(req, res) {
     return sendError(res, 400, "初始密码长度需要在 6-72 位之间。");
   }
 
-  if (db.users.some((user) => normalizeUsername(user.username) === username)) {
-    return sendError(res, 409, "该账号已存在。");
-  }
+  const existing = await findUserByName(username);
+  if (existing) return sendError(res, 409, "该账号已存在。");
 
   const user = makeUser(crypto.randomUUID(), username, displayName.slice(0, 40), "user", password, dailyImageLimit);
-  db.users.push(user);
-  await writeDb(db);
+  await createUser(user);
 
   return sendJson(res, 201, {
     user: publicUser(user),
-    accounts: buildAccountSummaries(db)
+    accounts: await buildAccountSummaries()
   });
 }
 
 async function handleUpdateUser(req, res, userId) {
-  const db = await readDb();
-  const currentUser = getSessionUser(req, db);
+  const currentUser = await getSessionUser(req);
   if (!currentUser) return sendError(res, 401, "登录已失效。");
   if (currentUser.role !== "admin") return sendError(res, 403, "只有管理员可以修改账号设置。");
 
-  const targetUser = db.users.find((user) => user.id === userId);
+  const targetUser = await getUserById(userId);
   if (!targetUser) return sendError(res, 404, "账号不存在。");
 
   const body = await parseJsonBody(req);
+  const fields = {};
+
   if (Object.prototype.hasOwnProperty.call(body, "dailyImageLimit")) {
     if (hasUnlimitedImageGeneration(targetUser)) {
       return sendError(res, 400, "管理员账号不受每日生图数量限制，无需设置额度。");
@@ -586,7 +464,7 @@ async function handleUpdateUser(req, res, userId) {
     if (!Number.isFinite(rawLimit) || rawLimit < 0 || rawLimit > maxDailyImageLimit) {
       return sendError(res, 400, `每日生成图片上限需要在 0-${maxDailyImageLimit} 之间。`);
     }
-    targetUser.dailyImageLimit = normalizeDailyImageLimit(rawLimit);
+    fields.dailyImageLimit = normalizeDailyImageLimit(rawLimit);
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "password")) {
@@ -595,30 +473,30 @@ async function handleUpdateUser(req, res, userId) {
       return sendError(res, 400, "新密码长度需要在 6-72 位之间。");
     }
     const passwordParts = hashPassword(password);
-    targetUser.passwordSalt = passwordParts.salt;
-    targetUser.passwordHash = passwordParts.hash;
+    fields.passwordSalt = passwordParts.salt;
+    fields.passwordHash = passwordParts.hash;
   }
-  await writeDb(db);
+  await updateUser(userId, fields);
+  const updated = await getUserById(userId);
 
   return sendJson(res, 200, {
-    user: publicUser(targetUser),
-    accounts: buildAccountSummaries(db)
+    user: publicUser(updated),
+    accounts: await buildAccountSummaries()
   });
 }
 
 async function handleHistory(req, res) {
-  const db = await readDb();
-  const user = getSessionUser(req, db);
+  const user = await getSessionUser(req);
   if (!user) return sendError(res, 401, "登录已失效。");
 
+  const records = await listHistoryForUser(user.id, user.role);
   return sendJson(res, 200, {
-    history: historyForUser(db, user).slice(0, 100).map(sanitizeHistory)
+    history: records.slice(0, 100).map(sanitizeHistory)
   });
 }
 
 async function handleGenerate(req, res) {
-  const db = await readDb();
-  const user = getSessionUser(req, db);
+  const user = await getSessionUser(req);
   if (!user) return sendError(res, 401, "登录已失效。");
 
   const body = await parseJsonBody(req);
@@ -636,7 +514,7 @@ async function handleGenerate(req, res) {
   if (!title || !textBody || !tags.length) return sendError(res, 400, "缺少标题、正文或标签。");
 
   const dailyImageLimit = normalizeDailyImageLimit(user.dailyImageLimit);
-  const generatedToday = generatedImagesForDate(db, user.id);
+  const generatedToday = await countImagesForDate(user.id);
   const requestedImageCount = promptParamsList.length;
   if (!hasUnlimitedImageGeneration(user) && generatedToday + requestedImageCount > dailyImageLimit) {
     const remaining = Math.max(0, dailyImageLimit - generatedToday);
@@ -749,8 +627,8 @@ async function handleGenerate(req, res) {
       latencyMs: Date.now() - startedAt
     };
 
-    db.history.unshift(record);
-    await writeDb(purgeExpiredHistory(db));
+    await insertHistory(record);
+    await purgeExpiredHistory(retentionDays);
     console.log(`[generate:success] id=${recordId} images=${savedImages.length} latencyMs=${record.latencyMs}`);
     return sendJson(res, 200, { record: sanitizeHistory(record) });
   } catch (error) {
@@ -772,26 +650,26 @@ async function handleGenerate(req, res) {
       error: error.message || "生图失败。",
       latencyMs: Date.now() - startedAt
     };
-    db.history.unshift(record);
-    await writeDb(purgeExpiredHistory(db));
+    await insertHistory(record);
+    await purgeExpiredHistory(retentionDays);
     console.log(`[generate:failed] id=${recordId} status=${error.statusCode || 500} latencyMs=${record.latencyMs} error=${record.error}`);
     return sendError(res, error.statusCode || 500, record.error);
   }
 }
 
 async function serveGenerated(req, res, pathname) {
-  const filename = path.basename(pathname.replace("/api/generated/", ""));
-  const filePath = path.join(generatedDir, filename);
-  if (!filePath.startsWith(generatedDir) || !existsSync(filePath)) {
+  const key = path.basename(pathname.replace("/api/generated/", ""));
+  try {
+    const stream = await getImageStream(key);
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Cache-Control": "private, max-age=31536000"
+    });
+    stream.pipe(res);
+  } catch {
     res.writeHead(404);
-    return res.end("Not found");
+    res.end("Not found");
   }
-
-  res.writeHead(200, {
-    "Content-Type": "image/png",
-    "Cache-Control": "private, max-age=31536000"
-  });
-  return createReadStream(filePath).pipe(res);
 }
 
 const mimeTypes = {
@@ -863,7 +741,8 @@ async function handleRequest(req, res) {
   }
 }
 
-await ensureDataFiles();
+await ensureSchema();
+await ensureBucket();
 
 createServer(handleRequest).listen(port, "0.0.0.0", () => {
   console.log(`Bridal content studio listening on http://127.0.0.1:${port}`);
