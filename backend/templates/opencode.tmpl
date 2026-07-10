@@ -1,0 +1,51 @@
+{
+  "snapshot": false,
+  "agent": {
+    "title": {
+      "disable": true
+    }
+  },
+  "provider": {
+    "monkeycode-ai": {
+      "npm": "{{.npm_package}}",
+      "name": "monkeycode-ai",
+      "options": {
+        "baseURL": "{{.base_url}}"
+      },
+      "models": {
+        "{{.model}}": {
+{{- if or (not .thinking_enabled) .force_reasoning }}
+          "options": {
+{{- if not .thinking_enabled }}
+            "thinking": {"type":"disabled"}{{if .force_reasoning}},{{end}}
+{{- end }}
+{{- if .force_reasoning }}
+            "forceReasoning": true
+{{- end }}
+          },
+{{- end }}
+          "name": "{{.model}}",
+{{- if .support_image }}
+          "attachment": true,
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
+{{- end }}
+          "limit": {"context": {{.context_limit}}, "output": {{.output_limit}}}
+        }
+      }
+    }
+  },
+  "model": "monkeycode-ai/{{.model}}",
+  "disabled_providers": ["openai", "opencode"],
+  "instructions": ["${HOME}/.codingmatrix/project-tpl/.ai-ready/rules/*.md"],
+  "permission": {
+    "doom_loop": "allow",
+    "external_directory": { "*": "allow" },
+    "read": { "*.env": "allow", "*.env.*": "allow" }
+  },
+  "skills": {
+    "paths": ["${HOME}/.codingmatrix/project-tpl/.ai-ready/skills/"]
+  }
+}

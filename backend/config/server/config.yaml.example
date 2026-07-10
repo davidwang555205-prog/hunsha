@@ -1,0 +1,151 @@
+debug: true
+server:
+  addr: ":8888"
+  # 必须手动配置为外部可访问地址，用于安装脚本、回调、对象存储公开 URL 等场景。
+  base_url: "http://localhost:8888"
+
+database:
+  master: "postgres://monkeycode:monkeycode@localhost:5432/monkeycode?sslmode=disable"
+  slave: ""
+  max_open_conns: 100
+  max_idle_conns: 50
+  conn_max_lifetime: 30
+
+redis:
+  host: "localhost"
+  port: 6379
+  pass: ""
+  db: 0
+
+session:
+  secret: "change-me-to-a-random-32-byte-key"
+  expire: 86400
+
+smtp:
+  host: "smtp.example.com"
+  port: 587
+  username: ""
+  password: ""
+  from: "noreply@example.com"
+  tls: false
+
+root_path: "/app"
+admin_token: "change-me"
+
+logger:
+  level: "info"
+
+init_team:
+  email: ""
+  password: ""
+  name: ""
+  image: ""
+  extension_package_dir: "/app/extensions/packages"
+
+mcp_hub:
+  enabled: false
+  url: "http://mcp-hub:8897/mcp"
+  token: ""
+  upstream_timeout: "60s"
+
+vm_idle:
+  sleep_seconds: 600
+  recycle_seconds: 604800
+  # VM 回收前，微信公众号档每个 tier 的提前预警时长（秒），可配多档；省略则使用 [7200, 900]（2h、15min）
+  recycle_warn_wechat_lead_seconds: [7200, 900]
+  # VM 回收前，非微信公众号渠道（钉钉/飞书等）的提前预警时长（秒），<=0 视为禁用；省略则使用 3600（1h）
+  recycle_warn_default_lead_seconds: 3600
+
+wechat:
+  # 微信开放平台 - 网站扫码登录（按需配置，不用可整段省略）
+  open:
+    app_id: ""
+    app_secret: ""
+    callback_url: ""
+    scope: "snsapi_login"
+    debug: false
+
+  # 微信公众号 - 消息推送 / 回调 / 文本自动问答
+  mp:
+    app_id: ""
+    app_secret: ""
+    # 服务器配置里的 Token，用于回调验签（需与公众号后台一致）
+    token: ""
+    # 安全模式的消息加解密 key，43 位；留空则为明文模式
+    encoding_aes_key: ""
+    # 按事件类型路由的模板 ID（key 为 consts.NotifyEventType 字符串）
+    templates: {}
+    # Nginx mirror 部署时置 true：绑定成功的 inline 回复会被丢弃，需主动补发模板消息。
+    # 单后端部署保持 false，否则用户会收到两次"绑定成功"。
+    mirror_mode: false
+
+    # 文本消息自动问答（接 baizhi 知识库 chat/completions）
+    qa:
+      # 总开关。false（或 base_url/api_key 缺失）时，文本消息只回固定文案，不调用知识库
+      enabled: false
+      # 知识库域名，形如 https://monkeycode.docs.baizhi.cloud
+      base_url: ""
+      # 知识库 share token。建议用环境变量注入，不要明文写进仓库
+      api_key: ""
+      # 模型名，留空默认 deepseek-v3.2
+      model: "deepseek-v3.2"
+
+oauth_login:
+  google:
+    enabled: false
+    client_id: ""
+    client_secret: ""
+    # 留空时默认使用 server.base_url + /api/v1/users/oauth/google/callback
+    redirect_url: ""
+  github:
+    enabled: false
+    client_id: ""
+    client_secret: ""
+    # 留空时默认使用 server.base_url + /api/v1/users/oauth/github/callback
+    redirect_url: ""
+
+task:
+  create_req_ttl_seconds: 600
+
+clickhouse:
+  addr: ""
+  database: ""
+  table: "task_logs"
+  model_usage_table: "model_usage_events"
+  init_enabled: false
+  username: ""
+  password: ""
+  read_username: ""
+  read_password: ""
+  max_open_conns: 64
+  max_idle_conns: 32
+  conn_max_lifetime: 3600
+
+object_storage:
+  enabled: false
+  provider: "s3"
+  force_path_style: true
+  init_bucket: false
+  presign_expires: "168h"
+
+  endpoint: ""
+  # 外部访问入口，例如 http://example.com/oss。留空时回退到 endpoint。
+  access_endpoint: ""
+  access_key: ""
+  access_key_secret: ""
+  bucket: ""
+  region: "us-east-1"
+  max_size: 52428800
+  avatar_prefix: "avatar"
+  spec_prefix: "spec"
+  repo_prefix: "repo"
+  temp_prefix: "temp"
+
+static_files:
+  enabled: true
+  dir: "/app/static"
+  route_prefix: "/static"
+
+host_installer:
+  mode: "online"
+  bundle_path: "installer/{{.arch}}/host.tgz"

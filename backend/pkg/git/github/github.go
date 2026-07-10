@@ -1,0 +1,435 @@
+// Package github 提供 GitHub 客户端功能（PAT 模式，不含 GitHub App）
+package github
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"log/slog"
+	"net/http"
+	"slices"
+	"strings"
+
+	"github.com/google/go-github/v74/github"
+	"github.com/palantir/go-githubapp/githubapp"
+	"golang.org/x/oauth2"
+
+	"github.com/GoYoko/web"
+
+	"github.com/chaitin/MonkeyCode/backend/config"
+	"github.com/chaitin/MonkeyCode/backend/domain"
+)
+
+// Github GitHub 客户端（PAT 模式）
+type Github struct {
+	logger    *slog.Logger
+	baseURL   string
+	githubapp githubapp.ClientCreator
+}
+
+// NewGithub 创建 GitHub 客户端
+func NewGithub(logger *slog.Logger, cfg *config.Config) *Github {
+	ga, err := githubapp.NewDefaultCachingClientCreator(
+		githubapp.Config{
+			V3APIURL: "https://api.github.com/",
+			App: struct {
+				IntegrationID int64  "yaml:\"integration_id\" json:\"integrationId\""
+				WebhookSecret string "yaml:\"webhook_secret\" json:\"webhookSecret\""
+				PrivateKey    string "yaml:\"private_key\" json:\"privateKey\""
+			}{
+				IntegrationID: cfg.Github.App.ID,
+				WebhookSecret: cfg.Github.App.WebhookSecret,
+				PrivateKey:    cfg.Github.App.PrivateKey,
+			},
+		},
+	)
+	if err != nil {
+		log.Fatalf("failed to create github app client creator: %v", err)
+	}
+	return &Github{
+		logger:    logger.With("module", "github"),
+		baseURL:   "https://github.com",
+		githubapp: ga,
+	}
+}
+
+// GetInstallationToken 通过 GitHub App 获取 installation access token
+func (g *Github) GetInstallationToken(ctx context.Context, installID int64) (string, error) {
+	client, err := g.githubapp.NewAppClient()
+	if err != nil {
+		return "", fmt.Errorf("create app client: %w", err)
+	}
+	token, _, err := client.Apps.CreateInstallationToken(ctx, installID, nil)
+	if err != nil {
+		return "", fmt.Errorf("create installation token: %w", err)
+	}
+	return token.GetToken(), nil
+}
+
+// GetClient 使用 PAT 或 Installation 创建 GitHub 客户端
+func (g *Github) GetClient(ctx context.Context, token string, installID int64) (*github.Client, error) {
+	if installID > 0 {
+		return g.githubapp.NewInstallationClient(installID)
+	}
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(ctx, ts)
+	return github.NewClient(tc), nil
+}
+
+func parseRepoURL(repoURL string) (owner, repo string, err error) {
+	repoURL = strings.TrimSuffix(repoURL, ".git")
+	for _, prefix := range []string{"https://github.com/", "http://github.com/"} {
+		repoURL = strings.TrimPrefix(repoURL, prefix)
+	}
+	parts := strings.Split(repoURL, "/")
+	if len(parts) < 2 {
+		return "", "", fmt.Errorf("invalid repo url: %s", repoURL)
+	}
+	return parts[0], parts[1], nil
+}
+
+// GetRepoInfoByPAT 根据 PAT 获取仓库信息
+func (g *Github) GetRepoInfoByPAT(ctx context.Context, token string, repoURL string) (*github.Repository, error) {
+	owner, repo, err := parseRepoURL(repoURL)
+	if err != nil {
+		return nil, err
+	}
+	client, err := g.GetClient(ctx, token, 0)
+	if err != nil {
+		return nil, err
+	}
+	repository, _, err := client.Repositories.Get(ctx, owner, repo)
+	if err != nil {
+		return nil, err
+	}
+	return repository, nil
+}
+
+// GetUserInfoByPAT 根据 PAT 获取用户信息
+func (g *Github) GetUserInfoByPAT(ctx context.Context, token string) (*domain.PlatformUserInfo, error) {
+	client, err := g.GetClient(ctx, token, 0)
+	if err != nil {
+		return nil, err
+	}
+	user, _, err := client.Users.Get(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	return &domain.PlatformUserInfo{
+		Name: user.GetLogin(),
+	}, nil
+}
+
+// CheckPAT 校验 PAT
+func (g *Github) CheckPAT(ctx context.Context, token string, repoURL string) (bool, *domain.BindRepository, error) {
+	repository, err := g.GetRepoInfoByPAT(ctx, token, repoURL)
+	if err != nil {
+		return false, nil, err
+	}
+	if repository == nil {
+		return false, nil, fmt.Errorf("repository not found")
+	}
+
+	permissions := repository.GetPermissions()
+	if permissions["pull"] || permissions["push"] || permissions["admin"] {
+		return true, &domain.BindRepository{
+			RepoID:          fmt.Sprintf("%d", repository.GetID()),
+			RepoName:        repository.GetName(),
+			FullName:        repository.GetFullName(),
+			RepoURL:         repository.GetHTMLURL(),
+			RepoDescription: repository.GetDescription(),
+			IsPrivate:       repository.GetPrivate(),
+			Platform:        "github",
+		}, nil
+	}
+	return false, nil, fmt.Errorf("token has no access to this repository")
+}
+
+// ListBranches 获取仓库分支列表（Installation App 模式优先）
+func (g *Github) ListBranches(ctx context.Context, installID int64, token, owner, repo string, page, perPage int) ([]*BranchInfo, error) {
+	client, err := g.GetClient(ctx, token, installID)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := &github.BranchListOptions{
+		ListOptions: github.ListOptions{Page: page, PerPage: perPage},
+	}
+	branches, _, err := client.Repositories.ListBranches(ctx, owner, repo, opts)
+	if err != nil {
+		return nil, fmt.Errorf("list branches: %w", err)
+	}
+	result := make([]*BranchInfo, 0, len(branches))
+	for _, b := range branches {
+		result = append(result, &BranchInfo{Name: b.GetName()})
+	}
+	return result, nil
+}
+
+// GetRepoDescription 获取仓库描述（PAT 模式）
+func (g *Github) GetRepoDescription(ctx context.Context, token, owner, repo string) (string, error) {
+	client, err := g.GetClient(ctx, token, 0)
+	if err != nil {
+		return "", err
+	}
+
+	r, _, err := client.Repositories.Get(ctx, owner, repo)
+	if err != nil {
+		return "", fmt.Errorf("get repo: %w", err)
+	}
+	return r.GetDescription(), nil
+}
+
+func (g *Github) ListInstallationRepos(ctx context.Context, installID int64) ([]*github.Repository, error) {
+	cli, err := g.githubapp.NewInstallationClient(installID)
+	if err != nil {
+		return nil, err
+	}
+	opts := &github.ListOptions{Page: 1, PerPage: 100}
+	var all []*github.Repository
+	for {
+		ls, resp, err := cli.Apps.ListRepos(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, ls.Repositories...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	return all, nil
+}
+
+// GetAuthorizedRepositories 获取可访问的仓库列表
+// installID > 0 时使用 GitHub App Installation API，否则使用 PAT 的 /user/repos
+func (g *Github) GetAuthorizedRepositories(ctx context.Context, token string, installID int64) ([]domain.AuthRepository, error) {
+	client, err := g.GetClient(ctx, token, installID)
+	if err != nil {
+		return nil, err
+	}
+
+	if installID > 0 {
+		return g.listInstallationRepos(ctx, client)
+	}
+	return g.listUserRepos(ctx, client)
+}
+
+func (g *Github) listInstallationRepos(ctx context.Context, client *github.Client) ([]domain.AuthRepository, error) {
+	opts := &github.ListOptions{PerPage: 100}
+	var all []domain.AuthRepository
+	for {
+		result, resp, err := client.Apps.ListRepos(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("list repos: %w", err)
+		}
+		for _, r := range result.Repositories {
+			all = append(all, domain.AuthRepository{
+				FullName:    r.GetFullName(),
+				URL:         r.GetHTMLURL(),
+				Description: r.GetDescription(),
+			})
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	return all, nil
+}
+
+func (g *Github) listUserRepos(ctx context.Context, client *github.Client) ([]domain.AuthRepository, error) {
+	opts := &github.RepositoryListByAuthenticatedUserOptions{
+		ListOptions: github.ListOptions{PerPage: 100},
+		Sort:        "updated",
+	}
+	var all []domain.AuthRepository
+	for {
+		repos, resp, err := client.Repositories.ListByAuthenticatedUser(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("list repos: %w", err)
+		}
+		for _, r := range repos {
+			all = append(all, domain.AuthRepository{
+				FullName:    r.GetFullName(),
+				URL:         r.GetHTMLURL(),
+				Description: r.GetDescription(),
+			})
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	return all, nil
+}
+
+// repositoriesPage 服务端分页拉取单页仓库。
+// 无关键字时走平台原生分页；带关键字时拉全量后内存过滤再切片
+// （GitHub 列表 API 不支持搜索词，Search API 又有 scope/限流限制）。
+func (g *Github) repositoriesPage(ctx context.Context, opts *domain.RepositoryOptions) (*domain.RepositoryPage, error) {
+	if opts.Keyword != "" {
+		all, err := g.GetAuthorizedRepositories(ctx, opts.Token, opts.InstallID)
+		if err != nil {
+			return nil, err
+		}
+		return domain.PaginateRepos(all, opts.Keyword, opts.Page, opts.Size), nil
+	}
+
+	client, err := g.GetClient(ctx, opts.Token, opts.InstallID)
+	if err != nil {
+		return nil, err
+	}
+	if opts.InstallID > 0 {
+		return g.listInstallationReposPage(ctx, client, opts.Page, opts.Size)
+	}
+	return g.listUserReposPage(ctx, client, opts.Page, opts.Size)
+}
+
+func (g *Github) listInstallationReposPage(ctx context.Context, client *github.Client, page, size int) (*domain.RepositoryPage, error) {
+	result, resp, err := client.Apps.ListRepos(ctx, &github.ListOptions{Page: page, PerPage: size})
+	if err != nil {
+		return nil, fmt.Errorf("list repos: %w", err)
+	}
+	items := make([]domain.AuthRepository, 0, len(result.Repositories))
+	for _, r := range result.Repositories {
+		items = append(items, domain.AuthRepository{
+			FullName:    r.GetFullName(),
+			URL:         r.GetHTMLURL(),
+			Description: r.GetDescription(),
+		})
+	}
+	return &domain.RepositoryPage{
+		Repositories: items,
+		PageInfo: &web.PageInfo{
+			TotalCount:  int64(result.GetTotalCount()),
+			HasNextPage: resp.NextPage != 0,
+		},
+	}, nil
+}
+
+func (g *Github) listUserReposPage(ctx context.Context, client *github.Client, page, size int) (*domain.RepositoryPage, error) {
+	opts := &github.RepositoryListByAuthenticatedUserOptions{
+		ListOptions: github.ListOptions{Page: page, PerPage: size},
+		Sort:        "updated",
+	}
+	repos, resp, err := client.Repositories.ListByAuthenticatedUser(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("list repos: %w", err)
+	}
+	items := make([]domain.AuthRepository, 0, len(repos))
+	for _, r := range repos {
+		items = append(items, domain.AuthRepository{
+			FullName:    r.GetFullName(),
+			URL:         r.GetHTMLURL(),
+			Description: r.GetDescription(),
+		})
+	}
+	var totalCount int64
+	if resp.NextPage == 0 {
+		totalCount = int64((page-1)*size + len(repos))
+	} else if resp.LastPage > 0 {
+		totalCount = int64(resp.LastPage) * int64(size)
+	}
+
+	return &domain.RepositoryPage{
+		Repositories: items,
+		PageInfo: &web.PageInfo{
+			TotalCount:  totalCount,
+			HasNextPage: resp.NextPage != 0,
+		},
+	}, nil
+}
+
+// DeleteWebhookByURL 根据 webhook URL 精确匹配删除 GitHub 仓库上的 webhook
+func (g *Github) DeleteWebhookByURL(ctx context.Context, token, owner, repo, webhookURL string) error {
+	client, err := g.GetClient(ctx, token, 0)
+	if err != nil {
+		return err
+	}
+
+	opts := &github.ListOptions{Page: 1, PerPage: 100}
+	for {
+		hooks, resp, err := client.Repositories.ListHooks(ctx, owner, repo, opts)
+		if err != nil {
+			return fmt.Errorf("list hooks: %w", err)
+		}
+		for _, hook := range hooks {
+			if hook.Config != nil && hook.Config.GetURL() == webhookURL {
+				_, err := client.Repositories.DeleteHook(ctx, owner, repo, hook.GetID())
+				if err != nil {
+					return fmt.Errorf("delete hook %d: %w", hook.GetID(), err)
+				}
+				return nil
+			}
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	return nil
+}
+
+// CreateRepoWebhook 在仓库上注册 webhook
+func (g *Github) CreateRepoWebhook(ctx context.Context, token, owner, repo, webhookURL, secret string, events []string) error {
+	client, err := g.GetClient(ctx, token, 0)
+	if err != nil {
+		return err
+	}
+
+	hook := &github.Hook{
+		Config: &github.HookConfig{
+			URL:         github.Ptr(webhookURL),
+			ContentType: github.Ptr("json"),
+			Secret:      github.Ptr(secret),
+			InsecureSSL: github.Ptr("0"),
+		},
+		Events: events,
+		Active: github.Ptr(true),
+	}
+	_, _, err = client.Repositories.CreateHook(ctx, owner, repo, hook)
+	if err != nil {
+		return fmt.Errorf("create repo webhook: %w", err)
+	}
+	return nil
+}
+
+// gitModeToInt converts a GitHub tree entry type to the integer mode convention
+func gitModeToInt(entryType, _ string) int {
+	switch entryType {
+	case "tree", "dir":
+		return 4
+	case "blob", "file":
+		return 1
+	case "symlink":
+		return 2
+	case "commit":
+		return 3
+	}
+	return 0
+}
+
+func baseName(path string) string {
+	for i := len(path) - 1; i >= 0; i-- {
+		if path[i] == '/' {
+			return path[i+1:]
+		}
+	}
+	return path
+}
+
+func isBinaryContent(content []byte) bool {
+	if len(content) == 0 {
+		return false
+	}
+	check := content
+	if len(check) > 8000 {
+		check = check[:8000]
+	}
+	return http.DetectContentType(check) == "application/octet-stream" || containsNull(check)
+}
+
+func containsNull(b []byte) bool {
+	return slices.Contains(b, 0)
+}

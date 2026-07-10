@@ -1,0 +1,302 @@
+[err-unauthorized]
+other = "未授权"
+
+[err-forbidden]
+other = "禁止访问"
+
+[err-bad-request]
+other = "请求错误"
+
+[err-internal-server]
+other = "内部服务器错误"
+
+[err-permision-denied]
+other = "权限不足"
+
+[err-not-found]
+other = "资源不存在"
+
+[err-duplicate]
+other = "重复条目"
+
+[err-database-query]
+other = "数据库查询失败"
+
+[err-database-operation-failed]
+other = "数据库操作失败"
+
+[err-http-request-failed]
+other = "HTTP请求失败"
+
+[err-file-permision-denied]
+other = "无权操作 {{.file}}"
+
+[err-stream-disconnect]
+other = "与开发环境断开连接， 请稍后再试"
+
+[err-file-op]
+other = "文件操作失败"
+
+[err-vm-id-required]
+other = "开发环境ID必填"
+
+[err-vm-not-belong-to-user]
+other = "开发环境不属于该用户"
+
+[err-vm-removed]
+other = "开发环境已被回收"
+
+[err-host-id-required]
+other = "宿主机ID必填"
+
+[err-public-host-cannot-renew]
+other = "公共宿主机不能续费"
+
+[err-public-host-beyond-limit]
+other = "公共宿主机超过配额"
+
+[err-vm-beyond-expire-time]
+other = "虚拟机过期时间超额"
+
+[err-model-id-required]
+other = "模型ID必填"
+
+[err-invalid-parameter]
+other = "参数无效"
+
+[err-invalid-platform]
+other = "平台无效"
+
+[err-invalid-token]
+other = "令牌无效"
+
+[err-invalid-collaborarator]
+other = "协作者无效"
+
+[err-update-project-failed]
+other = "更新项目失败"
+
+[err-git-operation]
+other = "Git操作失败"
+
+[err-project-git-identity-required]
+other = "项目需要先关联 Git 身份"
+
+[err-repo-already-linked]
+other = "重复绑定仓库"
+
+[err-git-identity-in-use-by-project]
+other = "该 Git 身份已被项目使用，无法删除"
+
+[err-codeup-oauth-not-supported]
+other = "云效（Codeup）暂不支持 OAuth 接入，请改用个人访问令牌（PAT）绑定"
+
+[err-team-member-limit-exceeded]
+other = "团队成员数量已达上限"
+
+[err-team-admin-limit-exceeded]
+other = "团队管理员数量已达上限"
+
+[err-team-user-deleted]
+other = "该用户已被删除，不能重复添加"
+
+[err-invalid-password]
+other = "密码无效"
+
+[err-password-length]
+other = "密码长度必须在 8 到 32 个字符之间"
+
+[err-sms-failed]
+other = "短信发送失败"
+
+[err-identity-already-bound]
+other = "该身份已被绑定"
+
+[err-invalid-state]
+other = "状态无效"
+
+[err-not-logged-in]
+other = "未登录"
+
+[err-user-blocked]
+other = "用户账号已被封禁"
+
+[err-login-failed]
+other = "登录失败"
+
+[err-invalid-coupon]
+other = "兑换码无效"
+
+[err-reset-password-failed]
+other = "重置密码失败"
+
+[err-create-captcha-failed]
+other = "创建验证码失败"
+
+[err-redeem-captcha-failed]
+other = "兑换验证码失败"
+
+[err-public-host-not-found]
+other = "公网宿主机未找到"
+
+[err-host-offline]
+other = "主机不在线"
+
+[err-wallet-insufficient]
+other = "余额不足"
+
+[err-account-overdraft]
+other = "账户超支"
+
+[err-email-verify-failed]
+other = "邮箱验证失败"
+
+[err-email-already-bound]
+other = "该邮箱已绑定"
+
+[err-email-taken]
+other = "该邮箱已被使用"
+
+[err-email-required]
+other = "邮箱不能为空"
+
+[err-email-not-bound]
+other = "存在未绑定邮箱的用户，请绑定邮箱后再重置密码"
+
+[err-enterprise-reset-password-denied]
+other = "企业用户不支持重置密码，请联系开发人员"
+
+[err-deposit-failed]
+other = "充值失败"
+
+[err-vm-expired]
+other = "开发环境已过期"
+
+[err-apply-port-failed]
+other = "申请端口失败"
+
+[err-recycle-port-failed]
+other = "回收端口失败"
+
+[err-kb-nil-tree]
+other = "树结构为空"
+
+[err-kb-empty-path]
+other = "路径为空"
+
+[err-kb-path-not-found]
+other = "路径不存在"
+
+[err-kb-not-file]
+other = "路径是目录而非文件"
+
+[err-kb-not-dir]
+other = "路径是文件而非目录"
+
+[err-kb-dir-not-empty]
+other = "目录非空"
+
+[err-kb-already-exists]
+other = "路径已存在但类型不同"
+
+[err-task-cannot-delete]
+other = "任务运行中或虚拟机在线，无法删除"
+
+[err-task-concurrency-limit]
+other = "你已有一个正在运行的任务，请等待完成后再创建新任务"
+
+[err-task-rounds-direction-unsupported]
+other = "当前任务的日志存储不支持该翻页方向"
+
+[err-model-not-found]
+other = "模型配置未找到"
+
+[err-image-not-found]
+other = "镜像配置未找到"
+
+[err-model-access-denied]
+other = "无权使用该模型"
+
+[err-oidc-disabled]
+other = "企业登录未启用"
+
+[err-oidc-config-invalid]
+other = "企业登录配置无效"
+
+[err-oidc-state-invalid]
+other = "企业登录状态已失效，请重新登录"
+
+[err-oidc-token-invalid]
+other = "企业登录身份校验失败"
+
+[err-oidc-email-required]
+other = "企业身份未返回邮箱"
+
+[err-oidc-email-not-verified]
+other = "企业邮箱未验证"
+
+[err-oidc-email-domain-denied]
+other = "企业邮箱域名不允许登录"
+
+[err-oidc-team-member-required]
+other = "账号未加入该团队"
+
+[err-password-login-disabled]
+other = "该团队已关闭账号密码登录"
+
+[err-oauth-login-provider-disabled]
+other = "该登录方式暂未启用"
+
+[err-oauth-login-state-invalid]
+other = "登录状态已失效，请重新登录"
+
+[err-oauth-login-email-required]
+other = "第三方账号未返回可用邮箱"
+
+[err-oauth-login-email-unverified]
+other = "第三方账号邮箱未验证"
+
+[err-oauth-login-role-denied]
+other = "该账号不允许使用第三方登录"
+
+[err-oauth-login-failed]
+other = "第三方登录失败"
+
+[err-oauth-login-redirect-invalid]
+other = "登录跳转地址无效"
+
+[err-has-invalid-entry]
+other = "存在无效条目"
+
+[err-forbidden-base-url]
+other = "不允许访问该地址"
+
+[err-user-already-exists]
+other = "用户已存在"
+
+[err-change-password-failed]
+other = "修改密码失败"
+
+[err-password-hash-failed]
+other = "密码加密失败"
+
+[err-captcha-verify-failed]
+other = "验证码校验失败"
+
+[err-wechat-mp-not-bound]
+other = "未绑定微信公众号"
+
+[err-license-invalid]
+other = "License 无效"
+
+[err-license-missing]
+other = "未导入 License"
+
+[err-license-expired]
+other = "License 已过期"
+
+[err-license-not-ready]
+other = "License 尚未生效"
+
+[err-license-machine-mismatch]
+other = "License 机器码不匹配"
