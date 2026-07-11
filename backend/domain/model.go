@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
+	"bridal/backend/consts"
+	"bridal/backend/db"
 )
 
 // ModelUsecase 模型配置业务逻辑接口

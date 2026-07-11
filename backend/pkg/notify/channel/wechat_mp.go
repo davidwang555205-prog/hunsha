@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/msgpush"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/msgpush"
 )
 
 // WechatMPSender 微信公众号模板消息推送。

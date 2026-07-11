@@ -16,11 +16,11 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
-	"github.com/chaitin/MonkeyCode/backend/pkg/session"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
+	"bridal/backend/pkg/session"
 )
 
 func TestOAuthLoginRouteReturnsProviderURL(t *testing.T) {

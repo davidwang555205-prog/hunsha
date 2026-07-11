@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 // Session 基于 Redis Hash 的会话管理

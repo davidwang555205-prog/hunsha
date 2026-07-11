@@ -10,7 +10,7 @@ package doubao
 import (
 	"log/slog"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 const (

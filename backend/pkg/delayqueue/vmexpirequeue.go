@@ -6,7 +6,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 )
 
 // VMExpireQueue VM 过期队列

@@ -10,8 +10,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/entx"
 )
 
 // UserIdentity holds the schema definition for the UserIdentity entity.

@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/gitbotuser"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbotuser"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // GitBotUserDelete is the builder for deleting a GitBotUser entity.

@@ -33,6 +33,16 @@ const (
 	FieldIsBlocked = "is_blocked"
 	// FieldDefaultConfigs holds the string denoting the default_configs field in the database.
 	FieldDefaultConfigs = "default_configs"
+	// FieldUsername holds the string denoting the username field in the database.
+	FieldUsername = "username"
+	// FieldDisplayName holds the string denoting the display_name field in the database.
+	FieldDisplayName = "display_name"
+	// FieldDailyImageLimit holds the string denoting the daily_image_limit field in the database.
+	FieldDailyImageLimit = "daily_image_limit"
+	// FieldPasswordSalt holds the string denoting the password_salt field in the database.
+	FieldPasswordSalt = "password_salt"
+	// FieldPasswordHash holds the string denoting the password_hash field in the database.
+	FieldPasswordHash = "password_hash"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -236,6 +246,11 @@ var Columns = []string{
 	FieldStatus,
 	FieldIsBlocked,
 	FieldDefaultConfigs,
+	FieldUsername,
+	FieldDisplayName,
+	FieldDailyImageLimit,
+	FieldPasswordSalt,
+	FieldPasswordHash,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -266,7 +281,7 @@ func ValidColumn(column string) bool {
 // package on the initialization of the application. Therefore,
 // it should be imported in the main as follows:
 //
-//	import _ "github.com/chaitin/MonkeyCode/backend/db/runtime"
+//	import _ "bridal/backend/db/runtime"
 var (
 	Hooks        [1]ent.Hook
 	Interceptors [1]ent.Interceptor
@@ -274,6 +289,10 @@ var (
 	NameValidator func(string) error
 	// DefaultIsBlocked holds the default value on creation for the "is_blocked" field.
 	DefaultIsBlocked bool
+	// DefaultDailyImageLimit holds the default value on creation for the "daily_image_limit" field.
+	DefaultDailyImageLimit int
+	// DailyImageLimitValidator is a validator for the "daily_image_limit" field. It is called by the builders before save.
+	DailyImageLimitValidator func(int) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -328,6 +347,31 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByIsBlocked orders the results by the is_blocked field.
 func ByIsBlocked(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsBlocked, opts...).ToFunc()
+}
+
+// ByUsername orders the results by the username field.
+func ByUsername(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUsername, opts...).ToFunc()
+}
+
+// ByDisplayName orders the results by the display_name field.
+func ByDisplayName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisplayName, opts...).ToFunc()
+}
+
+// ByDailyImageLimit orders the results by the daily_image_limit field.
+func ByDailyImageLimit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyImageLimit, opts...).ToFunc()
+}
+
+// ByPasswordSalt orders the results by the password_salt field.
+func ByPasswordSalt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPasswordSalt, opts...).ToFunc()
+}
+
+// ByPasswordHash orders the results by the password_hash field.
+func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPasswordHash, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

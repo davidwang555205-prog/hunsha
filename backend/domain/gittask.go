@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/pkg/taskflow"
 )
 
 // GitTaskUsecase GitTask 业务逻辑接口

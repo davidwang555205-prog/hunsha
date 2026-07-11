@@ -1,8 +1,8 @@
 package domain
 
 import (
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/taskflow"
 )
 
 // CloseTerminalReq 关闭终端请求

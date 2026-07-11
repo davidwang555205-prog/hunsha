@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/agentskillrepo"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // AgentSkillRepoDelete is the builder for deleting a AgentSkillRepo entity.

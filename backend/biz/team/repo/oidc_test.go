@@ -10,11 +10,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/enttest"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/oidc"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/enttest"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/oidc"
 )
 
 func TestTeamOIDCConfigSchemaPersistsDefaults(t *testing.T) {

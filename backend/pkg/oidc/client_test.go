@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 )
 
 func TestNormalizeIssuer(t *testing.T) {

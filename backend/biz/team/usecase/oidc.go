@@ -14,12 +14,12 @@ import (
 	"github.com/samber/do"
 	"golang.org/x/oauth2"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
-	oidcpkg "github.com/chaitin/MonkeyCode/backend/pkg/oidc"
+	"bridal/backend/config"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/cvt"
+	oidcpkg "bridal/backend/pkg/oidc"
 )
 
 const oidcStatePrefix = "team_oidc_state:"

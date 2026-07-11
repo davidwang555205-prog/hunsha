@@ -1,0 +1,91 @@
+/**
+ * 苹果风格设计系统 Design Tokens -- 单一事实源
+ *
+ * 设计语言：apple.com 风格，高端克制。
+ * - 配色：黑白灰基底，Apple 蓝 (#0071e3) 作为品牌点缀
+ * - 圆角：8/12px，卡片 16px
+ * - 阴影：极淡，几乎不可见的层次感
+ * - 动效：300ms 以内 ease-out，无 bounce/elastic
+ * - 字体：系统字体栈 (-apple-system, SF Pro)，中文 PingFang SC
+ * - 禁止：AI 风格渐变色、花哨动画、过度装饰
+ *
+ * 深色模式预留：未来加 :root[data-theme="dark"] 覆盖变量即可（本轮 YAGNI 不实现）。
+ */
+:root {
+  /* ===== 品牌色（Apple 蓝，仅作点缀） ===== */
+  --color-primary: #0071e3;
+  --color-primary-50: #e8f1fd;
+  --color-primary-100: #d1e3fb;
+  --color-primary-500: #0071e3;
+  --color-primary-600: #0066c8;
+  --color-primary-700: #0058ab;
+
+  /* 强调色保持克制：用深灰替代粉色 */
+  --color-accent-soft: #e8e8ed;
+  --color-accent: #6e6e73;
+  --color-danger: #ff3b30;
+
+  /* ===== 中性色（Apple 灰阶） ===== */
+  --color-bg: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-border: #d2d2d7;
+  --color-border-strong: #a1a1a6;
+  --color-text: #1d1d1f;
+  --color-text-muted: #6e6e73;
+  --color-text-subtle: #86868b;
+
+  /* ===== 语义色 ===== */
+  --color-danger: #ff3b30;
+  --color-success: #34c759;
+  --color-warning: #ff9500;
+  --color-info: #0071e3;
+
+  /* ===== 字体（系统字体栈） ===== */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "HarmonyOS Sans SC", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC",
+    "Helvetica Neue", system-ui, sans-serif;
+
+  /* ===== 字号阶梯 ===== */
+  --text-display: 2rem;
+  --text-h1: 1.5rem;
+  --text-h2: 1.25rem;
+  --text-h3: 1.0625rem;
+  --text-body: 0.9375rem;
+  --text-sm: 0.8125rem;
+  --text-caption: 0.75rem;
+
+  /* ===== 间距系统（4px 基准） ===== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ===== 圆角（Apple 风格：克制） ===== */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* ===== 阴影（极淡，几乎不可见） ===== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-glow: none;
+
+  /* ===== 动效（300ms 以内 ease-out，无 bounce/elastic） ===== */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1); /* 不用弹性，降级为 ease-out */
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 300ms;
+
+  /* ===== 渐变（苹果风格禁用品牌渐变，保留为纯色兜底） ===== */
+  --gradient-brand: #0071e3;
+  --gradient-soft: #f5f5f7;
+  --gradient-text: #1d1d1f;
+}

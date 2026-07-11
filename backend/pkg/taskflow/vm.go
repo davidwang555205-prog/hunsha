@@ -7,7 +7,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/pkg/request"
 )
 
 type virtualMachineClient struct {

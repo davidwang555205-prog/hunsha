@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
+	"bridal/backend/db"
 )
 
 type TeamMCPUsecase interface {

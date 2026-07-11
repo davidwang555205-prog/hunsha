@@ -7,11 +7,11 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/enttest"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptool"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/db/enttest"
+	"bridal/backend/db/mcptool"
+	"bridal/backend/domain"
 	"github.com/google/uuid"
 )
 

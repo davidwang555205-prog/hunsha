@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // GitIdentityDelete is the builder for deleting a GitIdentity entity.

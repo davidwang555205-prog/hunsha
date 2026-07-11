@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
 )
 
 // giteaAPIGet 通用 Gitea API GET 请求

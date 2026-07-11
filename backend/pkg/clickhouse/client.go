@@ -22,7 +22,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 const (

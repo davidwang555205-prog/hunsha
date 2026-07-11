@@ -39,6 +39,12 @@ type AgentSyncJob func(*sql.Selector)
 // Audit is the predicate function for audit builders.
 type Audit func(*sql.Selector)
 
+// GenerationImage is the predicate function for generationimage builders.
+type GenerationImage func(*sql.Selector)
+
+// GenerationTask is the predicate function for generationtask builders.
+type GenerationTask func(*sql.Selector)
+
 // GitBot is the predicate function for gitbot builders.
 type GitBot func(*sql.Selector)
 

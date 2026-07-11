@@ -36,6 +36,10 @@ type Tx struct {
 	AgentSyncJob *AgentSyncJobClient
 	// Audit is the client for interacting with the Audit builders.
 	Audit *AuditClient
+	// GenerationImage is the client for interacting with the GenerationImage builders.
+	GenerationImage *GenerationImageClient
+	// GenerationTask is the client for interacting with the GenerationTask builders.
+	GenerationTask *GenerationTaskClient
 	// GitBot is the client for interacting with the GitBot builders.
 	GitBot *GitBotClient
 	// GitBotTask is the client for interacting with the GitBotTask builders.
@@ -264,6 +268,8 @@ func (tx *Tx) init() {
 	tx.AgentSkillVersion = NewAgentSkillVersionClient(tx.config)
 	tx.AgentSyncJob = NewAgentSyncJobClient(tx.config)
 	tx.Audit = NewAuditClient(tx.config)
+	tx.GenerationImage = NewGenerationImageClient(tx.config)
+	tx.GenerationTask = NewGenerationTaskClient(tx.config)
 	tx.GitBot = NewGitBotClient(tx.config)
 	tx.GitBotTask = NewGitBotTaskClient(tx.config)
 	tx.GitBotUser = NewGitBotUserClient(tx.config)

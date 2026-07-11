@@ -3,8 +3,8 @@ package channel
 import (
 	"context"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
 )
 
 type Message struct {

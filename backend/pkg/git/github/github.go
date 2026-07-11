@@ -16,8 +16,8 @@ import (
 
 	"github.com/GoYoko/web"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/config"
+	"bridal/backend/domain"
 )
 
 // Github GitHub 客户端（PAT 模式）

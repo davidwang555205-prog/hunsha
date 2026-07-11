@@ -3,6 +3,15 @@
 package db
 
 import (
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/host"
+	"bridal/backend/db/model"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskvirtualmachine"
+	"bridal/backend/db/user"
+	"bridal/backend/db/virtualmachine"
+	"bridal/backend/ent/types"
 	"context"
 	"errors"
 	"fmt"
@@ -11,15 +20,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskvirtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/ent/types"
 	"github.com/google/uuid"
 )
 

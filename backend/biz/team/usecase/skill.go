@@ -16,11 +16,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/biz/agentresource"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/biz/agentresource"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/cvt"
 )
 
 // skillS3KeyPrefix:S3 上每个 skill 版本对应的 key 形如

@@ -3,9 +3,9 @@ package setting
 import (
 	"github.com/samber/do"
 
-	v1 "github.com/chaitin/MonkeyCode/backend/biz/setting/handler/v1"
-	"github.com/chaitin/MonkeyCode/backend/biz/setting/repo"
-	"github.com/chaitin/MonkeyCode/backend/biz/setting/usecase"
+	v1 "bridal/backend/biz/setting/handler/v1"
+	"bridal/backend/biz/setting/repo"
+	"bridal/backend/biz/setting/usecase"
 )
 
 // ProvideSetting 注册 setting 模块的服务工厂

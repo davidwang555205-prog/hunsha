@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/mcpusertoolsetting"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpusertoolsetting"
 	"github.com/google/uuid"
 )
 

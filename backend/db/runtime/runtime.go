@@ -3,64 +3,66 @@
 package runtime
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/agentplugin"
+	"bridal/backend/db/agentpluginrepo"
+	"bridal/backend/db/agentpluginversion"
+	"bridal/backend/db/agentrule"
+	"bridal/backend/db/agentruleversion"
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillgroupbinding"
+	"bridal/backend/db/agentskillrepo"
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/agentsyncjob"
+	"bridal/backend/db/audit"
+	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationtask"
+	"bridal/backend/db/gitbot"
+	"bridal/backend/db/gitbottask"
+	"bridal/backend/db/gitbotuser"
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/gittask"
+	"bridal/backend/db/host"
+	"bridal/backend/db/image"
+	"bridal/backend/db/mcptool"
+	"bridal/backend/db/mcptoolcall"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/mcpusertoolsetting"
+	"bridal/backend/db/model"
+	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelpricing"
+	"bridal/backend/db/notifychannel"
+	"bridal/backend/db/notifysendlog"
+	"bridal/backend/db/notifysubscription"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectcollaborator"
+	"bridal/backend/db/projectgitbot"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projectissuecomment"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/taskusagestat"
+	"bridal/backend/db/taskvirtualmachine"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamextensionimagearchive"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgrouphost"
+	"bridal/backend/db/teamgroupimage"
+	"bridal/backend/db/teamgroupmcpupstream"
+	"bridal/backend/db/teamgroupmember"
+	"bridal/backend/db/teamgroupmodel"
+	"bridal/backend/db/teamhost"
+	"bridal/backend/db/teamimage"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/teammodel"
+	"bridal/backend/db/teamoidcconfig"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/db/virtualmachine"
+	"bridal/backend/ent/schema"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/agentplugin"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentrule"
-	"github.com/chaitin/MonkeyCode/backend/db/agentruleversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillgroupbinding"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentsyncjob"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbottask"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbotuser"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/gittask"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptool"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptoolcall"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpusertoolsetting"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/modelapikey"
-	"github.com/chaitin/MonkeyCode/backend/db/modelpricing"
-	"github.com/chaitin/MonkeyCode/backend/db/notifychannel"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysendlog"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysubscription"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectcollaborator"
-	"github.com/chaitin/MonkeyCode/backend/db/projectgitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissuecomment"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/taskusagestat"
-	"github.com/chaitin/MonkeyCode/backend/db/taskvirtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamextensionimagearchive"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmember"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teamhost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/teammodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teamoidcconfig"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/ent/schema"
 	"github.com/google/uuid"
 )
 
@@ -332,6 +334,90 @@ func init() {
 	auditDescCreatedAt := auditFields[7].Descriptor()
 	// audit.DefaultCreatedAt holds the default value on creation for the created_at field.
 	audit.DefaultCreatedAt = auditDescCreatedAt.Default.(func() time.Time)
+	generationimageFields := schema.GenerationImage{}.Fields()
+	_ = generationimageFields
+	// generationimageDescName is the schema descriptor for name field.
+	generationimageDescName := generationimageFields[2].Descriptor()
+	// generationimage.DefaultName holds the default value on creation for the name field.
+	generationimage.DefaultName = generationimageDescName.Default.(string)
+	// generationimageDescURL is the schema descriptor for url field.
+	generationimageDescURL := generationimageFields[3].Descriptor()
+	// generationimage.DefaultURL holds the default value on creation for the url field.
+	generationimage.DefaultURL = generationimageDescURL.Default.(string)
+	// generationimageDescDownloadURL is the schema descriptor for download_url field.
+	generationimageDescDownloadURL := generationimageFields[4].Descriptor()
+	// generationimage.DefaultDownloadURL holds the default value on creation for the download_url field.
+	generationimage.DefaultDownloadURL = generationimageDescDownloadURL.Default.(string)
+	// generationimageDescSource is the schema descriptor for source field.
+	generationimageDescSource := generationimageFields[5].Descriptor()
+	// generationimage.DefaultSource holds the default value on creation for the source field.
+	generationimage.DefaultSource = generationimageDescSource.Default.(string)
+	// generationimageDescImageNumber is the schema descriptor for image_number field.
+	generationimageDescImageNumber := generationimageFields[6].Descriptor()
+	// generationimage.DefaultImageNumber holds the default value on creation for the image_number field.
+	generationimage.DefaultImageNumber = generationimageDescImageNumber.Default.(int)
+	// generationimageDescCreatedAt is the schema descriptor for created_at field.
+	generationimageDescCreatedAt := generationimageFields[7].Descriptor()
+	// generationimage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	generationimage.DefaultCreatedAt = generationimageDescCreatedAt.Default.(func() time.Time)
+	generationtaskFields := schema.GenerationTask{}.Fields()
+	_ = generationtaskFields
+	// generationtaskDescUsername is the schema descriptor for username field.
+	generationtaskDescUsername := generationtaskFields[2].Descriptor()
+	// generationtask.DefaultUsername holds the default value on creation for the username field.
+	generationtask.DefaultUsername = generationtaskDescUsername.Default.(string)
+	// generationtaskDescStatus is the schema descriptor for status field.
+	generationtaskDescStatus := generationtaskFields[3].Descriptor()
+	// generationtask.DefaultStatus holds the default value on creation for the status field.
+	generationtask.DefaultStatus = generationtaskDescStatus.Default.(string)
+	// generationtaskDescModel is the schema descriptor for model field.
+	generationtaskDescModel := generationtaskFields[4].Descriptor()
+	// generationtask.DefaultModel holds the default value on creation for the model field.
+	generationtask.DefaultModel = generationtaskDescModel.Default.(string)
+	// generationtaskDescMode is the schema descriptor for mode field.
+	generationtaskDescMode := generationtaskFields[5].Descriptor()
+	// generationtask.DefaultMode holds the default value on creation for the mode field.
+	generationtask.DefaultMode = generationtaskDescMode.Default.(string)
+	// generationtaskDescTitle is the schema descriptor for title field.
+	generationtaskDescTitle := generationtaskFields[6].Descriptor()
+	// generationtask.DefaultTitle holds the default value on creation for the title field.
+	generationtask.DefaultTitle = generationtaskDescTitle.Default.(string)
+	// generationtaskDescBody is the schema descriptor for body field.
+	generationtaskDescBody := generationtaskFields[7].Descriptor()
+	// generationtask.DefaultBody holds the default value on creation for the body field.
+	generationtask.DefaultBody = generationtaskDescBody.Default.(string)
+	// generationtaskDescTags is the schema descriptor for tags field.
+	generationtaskDescTags := generationtaskFields[8].Descriptor()
+	// generationtask.DefaultTags holds the default value on creation for the tags field.
+	generationtask.DefaultTags = generationtaskDescTags.Default.([]string)
+	// generationtaskDescTopic is the schema descriptor for topic field.
+	generationtaskDescTopic := generationtaskFields[9].Descriptor()
+	// generationtask.DefaultTopic holds the default value on creation for the topic field.
+	generationtask.DefaultTopic = generationtaskDescTopic.Default.(string)
+	// generationtaskDescError is the schema descriptor for error field.
+	generationtaskDescError := generationtaskFields[10].Descriptor()
+	// generationtask.DefaultError holds the default value on creation for the error field.
+	generationtask.DefaultError = generationtaskDescError.Default.(string)
+	// generationtaskDescPromptHash is the schema descriptor for prompt_hash field.
+	generationtaskDescPromptHash := generationtaskFields[11].Descriptor()
+	// generationtask.DefaultPromptHash holds the default value on creation for the prompt_hash field.
+	generationtask.DefaultPromptHash = generationtaskDescPromptHash.Default.(string)
+	// generationtaskDescUploadedImageCount is the schema descriptor for uploaded_image_count field.
+	generationtaskDescUploadedImageCount := generationtaskFields[12].Descriptor()
+	// generationtask.DefaultUploadedImageCount holds the default value on creation for the uploaded_image_count field.
+	generationtask.DefaultUploadedImageCount = generationtaskDescUploadedImageCount.Default.(int)
+	// generationtaskDescLatencyMs is the schema descriptor for latency_ms field.
+	generationtaskDescLatencyMs := generationtaskFields[13].Descriptor()
+	// generationtask.DefaultLatencyMs holds the default value on creation for the latency_ms field.
+	generationtask.DefaultLatencyMs = generationtaskDescLatencyMs.Default.(int)
+	// generationtaskDescCreatedAt is the schema descriptor for created_at field.
+	generationtaskDescCreatedAt := generationtaskFields[14].Descriptor()
+	// generationtask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	generationtask.DefaultCreatedAt = generationtaskDescCreatedAt.Default.(func() time.Time)
+	// generationtaskDescID is the schema descriptor for id field.
+	generationtaskDescID := generationtaskFields[0].Descriptor()
+	// generationtask.DefaultID holds the default value on creation for the id field.
+	generationtask.DefaultID = generationtaskDescID.Default.(func() uuid.UUID)
 	gitbotMixin := schema.GitBot{}.Mixin()
 	gitbotMixinHooks0 := gitbotMixin[0].Hooks()
 	gitbot.Hooks[0] = gitbotMixinHooks0[0]
@@ -1290,12 +1376,18 @@ func init() {
 	userDescIsBlocked := userFields[7].Descriptor()
 	// user.DefaultIsBlocked holds the default value on creation for the is_blocked field.
 	user.DefaultIsBlocked = userDescIsBlocked.Default.(bool)
+	// userDescDailyImageLimit is the schema descriptor for daily_image_limit field.
+	userDescDailyImageLimit := userFields[11].Descriptor()
+	// user.DefaultDailyImageLimit holds the default value on creation for the daily_image_limit field.
+	user.DefaultDailyImageLimit = userDescDailyImageLimit.Default.(int)
+	// user.DailyImageLimitValidator is a validator for the "daily_image_limit" field. It is called by the builders before save.
+	user.DailyImageLimitValidator = userDescDailyImageLimit.Validators[0].(func(int) error)
 	// userDescCreatedAt is the schema descriptor for created_at field.
-	userDescCreatedAt := userFields[9].Descriptor()
+	userDescCreatedAt := userFields[14].Descriptor()
 	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
 	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 	// userDescUpdatedAt is the schema descriptor for updated_at field.
-	userDescUpdatedAt := userFields[10].Descriptor()
+	userDescUpdatedAt := userFields[15].Descriptor()
 	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

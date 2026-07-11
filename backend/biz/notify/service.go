@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/dispatcher"
+	"bridal/backend/pkg/notify/dispatcher"
 )
 
 // Service 通知服务，负责管理事件分发器的生命周期

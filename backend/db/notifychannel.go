@@ -3,6 +3,8 @@
 package db
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/notifychannel"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,8 +12,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/notifychannel"
 	"github.com/google/uuid"
 )
 

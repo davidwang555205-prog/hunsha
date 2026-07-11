@@ -3,7 +3,7 @@ package public
 import (
 	"github.com/samber/do"
 
-	v1 "github.com/chaitin/MonkeyCode/backend/biz/public/handler/http/v1"
+	v1 "bridal/backend/biz/public/handler/http/v1"
 )
 
 // ProvidePublic 注册 public 模块的服务工厂

@@ -3,16 +3,16 @@
 package db
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/gittask"
+	"bridal/backend/db/task"
+	"bridal/backend/db/user"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/gittask"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
 	"github.com/google/uuid"
 )
 

@@ -15,8 +15,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
 )
 
 func TestUpdateUserRoute(t *testing.T) {

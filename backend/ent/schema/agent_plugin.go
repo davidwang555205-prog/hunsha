@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/ent/types"
+	"bridal/backend/ent/types"
 )
 
 // AgentPlugin holds the schema definition for the agent_plugins entity.

@@ -3,15 +3,15 @@
 package db
 
 import (
+	"bridal/backend/db/host"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgrouphost"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
 	"github.com/google/uuid"
 )
 

@@ -10,10 +10,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/request"
 )
 
 type DingTalkSender struct{}

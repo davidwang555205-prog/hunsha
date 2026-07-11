@@ -9,7 +9,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 )
 
 // responseWriter 包装 http.ResponseWriter 以捕获响应内容

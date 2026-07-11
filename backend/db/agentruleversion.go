@@ -3,14 +3,14 @@
 package db
 
 import (
+	"bridal/backend/db/agentrule"
+	"bridal/backend/db/agentruleversion"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/agentrule"
-	"github.com/chaitin/MonkeyCode/backend/db/agentruleversion"
 	"github.com/google/uuid"
 )
 

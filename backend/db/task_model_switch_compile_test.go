@@ -3,7 +3,7 @@ package db_test
 import (
 	"testing"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
+	"bridal/backend/db"
 )
 
 func TestTaskModelSwitchGeneratedFieldsCompile(t *testing.T) {

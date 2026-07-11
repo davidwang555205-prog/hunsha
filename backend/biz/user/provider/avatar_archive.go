@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 const (

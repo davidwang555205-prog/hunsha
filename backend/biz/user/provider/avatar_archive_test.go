@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 func TestAvatarArchiverUploadsImageToObjectStorage(t *testing.T) {

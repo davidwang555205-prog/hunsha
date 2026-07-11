@@ -3,16 +3,16 @@
 package db
 
 import (
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupmcpupstream"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmcpupstream"
 	"github.com/google/uuid"
 )
 

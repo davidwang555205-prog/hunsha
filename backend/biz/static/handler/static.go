@@ -4,7 +4,7 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 type StaticHandler struct {

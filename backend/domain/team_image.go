@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/db"
+	"bridal/backend/pkg/cvt"
 )
 
 // TeamImageUsecase 团队组镜像业务逻辑接口

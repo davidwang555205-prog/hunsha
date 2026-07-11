@@ -10,13 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/teamgrouphost"
+	"bridal/backend/db/teamgroupimage"
+	"bridal/backend/db/teamgroupmodel"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/taskflow"
 )
 
 func TestTeamImageCreateUsesDefaultGroupWhenGroupIDsEmpty(t *testing.T) {

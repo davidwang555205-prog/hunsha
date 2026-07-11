@@ -3,16 +3,16 @@
 package db
 
 import (
+	"bridal/backend/db/model"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/user"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
 	"github.com/google/uuid"
 )
 

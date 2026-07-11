@@ -3,9 +3,9 @@ package notify
 import (
 	"github.com/samber/do"
 
-	v1 "github.com/chaitin/MonkeyCode/backend/biz/notify/handler/v1"
-	"github.com/chaitin/MonkeyCode/backend/biz/notify/repo"
-	"github.com/chaitin/MonkeyCode/backend/biz/notify/usecase"
+	v1 "bridal/backend/biz/notify/handler/v1"
+	"bridal/backend/biz/notify/repo"
+	"bridal/backend/biz/notify/usecase"
 )
 
 // ProvideNotify 注册 notify 模块的服务工厂

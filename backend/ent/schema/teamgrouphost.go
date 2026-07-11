@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/pkg/entx"
 )
 
 // TeamGroupHost holds the schema definition for the TeamGroupHost entity.

@@ -7,7 +7,7 @@ import (
 
 	gocache "github.com/patrickmn/go-cache"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 )
 
 // fakeClient 实现 domain.GitClienter，仅记录 Repositories 调用次数与入参，其余方法返回零值。

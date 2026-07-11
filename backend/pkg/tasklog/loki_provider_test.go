@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/tasklog"
+	"bridal/backend/pkg/tasklog"
 )
 
 func TestLokiProviderQueryTurnsForwardUnsupported(t *testing.T) {

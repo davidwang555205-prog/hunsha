@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/db"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teammember"
+	"bridal/backend/domain"
 )
 
 type TeamPolicyRepo struct {

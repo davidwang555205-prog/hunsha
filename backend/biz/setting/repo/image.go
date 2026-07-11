@@ -7,15 +7,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/image"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/user"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/entx"
 )
 
 type imageRepo struct {

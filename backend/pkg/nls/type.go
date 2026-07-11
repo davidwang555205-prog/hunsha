@@ -6,7 +6,7 @@ import (
 	nls "github.com/aliyun/alibabacloud-nls-go-sdk"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 // RecognitionResult 表示语音识别结果

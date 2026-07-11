@@ -14,13 +14,13 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
-	"github.com/chaitin/MonkeyCode/backend/pkg/random"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/cvt"
+	"bridal/backend/pkg/random"
 )
 
 // TeamGroupUserUsecase 团队分组成员业务逻辑层

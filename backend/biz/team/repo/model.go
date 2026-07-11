@@ -9,16 +9,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teammodel"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/db"
+	"bridal/backend/db/model"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupmodel"
+	"bridal/backend/db/teammodel"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/cvt"
+	"bridal/backend/pkg/entx"
 )
 
 type teamModelRepo struct {

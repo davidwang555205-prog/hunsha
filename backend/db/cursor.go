@@ -4,6 +4,21 @@ package db
 
 // Extra imports required by this file.
 import (
+	"bridal/backend/db/audit"
+	"bridal/backend/db/gitbot"
+	"bridal/backend/db/host"
+	"bridal/backend/db/image"
+	"bridal/backend/db/model"
+	"bridal/backend/db/notifychannel"
+	"bridal/backend/db/notifysendlog"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projectissuecomment"
+	"bridal/backend/db/task"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgrouphost"
+	"bridal/backend/db/teamgroupmcpupstream"
+	"bridal/backend/db/teamgroupmodel"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -12,21 +27,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/notifychannel"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysendlog"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissuecomment"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
 	"github.com/google/uuid"
 )
 

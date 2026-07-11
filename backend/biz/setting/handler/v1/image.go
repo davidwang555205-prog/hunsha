@@ -6,9 +6,9 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/middleware"
 )
 
 // ImageHandler 镜像配置处理器

@@ -6,9 +6,9 @@ import (
 
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/config"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
 )
 
 type TeamPolicyUsecase struct {

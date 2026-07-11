@@ -3,10 +3,10 @@ package domain
 import (
 	"context"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptool"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/db"
+	"bridal/backend/db/mcptool"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/pkg/cvt"
 	"github.com/google/uuid"
 )
 

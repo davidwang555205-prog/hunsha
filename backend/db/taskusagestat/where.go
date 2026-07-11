@@ -3,10 +3,10 @@
 package taskusagestat
 
 import (
+	"bridal/backend/db/predicate"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 	"github.com/google/uuid"
 )
 

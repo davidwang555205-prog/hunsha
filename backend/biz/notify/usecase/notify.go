@@ -10,13 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/channel"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/dispatcher"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/template"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/notify/channel"
+	"bridal/backend/pkg/notify/dispatcher"
+	"bridal/backend/pkg/notify/template"
 )
 
 type NotifyChannelUsecaseImpl struct {

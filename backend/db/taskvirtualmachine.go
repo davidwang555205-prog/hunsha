@@ -3,15 +3,15 @@
 package db
 
 import (
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskvirtualmachine"
+	"bridal/backend/db/virtualmachine"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskvirtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
 	"github.com/google/uuid"
 )
 

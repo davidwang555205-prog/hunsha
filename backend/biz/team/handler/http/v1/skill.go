@@ -13,10 +13,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/config"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/middleware"
 )
 
 const defaultSkillPackageMaxSize int64 = 50 << 20 // 50 MiB fallback

@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/loki"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	"bridal/backend/pkg/loki"
+	"bridal/backend/pkg/taskflow"
 )
 
 type LokiProvider struct {

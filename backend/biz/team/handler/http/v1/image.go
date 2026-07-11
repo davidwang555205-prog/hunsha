@@ -4,8 +4,8 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
 )
 
 // TeamImageHandler 团队镜像处理器

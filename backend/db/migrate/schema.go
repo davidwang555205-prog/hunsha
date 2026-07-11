@@ -405,6 +405,66 @@ var (
 			},
 		},
 	}
+	// GenerationImagesColumns holds the columns for the "generation_images" table.
+	GenerationImagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true},
+		{Name: "task_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "url", Type: field.TypeString, Default: ""},
+		{Name: "download_url", Type: field.TypeString, Default: ""},
+		{Name: "source", Type: field.TypeString, Default: "local"},
+		{Name: "image_number", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// GenerationImagesTable holds the schema information for the "generation_images" table.
+	GenerationImagesTable = &schema.Table{
+		Name:       "generation_images",
+		Columns:    GenerationImagesColumns,
+		PrimaryKey: []*schema.Column{GenerationImagesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "generationimage_task_id",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationImagesColumns[1]},
+			},
+		},
+	}
+	// GenerationTasksColumns holds the columns for the "generation_tasks" table.
+	GenerationTasksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "username", Type: field.TypeString, Default: ""},
+		{Name: "status", Type: field.TypeString, Default: ""},
+		{Name: "model", Type: field.TypeString, Default: ""},
+		{Name: "mode", Type: field.TypeString, Default: ""},
+		{Name: "title", Type: field.TypeString, Default: ""},
+		{Name: "body", Type: field.TypeString, Default: ""},
+		{Name: "tags", Type: field.TypeJSON},
+		{Name: "topic", Type: field.TypeString, Default: ""},
+		{Name: "error", Type: field.TypeString, Default: ""},
+		{Name: "prompt_hash", Type: field.TypeString, Default: ""},
+		{Name: "uploaded_image_count", Type: field.TypeInt, Default: 0},
+		{Name: "latency_ms", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// GenerationTasksTable holds the schema information for the "generation_tasks" table.
+	GenerationTasksTable = &schema.Table{
+		Name:       "generation_tasks",
+		Columns:    GenerationTasksColumns,
+		PrimaryKey: []*schema.Column{GenerationTasksColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "generationtask_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationTasksColumns[1], GenerationTasksColumns[14]},
+			},
+			{
+				Name:    "generationtask_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationTasksColumns[14]},
+			},
+		},
+	}
 	// GitBotsColumns holds the columns for the "git_bots" table.
 	GitBotsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1861,6 +1921,11 @@ var (
 		{Name: "status", Type: field.TypeString},
 		{Name: "is_blocked", Type: field.TypeBool, Default: false},
 		{Name: "default_configs", Type: field.TypeJSON, Nullable: true},
+		{Name: "username", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "display_name", Type: field.TypeString, Nullable: true},
+		{Name: "daily_image_limit", Type: field.TypeInt, Default: 20},
+		{Name: "password_salt", Type: field.TypeString, Nullable: true},
+		{Name: "password_hash", Type: field.TypeString, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -1971,6 +2036,8 @@ var (
 		AgentSkillVersionsTable,
 		AgentSyncJobsTable,
 		AuditsTable,
+		GenerationImagesTable,
+		GenerationTasksTable,
 		GitBotsTable,
 		GitBotTasksTable,
 		GitBotUsersTable,
@@ -2058,6 +2125,12 @@ func init() {
 	AuditsTable.ForeignKeys[0].RefTable = UsersTable
 	AuditsTable.Annotation = &entsql.Annotation{
 		Table: "audits",
+	}
+	GenerationImagesTable.Annotation = &entsql.Annotation{
+		Table: "generation_images",
+	}
+	GenerationTasksTable.Annotation = &entsql.Annotation{
+		Table: "generation_tasks",
 	}
 	GitBotsTable.ForeignKeys[0].RefTable = HostsTable
 	GitBotsTable.Annotation = &entsql.Annotation{

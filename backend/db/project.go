@@ -3,6 +3,11 @@
 package db
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/image"
+	"bridal/backend/db/project"
+	"bridal/backend/db/user"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,11 +15,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
 	"github.com/google/uuid"
 )
 

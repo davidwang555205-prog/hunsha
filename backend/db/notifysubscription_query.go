@@ -3,6 +3,9 @@
 package db
 
 import (
+	"bridal/backend/db/notifychannel"
+	"bridal/backend/db/notifysubscription"
+	"bridal/backend/db/predicate"
 	"context"
 	"fmt"
 	"math"
@@ -12,9 +15,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/notifychannel"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysubscription"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 	"github.com/google/uuid"
 )
 

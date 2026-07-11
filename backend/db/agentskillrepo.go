@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/agentskillrepo"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
 	"github.com/google/uuid"
 )
 

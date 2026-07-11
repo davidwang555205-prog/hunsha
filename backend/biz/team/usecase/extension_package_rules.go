@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/agentrule"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/db"
+	"bridal/backend/db/agentrule"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
 )
 
 type extensionRuleImporter struct {

@@ -2,39 +2,40 @@ package pkg
 
 import (
 	"log/slog"
+	"strings"
 
 	"github.com/GoYoko/web"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
-	"github.com/chaitin/MonkeyCode/backend/pkg/asr"
-	"github.com/chaitin/MonkeyCode/backend/pkg/captcha"
-	"github.com/chaitin/MonkeyCode/backend/pkg/clickhouse"
-	"github.com/chaitin/MonkeyCode/backend/pkg/delayqueue"
-	"github.com/chaitin/MonkeyCode/backend/pkg/doubao"
-	"github.com/chaitin/MonkeyCode/backend/pkg/email"
-	"github.com/chaitin/MonkeyCode/backend/pkg/lifecycle"
-	"github.com/chaitin/MonkeyCode/backend/pkg/llm"
-	"github.com/chaitin/MonkeyCode/backend/pkg/logger"
-	"github.com/chaitin/MonkeyCode/backend/pkg/loki"
-	"github.com/chaitin/MonkeyCode/backend/pkg/modelusage"
-	"github.com/chaitin/MonkeyCode/backend/pkg/msgpush"
-	"github.com/chaitin/MonkeyCode/backend/pkg/nls"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/channel"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/dispatcher"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/template"
-	"github.com/chaitin/MonkeyCode/backend/pkg/session"
-	"github.com/chaitin/MonkeyCode/backend/pkg/store"
-	"github.com/chaitin/MonkeyCode/backend/pkg/tasker"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
-	"github.com/chaitin/MonkeyCode/backend/pkg/tasklog"
-	"github.com/chaitin/MonkeyCode/backend/pkg/ws"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
+	"bridal/backend/pkg/asr"
+	"bridal/backend/pkg/captcha"
+	"bridal/backend/pkg/clickhouse"
+	"bridal/backend/pkg/delayqueue"
+	"bridal/backend/pkg/doubao"
+	"bridal/backend/pkg/email"
+	"bridal/backend/pkg/lifecycle"
+	"bridal/backend/pkg/llm"
+	"bridal/backend/pkg/logger"
+	"bridal/backend/pkg/loki"
+	"bridal/backend/pkg/modelusage"
+	"bridal/backend/pkg/msgpush"
+	"bridal/backend/pkg/nls"
+	"bridal/backend/pkg/notify/channel"
+	"bridal/backend/pkg/notify/dispatcher"
+	"bridal/backend/pkg/notify/template"
+	"bridal/backend/pkg/session"
+	"bridal/backend/pkg/store"
+	"bridal/backend/pkg/tasker"
+	"bridal/backend/pkg/taskflow"
+	"bridal/backend/pkg/tasklog"
+	"bridal/backend/pkg/ws"
 )
 
 // RegisterInfra 注册基础设施依赖
@@ -105,6 +106,12 @@ func RegisterInfra(i *do.Injector, w ...*web.Web) error {
 
 	do.Provide(i, func(i *do.Injector) (taskflow.Clienter, error) {
 		cfg := do.MustInvoke[*config.Config](i)
+		// bridal: taskflow 为编码任务执行链路依赖，M1 起不启用。
+		// 配置为空时返回 nil（taskflow.NewClient 在 TASKFLOW_SERVER 为空时会 panic，
+		// 此处提前短路），消费方（biz/team host usecase 等）仅存指针，M1 不调用其方法。
+		if strings.TrimSpace(cfg.TaskFlow.GrpcURL) == "" {
+			return nil, nil
+		}
 		l := do.MustInvoke[*slog.Logger](i)
 		return taskflow.NewClient(taskflow.WithDebug(cfg.Debug), taskflow.WithLogger(l)), nil
 	})

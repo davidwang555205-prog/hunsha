@@ -10,8 +10,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/entx"
 )
 
 // User holds the schema definition for the User entity.
@@ -32,6 +32,10 @@ func (User) Mixin() []ent.Mixin {
 }
 
 // Fields of the User.
+// bridal 在 MonkeyCode 原字段基础上追加 bridal 专属认证字段：
+// username/display_name/daily_image_limit/password_salt/password_hash。
+// bridal 认证层（biz/bridalauth）用 scrypt + HMAC token，独立于 MonkeyCode 的 bcrypt + cookie session。
+// 原 password 字段保留（MonkeyCode team 链路 M4 复用），bridal 认证不使用它。
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Unique(),
@@ -43,6 +47,12 @@ func (User) Fields() []ent.Field {
 		field.String("status").GoType(consts.UserStatus("")),
 		field.Bool("is_blocked").Default(false),
 		field.JSON("default_configs", map[consts.DefaultConfigType]uuid.UUID{}).Optional(),
+		// bridal 专属字段
+		field.String("username").Unique().Optional(),                       // 登录账号名（小写），bridal 认证用
+		field.String("display_name").Optional(),                            // 展示名
+		field.Int("daily_image_limit").Default(20).Range(0, 1000),          // 每日生图额度，admin 不受限
+		field.String("password_salt").Optional(),                           // scrypt salt hex（bridal 认证）
+		field.String("password_hash").Optional(),                           // scrypt hash hex（bridal 认证）
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
 )
 
 // TargetActiveMiddleware 用户活动时间追踪中间件

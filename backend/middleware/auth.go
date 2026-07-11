@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/session"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/session"
 )
 
 const (

@@ -16,16 +16,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/biz/agentresource"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillgroupbinding"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/ent/types"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/biz/agentresource"
+	"bridal/backend/db"
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillgroupbinding"
+	"bridal/backend/db/agentskillrepo"
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/domain"
+	"bridal/backend/ent/types"
+	"bridal/backend/pkg/entx"
 )
 
 type teamSkillRepo struct {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
+	"bridal/backend/db"
 )
 
 // TeamSkill 团队私有 skill 的 DTO,对应 agent_skill 在 scope_type=team 下的一行

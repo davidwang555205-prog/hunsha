@@ -3,6 +3,10 @@
 package db
 
 import (
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillrepo"
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/predicate"
 	"context"
 	"errors"
 	"fmt"
@@ -12,10 +16,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 	"github.com/google/uuid"
 )
 

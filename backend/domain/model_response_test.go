@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/domain"
 )
 
 func TestModelFromPreservesCredentialsForPureConversion(t *testing.T) {

@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/pkg/clickhouse"
+	"bridal/backend/db"
+	"bridal/backend/db/task"
+	"bridal/backend/db/teammember"
+	"bridal/backend/pkg/clickhouse"
 )
 
 type ClickHouse interface {

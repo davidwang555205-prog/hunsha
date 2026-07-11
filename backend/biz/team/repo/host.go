@@ -12,17 +12,17 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamhost"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	"bridal/backend/db"
+	"bridal/backend/db/host"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamgrouphost"
+	"bridal/backend/db/teamhost"
+	"bridal/backend/db/teammember"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/cvt"
+	"bridal/backend/pkg/entx"
+	"bridal/backend/pkg/taskflow"
 )
 
 // TeamHostRepo 团队宿主机数据访问层

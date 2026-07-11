@@ -57,27 +57,27 @@ export function ReferenceImageUploader({ files: controlledFiles, onChange }: Ref
 
   return (
     <div className="space-y-3">
-      <label className="flex cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-aura-sand bg-white/70 px-4 py-5 text-center transition hover:border-aura-clay hover:bg-white">
-        <span className="text-sm font-medium text-aura-charcoal">上传参考图</span>
-        <span className="mt-1 text-xs leading-5 text-aura-muted">jpg / png / webp，单张 10MB 内，最多取前 4 张参与生成。</span>
+      <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface/70 px-4 py-5 text-center transition hover:border-primary hover:bg-surface">
+        <span className="text-sm font-medium text-text">上传参考图</span>
+        <span className="mt-1 text-xs leading-5 text-text-muted">jpg / png / webp，单张 10MB 内，最多取前 4 张参与生成。</span>
         <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleSelect} />
       </label>
 
-      <p className="rounded-[14px] bg-aura-cream px-3 py-2 text-xs leading-5 text-aura-muted ring-1 ring-aura-beige/70">
+      <p className="rounded-md bg-bg px-3 py-2 text-xs leading-5 text-text-muted ring-1 ring-border/70">
         上传后可预览，生成时由服务端提交到生图接口。
       </p>
 
-      {error && <p className="text-xs text-[#9a4b43]">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {previews.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {previews.map((preview) => (
-            <div key={`${preview.file.name}-${preview.file.lastModified}`} className="overflow-hidden rounded-[16px] bg-white ring-1 ring-aura-beige">
+            <div key={`${preview.file.name}-${preview.file.lastModified}`} className="overflow-hidden rounded-md bg-surface ring-1 ring-border">
               <img className="aspect-[4/5] w-full object-cover" src={preview.url} alt={preview.file.name} />
               <div className="space-y-2 p-2">
-                <p className="truncate text-xs text-aura-muted">{preview.file.name}</p>
+                <p className="truncate text-xs text-text-muted">{preview.file.name}</p>
                 <button
-                  className="w-full rounded-[12px] bg-aura-cream px-3 py-2 text-xs font-medium text-aura-charcoal ring-1 ring-aura-beige transition hover:bg-aura-beige"
+                  className="w-full rounded-sm bg-bg px-3 py-2 text-xs font-medium text-text ring-1 ring-border transition hover:bg-primary-50"
                   type="button"
                   onClick={() => removeFile(preview.file)}
                 >

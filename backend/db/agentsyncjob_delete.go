@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/agentsyncjob"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/agentsyncjob"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // AgentSyncJobDelete is the builder for deleting a AgentSyncJob entity.

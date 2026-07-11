@@ -6,8 +6,8 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/modelusage"
+	"bridal/backend/db"
+	"bridal/backend/pkg/modelusage"
 )
 
 type Handler struct {

@@ -8,10 +8,10 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/config"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/middleware"
 )
 
 type TeamExtensionPackageHandler struct {

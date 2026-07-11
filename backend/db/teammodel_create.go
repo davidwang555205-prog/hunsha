@@ -3,6 +3,9 @@
 package db
 
 import (
+	"bridal/backend/db/model"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teammodel"
 	"context"
 	"errors"
 	"fmt"
@@ -12,9 +15,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teammodel"
 	"github.com/google/uuid"
 )
 

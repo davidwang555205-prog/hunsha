@@ -9,11 +9,11 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/enttest"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/consts"
+	"bridal/backend/db/enttest"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/domain"
 )
 
 func TestCreateIndividualWithIdentityCreatesUserAndIdentity(t *testing.T) {

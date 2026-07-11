@@ -8,15 +8,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/teamoidcconfig"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/oidc"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/teamoidcconfig"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/oidc"
 )
 
 type TeamOIDCRepo struct {

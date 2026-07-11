@@ -3,6 +3,15 @@
 package db
 
 import (
+	"bridal/backend/db/gitbottask"
+	"bridal/backend/db/gittask"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/taskvirtualmachine"
+	"bridal/backend/db/user"
+	"bridal/backend/db/virtualmachine"
 	"context"
 	"database/sql/driver"
 	"fmt"
@@ -13,15 +22,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbottask"
-	"github.com/chaitin/MonkeyCode/backend/db/gittask"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/taskvirtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
 	"github.com/google/uuid"
 )
 

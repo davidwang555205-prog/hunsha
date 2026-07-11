@@ -17,8 +17,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/config"
+	"bridal/backend/pkg/request"
 )
 
 // access_token Redis 共享缓存相关常量。

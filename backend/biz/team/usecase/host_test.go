@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/config"
+	"bridal/backend/domain"
 )
 
 func TestGetInstallCommandStoresTokenForTwoHours(t *testing.T) {

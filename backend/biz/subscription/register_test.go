@@ -8,7 +8,7 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/middleware"
 )
 
 func TestNewHandlerRegistersSubscriptionRoute(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/pkg/request"
 )
 
 // ==================== 接口定义 ====================

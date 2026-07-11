@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/config"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/request"
 	"github.com/google/uuid"
 )
 

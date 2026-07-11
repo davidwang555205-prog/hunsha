@@ -7,8 +7,8 @@ import (
 	"entgo.io/ent/dialect/sql/schema"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/db"
+	"bridal/backend/domain"
 	_ "github.com/mattn/go-sqlite3"
 )
 

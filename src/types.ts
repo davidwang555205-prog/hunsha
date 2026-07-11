@@ -91,4 +91,6 @@ export type PromptParams = {
   extraRequirement: string;
   generationNonce: number;
   bridalKeywordProfileId?: BridalImageKeywordProfileId;
+  /** 对齐后端 prompt.Params.GeneratedImageName（prompt.go:23），生图时由调用方填写 */
+  generatedImageName?: string;
 };

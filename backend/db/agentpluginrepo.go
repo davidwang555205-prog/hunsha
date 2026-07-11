@@ -3,6 +3,8 @@
 package db
 
 import (
+	"bridal/backend/db/agentpluginrepo"
+	"bridal/backend/ent/types"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,8 +12,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginrepo"
-	"github.com/chaitin/MonkeyCode/backend/ent/types"
 	"github.com/google/uuid"
 )
 

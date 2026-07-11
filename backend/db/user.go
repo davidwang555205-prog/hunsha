@@ -3,6 +3,8 @@
 package db
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/user"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,8 +12,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
 	"github.com/google/uuid"
 )
 
@@ -38,6 +38,16 @@ type User struct {
 	IsBlocked bool `json:"is_blocked,omitempty"`
 	// DefaultConfigs holds the value of the "default_configs" field.
 	DefaultConfigs map[consts.DefaultConfigType]uuid.UUID `json:"default_configs,omitempty"`
+	// Username holds the value of the "username" field.
+	Username string `json:"username,omitempty"`
+	// DisplayName holds the value of the "display_name" field.
+	DisplayName string `json:"display_name,omitempty"`
+	// DailyImageLimit holds the value of the "daily_image_limit" field.
+	DailyImageLimit int `json:"daily_image_limit,omitempty"`
+	// PasswordSalt holds the value of the "password_salt" field.
+	PasswordSalt string `json:"password_salt,omitempty"`
+	// PasswordHash holds the value of the "password_hash" field.
+	PasswordHash string `json:"password_hash,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -295,7 +305,9 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case user.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
-		case user.FieldName, user.FieldEmail, user.FieldAvatarURL, user.FieldPassword, user.FieldRole, user.FieldStatus:
+		case user.FieldDailyImageLimit:
+			values[i] = new(sql.NullInt64)
+		case user.FieldName, user.FieldEmail, user.FieldAvatarURL, user.FieldPassword, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldDisplayName, user.FieldPasswordSalt, user.FieldPasswordHash:
 			values[i] = new(sql.NullString)
 		case user.FieldDeletedAt, user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -377,6 +389,36 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.DefaultConfigs); err != nil {
 					return fmt.Errorf("unmarshal field default_configs: %w", err)
 				}
+			}
+		case user.FieldUsername:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field username", values[i])
+			} else if value.Valid {
+				_m.Username = value.String
+			}
+		case user.FieldDisplayName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field display_name", values[i])
+			} else if value.Valid {
+				_m.DisplayName = value.String
+			}
+		case user.FieldDailyImageLimit:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field daily_image_limit", values[i])
+			} else if value.Valid {
+				_m.DailyImageLimit = int(value.Int64)
+			}
+		case user.FieldPasswordSalt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password_salt", values[i])
+			} else if value.Valid {
+				_m.PasswordSalt = value.String
+			}
+		case user.FieldPasswordHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
+			} else if value.Valid {
+				_m.PasswordHash = value.String
 			}
 		case user.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -557,6 +599,21 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("default_configs=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DefaultConfigs))
+	builder.WriteString(", ")
+	builder.WriteString("username=")
+	builder.WriteString(_m.Username)
+	builder.WriteString(", ")
+	builder.WriteString("display_name=")
+	builder.WriteString(_m.DisplayName)
+	builder.WriteString(", ")
+	builder.WriteString("daily_image_limit=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyImageLimit))
+	builder.WriteString(", ")
+	builder.WriteString("password_salt=")
+	builder.WriteString(_m.PasswordSalt)
+	builder.WriteString(", ")
+	builder.WriteString("password_hash=")
+	builder.WriteString(_m.PasswordHash)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

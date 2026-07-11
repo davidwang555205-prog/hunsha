@@ -1,10 +1,13 @@
+/* 苹果风格 design tokens 单一事实源，须先于 @tailwind 导入 */
+@import "./styles/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color: #2e2b28;
-  background: #f8f4ec;
+  color: var(--color-text);
+  background: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,9 +22,11 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(255, 252, 247, 0.92), rgba(248, 244, 236, 0.96)),
-    #f8f4ec;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  /* 苹果风格：纯净浅灰底，无渐变光晕 */
+  background: var(--color-bg);
+  background-attachment: fixed;
 }
 
 button,
@@ -36,24 +41,52 @@ textarea {
 }
 
 ::selection {
-  background: #d7c8b5;
-  color: #2e2b28;
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
 }
 
-.aura-scrollbar {
-  scrollbar-color: #cfc4b6 transparent;
+/* 滚动条（克制灰） */
+.brand-scrollbar {
+  scrollbar-color: var(--color-border-strong) transparent;
   scrollbar-width: thin;
 }
 
-.aura-scrollbar::-webkit-scrollbar {
+.brand-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
-.aura-scrollbar::-webkit-scrollbar-track {
+.brand-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.aura-scrollbar::-webkit-scrollbar-thumb {
-  background: #cfc4b6;
-  border-radius: 999px;
+.brand-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-full);
+}
+
+/* 全局滚动条（窄） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-full);
+}
+
+/* 焦点态：键盘可见光环 */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+/* ProgressBar 不确定态：色块左右扫描 */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
 }

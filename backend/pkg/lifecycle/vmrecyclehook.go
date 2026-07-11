@@ -9,11 +9,11 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/delayqueue"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/delayqueue"
+	"bridal/backend/pkg/entx"
+	"bridal/backend/pkg/taskflow"
 )
 
 const (

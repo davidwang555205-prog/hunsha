@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/db"
+	"bridal/backend/db/audit"
+	"bridal/backend/db/teammember"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
 )
 
 // AuditRepo 审计日志仓库

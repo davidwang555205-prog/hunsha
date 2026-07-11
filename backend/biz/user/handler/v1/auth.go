@@ -10,12 +10,12 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
-	"github.com/chaitin/MonkeyCode/backend/pkg/captcha"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/middleware"
+	"bridal/backend/pkg/captcha"
 )
 
 // AuthHandler 认证处理器

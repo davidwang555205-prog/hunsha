@@ -6,11 +6,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/db"
+	"bridal/backend/pkg/cvt"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/consts"
+	"bridal/backend/errcode"
 )
 
 type MemberManager interface {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 )
 
 func publishExtensionImages(staticDir, routePrefix string, teamID uuid.UUID, pkg *parsedExtensionPackage) ([]domain.TeamExtensionImageImport, error) {

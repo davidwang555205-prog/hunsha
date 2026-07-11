@@ -3,15 +3,15 @@
 package db
 
 import (
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillgroupbinding"
+	"bridal/backend/db/teamgroup"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillgroupbinding"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
 	"github.com/google/uuid"
 )
 

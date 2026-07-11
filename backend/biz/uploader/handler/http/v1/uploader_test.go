@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/oss"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/oss"
 	"github.com/google/uuid"
 )
 

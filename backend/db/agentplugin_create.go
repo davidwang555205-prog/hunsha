@@ -3,6 +3,9 @@
 package db
 
 import (
+	"bridal/backend/db/agentplugin"
+	"bridal/backend/db/agentpluginrepo"
+	"bridal/backend/db/agentpluginversion"
 	"context"
 	"errors"
 	"fmt"
@@ -12,9 +15,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/agentplugin"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginversion"
 	"github.com/google/uuid"
 )
 

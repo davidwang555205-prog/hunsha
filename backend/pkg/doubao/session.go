@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	"github.com/chaitin/MonkeyCode/backend/pkg/asr"
+	"bridal/backend/pkg/asr"
 )
 
 // session 实现 asr.Session,一次豆包流式语音识别会话。

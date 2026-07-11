@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/mcptoolcall"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptoolcall"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // MCPToolCallDelete is the builder for deleting a MCPToolCall entity.

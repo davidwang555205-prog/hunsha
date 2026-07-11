@@ -6,11 +6,11 @@ import (
 
 	"entgo.io/ent"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/hook"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/hook"
+	"bridal/backend/db/task"
+	"bridal/backend/errcode"
 )
 
 func taskConcurrencyExceeded(count, limit int) bool {

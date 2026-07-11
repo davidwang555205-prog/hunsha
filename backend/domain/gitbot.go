@@ -5,9 +5,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/pkg/cvt"
 )
 
 // GitBotUsecase GitBot 业务逻辑接口

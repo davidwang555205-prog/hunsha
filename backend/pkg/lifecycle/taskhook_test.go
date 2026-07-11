@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 
-	taskrepo "github.com/chaitin/MonkeyCode/backend/biz/task/repo"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/enttest"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
+	taskrepo "bridal/backend/biz/task/repo"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/enttest"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/taskflow"
 )
 
 func TestTaskHook_OnStateChange_FinishedUpdatesTaskStatusAndCompletedAt(t *testing.T) {

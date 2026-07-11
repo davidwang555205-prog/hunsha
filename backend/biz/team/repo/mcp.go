@@ -8,13 +8,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/db"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupmcpupstream"
+	"bridal/backend/db/teammember"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/entx"
 )
 
 type teamMCPRepo struct {

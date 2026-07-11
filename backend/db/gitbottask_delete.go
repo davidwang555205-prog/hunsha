@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/gitbottask"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbottask"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // GitBotTaskDelete is the builder for deleting a GitBotTask entity.

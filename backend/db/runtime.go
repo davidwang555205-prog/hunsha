@@ -2,4 +2,4 @@
 
 package db
 
-// The schema-stitching logic is generated in github.com/chaitin/MonkeyCode/backend/db/runtime/runtime.go
+// The schema-stitching logic is generated in bridal/backend/db/runtime/runtime.go

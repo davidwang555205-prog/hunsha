@@ -1,0 +1,133 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateFashionSeedingContent > produces consistent output for same input (snapshot) 1`] = `
+{
+  "body": "今天店里第一组图没有拍满墙婚纱，先拍了她说起自己怕只有空间美图的那几分钟。
+
+镜子前的光没有过曝，白纱和人的肤色都正常。头纱配饰台能让预约前的人少猜一点。
+
+面料小样和改尺寸记录留在桌上，衣架上婚纱的挂装状态不是摆设，是沟通时真的会用到。
+
+试后确认放进组图里，店铺的信任感就不靠装修撑着了。
+
+想先了解店的人预约前会紧张，那就把流程拍清楚一点，别只拍漂亮角落。",
+  "dailySlot": 1,
+  "dateKey": "2026-07-10",
+  "images": [
+    {
+      "description": "镜子、纱帘、衣架和一件主纱，干净但有真实服务感。",
+      "name": "图1｜门店｜试纱间主视觉",
+      "params": {
+        "bridalKeywordProfileId": "storePublishing",
+        "bridalStyle": "极简缎面婚纱",
+        "customProductName": "",
+        "dressStyle": "连衣裙",
+        "extraRequirement": "Create a bridal boutique publishing image showing fitting room, mirror, curtain, dress rack, one main gown, appointment-ready calm service mood. Variant-specific cues: focus on specific visual evidence from the generated post. Resolve the viewer concern through specific visual evidence from the generated post. Use visual proof such as specific visual evidence from the generated post in veil and accessory relationship. Emphasize detail cues including worn garment fit evidence. Visual recipe: full-length front mirror framing with enough floor line to judge gown proportion; store appointment detail such as rack, curtain, veil, or fitting table kept believable; temporary beading-tool adjustment marks feel realistic and respectful. Create it as part of a bridal boutique publishing post, focused on store trust, appointment-ready space, service detail, clean fitting-room order, and real boutique atmosphere. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image. Series continuity is a hard requirement for image 1 of 5. Keep the exact same physical location and preserve its permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, and garment design established by the series cover. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one. This frame may omit the face, but any visible person, hands, hair, or garment must belong to the same model and the same fitting session. Do not introduce another model.",
+        "generationNonce": 5801,
+        "imageType": "非产品氛围图",
+        "lightPreference": "自动匹配",
+        "modelChoice": "亚洲新娘感模特 25–35",
+        "productCategory": "婚纱 / 礼服",
+        "scenePreference": "试纱间",
+        "season": "夏",
+      },
+      "purpose": "展示婚纱店空间和预约氛围。",
+    },
+    {
+      "description": "顾问和客人一起看镜子或衣架，动作自然。",
+      "name": "图2｜服务｜顾问陪选",
+      "params": {
+        "bridalKeywordProfileId": "fittingServiceDetail",
+        "bridalStyle": "极简缎面婚纱",
+        "customProductName": "",
+        "dressStyle": "连衣裙",
+        "extraRequirement": "Show a bridal consultant helping a customer compare gown options near mirror or dress rack, respectful distance, no hard selling, real boutique service. Variant-specific cues: focus on specific visual evidence from the generated post. Resolve the viewer concern through specific visual evidence from the generated post. Use visual proof such as specific visual evidence from the generated post in veil and accessory relationship. Emphasize detail cues including worn garment fit evidence. Visual recipe: full-length front mirror framing with enough floor line to judge gown proportion; store appointment detail such as rack, curtain, veil, or fitting table kept believable; temporary beading-tool adjustment marks feel realistic and respectful. Create it as part of a bridal boutique publishing post, focused on store trust, appointment-ready space, service detail, clean fitting-room order, and real boutique atmosphere. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image. Series continuity is a hard requirement for image 2 of 5. Keep the exact same physical location and preserve its permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, and garment design established by the series cover. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one. Establish one clearly identifiable woman for the complete series. Keep her exact facial identity, age, facial structure, skin tone, hairstyle, hair color, and body proportions unchanged in every later frame where a face appears.",
+        "generationNonce": 5802,
+        "imageType": "生活场景图",
+        "lightPreference": "自动匹配",
+        "modelChoice": "高级婚纱店真实试纱客户",
+        "productCategory": "婚纱 / 礼服",
+        "scenePreference": "试纱间",
+        "season": "夏",
+      },
+      "purpose": "展示顾问服务，不硬销售。",
+    },
+    {
+      "description": "客人上身婚纱，表情自然，试纱间光线干净。",
+      "name": "图3｜客照｜真实试穿瞬间",
+      "params": {
+        "bridalKeywordProfileId": "realCustomerFitting",
+        "bridalStyle": "极简缎面婚纱",
+        "customProductName": "",
+        "dressStyle": "连衣裙",
+        "extraRequirement": "Create a real customer trial fitting image in boutique room, natural expression, clear gown details, no influencer pose, no commercial retouching. Variant-specific cues: focus on specific visual evidence from the generated post. Resolve the viewer concern through specific visual evidence from the generated post. Use visual proof such as specific visual evidence from the generated post in veil and accessory relationship. Emphasize detail cues including worn garment fit evidence. Visual recipe: full-length front mirror framing with enough floor line to judge gown proportion; store appointment detail such as rack, curtain, veil, or fitting table kept believable; temporary beading-tool adjustment marks feel realistic and respectful. Create it as part of a bridal boutique publishing post, focused on store trust, appointment-ready space, service detail, clean fitting-room order, and real boutique atmosphere. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image. Series continuity is a hard requirement for image 3 of 5. Keep the exact same physical location and preserve its permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, and garment design established by the series cover. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one. Use the supplied series identity reference as a strict character reference. Show the exact same woman as the cover, with identical facial identity, age, facial structure, skin tone, hairstyle, hair color, and body proportions. Do not generate a lookalike or a different model.",
+        "generationNonce": 5803,
+        "imageType": "产品上身图",
+        "lightPreference": "自动匹配",
+        "modelChoice": "高级婚纱店真实试纱客户",
+        "productCategory": "婚纱 / 礼服",
+        "scenePreference": "试纱间",
+        "season": "夏",
+      },
+      "purpose": "建立真实客照可信度。",
+    },
+    {
+      "description": "头纱、耳饰、手套、面料卡和预约单。",
+      "name": "图4｜细节｜头纱与配件区",
+      "params": {
+        "bridalKeywordProfileId": "bridalMaterialProof",
+        "bridalStyle": "极简缎面婚纱",
+        "customProductName": "",
+        "dressStyle": "连衣裙",
+        "extraRequirement": "Show boutique accessory station with veil, earrings, gloves, lace, satin swatches, appointment card, and organized styling detail. Variant-specific cues: focus on specific visual evidence from the generated post. Resolve the viewer concern through specific visual evidence from the generated post. Use visual proof such as specific visual evidence from the generated post in veil and accessory relationship. Emphasize detail cues including worn garment fit evidence. Visual recipe: full-length front mirror framing with enough floor line to judge gown proportion; store appointment detail such as rack, curtain, veil, or fitting table kept believable; temporary beading-tool adjustment marks feel realistic and respectful. Create it as part of a bridal boutique publishing post, focused on store trust, appointment-ready space, service detail, clean fitting-room order, and real boutique atmosphere. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image. Series continuity is a hard requirement for image 4 of 5. Keep the exact same physical location and preserve its permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, and garment design established by the series cover. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one. This frame may omit the face, but any visible person, hands, hair, or garment must belong to the same model and the same fitting session. Do not introduce another model.",
+        "generationNonce": 5804,
+        "imageType": "产品静物图",
+        "lightPreference": "自动匹配",
+        "modelChoice": "亚洲新娘感模特 25–35",
+        "productCategory": "婚纱 / 礼服",
+        "scenePreference": "试纱间",
+        "season": "夏",
+      },
+      "purpose": "补充店内专业搭配能力。",
+    },
+    {
+      "description": "婚纱店橱窗、礼服展示和柔和街面反光。",
+      "name": "图5｜橱窗｜预约前第一印象",
+      "params": {
+        "bridalKeywordProfileId": "storePublishing",
+        "bridalStyle": "极简缎面婚纱",
+        "customProductName": "",
+        "dressStyle": "连衣裙",
+        "extraRequirement": "Create a bridal boutique window impression, gown display, soft street reflection, quiet premium storefront, inviting but not flashy. Variant-specific cues: focus on specific visual evidence from the generated post. Resolve the viewer concern through specific visual evidence from the generated post. Use visual proof such as specific visual evidence from the generated post in veil and accessory relationship. Emphasize detail cues including worn garment fit evidence. Visual recipe: full-length front mirror framing with enough floor line to judge gown proportion; store appointment detail such as rack, curtain, veil, or fitting table kept believable; temporary beading-tool adjustment marks feel realistic and respectful. Create it as part of a bridal boutique publishing post, focused on store trust, appointment-ready space, service detail, clean fitting-room order, and real boutique atmosphere. Keep the result photographic and scene-based, not a text page, instruction sheet, UI screen, poster, or brochure layout. Do not render readable Chinese text, captions, labels, watermarks, or document-style blocks inside the image. Series continuity is a hard requirement for image 5 of 5. Keep the exact same physical location and preserve its permanent room architecture, mirror design, curtains, walls, floor, fixed furniture, light direction, color temperature, time of day, and garment design established by the series cover. Recurring movable props must keep the same design, while the client, consultant, phone, veil, train, and small tabletop items may move only as required by the assigned shot. Output exactly one continuous photograph with one camera viewpoint and one instance of the main person. This is one separately generated frame in the series, never a collage, split screen, triptych, diptych, contact sheet, before-and-after layout, or multiple-angle composite. Treat every image as one assigned camera angle or detail captured during one uninterrupted shoot. Do not move to a material worktable, another room, another storefront, or another outdoor location even if an earlier instruction suggests one. This frame may omit the face, but any visible person, hands, hair, or garment must belong to the same model and the same fitting session. Do not introduce another model.",
+        "generationNonce": 5805,
+        "imageType": "非产品氛围图",
+        "lightPreference": "自动匹配",
+        "modelChoice": "亚洲新娘感模特 25–35",
+        "productCategory": "婚纱 / 礼服",
+        "scenePreference": "试纱间",
+        "season": "夏",
+      },
+      "purpose": "作为探店或门店发布收尾。",
+    },
+  ],
+  "note": "这一版主打像预约前能安心看的探店笔记，用试纱结束后的温和确认和衣架上婚纱的挂装状态回应预约前想了解店铺体验的人最在意的店铺日常是不是只有空间美图。",
+  "tags": [
+    "#婚纱店",
+    "#婚纱馆",
+    "#试纱预约",
+    "#婚纱店日常",
+    "#备婚探店",
+    "#真实试纱",
+    "#备婚攻略",
+  ],
+  "titles": [
+    "让客人放心的，很多是小动作，今天拍了头纱配饰台",
+    "预约前我会先看试后确认",
+    "先别急，别只看装修，也看门店笔记真实过程",
+  ],
+  "topic": "婚纱店发布",
+  "variantCount": 1000,
+  "variantIndex": 580,
+  "variantLabel": "第 581 / 1000 版",
+}
+`;

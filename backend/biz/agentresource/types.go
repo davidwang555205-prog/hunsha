@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
-	enttypes "github.com/chaitin/MonkeyCode/backend/ent/types"
+	enttypes "bridal/backend/ent/types"
 )
 
 // RuleWithVersion is an agent rule joined with the row referenced by its

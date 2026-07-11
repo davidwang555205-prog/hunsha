@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
+	"bridal/backend/db"
+	"bridal/backend/db/agentpluginrepo"
+	"bridal/backend/db/agentskillrepo"
 )
 
 // BareRepoSourceType / BareRepoScopeType 与 ent enum 字符串严格保持一致。

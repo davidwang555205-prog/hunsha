@@ -2,13 +2,14 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/spf13/viper"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/logger"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/logger"
 )
 
 type Config struct {
@@ -91,6 +92,37 @@ type Config struct {
 	Doubao Doubao `mapstructure:"doubao"`
 
 	ReviewAgent ReviewAgent `mapstructure:"review_agent"`
+
+	// Bridal 专属配置（婚纱生图平台认证/生图参数），独立于 MonkeyCode 的 team/编码任务配置。
+	Bridal Bridal `mapstructure:"bridal"`
+}
+
+// Bridal 是 bridal 平台专属配置。环境变量前缀 MCAI_BRIDAL_ 可覆盖（如 MCAI_BRIDAL_SESSION_SECRET）。
+// 字段命名与 Node server/index.mjs 的环境变量一一对应，便于 .env 复用。
+type Bridal struct {
+	// SessionSecret HMAC token 签名密钥，对应 Node APP_SESSION_SECRET。
+	// 缺省回退到 AdminPassword 再到固定常量（生产必须配置）。
+	SessionSecret string `mapstructure:"session_secret"`
+	// AdminPassword 初始 admin 账号密码，对应 Node APP_ADMIN_PASSWORD，默认 admin123。
+	AdminPassword string `mapstructure:"admin_password"`
+	// UserPassword 初始 wang 账号密码，对应 Node APP_USER_PASSWORD，默认 user123。
+	UserPassword string `mapstructure:"user_password"`
+	// DefaultDailyImageLimit 默认每日生图额度，对应 Node DEFAULT_DAILY_IMAGE_LIMIT，默认 20。
+	DefaultDailyImageLimit int `mapstructure:"default_daily_image_limit"`
+	// HistoryRetentionDays 历史保留天数，对应 Node HISTORY_RETENTION_DAYS，默认 180。
+	HistoryRetentionDays int `mapstructure:"history_retention_days"`
+	// WalaAPIKey WalaAPI 密钥，对应 Node WALA_API_KEY。
+	WalaAPIKey string `mapstructure:"wala_api_key"`
+	// WalaAPIBaseURL WalaAPI 基址，对应 Node WALA_API_BASE_URL，默认 https://walaapi.net/v1。
+	WalaAPIBaseURL string `mapstructure:"wala_api_base_url"`
+	// WalaImageModel 生图模型，对应 Node WALA_IMAGE_MODEL，默认 gpt-image-2（Node 硬编码，Go 借机读 env）。
+	WalaImageModel string `mapstructure:"wala_image_model"`
+	// WalaImageQuality 默认生图质量，对应 Node WALA_IMAGE_QUALITY，默认 medium。
+	WalaImageQuality string `mapstructure:"wala_image_quality"`
+	// WalaImageTimeoutMs 单张生图超时毫秒，对应 Node WALA_IMAGE_TIMEOUT_MS，默认 180000。
+	WalaImageTimeoutMs int `mapstructure:"wala_image_timeout_ms"`
+	// WalaImageRetryAttempts 生图重试次数，对应 Node WALA_IMAGE_RETRY_ATTEMPTS，默认 3。
+	WalaImageRetryAttempts int `mapstructure:"wala_image_retry_attempts"`
 }
 
 type ReviewAgent struct {
@@ -416,6 +448,19 @@ func Init(dir string) (*Config, error) {
 	v.SetDefault("oauth_login.github.client_secret", "")
 	v.SetDefault("oauth_login.github.redirect_url", "")
 
+	// bridal 专属默认值（与 Node server/index.mjs 默认值对齐）
+	v.SetDefault("bridal.session_secret", "")
+	v.SetDefault("bridal.admin_password", "admin123")
+	v.SetDefault("bridal.user_password", "user123")
+	v.SetDefault("bridal.default_daily_image_limit", 20)
+	v.SetDefault("bridal.history_retention_days", 180)
+	v.SetDefault("bridal.wala_api_key", "")
+	v.SetDefault("bridal.wala_api_base_url", "https://walaapi.net/v1")
+	v.SetDefault("bridal.wala_image_model", "gpt-image-2")
+	v.SetDefault("bridal.wala_image_quality", "medium")
+	v.SetDefault("bridal.wala_image_timeout_ms", 180000)
+	v.SetDefault("bridal.wala_image_retry_attempts", 3)
+
 	v.SetConfigType("yaml")
 	v.AddConfigPath(dir)
 	v.SetConfigName("config")
@@ -430,7 +475,42 @@ func Init(dir string) (*Config, error) {
 		return nil, err
 	}
 
+	// bridal 原生环境变量兼容：Node 阶段用 APP_SESSION_SECRET / APP_ADMIN_PASSWORD /
+	// APP_USER_PASSWORD / WALA_API_KEY 等命名，此处做回退读取，便于直接复用 bridal 的 .env。
+	// MCAI_BRIDAL_* 优先级更高（已由 viper AutomaticEnv 写入 c.Bridal），此处仅填充空值。
+	applyBridalEnvDefaults(&c.Bridal)
+
 	return &c, nil
+}
+
+// applyBridalEnvDefaults 用 bridal 原生命名（无 MCAI_ 前缀）的环境变量回退填充空字段，
+// 使 Node 阶段的 .env 可直接复用。
+func applyBridalEnvDefaults(b *Bridal) {
+	if b.SessionSecret == "" {
+		b.SessionSecret = os.Getenv("APP_SESSION_SECRET")
+	}
+	if b.AdminPassword == "" || b.AdminPassword == "admin123" {
+		if v := os.Getenv("APP_ADMIN_PASSWORD"); v != "" {
+			b.AdminPassword = v
+		}
+	}
+	if b.UserPassword == "" || b.UserPassword == "user123" {
+		if v := os.Getenv("APP_USER_PASSWORD"); v != "" {
+			b.UserPassword = v
+		}
+	}
+	if b.WalaAPIKey == "" {
+		b.WalaAPIKey = os.Getenv("WALA_API_KEY")
+	}
+	if v := os.Getenv("WALA_API_BASE_URL"); v != "" {
+		b.WalaAPIBaseURL = v
+	}
+	if v := os.Getenv("WALA_IMAGE_MODEL"); v != "" {
+		b.WalaImageModel = v
+	}
+	if v := os.Getenv("WALA_IMAGE_QUALITY"); v != "" {
+		b.WalaImageQuality = v
+	}
 }
 
 func normalizeWechatMPTemplates(v *viper.Viper) error {

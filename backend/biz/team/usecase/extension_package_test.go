@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/db"
+	"bridal/backend/domain"
 )
 
 func TestTeamExtensionPackageUsecaseImportWritesAggregatedManifest(t *testing.T) {

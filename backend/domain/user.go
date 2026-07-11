@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/errcode"
+	"bridal/backend/pkg/cvt"
 )
 
 type UserUsecase interface {

@@ -3,6 +3,9 @@
 package db
 
 import (
+	"bridal/backend/db/mcptool"
+	"bridal/backend/db/mcptoolcall"
+	"bridal/backend/db/mcpupstream"
 	"context"
 	"errors"
 	"fmt"
@@ -12,9 +15,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptool"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptoolcall"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
 	"github.com/google/uuid"
 )
 

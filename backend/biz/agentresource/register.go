@@ -12,9 +12,9 @@ import (
 
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/oss"
+	"bridal/backend/config"
+	"bridal/backend/db"
+	"bridal/backend/pkg/oss"
 )
 
 // ProvideAgentResource wires the agent-resource module. The ObjectStore is

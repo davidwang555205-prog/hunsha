@@ -15,13 +15,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
-	"github.com/chaitin/MonkeyCode/backend/pkg/llm"
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/config"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/cvt"
+	"bridal/backend/pkg/llm"
+	"bridal/backend/pkg/request"
 )
 
 type modelUsecase struct {

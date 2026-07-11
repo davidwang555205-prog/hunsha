@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/request"
 )
 
 // Codeup 客户端

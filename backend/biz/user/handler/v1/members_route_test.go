@@ -11,10 +11,10 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
-	"github.com/chaitin/MonkeyCode/backend/pkg/captcha"
+	"bridal/backend/config"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
+	"bridal/backend/pkg/captcha"
 )
 
 func TestNewAuthHandlerRegistersMembersRoute(t *testing.T) {

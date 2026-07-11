@@ -7,8 +7,8 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
+	"bridal/backend/consts"
+	"bridal/backend/db"
 )
 
 // GitIdentityUsecase Git 身份认证业务逻辑接口

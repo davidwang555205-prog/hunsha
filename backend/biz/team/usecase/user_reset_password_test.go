@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
 )
 
 func TestResetPasswordReturnsGeneratedPasswordAndUpdatesTeamMember(t *testing.T) {

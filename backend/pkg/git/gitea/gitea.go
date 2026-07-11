@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/domain"
 )
 
 // Gitea 客户端

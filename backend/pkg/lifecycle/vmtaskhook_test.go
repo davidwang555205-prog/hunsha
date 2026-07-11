@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
+	"bridal/backend/consts"
 )
 
 func TestVMTaskHook_OnStateChange_FailedTransitionsTaskToError(t *testing.T) {

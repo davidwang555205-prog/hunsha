@@ -7,16 +7,16 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/agentplugin"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentrule"
-	"github.com/chaitin/MonkeyCode/backend/db/agentruleversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillgroupbinding"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
+	"bridal/backend/db"
+	"bridal/backend/db/agentplugin"
+	"bridal/backend/db/agentpluginversion"
+	"bridal/backend/db/agentrule"
+	"bridal/backend/db/agentruleversion"
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillgroupbinding"
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/teamgroup"
 )
 
 // Repo is the read-only surface used by the task dispatch path and by the

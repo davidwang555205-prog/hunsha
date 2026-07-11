@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
+	"bridal/backend/config"
 )
 
 // Client 数据库客户端

@@ -3,6 +3,16 @@
 package db
 
 import (
+	"bridal/backend/db/image"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamextensionimagearchive"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupimage"
+	"bridal/backend/db/teamimage"
+	"bridal/backend/db/user"
 	"context"
 	"errors"
 	"fmt"
@@ -11,16 +21,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamextensionimagearchive"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teamimage"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
 	"github.com/google/uuid"
 )
 

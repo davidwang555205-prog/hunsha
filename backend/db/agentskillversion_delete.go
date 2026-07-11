@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/predicate"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
 )
 
 // AgentSkillVersionDelete is the builder for deleting a AgentSkillVersion entity.

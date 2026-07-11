@@ -10,14 +10,22 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/biz"
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/pkg"
-	"github.com/chaitin/MonkeyCode/backend/pkg/service"
-	"github.com/chaitin/MonkeyCode/backend/pkg/store"
+	"bridal/backend/biz"
+	"bridal/backend/config"
+	"bridal/backend/pkg"
+	"bridal/backend/pkg/dotenv"
+	"bridal/backend/pkg/service"
+	"bridal/backend/pkg/store"
 )
 
 func main() {
+	// 加载 bridal 项目根 .env（与 Node server/index.mjs applyDotEnv 一致），
+	// 在 config.Init 之前填充 WALA_API_KEY / APP_SESSION_SECRET 等环境变量。
+	// 从 backend/ 向上查找 ../.env。
+	if err := dotenv.Load("../.env"); err != nil {
+		fmt.Fprintf(os.Stderr, "load .env warning: %v\n", err)
+	}
+
 	// 初始化配置
 	cfg, err := config.Init("./config/server")
 	if err != nil {
@@ -46,11 +54,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 注册业务模块
-	biz.RegisterAll(injector)
-	biz.RegisterOpenSource(injector)
-	biz.InvokeAll(injector)
-	biz.InvokeOpenSource(injector)
+	// 注册业务模块（bridal 裁剪版：仅保留登录/授权/订阅/团队/上传/llmproxy 等模块，
+	// 剥离 host/vmidle/git/project/task/skill/plugin/mcphub/file 等编码任务执行链路）
+	biz.RegisterBridal(injector)
+	biz.InvokeBridal(injector)
 
 	// 获取 web 实例并启动服务
 	w := do.MustInvoke[*web.Web](injector)

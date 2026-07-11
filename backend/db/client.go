@@ -9,67 +9,70 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/chaitin/MonkeyCode/backend/db/migrate"
-	"github.com/google/uuid"
+	"bridal/backend/db/migrate"
+
+	"bridal/backend/db/agentplugin"
+	"bridal/backend/db/agentpluginrepo"
+	"bridal/backend/db/agentpluginversion"
+	"bridal/backend/db/agentrule"
+	"bridal/backend/db/agentruleversion"
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillgroupbinding"
+	"bridal/backend/db/agentskillrepo"
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/agentsyncjob"
+	"bridal/backend/db/audit"
+	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationtask"
+	"bridal/backend/db/gitbot"
+	"bridal/backend/db/gitbottask"
+	"bridal/backend/db/gitbotuser"
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/gittask"
+	"bridal/backend/db/host"
+	"bridal/backend/db/image"
+	"bridal/backend/db/mcptool"
+	"bridal/backend/db/mcptoolcall"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/mcpusertoolsetting"
+	"bridal/backend/db/model"
+	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelpricing"
+	"bridal/backend/db/notifychannel"
+	"bridal/backend/db/notifysendlog"
+	"bridal/backend/db/notifysubscription"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectcollaborator"
+	"bridal/backend/db/projectgitbot"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projectissuecomment"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/taskusagestat"
+	"bridal/backend/db/taskvirtualmachine"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamextensionimagearchive"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgrouphost"
+	"bridal/backend/db/teamgroupimage"
+	"bridal/backend/db/teamgroupmcpupstream"
+	"bridal/backend/db/teamgroupmember"
+	"bridal/backend/db/teamgroupmodel"
+	"bridal/backend/db/teamhost"
+	"bridal/backend/db/teamimage"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/teammodel"
+	"bridal/backend/db/teamoidcconfig"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/db/virtualmachine"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/chaitin/MonkeyCode/backend/db/agentplugin"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentrule"
-	"github.com/chaitin/MonkeyCode/backend/db/agentruleversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillgroupbinding"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentsyncjob"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbottask"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbotuser"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/gittask"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptool"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptoolcall"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpusertoolsetting"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/modelapikey"
-	"github.com/chaitin/MonkeyCode/backend/db/modelpricing"
-	"github.com/chaitin/MonkeyCode/backend/db/notifychannel"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysendlog"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysubscription"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectcollaborator"
-	"github.com/chaitin/MonkeyCode/backend/db/projectgitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissuecomment"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/taskusagestat"
-	"github.com/chaitin/MonkeyCode/backend/db/taskvirtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamextensionimagearchive"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmember"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teamhost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/teammodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teamoidcconfig"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
+	"github.com/google/uuid"
 
 	stdsql "database/sql"
 )
@@ -101,6 +104,10 @@ type Client struct {
 	AgentSyncJob *AgentSyncJobClient
 	// Audit is the client for interacting with the Audit builders.
 	Audit *AuditClient
+	// GenerationImage is the client for interacting with the GenerationImage builders.
+	GenerationImage *GenerationImageClient
+	// GenerationTask is the client for interacting with the GenerationTask builders.
+	GenerationTask *GenerationTaskClient
 	// GitBot is the client for interacting with the GitBot builders.
 	GitBot *GitBotClient
 	// GitBotTask is the client for interacting with the GitBotTask builders.
@@ -209,6 +216,8 @@ func (c *Client) init() {
 	c.AgentSkillVersion = NewAgentSkillVersionClient(c.config)
 	c.AgentSyncJob = NewAgentSyncJobClient(c.config)
 	c.Audit = NewAuditClient(c.config)
+	c.GenerationImage = NewGenerationImageClient(c.config)
+	c.GenerationTask = NewGenerationTaskClient(c.config)
 	c.GitBot = NewGitBotClient(c.config)
 	c.GitBotTask = NewGitBotTaskClient(c.config)
 	c.GitBotUser = NewGitBotUserClient(c.config)
@@ -355,6 +364,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AgentSkillVersion:         NewAgentSkillVersionClient(cfg),
 		AgentSyncJob:              NewAgentSyncJobClient(cfg),
 		Audit:                     NewAuditClient(cfg),
+		GenerationImage:           NewGenerationImageClient(cfg),
+		GenerationTask:            NewGenerationTaskClient(cfg),
 		GitBot:                    NewGitBotClient(cfg),
 		GitBotTask:                NewGitBotTaskClient(cfg),
 		GitBotUser:                NewGitBotUserClient(cfg),
@@ -428,6 +439,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AgentSkillVersion:         NewAgentSkillVersionClient(cfg),
 		AgentSyncJob:              NewAgentSyncJobClient(cfg),
 		Audit:                     NewAuditClient(cfg),
+		GenerationImage:           NewGenerationImageClient(cfg),
+		GenerationTask:            NewGenerationTaskClient(cfg),
 		GitBot:                    NewGitBotClient(cfg),
 		GitBotTask:                NewGitBotTaskClient(cfg),
 		GitBotUser:                NewGitBotUserClient(cfg),
@@ -502,16 +515,17 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AgentPlugin, c.AgentPluginRepo, c.AgentPluginVersion, c.AgentRule,
 		c.AgentRuleVersion, c.AgentSkill, c.AgentSkillGroupBinding, c.AgentSkillRepo,
-		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.GitBot, c.GitBotTask,
-		c.GitBotUser, c.GitIdentity, c.GitTask, c.Host, c.Image, c.MCPTool,
-		c.MCPToolCall, c.MCPUpstream, c.MCPUserToolSetting, c.Model, c.ModelApiKey,
-		c.ModelPricing, c.NotifyChannel, c.NotifySendLog, c.NotifySubscription,
-		c.Project, c.ProjectCollaborator, c.ProjectGitBot, c.ProjectIssue,
-		c.ProjectIssueComment, c.ProjectTask, c.Task, c.TaskModelSwitch,
-		c.TaskUsageStat, c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive,
-		c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream,
-		c.TeamGroupMember, c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember,
-		c.TeamModel, c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine,
+		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.GenerationImage,
+		c.GenerationTask, c.GitBot, c.GitBotTask, c.GitBotUser, c.GitIdentity,
+		c.GitTask, c.Host, c.Image, c.MCPTool, c.MCPToolCall, c.MCPUpstream,
+		c.MCPUserToolSetting, c.Model, c.ModelApiKey, c.ModelPricing, c.NotifyChannel,
+		c.NotifySendLog, c.NotifySubscription, c.Project, c.ProjectCollaborator,
+		c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask, c.Task,
+		c.TaskModelSwitch, c.TaskUsageStat, c.TaskVirtualMachine, c.Team,
+		c.TeamExtensionImageArchive, c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage,
+		c.TeamGroupMCPUpstream, c.TeamGroupMember, c.TeamGroupModel, c.TeamHost,
+		c.TeamImage, c.TeamMember, c.TeamModel, c.TeamOIDCConfig, c.User,
+		c.UserIdentity, c.VirtualMachine,
 	} {
 		n.Use(hooks...)
 	}
@@ -523,16 +537,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AgentPlugin, c.AgentPluginRepo, c.AgentPluginVersion, c.AgentRule,
 		c.AgentRuleVersion, c.AgentSkill, c.AgentSkillGroupBinding, c.AgentSkillRepo,
-		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.GitBot, c.GitBotTask,
-		c.GitBotUser, c.GitIdentity, c.GitTask, c.Host, c.Image, c.MCPTool,
-		c.MCPToolCall, c.MCPUpstream, c.MCPUserToolSetting, c.Model, c.ModelApiKey,
-		c.ModelPricing, c.NotifyChannel, c.NotifySendLog, c.NotifySubscription,
-		c.Project, c.ProjectCollaborator, c.ProjectGitBot, c.ProjectIssue,
-		c.ProjectIssueComment, c.ProjectTask, c.Task, c.TaskModelSwitch,
-		c.TaskUsageStat, c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive,
-		c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream,
-		c.TeamGroupMember, c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember,
-		c.TeamModel, c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine,
+		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.GenerationImage,
+		c.GenerationTask, c.GitBot, c.GitBotTask, c.GitBotUser, c.GitIdentity,
+		c.GitTask, c.Host, c.Image, c.MCPTool, c.MCPToolCall, c.MCPUpstream,
+		c.MCPUserToolSetting, c.Model, c.ModelApiKey, c.ModelPricing, c.NotifyChannel,
+		c.NotifySendLog, c.NotifySubscription, c.Project, c.ProjectCollaborator,
+		c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask, c.Task,
+		c.TaskModelSwitch, c.TaskUsageStat, c.TaskVirtualMachine, c.Team,
+		c.TeamExtensionImageArchive, c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage,
+		c.TeamGroupMCPUpstream, c.TeamGroupMember, c.TeamGroupModel, c.TeamHost,
+		c.TeamImage, c.TeamMember, c.TeamModel, c.TeamOIDCConfig, c.User,
+		c.UserIdentity, c.VirtualMachine,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -563,6 +578,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AgentSyncJob.mutate(ctx, m)
 	case *AuditMutation:
 		return c.Audit.mutate(ctx, m)
+	case *GenerationImageMutation:
+		return c.GenerationImage.mutate(ctx, m)
+	case *GenerationTaskMutation:
+		return c.GenerationTask.mutate(ctx, m)
 	case *GitBotMutation:
 		return c.GitBot.mutate(ctx, m)
 	case *GitBotTaskMutation:
@@ -2322,6 +2341,272 @@ func (c *AuditClient) mutate(ctx context.Context, m *AuditMutation) (Value, erro
 		return (&AuditDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("db: unknown Audit mutation op: %q", m.Op())
+	}
+}
+
+// GenerationImageClient is a client for the GenerationImage schema.
+type GenerationImageClient struct {
+	config
+}
+
+// NewGenerationImageClient returns a client for the GenerationImage from the given config.
+func NewGenerationImageClient(c config) *GenerationImageClient {
+	return &GenerationImageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `generationimage.Hooks(f(g(h())))`.
+func (c *GenerationImageClient) Use(hooks ...Hook) {
+	c.hooks.GenerationImage = append(c.hooks.GenerationImage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `generationimage.Intercept(f(g(h())))`.
+func (c *GenerationImageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GenerationImage = append(c.inters.GenerationImage, interceptors...)
+}
+
+// Create returns a builder for creating a GenerationImage entity.
+func (c *GenerationImageClient) Create() *GenerationImageCreate {
+	mutation := newGenerationImageMutation(c.config, OpCreate)
+	return &GenerationImageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GenerationImage entities.
+func (c *GenerationImageClient) CreateBulk(builders ...*GenerationImageCreate) *GenerationImageCreateBulk {
+	return &GenerationImageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GenerationImageClient) MapCreateBulk(slice any, setFunc func(*GenerationImageCreate, int)) *GenerationImageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GenerationImageCreateBulk{err: fmt.Errorf("calling to GenerationImageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GenerationImageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GenerationImageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GenerationImage.
+func (c *GenerationImageClient) Update() *GenerationImageUpdate {
+	mutation := newGenerationImageMutation(c.config, OpUpdate)
+	return &GenerationImageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GenerationImageClient) UpdateOne(_m *GenerationImage) *GenerationImageUpdateOne {
+	mutation := newGenerationImageMutation(c.config, OpUpdateOne, withGenerationImage(_m))
+	return &GenerationImageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GenerationImageClient) UpdateOneID(id string) *GenerationImageUpdateOne {
+	mutation := newGenerationImageMutation(c.config, OpUpdateOne, withGenerationImageID(id))
+	return &GenerationImageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GenerationImage.
+func (c *GenerationImageClient) Delete() *GenerationImageDelete {
+	mutation := newGenerationImageMutation(c.config, OpDelete)
+	return &GenerationImageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GenerationImageClient) DeleteOne(_m *GenerationImage) *GenerationImageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GenerationImageClient) DeleteOneID(id string) *GenerationImageDeleteOne {
+	builder := c.Delete().Where(generationimage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GenerationImageDeleteOne{builder}
+}
+
+// Query returns a query builder for GenerationImage.
+func (c *GenerationImageClient) Query() *GenerationImageQuery {
+	return &GenerationImageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGenerationImage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GenerationImage entity by its id.
+func (c *GenerationImageClient) Get(ctx context.Context, id string) (*GenerationImage, error) {
+	return c.Query().Where(generationimage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GenerationImageClient) GetX(ctx context.Context, id string) *GenerationImage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *GenerationImageClient) Hooks() []Hook {
+	return c.hooks.GenerationImage
+}
+
+// Interceptors returns the client interceptors.
+func (c *GenerationImageClient) Interceptors() []Interceptor {
+	return c.inters.GenerationImage
+}
+
+func (c *GenerationImageClient) mutate(ctx context.Context, m *GenerationImageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GenerationImageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GenerationImageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GenerationImageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GenerationImageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown GenerationImage mutation op: %q", m.Op())
+	}
+}
+
+// GenerationTaskClient is a client for the GenerationTask schema.
+type GenerationTaskClient struct {
+	config
+}
+
+// NewGenerationTaskClient returns a client for the GenerationTask from the given config.
+func NewGenerationTaskClient(c config) *GenerationTaskClient {
+	return &GenerationTaskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `generationtask.Hooks(f(g(h())))`.
+func (c *GenerationTaskClient) Use(hooks ...Hook) {
+	c.hooks.GenerationTask = append(c.hooks.GenerationTask, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `generationtask.Intercept(f(g(h())))`.
+func (c *GenerationTaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GenerationTask = append(c.inters.GenerationTask, interceptors...)
+}
+
+// Create returns a builder for creating a GenerationTask entity.
+func (c *GenerationTaskClient) Create() *GenerationTaskCreate {
+	mutation := newGenerationTaskMutation(c.config, OpCreate)
+	return &GenerationTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GenerationTask entities.
+func (c *GenerationTaskClient) CreateBulk(builders ...*GenerationTaskCreate) *GenerationTaskCreateBulk {
+	return &GenerationTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GenerationTaskClient) MapCreateBulk(slice any, setFunc func(*GenerationTaskCreate, int)) *GenerationTaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GenerationTaskCreateBulk{err: fmt.Errorf("calling to GenerationTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GenerationTaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GenerationTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GenerationTask.
+func (c *GenerationTaskClient) Update() *GenerationTaskUpdate {
+	mutation := newGenerationTaskMutation(c.config, OpUpdate)
+	return &GenerationTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GenerationTaskClient) UpdateOne(_m *GenerationTask) *GenerationTaskUpdateOne {
+	mutation := newGenerationTaskMutation(c.config, OpUpdateOne, withGenerationTask(_m))
+	return &GenerationTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GenerationTaskClient) UpdateOneID(id uuid.UUID) *GenerationTaskUpdateOne {
+	mutation := newGenerationTaskMutation(c.config, OpUpdateOne, withGenerationTaskID(id))
+	return &GenerationTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GenerationTask.
+func (c *GenerationTaskClient) Delete() *GenerationTaskDelete {
+	mutation := newGenerationTaskMutation(c.config, OpDelete)
+	return &GenerationTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GenerationTaskClient) DeleteOne(_m *GenerationTask) *GenerationTaskDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GenerationTaskClient) DeleteOneID(id uuid.UUID) *GenerationTaskDeleteOne {
+	builder := c.Delete().Where(generationtask.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GenerationTaskDeleteOne{builder}
+}
+
+// Query returns a query builder for GenerationTask.
+func (c *GenerationTaskClient) Query() *GenerationTaskQuery {
+	return &GenerationTaskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGenerationTask},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GenerationTask entity by its id.
+func (c *GenerationTaskClient) Get(ctx context.Context, id uuid.UUID) (*GenerationTask, error) {
+	return c.Query().Where(generationtask.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GenerationTaskClient) GetX(ctx context.Context, id uuid.UUID) *GenerationTask {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *GenerationTaskClient) Hooks() []Hook {
+	return c.hooks.GenerationTask
+}
+
+// Interceptors returns the client interceptors.
+func (c *GenerationTaskClient) Interceptors() []Interceptor {
+	return c.inters.GenerationTask
+}
+
+func (c *GenerationTaskClient) mutate(ctx context.Context, m *GenerationTaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GenerationTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GenerationTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GenerationTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GenerationTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown GenerationTask mutation op: %q", m.Op())
 	}
 }
 
@@ -10665,11 +10950,12 @@ type (
 	hooks struct {
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
 		AgentSkill, AgentSkillGroupBinding, AgentSkillRepo, AgentSkillVersion,
-		AgentSyncJob, Audit, GitBot, GitBotTask, GitBotUser, GitIdentity, GitTask,
-		Host, Image, MCPTool, MCPToolCall, MCPUpstream, MCPUserToolSetting, Model,
-		ModelApiKey, ModelPricing, NotifyChannel, NotifySendLog, NotifySubscription,
-		Project, ProjectCollaborator, ProjectGitBot, ProjectIssue, ProjectIssueComment,
-		ProjectTask, Task, TaskModelSwitch, TaskUsageStat, TaskVirtualMachine, Team,
+		AgentSyncJob, Audit, GenerationImage, GenerationTask, GitBot, GitBotTask,
+		GitBotUser, GitIdentity, GitTask, Host, Image, MCPTool, MCPToolCall,
+		MCPUpstream, MCPUserToolSetting, Model, ModelApiKey, ModelPricing,
+		NotifyChannel, NotifySendLog, NotifySubscription, Project, ProjectCollaborator,
+		ProjectGitBot, ProjectIssue, ProjectIssueComment, ProjectTask, Task,
+		TaskModelSwitch, TaskUsageStat, TaskVirtualMachine, Team,
 		TeamExtensionImageArchive, TeamGroup, TeamGroupHost, TeamGroupImage,
 		TeamGroupMCPUpstream, TeamGroupMember, TeamGroupModel, TeamHost, TeamImage,
 		TeamMember, TeamModel, TeamOIDCConfig, User, UserIdentity,
@@ -10678,11 +10964,12 @@ type (
 	inters struct {
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
 		AgentSkill, AgentSkillGroupBinding, AgentSkillRepo, AgentSkillVersion,
-		AgentSyncJob, Audit, GitBot, GitBotTask, GitBotUser, GitIdentity, GitTask,
-		Host, Image, MCPTool, MCPToolCall, MCPUpstream, MCPUserToolSetting, Model,
-		ModelApiKey, ModelPricing, NotifyChannel, NotifySendLog, NotifySubscription,
-		Project, ProjectCollaborator, ProjectGitBot, ProjectIssue, ProjectIssueComment,
-		ProjectTask, Task, TaskModelSwitch, TaskUsageStat, TaskVirtualMachine, Team,
+		AgentSyncJob, Audit, GenerationImage, GenerationTask, GitBot, GitBotTask,
+		GitBotUser, GitIdentity, GitTask, Host, Image, MCPTool, MCPToolCall,
+		MCPUpstream, MCPUserToolSetting, Model, ModelApiKey, ModelPricing,
+		NotifyChannel, NotifySendLog, NotifySubscription, Project, ProjectCollaborator,
+		ProjectGitBot, ProjectIssue, ProjectIssueComment, ProjectTask, Task,
+		TaskModelSwitch, TaskUsageStat, TaskVirtualMachine, Team,
 		TeamExtensionImageArchive, TeamGroup, TeamGroupHost, TeamGroupImage,
 		TeamGroupMCPUpstream, TeamGroupMember, TeamGroupModel, TeamHost, TeamImage,
 		TeamMember, TeamModel, TeamOIDCConfig, User, UserIdentity,

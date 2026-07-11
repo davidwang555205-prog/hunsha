@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/enttest"
+	"bridal/backend/db"
+	"bridal/backend/db/enttest"
 )
 
 func newRuleImportTestClient(t *testing.T) *db.Client {

@@ -3,6 +3,18 @@
 package db
 
 import (
+	"bridal/backend/db/model"
+	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelpricing"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupmodel"
+	"bridal/backend/db/teammodel"
+	"bridal/backend/db/user"
+	"bridal/backend/db/virtualmachine"
 	"context"
 	"errors"
 	"fmt"
@@ -11,18 +23,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/modelapikey"
-	"github.com/chaitin/MonkeyCode/backend/db/modelpricing"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teammodel"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
 	"github.com/google/uuid"
 )
 

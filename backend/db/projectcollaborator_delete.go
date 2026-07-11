@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/projectcollaborator"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/projectcollaborator"
 )
 
 // ProjectCollaboratorDelete is the builder for deleting a ProjectCollaborator entity.

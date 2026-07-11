@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/dispatcher"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/notify/dispatcher"
 )
 
 // TaskNotifyHook 任务状态变更时发送通知

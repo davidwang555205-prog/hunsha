@@ -3,10 +3,9 @@
 package hook
 
 import (
+	"bridal/backend/db"
 	"context"
 	"fmt"
-
-	"github.com/chaitin/MonkeyCode/backend/db"
 )
 
 // The AgentPluginFunc type is an adapter to allow the use of ordinary
@@ -139,6 +138,30 @@ func (f AuditFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) 
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.AuditMutation", m)
+}
+
+// The GenerationImageFunc type is an adapter to allow the use of ordinary
+// function as GenerationImage mutator.
+type GenerationImageFunc func(context.Context, *db.GenerationImageMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GenerationImageFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.GenerationImageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.GenerationImageMutation", m)
+}
+
+// The GenerationTaskFunc type is an adapter to allow the use of ordinary
+// function as GenerationTask mutator.
+type GenerationTaskFunc func(context.Context, *db.GenerationTaskMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GenerationTaskFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.GenerationTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.GenerationTaskMutation", m)
 }
 
 // The GitBotFunc type is an adapter to allow the use of ordinary

@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/errcode"
 )
 
 type extensionPackageManifest struct {

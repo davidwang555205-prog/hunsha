@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/ent/types"
+	"bridal/backend/ent/types"
 )
 
 // AgentSkill holds the schema definition for the agent_skills entity.

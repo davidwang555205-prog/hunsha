@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/pkg/entx"
+	"bridal/backend/consts"
+	"bridal/backend/pkg/entx"
 )
 
 // NotifyChannel holds the schema definition for a push notification channel.

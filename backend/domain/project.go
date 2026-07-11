@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/pkg/cvt"
 )
 
 // ProjectUsecase 项目业务逻辑接口

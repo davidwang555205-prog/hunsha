@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/db"
+	"bridal/backend/config"
+	"bridal/backend/db"
 )
 
 func TestResolveTeamTaskVMIdlePolicyInheritsGlobalDefaults(t *testing.T) {

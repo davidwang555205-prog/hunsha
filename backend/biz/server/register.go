@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/samber/do"
 
-	v1 "github.com/chaitin/MonkeyCode/backend/biz/server/handler/v1"
+	v1 "bridal/backend/biz/server/handler/v1"
 )
 
 func ProvideServer(i *do.Injector) {

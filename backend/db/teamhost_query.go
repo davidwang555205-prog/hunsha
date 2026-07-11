@@ -3,6 +3,10 @@
 package db
 
 import (
+	"bridal/backend/db/host"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamhost"
 	"context"
 	"fmt"
 	"math"
@@ -12,10 +16,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamhost"
 	"github.com/google/uuid"
 )
 

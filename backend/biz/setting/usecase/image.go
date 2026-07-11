@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
+	"bridal/backend/db"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/cvt"
 )
 
 type imageUsecase struct {

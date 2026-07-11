@@ -7,11 +7,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysendlog"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/notifysendlog"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
 )
 
 type NotifySendLogRepoImpl struct {

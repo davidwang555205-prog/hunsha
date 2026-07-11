@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/notify/channel"
+	"bridal/backend/consts"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/notify/channel"
 )
 
 type VMExpiringSoonRenderer struct{}

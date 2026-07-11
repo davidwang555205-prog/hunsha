@@ -6,63 +6,66 @@ import (
 	"context"
 	"fmt"
 
+	"bridal/backend/db"
+	"bridal/backend/db/agentplugin"
+	"bridal/backend/db/agentpluginrepo"
+	"bridal/backend/db/agentpluginversion"
+	"bridal/backend/db/agentrule"
+	"bridal/backend/db/agentruleversion"
+	"bridal/backend/db/agentskill"
+	"bridal/backend/db/agentskillgroupbinding"
+	"bridal/backend/db/agentskillrepo"
+	"bridal/backend/db/agentskillversion"
+	"bridal/backend/db/agentsyncjob"
+	"bridal/backend/db/audit"
+	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationtask"
+	"bridal/backend/db/gitbot"
+	"bridal/backend/db/gitbottask"
+	"bridal/backend/db/gitbotuser"
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/gittask"
+	"bridal/backend/db/host"
+	"bridal/backend/db/image"
+	"bridal/backend/db/mcptool"
+	"bridal/backend/db/mcptoolcall"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/mcpusertoolsetting"
+	"bridal/backend/db/model"
+	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelpricing"
+	"bridal/backend/db/notifychannel"
+	"bridal/backend/db/notifysendlog"
+	"bridal/backend/db/notifysubscription"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectcollaborator"
+	"bridal/backend/db/projectgitbot"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projectissuecomment"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/taskusagestat"
+	"bridal/backend/db/taskvirtualmachine"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamextensionimagearchive"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgrouphost"
+	"bridal/backend/db/teamgroupimage"
+	"bridal/backend/db/teamgroupmcpupstream"
+	"bridal/backend/db/teamgroupmember"
+	"bridal/backend/db/teamgroupmodel"
+	"bridal/backend/db/teamhost"
+	"bridal/backend/db/teamimage"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/teammodel"
+	"bridal/backend/db/teamoidcconfig"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/db/virtualmachine"
+
 	"entgo.io/ent/dialect/sql"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/agentplugin"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentpluginversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentrule"
-	"github.com/chaitin/MonkeyCode/backend/db/agentruleversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskill"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillgroupbinding"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillrepo"
-	"github.com/chaitin/MonkeyCode/backend/db/agentskillversion"
-	"github.com/chaitin/MonkeyCode/backend/db/agentsyncjob"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbottask"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbotuser"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/gittask"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptool"
-	"github.com/chaitin/MonkeyCode/backend/db/mcptoolcall"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpusertoolsetting"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/modelapikey"
-	"github.com/chaitin/MonkeyCode/backend/db/modelpricing"
-	"github.com/chaitin/MonkeyCode/backend/db/notifychannel"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysendlog"
-	"github.com/chaitin/MonkeyCode/backend/db/notifysubscription"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectcollaborator"
-	"github.com/chaitin/MonkeyCode/backend/db/projectgitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissuecomment"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/taskusagestat"
-	"github.com/chaitin/MonkeyCode/backend/db/taskvirtualmachine"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamextensionimagearchive"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgrouphost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmember"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teamhost"
-	"github.com/chaitin/MonkeyCode/backend/db/teamimage"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/teammodel"
-	"github.com/chaitin/MonkeyCode/backend/db/teamoidcconfig"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
 )
 
 // The Query interface represents an operation that queries a graph.
@@ -416,6 +419,60 @@ func (f TraverseAudit) Traverse(ctx context.Context, q db.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *db.AuditQuery", q)
+}
+
+// The GenerationImageFunc type is an adapter to allow the use of ordinary function as a Querier.
+type GenerationImageFunc func(context.Context, *db.GenerationImageQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f GenerationImageFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.GenerationImageQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.GenerationImageQuery", q)
+}
+
+// The TraverseGenerationImage type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseGenerationImage func(context.Context, *db.GenerationImageQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseGenerationImage) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseGenerationImage) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.GenerationImageQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.GenerationImageQuery", q)
+}
+
+// The GenerationTaskFunc type is an adapter to allow the use of ordinary function as a Querier.
+type GenerationTaskFunc func(context.Context, *db.GenerationTaskQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f GenerationTaskFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.GenerationTaskQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.GenerationTaskQuery", q)
+}
+
+// The TraverseGenerationTask type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseGenerationTask func(context.Context, *db.GenerationTaskQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseGenerationTask) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseGenerationTask) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.GenerationTaskQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.GenerationTaskQuery", q)
 }
 
 // The GitBotFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1604,6 +1661,10 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.AgentSyncJobQuery, predicate.AgentSyncJob, agentsyncjob.OrderOption]{typ: db.TypeAgentSyncJob, tq: q}, nil
 	case *db.AuditQuery:
 		return &query[*db.AuditQuery, predicate.Audit, audit.OrderOption]{typ: db.TypeAudit, tq: q}, nil
+	case *db.GenerationImageQuery:
+		return &query[*db.GenerationImageQuery, predicate.GenerationImage, generationimage.OrderOption]{typ: db.TypeGenerationImage, tq: q}, nil
+	case *db.GenerationTaskQuery:
+		return &query[*db.GenerationTaskQuery, predicate.GenerationTask, generationtask.OrderOption]{typ: db.TypeGenerationTask, tq: q}, nil
 	case *db.GitBotQuery:
 		return &query[*db.GitBotQuery, predicate.GitBot, gitbot.OrderOption]{typ: db.TypeGitBot, tq: q}, nil
 	case *db.GitBotTaskQuery:

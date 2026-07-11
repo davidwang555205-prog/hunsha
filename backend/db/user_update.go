@@ -3,6 +3,29 @@
 package db
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/audit"
+	"bridal/backend/db/gitbot"
+	"bridal/backend/db/gitbotuser"
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/host"
+	"bridal/backend/db/image"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/model"
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectcollaborator"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projectissuecomment"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupmember"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/db/virtualmachine"
 	"context"
 	"errors"
 	"fmt"
@@ -11,29 +34,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbotuser"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectcollaborator"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissuecomment"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmember"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
 	"github.com/google/uuid"
 )
 
@@ -196,6 +196,107 @@ func (_u *UserUpdate) SetDefaultConfigs(v map[consts.DefaultConfigType]uuid.UUID
 // ClearDefaultConfigs clears the value of the "default_configs" field.
 func (_u *UserUpdate) ClearDefaultConfigs() *UserUpdate {
 	_u.mutation.ClearDefaultConfigs()
+	return _u
+}
+
+// SetUsername sets the "username" field.
+func (_u *UserUpdate) SetUsername(v string) *UserUpdate {
+	_u.mutation.SetUsername(v)
+	return _u
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableUsername(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetUsername(*v)
+	}
+	return _u
+}
+
+// ClearUsername clears the value of the "username" field.
+func (_u *UserUpdate) ClearUsername() *UserUpdate {
+	_u.mutation.ClearUsername()
+	return _u
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_u *UserUpdate) SetDisplayName(v string) *UserUpdate {
+	_u.mutation.SetDisplayName(v)
+	return _u
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableDisplayName(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetDisplayName(*v)
+	}
+	return _u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (_u *UserUpdate) ClearDisplayName() *UserUpdate {
+	_u.mutation.ClearDisplayName()
+	return _u
+}
+
+// SetDailyImageLimit sets the "daily_image_limit" field.
+func (_u *UserUpdate) SetDailyImageLimit(v int) *UserUpdate {
+	_u.mutation.ResetDailyImageLimit()
+	_u.mutation.SetDailyImageLimit(v)
+	return _u
+}
+
+// SetNillableDailyImageLimit sets the "daily_image_limit" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableDailyImageLimit(v *int) *UserUpdate {
+	if v != nil {
+		_u.SetDailyImageLimit(*v)
+	}
+	return _u
+}
+
+// AddDailyImageLimit adds value to the "daily_image_limit" field.
+func (_u *UserUpdate) AddDailyImageLimit(v int) *UserUpdate {
+	_u.mutation.AddDailyImageLimit(v)
+	return _u
+}
+
+// SetPasswordSalt sets the "password_salt" field.
+func (_u *UserUpdate) SetPasswordSalt(v string) *UserUpdate {
+	_u.mutation.SetPasswordSalt(v)
+	return _u
+}
+
+// SetNillablePasswordSalt sets the "password_salt" field if the given value is not nil.
+func (_u *UserUpdate) SetNillablePasswordSalt(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetPasswordSalt(*v)
+	}
+	return _u
+}
+
+// ClearPasswordSalt clears the value of the "password_salt" field.
+func (_u *UserUpdate) ClearPasswordSalt() *UserUpdate {
+	_u.mutation.ClearPasswordSalt()
+	return _u
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (_u *UserUpdate) SetPasswordHash(v string) *UserUpdate {
+	_u.mutation.SetPasswordHash(v)
+	return _u
+}
+
+// SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
+func (_u *UserUpdate) SetNillablePasswordHash(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetPasswordHash(*v)
+	}
+	return _u
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (_u *UserUpdate) ClearPasswordHash() *UserUpdate {
+	_u.mutation.ClearPasswordHash()
 	return _u
 }
 
@@ -1029,6 +1130,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`db: validator failed for field "User.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DailyImageLimit(); ok {
+		if err := user.DailyImageLimitValidator(v); err != nil {
+			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1091,6 +1197,36 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DefaultConfigsCleared() {
 		_spec.ClearField(user.FieldDefaultConfigs, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
+	}
+	if _u.mutation.UsernameCleared() {
+		_spec.ClearField(user.FieldUsername, field.TypeString)
+	}
+	if value, ok := _u.mutation.DisplayName(); ok {
+		_spec.SetField(user.FieldDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.DisplayNameCleared() {
+		_spec.ClearField(user.FieldDisplayName, field.TypeString)
+	}
+	if value, ok := _u.mutation.DailyImageLimit(); ok {
+		_spec.SetField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyImageLimit(); ok {
+		_spec.AddField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PasswordSalt(); ok {
+		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
+	}
+	if _u.mutation.PasswordSaltCleared() {
+		_spec.ClearField(user.FieldPasswordSalt, field.TypeString)
+	}
+	if value, ok := _u.mutation.PasswordHash(); ok {
+		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
+	}
+	if _u.mutation.PasswordHashCleared() {
+		_spec.ClearField(user.FieldPasswordHash, field.TypeString)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
@@ -2258,6 +2394,107 @@ func (_u *UserUpdateOne) ClearDefaultConfigs() *UserUpdateOne {
 	return _u
 }
 
+// SetUsername sets the "username" field.
+func (_u *UserUpdateOne) SetUsername(v string) *UserUpdateOne {
+	_u.mutation.SetUsername(v)
+	return _u
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableUsername(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetUsername(*v)
+	}
+	return _u
+}
+
+// ClearUsername clears the value of the "username" field.
+func (_u *UserUpdateOne) ClearUsername() *UserUpdateOne {
+	_u.mutation.ClearUsername()
+	return _u
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_u *UserUpdateOne) SetDisplayName(v string) *UserUpdateOne {
+	_u.mutation.SetDisplayName(v)
+	return _u
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableDisplayName(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetDisplayName(*v)
+	}
+	return _u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (_u *UserUpdateOne) ClearDisplayName() *UserUpdateOne {
+	_u.mutation.ClearDisplayName()
+	return _u
+}
+
+// SetDailyImageLimit sets the "daily_image_limit" field.
+func (_u *UserUpdateOne) SetDailyImageLimit(v int) *UserUpdateOne {
+	_u.mutation.ResetDailyImageLimit()
+	_u.mutation.SetDailyImageLimit(v)
+	return _u
+}
+
+// SetNillableDailyImageLimit sets the "daily_image_limit" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableDailyImageLimit(v *int) *UserUpdateOne {
+	if v != nil {
+		_u.SetDailyImageLimit(*v)
+	}
+	return _u
+}
+
+// AddDailyImageLimit adds value to the "daily_image_limit" field.
+func (_u *UserUpdateOne) AddDailyImageLimit(v int) *UserUpdateOne {
+	_u.mutation.AddDailyImageLimit(v)
+	return _u
+}
+
+// SetPasswordSalt sets the "password_salt" field.
+func (_u *UserUpdateOne) SetPasswordSalt(v string) *UserUpdateOne {
+	_u.mutation.SetPasswordSalt(v)
+	return _u
+}
+
+// SetNillablePasswordSalt sets the "password_salt" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillablePasswordSalt(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetPasswordSalt(*v)
+	}
+	return _u
+}
+
+// ClearPasswordSalt clears the value of the "password_salt" field.
+func (_u *UserUpdateOne) ClearPasswordSalt() *UserUpdateOne {
+	_u.mutation.ClearPasswordSalt()
+	return _u
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (_u *UserUpdateOne) SetPasswordHash(v string) *UserUpdateOne {
+	_u.mutation.SetPasswordHash(v)
+	return _u
+}
+
+// SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillablePasswordHash(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetPasswordHash(*v)
+	}
+	return _u
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (_u *UserUpdateOne) ClearPasswordHash() *UserUpdateOne {
+	_u.mutation.ClearPasswordHash()
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *UserUpdateOne) SetCreatedAt(v time.Time) *UserUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -3101,6 +3338,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`db: validator failed for field "User.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DailyImageLimit(); ok {
+		if err := user.DailyImageLimitValidator(v); err != nil {
+			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -3180,6 +3422,36 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.DefaultConfigsCleared() {
 		_spec.ClearField(user.FieldDefaultConfigs, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
+	}
+	if _u.mutation.UsernameCleared() {
+		_spec.ClearField(user.FieldUsername, field.TypeString)
+	}
+	if value, ok := _u.mutation.DisplayName(); ok {
+		_spec.SetField(user.FieldDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.DisplayNameCleared() {
+		_spec.ClearField(user.FieldDisplayName, field.TypeString)
+	}
+	if value, ok := _u.mutation.DailyImageLimit(); ok {
+		_spec.SetField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyImageLimit(); ok {
+		_spec.AddField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PasswordSalt(); ok {
+		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
+	}
+	if _u.mutation.PasswordSaltCleared() {
+		_spec.ClearField(user.FieldPasswordSalt, field.TypeString)
+	}
+	if value, ok := _u.mutation.PasswordHash(); ok {
+		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
+	}
+	if _u.mutation.PasswordHashCleared() {
+		_spec.ClearField(user.FieldPasswordHash, field.TypeString)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)

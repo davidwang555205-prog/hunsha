@@ -13,17 +13,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projecttask"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmember"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/clickhouse"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projecttask"
+	"bridal/backend/db/task"
+	"bridal/backend/db/teamgroupmember"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/user"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/clickhouse"
 )
 
 type dashboardUsageReader interface {

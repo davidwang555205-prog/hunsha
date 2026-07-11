@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 
-	gen "github.com/chaitin/MonkeyCode/backend/db"
-	"github.com/chaitin/MonkeyCode/backend/db/hook"
-	"github.com/chaitin/MonkeyCode/backend/db/intercept"
+	gen "bridal/backend/db"
+	"bridal/backend/db/hook"
+	"bridal/backend/db/intercept"
 )
 
 // SoftDeleteMixin implements the soft delete pattern for schemas.

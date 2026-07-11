@@ -7,9 +7,9 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/errcode"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/domain"
+	"bridal/backend/errcode"
+	"bridal/backend/middleware"
 )
 
 // ModelHandler 模型配置处理器

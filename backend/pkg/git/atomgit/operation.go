@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/pkg/request"
+	"bridal/backend/domain"
+	"bridal/backend/pkg/request"
 )
 
 // Tree 实现 GitClienter 接口。

@@ -7,12 +7,12 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db"
-	etypes "github.com/chaitin/MonkeyCode/backend/ent/types"
-	"github.com/chaitin/MonkeyCode/backend/pkg/cvt"
-	"github.com/chaitin/MonkeyCode/backend/pkg/taskflow"
-	"github.com/chaitin/MonkeyCode/backend/pkg/vmstatus"
+	"bridal/backend/consts"
+	"bridal/backend/db"
+	etypes "bridal/backend/ent/types"
+	"bridal/backend/pkg/cvt"
+	"bridal/backend/pkg/taskflow"
+	"bridal/backend/pkg/vmstatus"
 )
 
 // HostUsecase 主机业务逻辑接口

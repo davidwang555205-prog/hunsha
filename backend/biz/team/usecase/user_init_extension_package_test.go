@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/domain"
+	"bridal/backend/config"
+	"bridal/backend/domain"
 )
 
 func TestImportInitTeamExtensionPackagesSortsZipFiles(t *testing.T) {

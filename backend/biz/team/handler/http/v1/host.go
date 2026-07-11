@@ -4,8 +4,8 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
 )
 
 // TeamHostHandler 团队宿主机处理器

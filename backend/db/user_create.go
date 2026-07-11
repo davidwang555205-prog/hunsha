@@ -3,6 +3,28 @@
 package db
 
 import (
+	"bridal/backend/consts"
+	"bridal/backend/db/audit"
+	"bridal/backend/db/gitbot"
+	"bridal/backend/db/gitbotuser"
+	"bridal/backend/db/gitidentity"
+	"bridal/backend/db/host"
+	"bridal/backend/db/image"
+	"bridal/backend/db/mcpupstream"
+	"bridal/backend/db/model"
+	"bridal/backend/db/project"
+	"bridal/backend/db/projectcollaborator"
+	"bridal/backend/db/projectissue"
+	"bridal/backend/db/projectissuecomment"
+	"bridal/backend/db/task"
+	"bridal/backend/db/taskmodelswitch"
+	"bridal/backend/db/team"
+	"bridal/backend/db/teamgroup"
+	"bridal/backend/db/teamgroupmember"
+	"bridal/backend/db/teammember"
+	"bridal/backend/db/user"
+	"bridal/backend/db/useridentity"
+	"bridal/backend/db/virtualmachine"
 	"context"
 	"errors"
 	"fmt"
@@ -12,28 +34,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/consts"
-	"github.com/chaitin/MonkeyCode/backend/db/audit"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbot"
-	"github.com/chaitin/MonkeyCode/backend/db/gitbotuser"
-	"github.com/chaitin/MonkeyCode/backend/db/gitidentity"
-	"github.com/chaitin/MonkeyCode/backend/db/host"
-	"github.com/chaitin/MonkeyCode/backend/db/image"
-	"github.com/chaitin/MonkeyCode/backend/db/mcpupstream"
-	"github.com/chaitin/MonkeyCode/backend/db/model"
-	"github.com/chaitin/MonkeyCode/backend/db/project"
-	"github.com/chaitin/MonkeyCode/backend/db/projectcollaborator"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissue"
-	"github.com/chaitin/MonkeyCode/backend/db/projectissuecomment"
-	"github.com/chaitin/MonkeyCode/backend/db/task"
-	"github.com/chaitin/MonkeyCode/backend/db/taskmodelswitch"
-	"github.com/chaitin/MonkeyCode/backend/db/team"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroup"
-	"github.com/chaitin/MonkeyCode/backend/db/teamgroupmember"
-	"github.com/chaitin/MonkeyCode/backend/db/teammember"
-	"github.com/chaitin/MonkeyCode/backend/db/user"
-	"github.com/chaitin/MonkeyCode/backend/db/useridentity"
-	"github.com/chaitin/MonkeyCode/backend/db/virtualmachine"
 	"github.com/google/uuid"
 )
 
@@ -136,6 +136,76 @@ func (_c *UserCreate) SetNillableIsBlocked(v *bool) *UserCreate {
 // SetDefaultConfigs sets the "default_configs" field.
 func (_c *UserCreate) SetDefaultConfigs(v map[consts.DefaultConfigType]uuid.UUID) *UserCreate {
 	_c.mutation.SetDefaultConfigs(v)
+	return _c
+}
+
+// SetUsername sets the "username" field.
+func (_c *UserCreate) SetUsername(v string) *UserCreate {
+	_c.mutation.SetUsername(v)
+	return _c
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (_c *UserCreate) SetNillableUsername(v *string) *UserCreate {
+	if v != nil {
+		_c.SetUsername(*v)
+	}
+	return _c
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_c *UserCreate) SetDisplayName(v string) *UserCreate {
+	_c.mutation.SetDisplayName(v)
+	return _c
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_c *UserCreate) SetNillableDisplayName(v *string) *UserCreate {
+	if v != nil {
+		_c.SetDisplayName(*v)
+	}
+	return _c
+}
+
+// SetDailyImageLimit sets the "daily_image_limit" field.
+func (_c *UserCreate) SetDailyImageLimit(v int) *UserCreate {
+	_c.mutation.SetDailyImageLimit(v)
+	return _c
+}
+
+// SetNillableDailyImageLimit sets the "daily_image_limit" field if the given value is not nil.
+func (_c *UserCreate) SetNillableDailyImageLimit(v *int) *UserCreate {
+	if v != nil {
+		_c.SetDailyImageLimit(*v)
+	}
+	return _c
+}
+
+// SetPasswordSalt sets the "password_salt" field.
+func (_c *UserCreate) SetPasswordSalt(v string) *UserCreate {
+	_c.mutation.SetPasswordSalt(v)
+	return _c
+}
+
+// SetNillablePasswordSalt sets the "password_salt" field if the given value is not nil.
+func (_c *UserCreate) SetNillablePasswordSalt(v *string) *UserCreate {
+	if v != nil {
+		_c.SetPasswordSalt(*v)
+	}
+	return _c
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (_c *UserCreate) SetPasswordHash(v string) *UserCreate {
+	_c.mutation.SetPasswordHash(v)
+	return _c
+}
+
+// SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
+func (_c *UserCreate) SetNillablePasswordHash(v *string) *UserCreate {
+	if v != nil {
+		_c.SetPasswordHash(*v)
+	}
 	return _c
 }
 
@@ -529,6 +599,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultIsBlocked
 		_c.mutation.SetIsBlocked(v)
 	}
+	if _, ok := _c.mutation.DailyImageLimit(); !ok {
+		v := user.DefaultDailyImageLimit
+		_c.mutation.SetDailyImageLimit(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		if user.DefaultCreatedAt == nil {
 			return fmt.Errorf("db: uninitialized user.DefaultCreatedAt (forgotten import db/runtime?)")
@@ -564,6 +638,14 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsBlocked(); !ok {
 		return &ValidationError{Name: "is_blocked", err: errors.New(`db: missing required field "User.is_blocked"`)}
+	}
+	if _, ok := _c.mutation.DailyImageLimit(); !ok {
+		return &ValidationError{Name: "daily_image_limit", err: errors.New(`db: missing required field "User.daily_image_limit"`)}
+	}
+	if v, ok := _c.mutation.DailyImageLimit(); ok {
+		if err := user.DailyImageLimitValidator(v); err != nil {
+			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "User.created_at"`)}
@@ -642,6 +724,26 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DefaultConfigs(); ok {
 		_spec.SetField(user.FieldDefaultConfigs, field.TypeJSON, value)
 		_node.DefaultConfigs = value
+	}
+	if value, ok := _c.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
+		_node.Username = value
+	}
+	if value, ok := _c.mutation.DisplayName(); ok {
+		_spec.SetField(user.FieldDisplayName, field.TypeString, value)
+		_node.DisplayName = value
+	}
+	if value, ok := _c.mutation.DailyImageLimit(); ok {
+		_spec.SetField(user.FieldDailyImageLimit, field.TypeInt, value)
+		_node.DailyImageLimit = value
+	}
+	if value, ok := _c.mutation.PasswordSalt(); ok {
+		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
+		_node.PasswordSalt = value
+	}
+	if value, ok := _c.mutation.PasswordHash(); ok {
+		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
+		_node.PasswordHash = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
@@ -1192,6 +1294,96 @@ func (u *UserUpsert) ClearDefaultConfigs() *UserUpsert {
 	return u
 }
 
+// SetUsername sets the "username" field.
+func (u *UserUpsert) SetUsername(v string) *UserUpsert {
+	u.Set(user.FieldUsername, v)
+	return u
+}
+
+// UpdateUsername sets the "username" field to the value that was provided on create.
+func (u *UserUpsert) UpdateUsername() *UserUpsert {
+	u.SetExcluded(user.FieldUsername)
+	return u
+}
+
+// ClearUsername clears the value of the "username" field.
+func (u *UserUpsert) ClearUsername() *UserUpsert {
+	u.SetNull(user.FieldUsername)
+	return u
+}
+
+// SetDisplayName sets the "display_name" field.
+func (u *UserUpsert) SetDisplayName(v string) *UserUpsert {
+	u.Set(user.FieldDisplayName, v)
+	return u
+}
+
+// UpdateDisplayName sets the "display_name" field to the value that was provided on create.
+func (u *UserUpsert) UpdateDisplayName() *UserUpsert {
+	u.SetExcluded(user.FieldDisplayName)
+	return u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (u *UserUpsert) ClearDisplayName() *UserUpsert {
+	u.SetNull(user.FieldDisplayName)
+	return u
+}
+
+// SetDailyImageLimit sets the "daily_image_limit" field.
+func (u *UserUpsert) SetDailyImageLimit(v int) *UserUpsert {
+	u.Set(user.FieldDailyImageLimit, v)
+	return u
+}
+
+// UpdateDailyImageLimit sets the "daily_image_limit" field to the value that was provided on create.
+func (u *UserUpsert) UpdateDailyImageLimit() *UserUpsert {
+	u.SetExcluded(user.FieldDailyImageLimit)
+	return u
+}
+
+// AddDailyImageLimit adds v to the "daily_image_limit" field.
+func (u *UserUpsert) AddDailyImageLimit(v int) *UserUpsert {
+	u.Add(user.FieldDailyImageLimit, v)
+	return u
+}
+
+// SetPasswordSalt sets the "password_salt" field.
+func (u *UserUpsert) SetPasswordSalt(v string) *UserUpsert {
+	u.Set(user.FieldPasswordSalt, v)
+	return u
+}
+
+// UpdatePasswordSalt sets the "password_salt" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePasswordSalt() *UserUpsert {
+	u.SetExcluded(user.FieldPasswordSalt)
+	return u
+}
+
+// ClearPasswordSalt clears the value of the "password_salt" field.
+func (u *UserUpsert) ClearPasswordSalt() *UserUpsert {
+	u.SetNull(user.FieldPasswordSalt)
+	return u
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (u *UserUpsert) SetPasswordHash(v string) *UserUpsert {
+	u.Set(user.FieldPasswordHash, v)
+	return u
+}
+
+// UpdatePasswordHash sets the "password_hash" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePasswordHash() *UserUpsert {
+	u.SetExcluded(user.FieldPasswordHash)
+	return u
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (u *UserUpsert) ClearPasswordHash() *UserUpsert {
+	u.SetNull(user.FieldPasswordHash)
+	return u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (u *UserUpsert) SetCreatedAt(v time.Time) *UserUpsert {
 	u.Set(user.FieldCreatedAt, v)
@@ -1422,6 +1614,111 @@ func (u *UserUpsertOne) UpdateDefaultConfigs() *UserUpsertOne {
 func (u *UserUpsertOne) ClearDefaultConfigs() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearDefaultConfigs()
+	})
+}
+
+// SetUsername sets the "username" field.
+func (u *UserUpsertOne) SetUsername(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetUsername(v)
+	})
+}
+
+// UpdateUsername sets the "username" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateUsername() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateUsername()
+	})
+}
+
+// ClearUsername clears the value of the "username" field.
+func (u *UserUpsertOne) ClearUsername() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearUsername()
+	})
+}
+
+// SetDisplayName sets the "display_name" field.
+func (u *UserUpsertOne) SetDisplayName(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetDisplayName(v)
+	})
+}
+
+// UpdateDisplayName sets the "display_name" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateDisplayName() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateDisplayName()
+	})
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (u *UserUpsertOne) ClearDisplayName() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearDisplayName()
+	})
+}
+
+// SetDailyImageLimit sets the "daily_image_limit" field.
+func (u *UserUpsertOne) SetDailyImageLimit(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetDailyImageLimit(v)
+	})
+}
+
+// AddDailyImageLimit adds v to the "daily_image_limit" field.
+func (u *UserUpsertOne) AddDailyImageLimit(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddDailyImageLimit(v)
+	})
+}
+
+// UpdateDailyImageLimit sets the "daily_image_limit" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateDailyImageLimit() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateDailyImageLimit()
+	})
+}
+
+// SetPasswordSalt sets the "password_salt" field.
+func (u *UserUpsertOne) SetPasswordSalt(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordSalt(v)
+	})
+}
+
+// UpdatePasswordSalt sets the "password_salt" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePasswordSalt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordSalt()
+	})
+}
+
+// ClearPasswordSalt clears the value of the "password_salt" field.
+func (u *UserUpsertOne) ClearPasswordSalt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPasswordSalt()
+	})
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (u *UserUpsertOne) SetPasswordHash(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordHash(v)
+	})
+}
+
+// UpdatePasswordHash sets the "password_hash" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePasswordHash() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordHash()
+	})
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (u *UserUpsertOne) ClearPasswordHash() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPasswordHash()
 	})
 }
 
@@ -1826,6 +2123,111 @@ func (u *UserUpsertBulk) UpdateDefaultConfigs() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearDefaultConfigs() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearDefaultConfigs()
+	})
+}
+
+// SetUsername sets the "username" field.
+func (u *UserUpsertBulk) SetUsername(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetUsername(v)
+	})
+}
+
+// UpdateUsername sets the "username" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateUsername() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateUsername()
+	})
+}
+
+// ClearUsername clears the value of the "username" field.
+func (u *UserUpsertBulk) ClearUsername() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearUsername()
+	})
+}
+
+// SetDisplayName sets the "display_name" field.
+func (u *UserUpsertBulk) SetDisplayName(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetDisplayName(v)
+	})
+}
+
+// UpdateDisplayName sets the "display_name" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateDisplayName() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateDisplayName()
+	})
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (u *UserUpsertBulk) ClearDisplayName() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearDisplayName()
+	})
+}
+
+// SetDailyImageLimit sets the "daily_image_limit" field.
+func (u *UserUpsertBulk) SetDailyImageLimit(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetDailyImageLimit(v)
+	})
+}
+
+// AddDailyImageLimit adds v to the "daily_image_limit" field.
+func (u *UserUpsertBulk) AddDailyImageLimit(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddDailyImageLimit(v)
+	})
+}
+
+// UpdateDailyImageLimit sets the "daily_image_limit" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateDailyImageLimit() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateDailyImageLimit()
+	})
+}
+
+// SetPasswordSalt sets the "password_salt" field.
+func (u *UserUpsertBulk) SetPasswordSalt(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordSalt(v)
+	})
+}
+
+// UpdatePasswordSalt sets the "password_salt" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePasswordSalt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordSalt()
+	})
+}
+
+// ClearPasswordSalt clears the value of the "password_salt" field.
+func (u *UserUpsertBulk) ClearPasswordSalt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPasswordSalt()
+	})
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (u *UserUpsertBulk) SetPasswordHash(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPasswordHash(v)
+	})
+}
+
+// UpdatePasswordHash sets the "password_hash" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePasswordHash() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePasswordHash()
+	})
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (u *UserUpsertBulk) ClearPasswordHash() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPasswordHash()
 	})
 }
 

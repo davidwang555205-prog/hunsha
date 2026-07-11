@@ -165,6 +165,34 @@ func (_m *AuditQuery) Page(ctx context.Context, page, size int) ([]*Audit, *Page
 	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
 }
 
+func (_m *GenerationImageQuery) Page(ctx context.Context, page, size int) ([]*GenerationImage, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
+func (_m *GenerationTaskQuery) Page(ctx context.Context, page, size int) ([]*GenerationTask, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
 func (_m *GitBotQuery) Page(ctx context.Context, page, size int) ([]*GitBot, *PageInfo, error) {
 	cnt, err := _m.Count(ctx)
 	if err != nil {

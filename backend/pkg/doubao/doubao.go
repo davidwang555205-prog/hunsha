@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/chaitin/MonkeyCode/backend/config"
-	"github.com/chaitin/MonkeyCode/backend/pkg/asr"
+	"bridal/backend/config"
+	"bridal/backend/pkg/asr"
 )
 
 // defaultEndWindowSize 二遍识别 VAD 强制判停时间 (ms)。

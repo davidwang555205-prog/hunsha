@@ -3,13 +3,13 @@
 package db
 
 import (
+	"bridal/backend/db/predicate"
+	"bridal/backend/db/teamimage"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/chaitin/MonkeyCode/backend/db/predicate"
-	"github.com/chaitin/MonkeyCode/backend/db/teamimage"
 )
 
 // TeamImageDelete is the builder for deleting a TeamImage entity.

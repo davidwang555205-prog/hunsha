@@ -9,8 +9,8 @@ import (
 	"github.com/GoYoko/web"
 	"github.com/samber/do"
 
-	"github.com/chaitin/MonkeyCode/backend/domain"
-	"github.com/chaitin/MonkeyCode/backend/middleware"
+	"bridal/backend/domain"
+	"bridal/backend/middleware"
 )
 
 func TestNewTeamOIDCHandlerRegistersRoutes(t *testing.T) {
