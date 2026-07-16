@@ -181,6 +181,20 @@ func (_c *UserCreate) SetNillableDailyImageLimit(v *int) *UserCreate {
 	return _c
 }
 
+// SetCredits sets the "credits" field.
+func (_c *UserCreate) SetCredits(v int) *UserCreate {
+	_c.mutation.SetCredits(v)
+	return _c
+}
+
+// SetNillableCredits sets the "credits" field if the given value is not nil.
+func (_c *UserCreate) SetNillableCredits(v *int) *UserCreate {
+	if v != nil {
+		_c.SetCredits(*v)
+	}
+	return _c
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (_c *UserCreate) SetPasswordSalt(v string) *UserCreate {
 	_c.mutation.SetPasswordSalt(v)
@@ -603,6 +617,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultDailyImageLimit
 		_c.mutation.SetDailyImageLimit(v)
 	}
+	if _, ok := _c.mutation.Credits(); !ok {
+		v := user.DefaultCredits
+		_c.mutation.SetCredits(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		if user.DefaultCreatedAt == nil {
 			return fmt.Errorf("db: uninitialized user.DefaultCreatedAt (forgotten import db/runtime?)")
@@ -646,6 +664,9 @@ func (_c *UserCreate) check() error {
 		if err := user.DailyImageLimitValidator(v); err != nil {
 			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Credits(); !ok {
+		return &ValidationError{Name: "credits", err: errors.New(`db: missing required field "User.credits"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "User.created_at"`)}
@@ -736,6 +757,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DailyImageLimit(); ok {
 		_spec.SetField(user.FieldDailyImageLimit, field.TypeInt, value)
 		_node.DailyImageLimit = value
+	}
+	if value, ok := _c.mutation.Credits(); ok {
+		_spec.SetField(user.FieldCredits, field.TypeInt, value)
+		_node.Credits = value
 	}
 	if value, ok := _c.mutation.PasswordSalt(); ok {
 		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
@@ -1348,6 +1373,24 @@ func (u *UserUpsert) AddDailyImageLimit(v int) *UserUpsert {
 	return u
 }
 
+// SetCredits sets the "credits" field.
+func (u *UserUpsert) SetCredits(v int) *UserUpsert {
+	u.Set(user.FieldCredits, v)
+	return u
+}
+
+// UpdateCredits sets the "credits" field to the value that was provided on create.
+func (u *UserUpsert) UpdateCredits() *UserUpsert {
+	u.SetExcluded(user.FieldCredits)
+	return u
+}
+
+// AddCredits adds v to the "credits" field.
+func (u *UserUpsert) AddCredits(v int) *UserUpsert {
+	u.Add(user.FieldCredits, v)
+	return u
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (u *UserUpsert) SetPasswordSalt(v string) *UserUpsert {
 	u.Set(user.FieldPasswordSalt, v)
@@ -1677,6 +1720,27 @@ func (u *UserUpsertOne) AddDailyImageLimit(v int) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateDailyImageLimit() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateDailyImageLimit()
+	})
+}
+
+// SetCredits sets the "credits" field.
+func (u *UserUpsertOne) SetCredits(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetCredits(v)
+	})
+}
+
+// AddCredits adds v to the "credits" field.
+func (u *UserUpsertOne) AddCredits(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddCredits(v)
+	})
+}
+
+// UpdateCredits sets the "credits" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateCredits() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateCredits()
 	})
 }
 
@@ -2186,6 +2250,27 @@ func (u *UserUpsertBulk) AddDailyImageLimit(v int) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateDailyImageLimit() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateDailyImageLimit()
+	})
+}
+
+// SetCredits sets the "credits" field.
+func (u *UserUpsertBulk) SetCredits(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetCredits(v)
+	})
+}
+
+// AddCredits adds v to the "credits" field.
+func (u *UserUpsertBulk) AddCredits(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddCredits(v)
+	})
+}
+
+// UpdateCredits sets the "credits" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateCredits() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateCredits()
 	})
 }
 

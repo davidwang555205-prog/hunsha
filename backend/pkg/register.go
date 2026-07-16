@@ -5,14 +5,17 @@ import (
 	"strings"
 
 	"github.com/GoYoko/web"
+	"github.com/GoYoko/web/locale"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
+	"golang.org/x/text/language"
 
 	"bridal/backend/config"
 	"bridal/backend/consts"
 	"bridal/backend/db"
 	"bridal/backend/domain"
+	"bridal/backend/errcode"
 	"bridal/backend/middleware"
 	"bridal/backend/pkg/asr"
 	"bridal/backend/pkg/captcha"
@@ -65,6 +68,10 @@ func RegisterInfra(i *do.Injector, w ...*web.Web) error {
 	} else {
 		do.Provide(i, func(i *do.Injector) (*web.Web, error) {
 			w := web.New()
+			// web.New() 默认 localizer 只加载 web 包 default.{zh,en}.toml，不含 errcode 业务错误码翻译，
+			// 导致登录失败等业务错误 i18n 查不到（"message ... not found in language zh"）。
+			// 必须在路由注册（Group 创建时捕获 w.locale）之前补载 errcode toml，否则 SetLocale 不生效。
+			w.SetLocale(locale.NewLocalizerWithFile(language.Chinese, errcode.LocalFS, []string{"locale.zh.toml", "locale.en.toml"}))
 			return w, nil
 		})
 	}

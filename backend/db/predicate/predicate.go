@@ -39,6 +39,15 @@ type AgentSyncJob func(*sql.Selector)
 // Audit is the predicate function for audit builders.
 type Audit func(*sql.Selector)
 
+// Category is the predicate function for category builders.
+type Category func(*sql.Selector)
+
+// ContentEngine is the predicate function for contentengine builders.
+type ContentEngine func(*sql.Selector)
+
+// CreditTransaction is the predicate function for credittransaction builders.
+type CreditTransaction func(*sql.Selector)
+
 // GenerationImage is the predicate function for generationimage builders.
 type GenerationImage func(*sql.Selector)
 
@@ -84,6 +93,9 @@ type Model func(*sql.Selector)
 // ModelApiKey is the predicate function for modelapikey builders.
 type ModelApiKey func(*sql.Selector)
 
+// ModelChannel is the predicate function for modelchannel builders.
+type ModelChannel func(*sql.Selector)
+
 // ModelPricing is the predicate function for modelpricing builders.
 type ModelPricing func(*sql.Selector)
 
@@ -113,6 +125,9 @@ type ProjectIssueComment func(*sql.Selector)
 
 // ProjectTask is the predicate function for projecttask builders.
 type ProjectTask func(*sql.Selector)
+
+// SystemSetting is the predicate function for systemsetting builders.
+type SystemSetting func(*sql.Selector)
 
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)

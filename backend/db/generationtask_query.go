@@ -3,9 +3,11 @@
 package db
 
 import (
+	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/predicate"
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -24,6 +26,7 @@ type GenerationTaskQuery struct {
 	order      []generationtask.OrderOption
 	inters     []Interceptor
 	predicates []predicate.GenerationTask
+	withImages *GenerationImageQuery
 	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -59,6 +62,28 @@ func (_q *GenerationTaskQuery) Unique(unique bool) *GenerationTaskQuery {
 func (_q *GenerationTaskQuery) Order(o ...generationtask.OrderOption) *GenerationTaskQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryImages chains the current query on the "images" edge.
+func (_q *GenerationTaskQuery) QueryImages() *GenerationImageQuery {
+	query := (&GenerationImageClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(generationtask.Table, generationtask.FieldID, selector),
+			sqlgraph.To(generationimage.Table, generationimage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, generationtask.ImagesTable, generationtask.ImagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first GenerationTask entity from the query.
@@ -253,11 +278,23 @@ func (_q *GenerationTaskQuery) Clone() *GenerationTaskQuery {
 		order:      append([]generationtask.OrderOption{}, _q.order...),
 		inters:     append([]Interceptor{}, _q.inters...),
 		predicates: append([]predicate.GenerationTask{}, _q.predicates...),
+		withImages: _q.withImages.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
 		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
+}
+
+// WithImages tells the query-builder to eager-load the nodes that are connected to
+// the "images" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *GenerationTaskQuery) WithImages(opts ...func(*GenerationImageQuery)) *GenerationTaskQuery {
+	query := (&GenerationImageClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withImages = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -336,8 +373,11 @@ func (_q *GenerationTaskQuery) prepareQuery(ctx context.Context) error {
 
 func (_q *GenerationTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*GenerationTask, error) {
 	var (
-		nodes = []*GenerationTask{}
-		_spec = _q.querySpec()
+		nodes       = []*GenerationTask{}
+		_spec       = _q.querySpec()
+		loadedTypes = [1]bool{
+			_q.withImages != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*GenerationTask).scanValues(nil, columns)
@@ -345,6 +385,7 @@ func (_q *GenerationTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &GenerationTask{config: _q.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(_q.modifiers) > 0 {
@@ -359,7 +400,45 @@ func (_q *GenerationTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withImages; query != nil {
+		if err := _q.loadImages(ctx, query, nodes,
+			func(n *GenerationTask) { n.Edges.Images = []*GenerationImage{} },
+			func(n *GenerationTask, e *GenerationImage) { n.Edges.Images = append(n.Edges.Images, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (_q *GenerationTaskQuery) loadImages(ctx context.Context, query *GenerationImageQuery, nodes []*GenerationTask, init func(*GenerationTask), assign func(*GenerationTask, *GenerationImage)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*GenerationTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(generationimage.FieldTaskID)
+	}
+	query.Where(predicate.GenerationImage(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(generationtask.ImagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TaskID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "task_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (_q *GenerationTaskQuery) sqlCount(ctx context.Context) (int, error) {

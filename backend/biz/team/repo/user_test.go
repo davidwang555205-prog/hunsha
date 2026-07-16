@@ -337,12 +337,15 @@ func TestMemberListSkipsDeletedUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	members, err := repo.MemberList(ctx, teamID, consts.TeamMemberRoleUser)
+	members, total, err := repo.MemberList(ctx, teamID, consts.TeamMemberRoleUser, "", 1, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(members) != 1 {
 		t.Fatalf("len(members) = %d, want 1", len(members))
+	}
+	if total != 1 {
+		t.Fatalf("total = %d, want 1", total)
 	}
 	if members[0].UserID != activeUserID {
 		t.Fatalf("member user id = %s, want %s", members[0].UserID, activeUserID)

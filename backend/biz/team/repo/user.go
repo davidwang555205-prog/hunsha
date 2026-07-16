@@ -182,6 +182,8 @@ func (r *TeamGroupUserRepo) DeleteGroupUser(ctx context.Context, groupID, userID
 }
 
 // Login 团队用户登录
+// bridal 单租户定制：enterprise（团队所有者/admin，不限额度）优先，subaccount（受限成员）兜底，
+// 二者均可登录生图。MonkeyCode 原意仅 enterprise 登录，bridal 改为所有团队成员可登录。
 func (r *TeamGroupUserRepo) Login(ctx context.Context, req *domain.TeamLoginReq) (*db.User, error) {
 	usr, err := r.db.User.Query().
 		WithTeams().
@@ -189,7 +191,18 @@ func (r *TeamGroupUserRepo) Login(ctx context.Context, req *domain.TeamLoginReq)
 		Where(user.Role(consts.UserRoleEnterprise)).
 		First(ctx)
 	if err != nil {
-		return nil, errcode.ErrLoginFailed.Wrap(err)
+		if !db.IsNotFound(err) {
+			return nil, errcode.ErrLoginFailed.Wrap(err)
+		}
+		// enterprise 未命中，回退查 subaccount（bridal 受限成员）
+		usr, err = r.db.User.Query().
+			WithTeams().
+			Where(user.Email(req.Email)).
+			Where(user.Role(consts.UserRoleSubAccount)).
+			First(ctx)
+		if err != nil {
+			return nil, errcode.ErrLoginFailed.Wrap(err)
+		}
 	}
 
 	err = crypto.VerifyPassword(usr.Password, req.Password)
@@ -200,8 +213,9 @@ func (r *TeamGroupUserRepo) Login(ctx context.Context, req *domain.TeamLoginReq)
 	return usr, nil
 }
 
-// MemberList 获取团队成员列表
-func (r *TeamGroupUserRepo) MemberList(ctx context.Context, teamID uuid.UUID, role consts.TeamMemberRole) ([]*db.TeamMember, error) {
+// MemberList 获取团队成员列表（支持 q 搜索 email/username/displayName + 分页）。
+// page/pageSize <= 0 时返回全量（兼容 /api/v1/users/members 普通用户路径，不分页）。
+func (r *TeamGroupUserRepo) MemberList(ctx context.Context, teamID uuid.UUID, role consts.TeamMemberRole, q string, page, pageSize int) ([]*db.TeamMember, int, error) {
 	query := r.db.TeamMember.Query().
 		Where(
 			teammember.TeamIDEQ(teamID),
@@ -212,8 +226,28 @@ func (r *TeamGroupUserRepo) MemberList(ctx context.Context, teamID uuid.UUID, ro
 	if role != "" {
 		query = query.Where(teammember.RoleEQ(role))
 	}
+	if q != "" {
+		query = query.Where(teammember.HasUserWith(
+			user.Or(
+				user.EmailContainsFold(q),
+				user.UsernameContainsFold(q),
+				user.DisplayNameContainsFold(q),
+			),
+		))
+	}
 
-	return query.All(ctx)
+	total, err := query.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Limit(pageSize).Offset((page - 1) * pageSize)
+	}
+	members, err := query.All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return members, total, nil
 }
 
 // ChangePassword 修改密码
@@ -251,6 +285,12 @@ func (r *TeamGroupUserRepo) UpdateUser(ctx context.Context, userID uuid.UUID, re
 	}
 	if req.IsBlocked != nil {
 		update = update.SetIsBlocked(*req.IsBlocked)
+	}
+	if req.DailyImageLimit != nil {
+		update = update.SetDailyImageLimit(*req.DailyImageLimit)
+	}
+	if req.Credits != nil {
+		update = update.SetCredits(*req.Credits)
 	}
 	return update.Save(ctx)
 }
@@ -403,6 +443,7 @@ func (r *TeamGroupUserRepo) ensureInitTeamMember(ctx context.Context, tx *db.Tx,
 			SetStatus(consts.UserStatusActive).
 			SetPassword(hashedPassword).
 			SetRole(consts.UserRoleSubAccount).
+			SetDailyImageLimit(domain.DefaultDailyImageLimit).
 			Save(ctx)
 		if err != nil {
 			return err

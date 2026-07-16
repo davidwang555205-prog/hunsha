@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -40,10 +41,43 @@ const (
 	FieldUploadedImageCount = "uploaded_image_count"
 	// FieldLatencyMs holds the string denoting the latency_ms field in the database.
 	FieldLatencyMs = "latency_ms"
+	// FieldTotalCount holds the string denoting the total_count field in the database.
+	FieldTotalCount = "total_count"
+	// FieldCompletedCount holds the string denoting the completed_count field in the database.
+	FieldCompletedCount = "completed_count"
+	// FieldEstimatedSeconds holds the string denoting the estimated_seconds field in the database.
+	FieldEstimatedSeconds = "estimated_seconds"
+	// FieldCategoryID holds the string denoting the category_id field in the database.
+	FieldCategoryID = "category_id"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
+	// FieldStartedAt holds the string denoting the started_at field in the database.
+	FieldStartedAt = "started_at"
+	// FieldCompletedAt holds the string denoting the completed_at field in the database.
+	FieldCompletedAt = "completed_at"
+	// FieldReferenceImages holds the string denoting the reference_images field in the database.
+	FieldReferenceImages = "reference_images"
+	// FieldPrompts holds the string denoting the prompts field in the database.
+	FieldPrompts = "prompts"
+	// FieldFeedback holds the string denoting the feedback field in the database.
+	FieldFeedback = "feedback"
+	// FieldDeleted holds the string denoting the deleted field in the database.
+	FieldDeleted = "deleted"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeImages holds the string denoting the images edge name in mutations.
+	EdgeImages = "images"
 	// Table holds the table name of the generationtask in the database.
 	Table = "generation_tasks"
+	// ImagesTable is the table that holds the images relation/edge.
+	ImagesTable = "generation_images"
+	// ImagesInverseTable is the table name for the GenerationImage entity.
+	// It exists in this package in order to avoid circular dependency with the "generationimage" package.
+	ImagesInverseTable = "generation_images"
+	// ImagesColumn is the table column denoting the images relation/edge.
+	ImagesColumn = "task_id"
 )
 
 // Columns holds all SQL columns for generationtask fields.
@@ -62,6 +96,18 @@ var Columns = []string{
 	FieldPromptHash,
 	FieldUploadedImageCount,
 	FieldLatencyMs,
+	FieldTotalCount,
+	FieldCompletedCount,
+	FieldEstimatedSeconds,
+	FieldCategoryID,
+	FieldChannelID,
+	FieldStartedAt,
+	FieldCompletedAt,
+	FieldReferenceImages,
+	FieldPrompts,
+	FieldFeedback,
+	FieldDeleted,
+	FieldDeletedAt,
 	FieldCreatedAt,
 }
 
@@ -100,6 +146,14 @@ var (
 	DefaultUploadedImageCount int
 	// DefaultLatencyMs holds the default value on creation for the "latency_ms" field.
 	DefaultLatencyMs int
+	// DefaultTotalCount holds the default value on creation for the "total_count" field.
+	DefaultTotalCount int
+	// DefaultCompletedCount holds the default value on creation for the "completed_count" field.
+	DefaultCompletedCount int
+	// DefaultEstimatedSeconds holds the default value on creation for the "estimated_seconds" field.
+	DefaultEstimatedSeconds int
+	// DefaultDeleted holds the default value on creation for the "deleted" field.
+	DefaultDeleted bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -174,7 +228,73 @@ func ByLatencyMs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLatencyMs, opts...).ToFunc()
 }
 
+// ByTotalCount orders the results by the total_count field.
+func ByTotalCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalCount, opts...).ToFunc()
+}
+
+// ByCompletedCount orders the results by the completed_count field.
+func ByCompletedCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCompletedCount, opts...).ToFunc()
+}
+
+// ByEstimatedSeconds orders the results by the estimated_seconds field.
+func ByEstimatedSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEstimatedSeconds, opts...).ToFunc()
+}
+
+// ByCategoryID orders the results by the category_id field.
+func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
+}
+
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
+// ByStartedAt orders the results by the started_at field.
+func ByStartedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartedAt, opts...).ToFunc()
+}
+
+// ByCompletedAt orders the results by the completed_at field.
+func ByCompletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCompletedAt, opts...).ToFunc()
+}
+
+// ByDeleted orders the results by the deleted field.
+func ByDeleted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeleted, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByImagesCount orders the results by images count.
+func ByImagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newImagesStep(), opts...)
+	}
+}
+
+// ByImages orders the results by images terms.
+func ByImages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newImagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newImagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ImagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ImagesTable, ImagesColumn),
+	)
 }

@@ -140,6 +140,42 @@ func (f AuditFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.AuditMutation", m)
 }
 
+// The CategoryFunc type is an adapter to allow the use of ordinary
+// function as Category mutator.
+type CategoryFunc func(context.Context, *db.CategoryMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CategoryFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.CategoryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.CategoryMutation", m)
+}
+
+// The ContentEngineFunc type is an adapter to allow the use of ordinary
+// function as ContentEngine mutator.
+type ContentEngineFunc func(context.Context, *db.ContentEngineMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ContentEngineFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.ContentEngineMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.ContentEngineMutation", m)
+}
+
+// The CreditTransactionFunc type is an adapter to allow the use of ordinary
+// function as CreditTransaction mutator.
+type CreditTransactionFunc func(context.Context, *db.CreditTransactionMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CreditTransactionFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.CreditTransactionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.CreditTransactionMutation", m)
+}
+
 // The GenerationImageFunc type is an adapter to allow the use of ordinary
 // function as GenerationImage mutator.
 type GenerationImageFunc func(context.Context, *db.GenerationImageMutation) (db.Value, error)
@@ -320,6 +356,18 @@ func (f ModelApiKeyFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.ModelApiKeyMutation", m)
 }
 
+// The ModelChannelFunc type is an adapter to allow the use of ordinary
+// function as ModelChannel mutator.
+type ModelChannelFunc func(context.Context, *db.ModelChannelMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ModelChannelFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.ModelChannelMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.ModelChannelMutation", m)
+}
+
 // The ModelPricingFunc type is an adapter to allow the use of ordinary
 // function as ModelPricing mutator.
 type ModelPricingFunc func(context.Context, *db.ModelPricingMutation) (db.Value, error)
@@ -438,6 +486,18 @@ func (f ProjectTaskFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.ProjectTaskMutation", m)
+}
+
+// The SystemSettingFunc type is an adapter to allow the use of ordinary
+// function as SystemSetting mutator.
+type SystemSettingFunc func(context.Context, *db.SystemSettingMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SystemSettingFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.SystemSettingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.SystemSettingMutation", m)
 }
 
 // The TaskFunc type is an adapter to allow the use of ordinary

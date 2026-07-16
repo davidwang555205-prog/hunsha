@@ -1,48 +1,32 @@
 /**
- * 认证与账号管理 API
+ * 认证 API（team cookie session）
  *
- * 对应后端 bridalauth handler：
- *   POST   /api/login            登录
- *   GET    /api/me               当前用户 + 账号列表 + 概要
- *   POST   /api/admin/users      开通账号（admin）
- *   PATCH  /api/admin/users/:id  改限额 / 改密码（admin）
+ * 对应后端 team handler（biz/team/handler/http/v1/user.go）：
+ *   POST /api/v1/teams/users/login    登录（email+password，后端 Set-Cookie 建立双 session）
+ *   GET  /api/v1/teams/users/status    当前登录态 + user（TeamUser）
+ *   POST /api/v1/teams/users/logout    登出（清 cookie）
+ * 响应均由 client 解包 web.Resp.data。
  */
 import { apiRequest } from "./client";
-import type {
-  LoginRequest,
-  LoginResponse,
-  MeResponse,
-  CreateUserRequest,
-  CreateUserResponse,
-  UpdateUserRequest,
-  UpdateUserResponse
-} from "../types/api";
+import type { LoginRequest, LoginResponse, StatusResponse } from "../types/api";
 
-/** POST /api/login */
+/** POST /api/v1/teams/users/login */
 export function login(req: LoginRequest) {
-  return apiRequest<LoginResponse>("/api/login", {
+  return apiRequest<LoginResponse>("/api/v1/teams/users/login", {
     method: "POST",
     body: JSON.stringify(req)
   });
 }
 
-/** GET /api/me */
-export function getMe() {
-  return apiRequest<MeResponse>("/api/me");
+/** GET /api/v1/teams/users/status（探测登录态，未登录 401 静默，不触发自动登出） */
+export function getStatus() {
+  return apiRequest<StatusResponse>("/api/v1/teams/users/status", { skipUnauthorized: true });
 }
 
-/** POST /api/admin/users（admin 开通账号） */
-export function createUser(req: CreateUserRequest) {
-  return apiRequest<CreateUserResponse>("/api/admin/users", {
+/** POST /api/v1/teams/users/logout（自身 401 跳过拦截，避免 logout 401 再调 logout 死循环） */
+export function logout() {
+  return apiRequest<unknown>("/api/v1/teams/users/logout", {
     method: "POST",
-    body: JSON.stringify(req)
-  });
-}
-
-/** PATCH /api/admin/users/:id（改限额或改密码） */
-export function updateUser(userId: string, req: UpdateUserRequest) {
-  return apiRequest<UpdateUserResponse>(`/api/admin/users/${encodeURIComponent(userId)}`, {
-    method: "PATCH",
-    body: JSON.stringify(req)
+    skipUnauthorized: true
   });
 }

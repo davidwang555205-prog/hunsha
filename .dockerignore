@@ -1,0 +1,31 @@
+# 两个 Dockerfile 共用项目根作 build context，此文件控制传入上下文
+# 排除大目录与无关文件，加速构建、避免敏感信息进镜像
+
+# 依赖与产物（容器内重新安装/构建，不传本地）
+node_modules
+dist
+backend/tmp
+
+# 版本控制
+.git
+.gitignore
+
+# 文档与历史（构建不需要）
+docs
+.claude
+archive
+*.md
+!README.md
+
+# 本地环境与密钥
+.env
+.env.local
+.env.*.local
+
+# 编辑器/系统
+.vscode
+.idea
+.DS_Store
+
+# 构建产物 tar
+*.tar

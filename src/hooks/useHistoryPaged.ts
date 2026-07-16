@@ -9,7 +9,7 @@ import { listHistoryPaged } from "../api/generation";
 import { useAuth } from "../context/AuthContext";
 import type { HistoryQuery, HistoryRecord } from "../types/api";
 
-const defaultQuery: HistoryQuery = { page: 1, pageSize: 20 };
+const defaultQuery: HistoryQuery = { page: 1, pageSize: 12 };
 
 export function useHistoryPaged() {
   const { isAuthenticated } = useAuth();
@@ -47,8 +47,9 @@ export function useHistoryPaged() {
   const setPage = useCallback((page: number) => setQuery((q) => ({ ...q, page })), []);
   const setFilter = useCallback((patch: Omit<HistoryQuery, "page">) => setQuery({ ...patch, page: 1 }), []);
   const refresh = useCallback(() => void fetch(query), [fetch, query]);
+  const setPageSize = useCallback((size: number) => setQuery((q) => ({ ...q, pageSize: size, page: 1 })), []);
 
-  const totalPages = Math.max(1, Math.ceil(total / (query.pageSize ?? 20)));
+  const totalPages = Math.max(1, Math.ceil(total / (query.pageSize ?? 12)));
 
   return {
     query,
@@ -59,6 +60,7 @@ export function useHistoryPaged() {
     error,
     setPage,
     setFilter,
+    setPageSize,
     refresh
   };
 }

@@ -107,6 +107,20 @@ func (a *AuthMiddleware) Auth() echo.MiddlewareFunc {
 	}
 }
 
+// AdminAuth 全局管理员权限中间件（enterprise+admin 视为全局 admin），必须在 Auth 之后使用。
+// bridal 单租户语义：团队所有者(enterprise)与系统管理员(admin)不限额度，即全局 admin。
+func (a *AuthMiddleware) AdminAuth() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user := GetUser(c)
+			if user == nil || !user.HasUnlimitedImageGeneration() {
+				return c.String(http.StatusForbidden, "Forbidden")
+			}
+			return next(c)
+		}
+	}
+}
+
 // Check 检查用户是否已认证（不强制要求认证）
 func (a *AuthMiddleware) Check() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

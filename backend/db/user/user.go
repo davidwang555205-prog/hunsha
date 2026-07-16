@@ -39,6 +39,8 @@ const (
 	FieldDisplayName = "display_name"
 	// FieldDailyImageLimit holds the string denoting the daily_image_limit field in the database.
 	FieldDailyImageLimit = "daily_image_limit"
+	// FieldCredits holds the string denoting the credits field in the database.
+	FieldCredits = "credits"
 	// FieldPasswordSalt holds the string denoting the password_salt field in the database.
 	FieldPasswordSalt = "password_salt"
 	// FieldPasswordHash holds the string denoting the password_hash field in the database.
@@ -249,6 +251,7 @@ var Columns = []string{
 	FieldUsername,
 	FieldDisplayName,
 	FieldDailyImageLimit,
+	FieldCredits,
 	FieldPasswordSalt,
 	FieldPasswordHash,
 	FieldCreatedAt,
@@ -293,6 +296,8 @@ var (
 	DefaultDailyImageLimit int
 	// DailyImageLimitValidator is a validator for the "daily_image_limit" field. It is called by the builders before save.
 	DailyImageLimitValidator func(int) error
+	// DefaultCredits holds the default value on creation for the "credits" field.
+	DefaultCredits int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -362,6 +367,11 @@ func ByDisplayName(opts ...sql.OrderTermOption) OrderOption {
 // ByDailyImageLimit orders the results by the daily_image_limit field.
 func ByDailyImageLimit(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDailyImageLimit, opts...).ToFunc()
+}
+
+// ByCredits orders the results by the credits field.
+func ByCredits(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCredits, opts...).ToFunc()
 }
 
 // ByPasswordSalt orders the results by the password_salt field.

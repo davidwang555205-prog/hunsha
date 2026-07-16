@@ -114,6 +114,11 @@ func DailyImageLimit(v int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldDailyImageLimit, v))
 }
 
+// Credits applies equality check predicate on the "credits" field. It's identical to CreditsEQ.
+func Credits(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldCredits, v))
+}
+
 // PasswordSalt applies equality check predicate on the "password_salt" field. It's identical to PasswordSaltEQ.
 func PasswordSalt(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldPasswordSalt, v))
@@ -850,6 +855,46 @@ func DailyImageLimitLT(v int) predicate.User {
 // DailyImageLimitLTE applies the LTE predicate on the "daily_image_limit" field.
 func DailyImageLimitLTE(v int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldDailyImageLimit, v))
+}
+
+// CreditsEQ applies the EQ predicate on the "credits" field.
+func CreditsEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldCredits, v))
+}
+
+// CreditsNEQ applies the NEQ predicate on the "credits" field.
+func CreditsNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldCredits, v))
+}
+
+// CreditsIn applies the In predicate on the "credits" field.
+func CreditsIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldCredits, vs...))
+}
+
+// CreditsNotIn applies the NotIn predicate on the "credits" field.
+func CreditsNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldCredits, vs...))
+}
+
+// CreditsGT applies the GT predicate on the "credits" field.
+func CreditsGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldCredits, v))
+}
+
+// CreditsGTE applies the GTE predicate on the "credits" field.
+func CreditsGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldCredits, v))
+}
+
+// CreditsLT applies the LT predicate on the "credits" field.
+func CreditsLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldCredits, v))
+}
+
+// CreditsLTE applies the LTE predicate on the "credits" field.
+func CreditsLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldCredits, v))
 }
 
 // PasswordSaltEQ applies the EQ predicate on the "password_salt" field.

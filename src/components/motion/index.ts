@@ -10,3 +10,5 @@ export { SpotlightCard } from "./SpotlightCard";
 export { GlassCard } from "./GlassCard";
 export { MagneticButton } from "./MagneticButton";
 export { AnimatedTooltip } from "./AnimatedTooltip";
+export { CountUp } from "./CountUp";
+export { StarBorder } from "./StarBorder";

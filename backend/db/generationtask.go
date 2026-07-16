@@ -4,6 +4,7 @@ package db
 
 import (
 	"bridal/backend/db/generationtask"
+	"bridal/backend/ent/types"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -45,9 +46,54 @@ type GenerationTask struct {
 	UploadedImageCount int `json:"uploaded_image_count,omitempty"`
 	// LatencyMs holds the value of the "latency_ms" field.
 	LatencyMs int `json:"latency_ms,omitempty"`
+	// TotalCount holds the value of the "total_count" field.
+	TotalCount int `json:"total_count,omitempty"`
+	// CompletedCount holds the value of the "completed_count" field.
+	CompletedCount int `json:"completed_count,omitempty"`
+	// EstimatedSeconds holds the value of the "estimated_seconds" field.
+	EstimatedSeconds int `json:"estimated_seconds,omitempty"`
+	// CategoryID holds the value of the "category_id" field.
+	CategoryID uuid.UUID `json:"category_id,omitempty"`
+	// ChannelID holds the value of the "channel_id" field.
+	ChannelID uuid.UUID `json:"channel_id,omitempty"`
+	// StartedAt holds the value of the "started_at" field.
+	StartedAt time.Time `json:"started_at,omitempty"`
+	// CompletedAt holds the value of the "completed_at" field.
+	CompletedAt time.Time `json:"completed_at,omitempty"`
+	// ReferenceImages holds the value of the "reference_images" field.
+	ReferenceImages []types.ReferenceImage `json:"reference_images,omitempty"`
+	// Prompts holds the value of the "prompts" field.
+	Prompts []string `json:"prompts,omitempty"`
+	// Feedback holds the value of the "feedback" field.
+	Feedback types.TaskFeedback `json:"feedback,omitempty"`
+	// Deleted holds the value of the "deleted" field.
+	Deleted bool `json:"deleted,omitempty"`
+	// DeletedAt holds the value of the "deleted_at" field.
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the GenerationTaskQuery when eager-loading is set.
+	Edges        GenerationTaskEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// GenerationTaskEdges holds the relations/edges for other nodes in the graph.
+type GenerationTaskEdges struct {
+	// Images holds the value of the images edge.
+	Images []*GenerationImage `json:"images,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ImagesOrErr returns the Images value or an error if the edge
+// was not loaded in eager-loading.
+func (e GenerationTaskEdges) ImagesOrErr() ([]*GenerationImage, error) {
+	if e.loadedTypes[0] {
+		return e.Images, nil
+	}
+	return nil, &NotLoadedError{edge: "images"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -55,15 +101,17 @@ func (*GenerationTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case generationtask.FieldTags:
+		case generationtask.FieldTags, generationtask.FieldReferenceImages, generationtask.FieldPrompts, generationtask.FieldFeedback:
 			values[i] = new([]byte)
-		case generationtask.FieldUploadedImageCount, generationtask.FieldLatencyMs:
+		case generationtask.FieldDeleted:
+			values[i] = new(sql.NullBool)
+		case generationtask.FieldUploadedImageCount, generationtask.FieldLatencyMs, generationtask.FieldTotalCount, generationtask.FieldCompletedCount, generationtask.FieldEstimatedSeconds:
 			values[i] = new(sql.NullInt64)
 		case generationtask.FieldUsername, generationtask.FieldStatus, generationtask.FieldModel, generationtask.FieldMode, generationtask.FieldTitle, generationtask.FieldBody, generationtask.FieldTopic, generationtask.FieldError, generationtask.FieldPromptHash:
 			values[i] = new(sql.NullString)
-		case generationtask.FieldCreatedAt:
+		case generationtask.FieldStartedAt, generationtask.FieldCompletedAt, generationtask.FieldDeletedAt, generationtask.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case generationtask.FieldID, generationtask.FieldUserID:
+		case generationtask.FieldID, generationtask.FieldUserID, generationtask.FieldCategoryID, generationtask.FieldChannelID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -166,6 +214,84 @@ func (_m *GenerationTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LatencyMs = int(value.Int64)
 			}
+		case generationtask.FieldTotalCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_count", values[i])
+			} else if value.Valid {
+				_m.TotalCount = int(value.Int64)
+			}
+		case generationtask.FieldCompletedCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field completed_count", values[i])
+			} else if value.Valid {
+				_m.CompletedCount = int(value.Int64)
+			}
+		case generationtask.FieldEstimatedSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field estimated_seconds", values[i])
+			} else if value.Valid {
+				_m.EstimatedSeconds = int(value.Int64)
+			}
+		case generationtask.FieldCategoryID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field category_id", values[i])
+			} else if value != nil {
+				_m.CategoryID = *value
+			}
+		case generationtask.FieldChannelID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field channel_id", values[i])
+			} else if value != nil {
+				_m.ChannelID = *value
+			}
+		case generationtask.FieldStartedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field started_at", values[i])
+			} else if value.Valid {
+				_m.StartedAt = value.Time
+			}
+		case generationtask.FieldCompletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field completed_at", values[i])
+			} else if value.Valid {
+				_m.CompletedAt = value.Time
+			}
+		case generationtask.FieldReferenceImages:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field reference_images", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.ReferenceImages); err != nil {
+					return fmt.Errorf("unmarshal field reference_images: %w", err)
+				}
+			}
+		case generationtask.FieldPrompts:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field prompts", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Prompts); err != nil {
+					return fmt.Errorf("unmarshal field prompts: %w", err)
+				}
+			}
+		case generationtask.FieldFeedback:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field feedback", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Feedback); err != nil {
+					return fmt.Errorf("unmarshal field feedback: %w", err)
+				}
+			}
+		case generationtask.FieldDeleted:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted", values[i])
+			} else if value.Valid {
+				_m.Deleted = value.Bool
+			}
+		case generationtask.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = value.Time
+			}
 		case generationtask.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -183,6 +309,11 @@ func (_m *GenerationTask) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *GenerationTask) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryImages queries the "images" edge of the GenerationTask entity.
+func (_m *GenerationTask) QueryImages() *GenerationImageQuery {
+	return NewGenerationTaskClient(_m.config).QueryImages(_m)
 }
 
 // Update returns a builder for updating this GenerationTask.
@@ -246,6 +377,42 @@ func (_m *GenerationTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("latency_ms=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LatencyMs))
+	builder.WriteString(", ")
+	builder.WriteString("total_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TotalCount))
+	builder.WriteString(", ")
+	builder.WriteString("completed_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CompletedCount))
+	builder.WriteString(", ")
+	builder.WriteString("estimated_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EstimatedSeconds))
+	builder.WriteString(", ")
+	builder.WriteString("category_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))
+	builder.WriteString(", ")
+	builder.WriteString("channel_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChannelID))
+	builder.WriteString(", ")
+	builder.WriteString("started_at=")
+	builder.WriteString(_m.StartedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("completed_at=")
+	builder.WriteString(_m.CompletedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("reference_images=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReferenceImages))
+	builder.WriteString(", ")
+	builder.WriteString("prompts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Prompts))
+	builder.WriteString(", ")
+	builder.WriteString("feedback=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Feedback))
+	builder.WriteString(", ")
+	builder.WriteString("deleted=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Deleted))
+	builder.WriteString(", ")
+	builder.WriteString("deleted_at=")
+	builder.WriteString(_m.DeletedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

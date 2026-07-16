@@ -373,9 +373,17 @@ func endpointHostHasBucket(u *url.URL, bucket string) bool {
 }
 
 func presignSigningEndpoint(cfg config.ObjectStorageConfig) string {
-	endpoint := strings.TrimSpace(cfg.AccessEndpoint)
-	if endpoint == "" {
-		return cfg.Endpoint
+	// 虚拟主机风格：aws-sdk 会自动把 bucket 拼到 host 前缀，BaseEndpoint 必须不含 bucket，
+	// 否则 host 会变成 <bucket>.<bucket>.<host>（COS 强制虚拟主机，path 风格会被拒）。
+	// 故用 endpoint（不含 bucket）。path 风格：bucket 走 path，用 access_endpoint（CDN 场景）或回退 endpoint。
+	var endpoint string
+	if cfg.ForcePathStyle {
+		endpoint = strings.TrimSpace(cfg.AccessEndpoint)
+		if endpoint == "" {
+			endpoint = cfg.Endpoint
+		}
+	} else {
+		endpoint = strings.TrimSpace(cfg.Endpoint)
 	}
 	u, err := url.Parse(endpoint)
 	if err != nil {

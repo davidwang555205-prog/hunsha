@@ -260,6 +260,27 @@ func (_u *UserUpdate) AddDailyImageLimit(v int) *UserUpdate {
 	return _u
 }
 
+// SetCredits sets the "credits" field.
+func (_u *UserUpdate) SetCredits(v int) *UserUpdate {
+	_u.mutation.ResetCredits()
+	_u.mutation.SetCredits(v)
+	return _u
+}
+
+// SetNillableCredits sets the "credits" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableCredits(v *int) *UserUpdate {
+	if v != nil {
+		_u.SetCredits(*v)
+	}
+	return _u
+}
+
+// AddCredits adds value to the "credits" field.
+func (_u *UserUpdate) AddCredits(v int) *UserUpdate {
+	_u.mutation.AddCredits(v)
+	return _u
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (_u *UserUpdate) SetPasswordSalt(v string) *UserUpdate {
 	_u.mutation.SetPasswordSalt(v)
@@ -1215,6 +1236,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedDailyImageLimit(); ok {
 		_spec.AddField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Credits(); ok {
+		_spec.SetField(user.FieldCredits, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCredits(); ok {
+		_spec.AddField(user.FieldCredits, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.PasswordSalt(); ok {
 		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
@@ -2455,6 +2482,27 @@ func (_u *UserUpdateOne) AddDailyImageLimit(v int) *UserUpdateOne {
 	return _u
 }
 
+// SetCredits sets the "credits" field.
+func (_u *UserUpdateOne) SetCredits(v int) *UserUpdateOne {
+	_u.mutation.ResetCredits()
+	_u.mutation.SetCredits(v)
+	return _u
+}
+
+// SetNillableCredits sets the "credits" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableCredits(v *int) *UserUpdateOne {
+	if v != nil {
+		_u.SetCredits(*v)
+	}
+	return _u
+}
+
+// AddCredits adds value to the "credits" field.
+func (_u *UserUpdateOne) AddCredits(v int) *UserUpdateOne {
+	_u.mutation.AddCredits(v)
+	return _u
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (_u *UserUpdateOne) SetPasswordSalt(v string) *UserUpdateOne {
 	_u.mutation.SetPasswordSalt(v)
@@ -3440,6 +3488,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedDailyImageLimit(); ok {
 		_spec.AddField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Credits(); ok {
+		_spec.SetField(user.FieldCredits, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCredits(); ok {
+		_spec.AddField(user.FieldCredits, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.PasswordSalt(); ok {
 		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)

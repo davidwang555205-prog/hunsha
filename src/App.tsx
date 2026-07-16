@@ -19,11 +19,13 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LoginPage } from "./pages/LoginPage";
 import { AppShell } from "./components/layout/AppShell";
+import { AdminLayout } from "./components/layout/AdminLayout";
 import { RequireAuth, RequireAdmin } from "./components/auth/RequireAuth";
 import { FadeIn } from "./components/motion/FadeIn";
 import { Spinner } from "./components/ui/Spinner";
 
 const StudioPage = lazy(() => import("./pages/StudioPage").then((m) => ({ default: m.StudioPage })));
+const ToolsHomePage = lazy(() => import("./pages/ToolsHomePage").then((m) => ({ default: m.ToolsHomePage })));
 const HistoryPage = lazy(() => import("./pages/HistoryPage").then((m) => ({ default: m.HistoryPage })));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage })));
@@ -35,6 +37,9 @@ const AdminCategoriesPage = lazy(() =>
 );
 const AdminCreditsPage = lazy(() =>
   import("./pages/admin/AdminCreditsPage").then((m) => ({ default: m.AdminCreditsPage }))
+);
+const AdminEnginesPage = lazy(() =>
+  import("./pages/admin/AdminEnginesPage").then((m) => ({ default: m.AdminEnginesPage }))
 );
 
 function PageFallback() {
@@ -48,7 +53,7 @@ function PageFallback() {
 function LazyPage({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<PageFallback />}>
-      <FadeIn direction="up" duration={240}>{children}</FadeIn>
+      <FadeIn direction="up" duration={240} className="flex flex-col gap-8">{children}</FadeIn>
     </Suspense>
   );
 }
@@ -66,9 +71,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <RequireAdmin>
-      <AppShell>
+      <AdminLayout>
         <LazyPage>{children}</LazyPage>
-      </AppShell>
+      </AdminLayout>
     </RequireAdmin>
   );
 }
@@ -78,13 +83,16 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<Shell><StudioPage /></Shell>} />
+        <Route path="/" element={<Shell><ToolsHomePage /></Shell>} />
+        <Route path="/studio" element={<Shell><StudioPage /></Shell>} />
         <Route path="/history" element={<Shell><HistoryPage /></Shell>} />
         <Route path="/admin" element={<AdminShell><AdminPage /></AdminShell>} />
         <Route path="/admin/users" element={<AdminShell><AdminUsersPage /></AdminShell>} />
+        <Route path="/admin/history" element={<AdminShell><HistoryPage adminMode /></AdminShell>} />
         <Route path="/admin/channels" element={<AdminShell><AdminChannelsPage /></AdminShell>} />
         <Route path="/admin/categories" element={<AdminShell><AdminCategoriesPage /></AdminShell>} />
         <Route path="/admin/credits" element={<AdminShell><AdminCreditsPage /></AdminShell>} />
+        <Route path="/admin/engines" element={<AdminShell><AdminEnginesPage /></AdminShell>} />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>

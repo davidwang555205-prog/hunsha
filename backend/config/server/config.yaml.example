@@ -5,16 +5,16 @@ server:
   base_url: "http://localhost:8888"
 
 database:
-  master: "postgres://monkeycode:monkeycode@localhost:5432/monkeycode?sslmode=disable"
+  master: "postgres://bridal:change_me@127.0.0.1:5432/bridal?sslmode=disable&timezone=Asia/Shanghai"
   slave: ""
   max_open_conns: 100
   max_idle_conns: 50
   conn_max_lifetime: 30
 
 redis:
-  host: "localhost"
+  host: "127.0.0.1"
   port: 6379
-  pass: ""
+  pass: "change_me"
   db: 0
 
 session:
@@ -122,18 +122,18 @@ clickhouse:
   conn_max_lifetime: 3600
 
 object_storage:
-  enabled: false
+  enabled: true
   provider: "s3"
   force_path_style: true
-  init_bucket: false
+  init_bucket: true
   presign_expires: "168h"
 
-  endpoint: ""
+  endpoint: "http://127.0.0.1:9000"
   # 外部访问入口，例如 http://example.com/oss。留空时回退到 endpoint。
   access_endpoint: ""
-  access_key: ""
-  access_key_secret: ""
-  bucket: ""
+  access_key: "minioadmin"
+  access_key_secret: "change_me"
+  bucket: "bridal-images"
   region: "us-east-1"
   max_size: 52428800
   avatar_prefix: "avatar"
@@ -142,7 +142,7 @@ object_storage:
   temp_prefix: "temp"
 
 static_files:
-  enabled: true
+  enabled: false
   dir: "/app/static"
   route_prefix: "/static"
 

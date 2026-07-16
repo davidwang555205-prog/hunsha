@@ -11,6 +11,7 @@ import (
 	"bridal/backend/db"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
+	"bridal/backend/ent/types"
 )
 
 // Repo 生图历史仓储，操作 ent generation_tasks/generation_images 表。
@@ -27,12 +28,28 @@ func NewRepo(i *do.Injector) (*Repo, error) {
 }
 
 // ImageRecord 图片记录，对应 Node history.images 元素 {id,name,url,downloadUrl,source}。
+// Kind 仅参考图用：scene=场景参考图, product=婚纱产品图；生成图留空。
 type ImageRecord struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	URL          string `json:"url"`
-	DownloadURL  string `json:"downloadUrl"`
-	Source       string `json:"source"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	DownloadURL string `json:"downloadUrl"`
+	Source      string `json:"source"`
+	Kind        string `json:"kind,omitempty"`
+	// ThumbURL 列表/详情缩略图 URL（COS 公开 URL + imageMogr2 实时缩放，~260KB）。
+	// 公有读模式由 sanitize 填充；私有/代理模式留空，前端兜底用 URL。
+	ThumbURL string `json:"thumbUrl,omitempty"`
+}
+
+// SubTaskStatusItem 逐张子图状态，对应前端 SubTaskStatus。
+// status: pending|processing|success|failed|cancelled
+// image: success 时非空（含可访问 url）；pending/processing/failed 时为 nil。
+type SubTaskStatusItem struct {
+	Index     int          `json:"index"`
+	Status    string       `json:"status"`
+	Image     *ImageRecord `json:"image"`
+	Error     string       `json:"error"`
+	LatencyMs int          `json:"latencyMs"`
 }
 
 // TaskRecord 生图任务记录，对应 Node history 记录（含 sanitizeHistory 字段 + 内部字段）。
@@ -49,10 +66,22 @@ type TaskRecord struct {
 	Tags               []string
 	Topic              string
 	Images             []ImageRecord
+	ReferenceImages    []ImageRecord
+	Prompts            []string            // 每张图给大模型的英文提示词（管理员复盘）
+	Feedback           *types.TaskFeedback // 小红书发布反馈，nil=未反馈
 	Error              string
 	PromptHash         string
 	UploadedImageCount int
 	LatencyMs          int
+	// V2 异步任务字段
+	TotalCount       int               // 子图总数
+	CompletedCount   int               // 已完成数（含失败）
+	CategoryID       uuid.UUID         // 类目 id（uuid.Nil 表示未指定）
+	ChannelID        uuid.UUID         // 模型线路 id（uuid.Nil 表示未指定）
+	EstimatedSeconds int               // 预估耗时秒
+	StartedAt        *time.Time        // 开始处理时间
+	CompletedAt      *time.Time        // 完成时间
+	SubTaskStatus    []SubTaskStatusItem // 逐张状态（GetTask 时组装）
 }
 
 // InsertTask 写入生图任务 + 关联图片（事务）。
@@ -93,6 +122,7 @@ func (r *Repo) InsertTask(ctx context.Context, rec TaskRecord) error {
 			SetName(img.Name).
 			SetURL(img.URL).
 			SetDownloadURL(img.DownloadURL).
+			SetThumbURL(img.ThumbURL).
 			SetSource(img.Source).
 			SetImageNumber(i + 1).
 			Save(ctx); err != nil {
@@ -145,6 +175,7 @@ func (r *Repo) CountImagesForDate(ctx context.Context, userID uuid.UUID, shangha
 	taskIDs, err := r.db.GenerationTask.Query().
 		Where(
 			generationtask.UserIDEQ(userID),
+			generationtask.DeletedEQ(false),
 			generationtask.CreatedAtGTE(dayStart),
 			generationtask.CreatedAtLT(dayEnd),
 		).
@@ -156,53 +187,45 @@ func (r *Repo) CountImagesForDate(ctx context.Context, userID uuid.UUID, shangha
 		return 0, nil
 	}
 	return r.db.GenerationImage.Query().
-		Where(generationimage.TaskIDIn(taskIDs...)).
+		Where(generationimage.TaskIDIn(taskIDs...), generationimage.DeletedEQ(false)).
 		Count(ctx)
 }
 
-// ListForUser 查用户历史（admin 查全部），倒序最多 limit 条，带图片（两步查询）。
-// 对应 Node listHistoryForUser。不用 ent edge，避免自动外键列名问题。
+// ListForUser 查用户历史（admin 查全部），倒序最多 limit 条，带图片（WithImages 一步查询）。
+// 对应 Node listHistoryForUser。
 func (r *Repo) ListForUser(ctx context.Context, userID uuid.UUID, isAdmin bool, limit int) ([]TaskRecord, error) {
 	if limit <= 0 {
 		limit = 100
 	}
-	q := r.db.GenerationTask.Query()
+	q := r.db.GenerationTask.Query().Where(generationtask.DeletedEQ(false))
 	if !isAdmin {
 		q = q.Where(generationtask.UserIDEQ(userID))
 	}
-	tasks, err := q.Order(db.Desc(generationtask.FieldCreatedAt)).Limit(limit).All(ctx)
+	tasks, err := q.Order(db.Desc(generationtask.FieldCreatedAt)).Limit(limit).
+		WithImages(func(iq *db.GenerationImageQuery) {
+			iq.Where(generationimage.DeletedEQ(false)).Order(db.Asc(generationimage.FieldImageNumber))
+		}).
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if len(tasks) == 0 {
 		return []TaskRecord{}, nil
 	}
-	// 收集 task id，批量查 images
-	taskIDs := make([]uuid.UUID, 0, len(tasks))
-	for _, t := range tasks {
-		taskIDs = append(taskIDs, t.ID)
-	}
-	allImages, err := r.db.GenerationImage.Query().
-		Where(generationimage.TaskIDIn(taskIDs...)).
-		Order(db.Asc(generationimage.FieldImageNumber)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// 按 task_id 分组
-	imageMap := make(map[uuid.UUID][]ImageRecord, len(tasks))
-	for _, img := range allImages {
-		imageMap[img.TaskID] = append(imageMap[img.TaskID], ImageRecord{
-			ID:          img.ID,
-			Name:        img.Name,
-			URL:         img.URL,
-			DownloadURL: img.DownloadURL,
-			Source:      img.Source,
-		})
-	}
 
 	out := make([]TaskRecord, 0, len(tasks))
 	for _, t := range tasks {
+		images := make([]ImageRecord, 0, len(t.Edges.Images))
+		for _, img := range t.Edges.Images {
+			images = append(images, ImageRecord{
+				ID:          img.ID,
+				Name:        img.Name,
+				URL:         img.URL,
+				DownloadURL: img.DownloadURL,
+				ThumbURL:    img.ThumbURL,
+				Source:      img.Source,
+			})
+		}
 		rec := TaskRecord{
 			ID:                 t.ID,
 			UserID:             t.UserID,
@@ -215,14 +238,11 @@ func (r *Repo) ListForUser(ctx context.Context, userID uuid.UUID, isAdmin bool, 
 			Body:               t.Body,
 			Tags:               t.Tags,
 			Topic:              t.Topic,
-			Images:             imageMap[t.ID],
+			Images:             images,
 			Error:              t.Error,
 			PromptHash:         t.PromptHash,
 			UploadedImageCount: t.UploadedImageCount,
 			LatencyMs:          t.LatencyMs,
-		}
-		if rec.Images == nil {
-			rec.Images = []ImageRecord{}
 		}
 		if rec.Tags == nil {
 			rec.Tags = []string{}

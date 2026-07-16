@@ -21,3 +21,18 @@ pnpm-debug.log*
 .spec-workflow/
 login.png
 *.bak
+.tmp/
+backend/bridal-server
+backend/server
+
+# 本地 Agent / Claude / Codex 协作配置
+/.agents/
+/.serena/
+/backend/.serena/
+/AGENTS.md
+/CLAUDE.md
+/.claude/
+
+# 本地生成的缓存与构建辅助产物
+/docs/ocr_output/
+/progress-active.png

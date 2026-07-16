@@ -6,12 +6,15 @@ package wala
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -24,6 +27,8 @@ type Client struct {
 	timeout        time.Duration
 	retryAttempts  int
 	defaultQuality string
+	protocol       string   // openai | openrouter
+	paramsCache    sync.Map // OpenRouter 协议：modelID -> supported_parameters(map[string]any)，首次调用查 /images/models 懒加载
 }
 
 // Config 客户端配置。
@@ -34,6 +39,7 @@ type Config struct {
 	Timeout        time.Duration
 	RetryAttempts  int
 	DefaultQuality string // low/medium/high/auto
+	Protocol       string // openai | openrouter，空默认 openai。openai 走 /images/edits+generations，openrouter 走 /images+input_references
 }
 
 // NewClient 创建客户端。
@@ -54,6 +60,10 @@ func NewClient(cfg Config) *Client {
 	if cfg.DefaultQuality == "" {
 		cfg.DefaultQuality = "medium"
 	}
+	protocol := strings.ToLower(cfg.Protocol)
+	if protocol == "" {
+		protocol = "openai"
+	}
 	return &Client{
 		httpClient:     &http.Client{Timeout: cfg.Timeout * 2}, // 留余量，实际用 ctx 控制
 		apiKey:         cfg.APIKey,
@@ -62,22 +72,23 @@ func NewClient(cfg Config) *Client {
 		timeout:        cfg.Timeout,
 		retryAttempts:  cfg.RetryAttempts,
 		defaultQuality: cfg.DefaultQuality,
+		protocol:       protocol,
 	}
 }
 
 // FileInput 参考图输入，对应 Node FileInput（前端 dataUrl）。
 type FileInput struct {
-	Name   string
-	Type   string // mime
-	Size   int64
-	Data   []byte // 原始字节（已从 dataUrl 解码）
+	Name string
+	Type string // mime
+	Size int64
+	Data []byte // 原始字节（已从 dataUrl 解码）
 }
 
 // GeneratedImage WalaAPI 返回的单张图，对应 Node extractGeneratedImages 输出。
 type GeneratedImage struct {
-	B64            string
-	URL            string
-	RevisedPrompt  string
+	B64           string
+	URL           string
+	RevisedPrompt string
 }
 
 // Request 生图请求，对应 Node callWalaApi 入参。
@@ -114,8 +125,11 @@ func NewError(statusCode int, message string) *Error {
 	return &Error{StatusCode: statusCode, Message: message}
 }
 
-// Call 调用 WalaAPI（单次，无重试），返回原始响应体文本与状态码。
-// 对应 Node callWalaApi。
+// Call 调用图像接口（单次，无重试），按 protocol 分发：
+//   - openai（OpenAI Images API 兼容：官方 OpenAI / WalaAPI）：/images/edits(multipart) 或 /images/generations(json)
+//   - openrouter：/images(json) + input_references，动态按模型 supported_parameters 构造参数
+//
+// 返回原始响应体文本与状态码。对应 Node callWalaApi。
 func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText string, err error) {
 	if c.apiKey == "" {
 		return 0, "", NewError(500, "服务端缺少 WALA_API_KEY 环境变量。")
@@ -127,16 +141,30 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 	resolvedQuality := c.resolveImageQuality(req.Quality)
 	size := req.Size
 	if size == "" {
-		size = "1152x1536"
+		size = "3:4"
 	}
 
+	if c.protocol == "openrouter" {
+		return c.callOpenRouter(ctx, req, resolvedQuality, size)
+	}
+	return c.callOpenAI(ctx, req, resolvedQuality, size)
+}
+
+// callOpenAI 协议 A（OpenAI Images API 兼容：官方 OpenAI / WalaAPI）：
+// 有参考图 multipart POST /images/edits（字段 image[] 多值）；无参考图 json POST /images/generations。传 size。
+func (c *Client) callOpenAI(ctx context.Context, req Request, quality, size string) (status int, bodyText string, err error) {
+	// openai 协议传分辨率 size：比例(3:4)->分辨率(1152x1536)，已是分辨率原样返回；未知降级 1152x1536
+	resolution := aspectToResolution(size)
+	if resolution == "" {
+		resolution = "1152x1536"
+	}
 	var httpReq *http.Request
 	if len(req.Files) > 0 {
-		// 有参考图：multipart/form-data，字段名 image 多值
+		// 有参考图：multipart/form-data，字段名 image[] 多值（官方 OpenAI 标准；WalaAPI 兼容）
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 		for _, f := range req.Files {
-			part, err := writer.CreateFormFile("image", f.Name)
+			part, err := writer.CreateFormFile("image[]", f.Name)
 			if err != nil {
 				return 0, "", err
 			}
@@ -146,8 +174,8 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 		}
 		_ = writer.WriteField("prompt", req.Prompt)
 		_ = writer.WriteField("model", c.imageModel)
-		_ = writer.WriteField("size", size)
-		_ = writer.WriteField("quality", resolvedQuality)
+		_ = writer.WriteField("size", resolution)
+		_ = writer.WriteField("quality", quality)
 		if err := writer.Close(); err != nil {
 			return 0, "", err
 		}
@@ -162,8 +190,8 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 		payload := map[string]string{
 			"model":   c.imageModel,
 			"prompt":  req.Prompt,
-			"size":    size,
-			"quality": resolvedQuality,
+			"size":    resolution,
+			"quality": quality,
 		}
 		b, _ := json.Marshal(payload)
 		httpReq, err = http.NewRequestWithContext(ctx, http.MethodPost, c.apiBaseURL+"/images/generations", bytes.NewReader(b))
@@ -173,7 +201,64 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 		httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 		httpReq.Header.Set("Content-Type", "application/json")
 	}
+	return c.doRequest(ctx, httpReq)
+}
 
+// callOpenRouter 协议 B（OpenRouter）：POST /images（json），参考图走 input_references（image_url，base64 data url）。
+// 动态查 /images/models 的 supported_parameters 决定传哪些参数：gpt-image-2 不传 size（模型自决），gemini 传 aspect_ratio 等。
+func (c *Client) callOpenRouter(ctx context.Context, req Request, quality, size string) (status int, bodyText string, err error) {
+	params, _ := c.supportedParams(c.imageModel) // 查询失败降级 nil：按默认传 quality+input_references，不传 size
+
+	body := map[string]any{
+		"model":  c.imageModel,
+		"prompt": req.Prompt,
+	}
+	if len(req.Files) > 0 {
+		maxRefs := paramMax(params, "input_references", 16)
+		refs := make([]map[string]any, 0, len(req.Files))
+		for _, f := range req.Files {
+			if len(refs) >= maxRefs {
+				break
+			}
+			refs = append(refs, map[string]any{
+				"type":      "image_url",
+				"image_url": map[string]any{"url": fileToDataURL(f)},
+			})
+		}
+		body["input_references"] = refs
+	}
+	if params == nil || hasParam(params, "quality") {
+		body["quality"] = quality
+	}
+	// 尺寸按模型 supported_parameters 映射：aspect_ratio(比例) > resolution(分辨率) > size(分辨率，gpt-image-2 实测接受透传 OpenAI)
+	// params==nil（查询失败降级）时不传尺寸，避免对未知模型传 size 触发 400
+	switch {
+	case hasParam(params, "aspect_ratio"):
+		if ar := toAspectRatio(size); ar != "" {
+			body["aspect_ratio"] = ar
+		}
+	case hasParam(params, "resolution"):
+		if r := aspectToResolution(size); r != "" {
+			body["resolution"] = r
+		}
+	case params != nil:
+		if r := aspectToResolution(size); r != "" {
+			body["size"] = r
+		}
+	}
+
+	b, _ := json.Marshal(body)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiBaseURL+"/images", bytes.NewReader(b))
+	if err != nil {
+		return 0, "", err
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+	return c.doRequest(ctx, httpReq)
+}
+
+// doRequest 发送已构造的请求，读响应，ctx 超时转 504。
+func (c *Client) doRequest(ctx context.Context, httpReq *http.Request) (status int, bodyText string, err error) {
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		// 超时（ctx deadline）转 504
@@ -191,6 +276,123 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 	return resp.StatusCode, string(data), nil
 }
 
+// supportedParams 查 OpenRouter /images/models，缓存 modelID -> supported_parameters。失败返回 nil（调用方降级）。
+// 查询用独立 10s 超时，不占生图 ctx；接口公开免 key。
+func (c *Client) supportedParams(modelID string) (map[string]any, error) {
+	if v, ok := c.paramsCache.Load(modelID); ok {
+		return v.(map[string]any), nil
+	}
+	qCtx, qCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer qCancel()
+	req, err := http.NewRequestWithContext(qCtx, http.MethodGet, c.apiBaseURL+"/images/models", nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var payload struct {
+		Data []struct {
+			ID                  string         `json:"id"`
+			SupportedParameters map[string]any `json:"supported_parameters"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+	for _, m := range payload.Data {
+		c.paramsCache.Store(m.ID, m.SupportedParameters)
+	}
+	if v, ok := c.paramsCache.Load(modelID); ok {
+		return v.(map[string]any), nil
+	}
+	return nil, fmt.Errorf("model %s not found in /images/models", modelID)
+}
+
+// fileToDataURL 把参考图字节转 base64 data URL（OpenRouter input_references 用）。
+func fileToDataURL(f FileInput) string {
+	mime := f.Type
+	if mime == "" {
+		mime = "image/png"
+	}
+	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(f.Data)
+}
+
+// hasParam 模型是否支持某参数（params 非 nil 且含 key）。
+func hasParam(params map[string]any, name string) bool {
+	if params == nil {
+		return false
+	}
+	_, ok := params[name]
+	return ok
+}
+
+// paramMax 取 range 参数的 max（input_references/n 等），查询失败或无则返回 def。
+func paramMax(params map[string]any, name string, def int) int {
+	if params == nil {
+		return def
+	}
+	p, ok := params[name].(map[string]any)
+	if !ok {
+		return def
+	}
+	if mx, ok := p["max"].(float64); ok {
+		return int(mx)
+	}
+	return def
+}
+
+// aspectToResolution 宽高比 -> gpt-image-2 兼容分辨率（两边 16 的倍数，长宽比≤3:1，像素∈[655360,8294400]）。
+// 已是 "WxH" 分辨率原样返回；未知比例返回空串（调用方降级）。
+func aspectToResolution(size string) string {
+	if strings.Contains(size, "x") {
+		return size
+	}
+	switch size {
+	case "1:1":
+		return "1024x1024"
+	case "3:4":
+		return "1152x1536"
+	case "4:3":
+		return "1536x1152"
+	case "16:9":
+		return "1536x864"
+	}
+	return ""
+}
+
+// toAspectRatio 取宽高比："3:4" 原样返回；"1152x1536" -> "3:4"（最简整数比）；非法返回空串。
+func toAspectRatio(size string) string {
+	if strings.Contains(size, ":") {
+		return size
+	}
+	return sizeToAspectRatio(size)
+}
+
+// sizeToAspectRatio "1152x1536" -> "3:4"（最简整数比）；非标准格式返回空串。
+func sizeToAspectRatio(size string) string {
+	parts := strings.SplitN(size, "x", 2)
+	if len(parts) != 2 {
+		return ""
+	}
+	w, err1 := strconv.Atoi(parts[0])
+	h, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil || w <= 0 || h <= 0 {
+		return ""
+	}
+	g := gcd(w, h)
+	return fmt.Sprintf("%d:%d", w/g, h/g)
+}
+
+func gcd(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
 // IsRetryable 与 Node isRetryableWalaResponse 一致：429/502/503/504 或 body 含特定中文串。
 func IsRetryable(status int, bodyText string) bool {
 	switch status {
@@ -199,6 +401,14 @@ func IsRetryable(status int, bodyText string) bool {
 	}
 	return strings.Contains(bodyText, "当前分组上游负载已饱和") ||
 		strings.Contains(bodyText, "当前分组负载已饱和")
+}
+
+// IsFallbackable 判断是否应切换到下一条模型线路。
+// 404 或明确的参考图兼容错误通常是当前渠道的问题，适合立刻降级；但不属于同渠道重试，避免对错误线路反复等待。
+func IsFallbackable(status int, bodyText string) bool {
+	return status == http.StatusNotFound ||
+		(status == http.StatusBadRequest && strings.Contains(strings.ToLower(bodyText), "invalid image file or mode for image")) ||
+		IsRetryable(status, bodyText)
 }
 
 // retryDelay 与 Node retryDelayMs 一致：min(30s, 4s*2^(attempt-1))。

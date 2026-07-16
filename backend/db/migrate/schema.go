@@ -405,27 +405,121 @@ var (
 			},
 		},
 	}
+	// CategoriesColumns holds the columns for the "categories" table.
+	CategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "icon", Type: field.TypeString, Default: ""},
+		{Name: "engine", Type: field.TypeString, Default: "bridal"},
+		{Name: "description", Type: field.TypeString, Default: ""},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "is_enabled", Type: field.TypeBool, Default: true},
+		{Name: "config", Type: field.TypeJSON},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// CategoriesTable holds the schema information for the "categories" table.
+	CategoriesTable = &schema.Table{
+		Name:       "categories",
+		Columns:    CategoriesColumns,
+		PrimaryKey: []*schema.Column{CategoriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "category_is_enabled_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{CategoriesColumns[6], CategoriesColumns[5]},
+			},
+		},
+	}
+	// ContentEnginesColumns holds the columns for the "content_engines" table.
+	ContentEnginesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "description", Type: field.TypeString, Default: ""},
+		{Name: "config", Type: field.TypeJSON},
+		{Name: "is_enabled", Type: field.TypeBool, Default: true},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ContentEnginesTable holds the schema information for the "content_engines" table.
+	ContentEnginesTable = &schema.Table{
+		Name:       "content_engines",
+		Columns:    ContentEnginesColumns,
+		PrimaryKey: []*schema.Column{ContentEnginesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contentengine_is_enabled_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{ContentEnginesColumns[5], ContentEnginesColumns[6]},
+			},
+		},
+	}
+	// CreditTransactionsColumns holds the columns for the "credit_transactions" table.
+	CreditTransactionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "type", Type: field.TypeString, Default: "consume"},
+		{Name: "amount", Type: field.TypeInt, Default: 0},
+		{Name: "balance_after", Type: field.TypeInt, Default: 0},
+		{Name: "description", Type: field.TypeString, Default: ""},
+		{Name: "related_task_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// CreditTransactionsTable holds the schema information for the "credit_transactions" table.
+	CreditTransactionsTable = &schema.Table{
+		Name:       "credit_transactions",
+		Columns:    CreditTransactionsColumns,
+		PrimaryKey: []*schema.Column{CreditTransactionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "credittransaction_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CreditTransactionsColumns[1], CreditTransactionsColumns[7]},
+			},
+			{
+				Name:    "credittransaction_related_task_id",
+				Unique:  false,
+				Columns: []*schema.Column{CreditTransactionsColumns[6]},
+			},
+		},
+	}
 	// GenerationImagesColumns holds the columns for the "generation_images" table.
 	GenerationImagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
-		{Name: "task_id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString, Default: ""},
 		{Name: "url", Type: field.TypeString, Default: ""},
 		{Name: "download_url", Type: field.TypeString, Default: ""},
+		{Name: "thumb_url", Type: field.TypeString, Default: ""},
 		{Name: "source", Type: field.TypeString, Default: "local"},
 		{Name: "image_number", Type: field.TypeInt, Default: 0},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "error", Type: field.TypeString, Default: ""},
+		{Name: "latency_ms", Type: field.TypeInt, Default: 0},
+		{Name: "deleted", Type: field.TypeBool, Default: false},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
+		{Name: "task_id", Type: field.TypeUUID},
 	}
 	// GenerationImagesTable holds the schema information for the "generation_images" table.
 	GenerationImagesTable = &schema.Table{
 		Name:       "generation_images",
 		Columns:    GenerationImagesColumns,
 		PrimaryKey: []*schema.Column{GenerationImagesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "generation_images_generation_tasks_images",
+				Columns:    []*schema.Column{GenerationImagesColumns[13]},
+				RefColumns: []*schema.Column{GenerationTasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "generationimage_task_id",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationImagesColumns[1]},
+				Columns: []*schema.Column{GenerationImagesColumns[13]},
 			},
 		},
 	}
@@ -445,6 +539,18 @@ var (
 		{Name: "prompt_hash", Type: field.TypeString, Default: ""},
 		{Name: "uploaded_image_count", Type: field.TypeInt, Default: 0},
 		{Name: "latency_ms", Type: field.TypeInt, Default: 0},
+		{Name: "total_count", Type: field.TypeInt, Default: 0},
+		{Name: "completed_count", Type: field.TypeInt, Default: 0},
+		{Name: "estimated_seconds", Type: field.TypeInt, Default: 0},
+		{Name: "category_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "channel_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "reference_images", Type: field.TypeJSON, Nullable: true},
+		{Name: "prompts", Type: field.TypeJSON, Nullable: true},
+		{Name: "feedback", Type: field.TypeJSON, Nullable: true},
+		{Name: "deleted", Type: field.TypeBool, Default: false},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 	}
 	// GenerationTasksTable holds the schema information for the "generation_tasks" table.
@@ -456,12 +562,12 @@ var (
 			{
 				Name:    "generationtask_user_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationTasksColumns[1], GenerationTasksColumns[14]},
+				Columns: []*schema.Column{GenerationTasksColumns[1], GenerationTasksColumns[26]},
 			},
 			{
 				Name:    "generationtask_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationTasksColumns[14]},
+				Columns: []*schema.Column{GenerationTasksColumns[26]},
 			},
 		},
 	}
@@ -946,6 +1052,40 @@ var (
 			},
 		},
 	}
+	// ModelChannelsColumns holds the columns for the "model_channels" table.
+	ModelChannelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "api_base_url", Type: field.TypeString, Default: ""},
+		{Name: "api_key", Type: field.TypeString, Default: ""},
+		{Name: "protocol", Type: field.TypeString, Default: "openai"},
+		{Name: "model_id", Type: field.TypeString, Default: "gpt-image-2"},
+		{Name: "supported_sizes", Type: field.TypeJSON},
+		{Name: "default_quality", Type: field.TypeString, Default: "medium"},
+		{Name: "is_enabled", Type: field.TypeBool, Default: true},
+		{Name: "is_default", Type: field.TypeBool, Default: false},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "max_concurrency", Type: field.TypeInt, Default: 1},
+		{Name: "total_requests", Type: field.TypeInt, Default: 0},
+		{Name: "success_requests", Type: field.TypeInt, Default: 0},
+		{Name: "failed_requests", Type: field.TypeInt, Default: 0},
+		{Name: "total_latency_ms", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ModelChannelsTable holds the schema information for the "model_channels" table.
+	ModelChannelsTable = &schema.Table{
+		Name:       "model_channels",
+		Columns:    ModelChannelsColumns,
+		PrimaryKey: []*schema.Column{ModelChannelsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modelchannel_is_enabled_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{ModelChannelsColumns[8], ModelChannelsColumns[10]},
+			},
+		},
+	}
 	// ModelPricingsColumns holds the columns for the "model_pricings" table.
 	ModelPricingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -1319,6 +1459,26 @@ var (
 				Columns:    []*schema.Column{ProjectTasksColumns[11]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// SystemSettingsColumns holds the columns for the "system_settings" table.
+	SystemSettingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "value", Type: field.TypeJSON},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// SystemSettingsTable holds the schema information for the "system_settings" table.
+	SystemSettingsTable = &schema.Table{
+		Name:       "system_settings",
+		Columns:    SystemSettingsColumns,
+		PrimaryKey: []*schema.Column{SystemSettingsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "systemsetting_key",
+				Unique:  false,
+				Columns: []*schema.Column{SystemSettingsColumns[1]},
 			},
 		},
 	}
@@ -1924,6 +2084,7 @@ var (
 		{Name: "username", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "display_name", Type: field.TypeString, Nullable: true},
 		{Name: "daily_image_limit", Type: field.TypeInt, Default: 20},
+		{Name: "credits", Type: field.TypeInt, Default: 0},
 		{Name: "password_salt", Type: field.TypeString, Nullable: true},
 		{Name: "password_hash", Type: field.TypeString, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -2036,6 +2197,9 @@ var (
 		AgentSkillVersionsTable,
 		AgentSyncJobsTable,
 		AuditsTable,
+		CategoriesTable,
+		ContentEnginesTable,
+		CreditTransactionsTable,
 		GenerationImagesTable,
 		GenerationTasksTable,
 		GitBotsTable,
@@ -2051,6 +2215,7 @@ var (
 		McpUserToolSettingsTable,
 		ModelsTable,
 		ModelAPIKeysTable,
+		ModelChannelsTable,
 		ModelPricingsTable,
 		NotifyChannelsTable,
 		NotifySendLogsTable,
@@ -2061,6 +2226,7 @@ var (
 		ProjectIssuesTable,
 		ProjectIssueCommentsTable,
 		ProjectTasksTable,
+		SystemSettingsTable,
 		TasksTable,
 		TaskModelSwitchesTable,
 		TaskUsageStatsTable,
@@ -2126,6 +2292,16 @@ func init() {
 	AuditsTable.Annotation = &entsql.Annotation{
 		Table: "audits",
 	}
+	CategoriesTable.Annotation = &entsql.Annotation{
+		Table: "categories",
+	}
+	ContentEnginesTable.Annotation = &entsql.Annotation{
+		Table: "content_engines",
+	}
+	CreditTransactionsTable.Annotation = &entsql.Annotation{
+		Table: "credit_transactions",
+	}
+	GenerationImagesTable.ForeignKeys[0].RefTable = GenerationTasksTable
 	GenerationImagesTable.Annotation = &entsql.Annotation{
 		Table: "generation_images",
 	}
@@ -2187,6 +2363,9 @@ func init() {
 	ModelAPIKeysTable.Annotation = &entsql.Annotation{
 		Table: "model_api_keys",
 	}
+	ModelChannelsTable.Annotation = &entsql.Annotation{
+		Table: "model_channels",
+	}
 	ModelPricingsTable.ForeignKeys[0].RefTable = ModelsTable
 	ModelPricingsTable.Annotation = &entsql.Annotation{
 		Table: "model_pricings",
@@ -2237,6 +2416,9 @@ func init() {
 	ProjectTasksTable.ForeignKeys[5].RefTable = TasksTable
 	ProjectTasksTable.Annotation = &entsql.Annotation{
 		Table: "project_tasks",
+	}
+	SystemSettingsTable.Annotation = &entsql.Annotation{
+		Table: "system_settings",
 	}
 	TasksTable.ForeignKeys[0].RefTable = UsersTable
 	TasksTable.Annotation = &entsql.Annotation{

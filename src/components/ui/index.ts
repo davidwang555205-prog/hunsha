@@ -2,6 +2,7 @@
  * UI 原子组件 barrel -- 统一入口，引用方 `import { Button, Field } from "@/components/ui"`
  */
 export { Button, buttonVariants } from "./Button";
+export { Segmented } from "./Segmented";
 export { Field } from "./Field";
 export { Input } from "./Input";
 export { Select } from "./Select";

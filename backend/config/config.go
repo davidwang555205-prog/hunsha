@@ -123,6 +123,12 @@ type Bridal struct {
 	WalaImageTimeoutMs int `mapstructure:"wala_image_timeout_ms"`
 	// WalaImageRetryAttempts 生图重试次数，对应 Node WALA_IMAGE_RETRY_ATTEMPTS，默认 3。
 	WalaImageRetryAttempts int `mapstructure:"wala_image_retry_attempts"`
+	// WalaConcurrencyLimit 全局并发上限：同时调 WalaAPI 的 goroutine 数。
+	// 解决 goroutine 并发压垮上游（WalaAPI 失败率约 50%）。<=0 时默认 5。
+	WalaConcurrencyLimit int `mapstructure:"wala_concurrency_limit"`
+	// WalaImageReferenceLimit 单次生图传 WalaAPI 参考图张数上限（场景图 + 连续性参考图 + 产品图按优先级截断）。
+	// Node 时代硬编码 4，Go 放开为可配置默认 8（实测后调整）。<=0 时默认 8。
+	WalaImageReferenceLimit int `mapstructure:"wala_image_reference_limit"`
 }
 
 type ReviewAgent struct {
@@ -250,6 +256,9 @@ type ObjectStorageConfig struct {
 	SpecPrefix      string `mapstructure:"spec_prefix"`
 	RepoPrefix      string `mapstructure:"repo_prefix"`
 	TempPrefix      string `mapstructure:"temp_prefix"`
+	// PublicRead 桶是否公有读。true（生产 COS）生成图 URL 走 COS 公开直连 + imageMogr2 缩略图；
+	// false（dev 私有 MinIO）回退 /api 代理，不破坏本地开发。
+	PublicRead bool `mapstructure:"public_read"`
 }
 
 type StaticFilesConfig struct {
@@ -510,6 +519,42 @@ func applyBridalEnvDefaults(b *Bridal) {
 	}
 	if v := os.Getenv("WALA_IMAGE_QUALITY"); v != "" {
 		b.WalaImageQuality = v
+	}
+	if v := os.Getenv("WALA_CONCURRENCY_LIMIT"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			b.WalaConcurrencyLimit = n
+		}
+	}
+	if v := os.Getenv("DEFAULT_DAILY_IMAGE_LIMIT"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			b.DefaultDailyImageLimit = n
+		}
+	}
+	if v := os.Getenv("HISTORY_RETENTION_DAYS"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			b.HistoryRetentionDays = n
+		}
+	}
+	if v := os.Getenv("WALA_IMAGE_TIMEOUT_MS"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			b.WalaImageTimeoutMs = n
+		}
+	}
+	if v := os.Getenv("WALA_IMAGE_RETRY_ATTEMPTS"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			b.WalaImageRetryAttempts = n
+		}
+	}
+	if v := os.Getenv("WALA_IMAGE_REFERENCE_LIMIT"); v != "" {
+		var n int
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			b.WalaImageReferenceLimit = n
+		}
 	}
 }
 

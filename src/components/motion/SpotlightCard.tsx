@@ -19,7 +19,7 @@ type SpotlightCardProps = {
 export function SpotlightCard({
   children,
   className = "",
-  spotlightColor = "var(--color-primary)",
+  spotlightColor = "rgb(var(--color-primary))",
   radius = 240
 }: SpotlightCardProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -42,7 +42,7 @@ export function SpotlightCard({
   return (
     <div
       ref={ref}
-      className={`group relative overflow-hidden ${className}`}
+      className={`group relative ${className}`}
       style={
         {
           "--x": "50%",

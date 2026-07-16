@@ -15,6 +15,9 @@ import (
 	"bridal/backend/db/agentskillversion"
 	"bridal/backend/db/agentsyncjob"
 	"bridal/backend/db/audit"
+	"bridal/backend/db/category"
+	"bridal/backend/db/contentengine"
+	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
@@ -30,6 +33,7 @@ import (
 	"bridal/backend/db/mcpusertoolsetting"
 	"bridal/backend/db/model"
 	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelchannel"
 	"bridal/backend/db/modelpricing"
 	"bridal/backend/db/notifychannel"
 	"bridal/backend/db/notifysendlog"
@@ -40,6 +44,7 @@ import (
 	"bridal/backend/db/projectissue"
 	"bridal/backend/db/projectissuecomment"
 	"bridal/backend/db/projecttask"
+	"bridal/backend/db/systemsetting"
 	"bridal/backend/db/task"
 	"bridal/backend/db/taskmodelswitch"
 	"bridal/backend/db/taskusagestat"
@@ -334,6 +339,112 @@ func init() {
 	auditDescCreatedAt := auditFields[7].Descriptor()
 	// audit.DefaultCreatedAt holds the default value on creation for the created_at field.
 	audit.DefaultCreatedAt = auditDescCreatedAt.Default.(func() time.Time)
+	categoryFields := schema.Category{}.Fields()
+	_ = categoryFields
+	// categoryDescName is the schema descriptor for name field.
+	categoryDescName := categoryFields[1].Descriptor()
+	// category.DefaultName holds the default value on creation for the name field.
+	category.DefaultName = categoryDescName.Default.(string)
+	// categoryDescIcon is the schema descriptor for icon field.
+	categoryDescIcon := categoryFields[2].Descriptor()
+	// category.DefaultIcon holds the default value on creation for the icon field.
+	category.DefaultIcon = categoryDescIcon.Default.(string)
+	// categoryDescEngine is the schema descriptor for engine field.
+	categoryDescEngine := categoryFields[3].Descriptor()
+	// category.DefaultEngine holds the default value on creation for the engine field.
+	category.DefaultEngine = categoryDescEngine.Default.(string)
+	// categoryDescDescription is the schema descriptor for description field.
+	categoryDescDescription := categoryFields[4].Descriptor()
+	// category.DefaultDescription holds the default value on creation for the description field.
+	category.DefaultDescription = categoryDescDescription.Default.(string)
+	// categoryDescSortOrder is the schema descriptor for sort_order field.
+	categoryDescSortOrder := categoryFields[5].Descriptor()
+	// category.DefaultSortOrder holds the default value on creation for the sort_order field.
+	category.DefaultSortOrder = categoryDescSortOrder.Default.(int)
+	// categoryDescIsEnabled is the schema descriptor for is_enabled field.
+	categoryDescIsEnabled := categoryFields[6].Descriptor()
+	// category.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	category.DefaultIsEnabled = categoryDescIsEnabled.Default.(bool)
+	// categoryDescConfig is the schema descriptor for config field.
+	categoryDescConfig := categoryFields[7].Descriptor()
+	// category.DefaultConfig holds the default value on creation for the config field.
+	category.DefaultConfig = categoryDescConfig.Default.(map[string]interface{})
+	// categoryDescCreatedAt is the schema descriptor for created_at field.
+	categoryDescCreatedAt := categoryFields[8].Descriptor()
+	// category.DefaultCreatedAt holds the default value on creation for the created_at field.
+	category.DefaultCreatedAt = categoryDescCreatedAt.Default.(func() time.Time)
+	// categoryDescUpdatedAt is the schema descriptor for updated_at field.
+	categoryDescUpdatedAt := categoryFields[9].Descriptor()
+	// category.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	category.DefaultUpdatedAt = categoryDescUpdatedAt.Default.(func() time.Time)
+	// category.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	category.UpdateDefaultUpdatedAt = categoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// categoryDescID is the schema descriptor for id field.
+	categoryDescID := categoryFields[0].Descriptor()
+	// category.DefaultID holds the default value on creation for the id field.
+	category.DefaultID = categoryDescID.Default.(func() uuid.UUID)
+	contentengineFields := schema.ContentEngine{}.Fields()
+	_ = contentengineFields
+	// contentengineDescName is the schema descriptor for name field.
+	contentengineDescName := contentengineFields[2].Descriptor()
+	// contentengine.DefaultName holds the default value on creation for the name field.
+	contentengine.DefaultName = contentengineDescName.Default.(string)
+	// contentengineDescDescription is the schema descriptor for description field.
+	contentengineDescDescription := contentengineFields[3].Descriptor()
+	// contentengine.DefaultDescription holds the default value on creation for the description field.
+	contentengine.DefaultDescription = contentengineDescDescription.Default.(string)
+	// contentengineDescConfig is the schema descriptor for config field.
+	contentengineDescConfig := contentengineFields[4].Descriptor()
+	// contentengine.DefaultConfig holds the default value on creation for the config field.
+	contentengine.DefaultConfig = contentengineDescConfig.Default.(map[string]interface{})
+	// contentengineDescIsEnabled is the schema descriptor for is_enabled field.
+	contentengineDescIsEnabled := contentengineFields[5].Descriptor()
+	// contentengine.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	contentengine.DefaultIsEnabled = contentengineDescIsEnabled.Default.(bool)
+	// contentengineDescSortOrder is the schema descriptor for sort_order field.
+	contentengineDescSortOrder := contentengineFields[6].Descriptor()
+	// contentengine.DefaultSortOrder holds the default value on creation for the sort_order field.
+	contentengine.DefaultSortOrder = contentengineDescSortOrder.Default.(int)
+	// contentengineDescCreatedAt is the schema descriptor for created_at field.
+	contentengineDescCreatedAt := contentengineFields[7].Descriptor()
+	// contentengine.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contentengine.DefaultCreatedAt = contentengineDescCreatedAt.Default.(func() time.Time)
+	// contentengineDescUpdatedAt is the schema descriptor for updated_at field.
+	contentengineDescUpdatedAt := contentengineFields[8].Descriptor()
+	// contentengine.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	contentengine.DefaultUpdatedAt = contentengineDescUpdatedAt.Default.(func() time.Time)
+	// contentengine.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	contentengine.UpdateDefaultUpdatedAt = contentengineDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// contentengineDescID is the schema descriptor for id field.
+	contentengineDescID := contentengineFields[0].Descriptor()
+	// contentengine.DefaultID holds the default value on creation for the id field.
+	contentengine.DefaultID = contentengineDescID.Default.(func() uuid.UUID)
+	credittransactionFields := schema.CreditTransaction{}.Fields()
+	_ = credittransactionFields
+	// credittransactionDescType is the schema descriptor for type field.
+	credittransactionDescType := credittransactionFields[2].Descriptor()
+	// credittransaction.DefaultType holds the default value on creation for the type field.
+	credittransaction.DefaultType = credittransactionDescType.Default.(string)
+	// credittransactionDescAmount is the schema descriptor for amount field.
+	credittransactionDescAmount := credittransactionFields[3].Descriptor()
+	// credittransaction.DefaultAmount holds the default value on creation for the amount field.
+	credittransaction.DefaultAmount = credittransactionDescAmount.Default.(int)
+	// credittransactionDescBalanceAfter is the schema descriptor for balance_after field.
+	credittransactionDescBalanceAfter := credittransactionFields[4].Descriptor()
+	// credittransaction.DefaultBalanceAfter holds the default value on creation for the balance_after field.
+	credittransaction.DefaultBalanceAfter = credittransactionDescBalanceAfter.Default.(int)
+	// credittransactionDescDescription is the schema descriptor for description field.
+	credittransactionDescDescription := credittransactionFields[5].Descriptor()
+	// credittransaction.DefaultDescription holds the default value on creation for the description field.
+	credittransaction.DefaultDescription = credittransactionDescDescription.Default.(string)
+	// credittransactionDescCreatedAt is the schema descriptor for created_at field.
+	credittransactionDescCreatedAt := credittransactionFields[7].Descriptor()
+	// credittransaction.DefaultCreatedAt holds the default value on creation for the created_at field.
+	credittransaction.DefaultCreatedAt = credittransactionDescCreatedAt.Default.(func() time.Time)
+	// credittransactionDescID is the schema descriptor for id field.
+	credittransactionDescID := credittransactionFields[0].Descriptor()
+	// credittransaction.DefaultID holds the default value on creation for the id field.
+	credittransaction.DefaultID = credittransactionDescID.Default.(func() uuid.UUID)
 	generationimageFields := schema.GenerationImage{}.Fields()
 	_ = generationimageFields
 	// generationimageDescName is the schema descriptor for name field.
@@ -348,16 +459,36 @@ func init() {
 	generationimageDescDownloadURL := generationimageFields[4].Descriptor()
 	// generationimage.DefaultDownloadURL holds the default value on creation for the download_url field.
 	generationimage.DefaultDownloadURL = generationimageDescDownloadURL.Default.(string)
+	// generationimageDescThumbURL is the schema descriptor for thumb_url field.
+	generationimageDescThumbURL := generationimageFields[5].Descriptor()
+	// generationimage.DefaultThumbURL holds the default value on creation for the thumb_url field.
+	generationimage.DefaultThumbURL = generationimageDescThumbURL.Default.(string)
 	// generationimageDescSource is the schema descriptor for source field.
-	generationimageDescSource := generationimageFields[5].Descriptor()
+	generationimageDescSource := generationimageFields[6].Descriptor()
 	// generationimage.DefaultSource holds the default value on creation for the source field.
 	generationimage.DefaultSource = generationimageDescSource.Default.(string)
 	// generationimageDescImageNumber is the schema descriptor for image_number field.
-	generationimageDescImageNumber := generationimageFields[6].Descriptor()
+	generationimageDescImageNumber := generationimageFields[7].Descriptor()
 	// generationimage.DefaultImageNumber holds the default value on creation for the image_number field.
 	generationimage.DefaultImageNumber = generationimageDescImageNumber.Default.(int)
+	// generationimageDescStatus is the schema descriptor for status field.
+	generationimageDescStatus := generationimageFields[8].Descriptor()
+	// generationimage.DefaultStatus holds the default value on creation for the status field.
+	generationimage.DefaultStatus = generationimageDescStatus.Default.(string)
+	// generationimageDescError is the schema descriptor for error field.
+	generationimageDescError := generationimageFields[9].Descriptor()
+	// generationimage.DefaultError holds the default value on creation for the error field.
+	generationimage.DefaultError = generationimageDescError.Default.(string)
+	// generationimageDescLatencyMs is the schema descriptor for latency_ms field.
+	generationimageDescLatencyMs := generationimageFields[10].Descriptor()
+	// generationimage.DefaultLatencyMs holds the default value on creation for the latency_ms field.
+	generationimage.DefaultLatencyMs = generationimageDescLatencyMs.Default.(int)
+	// generationimageDescDeleted is the schema descriptor for deleted field.
+	generationimageDescDeleted := generationimageFields[11].Descriptor()
+	// generationimage.DefaultDeleted holds the default value on creation for the deleted field.
+	generationimage.DefaultDeleted = generationimageDescDeleted.Default.(bool)
 	// generationimageDescCreatedAt is the schema descriptor for created_at field.
-	generationimageDescCreatedAt := generationimageFields[7].Descriptor()
+	generationimageDescCreatedAt := generationimageFields[13].Descriptor()
 	// generationimage.DefaultCreatedAt holds the default value on creation for the created_at field.
 	generationimage.DefaultCreatedAt = generationimageDescCreatedAt.Default.(func() time.Time)
 	generationtaskFields := schema.GenerationTask{}.Fields()
@@ -410,8 +541,24 @@ func init() {
 	generationtaskDescLatencyMs := generationtaskFields[13].Descriptor()
 	// generationtask.DefaultLatencyMs holds the default value on creation for the latency_ms field.
 	generationtask.DefaultLatencyMs = generationtaskDescLatencyMs.Default.(int)
+	// generationtaskDescTotalCount is the schema descriptor for total_count field.
+	generationtaskDescTotalCount := generationtaskFields[14].Descriptor()
+	// generationtask.DefaultTotalCount holds the default value on creation for the total_count field.
+	generationtask.DefaultTotalCount = generationtaskDescTotalCount.Default.(int)
+	// generationtaskDescCompletedCount is the schema descriptor for completed_count field.
+	generationtaskDescCompletedCount := generationtaskFields[15].Descriptor()
+	// generationtask.DefaultCompletedCount holds the default value on creation for the completed_count field.
+	generationtask.DefaultCompletedCount = generationtaskDescCompletedCount.Default.(int)
+	// generationtaskDescEstimatedSeconds is the schema descriptor for estimated_seconds field.
+	generationtaskDescEstimatedSeconds := generationtaskFields[16].Descriptor()
+	// generationtask.DefaultEstimatedSeconds holds the default value on creation for the estimated_seconds field.
+	generationtask.DefaultEstimatedSeconds = generationtaskDescEstimatedSeconds.Default.(int)
+	// generationtaskDescDeleted is the schema descriptor for deleted field.
+	generationtaskDescDeleted := generationtaskFields[24].Descriptor()
+	// generationtask.DefaultDeleted holds the default value on creation for the deleted field.
+	generationtask.DefaultDeleted = generationtaskDescDeleted.Default.(bool)
 	// generationtaskDescCreatedAt is the schema descriptor for created_at field.
-	generationtaskDescCreatedAt := generationtaskFields[14].Descriptor()
+	generationtaskDescCreatedAt := generationtaskFields[26].Descriptor()
 	// generationtask.DefaultCreatedAt holds the default value on creation for the created_at field.
 	generationtask.DefaultCreatedAt = generationtaskDescCreatedAt.Default.(func() time.Time)
 	// generationtaskDescID is the schema descriptor for id field.
@@ -852,6 +999,82 @@ func init() {
 	modelapikeyDescCreatedAt := modelapikeyFields[5].Descriptor()
 	// modelapikey.DefaultCreatedAt holds the default value on creation for the created_at field.
 	modelapikey.DefaultCreatedAt = modelapikeyDescCreatedAt.Default.(func() time.Time)
+	modelchannelFields := schema.ModelChannel{}.Fields()
+	_ = modelchannelFields
+	// modelchannelDescName is the schema descriptor for name field.
+	modelchannelDescName := modelchannelFields[1].Descriptor()
+	// modelchannel.DefaultName holds the default value on creation for the name field.
+	modelchannel.DefaultName = modelchannelDescName.Default.(string)
+	// modelchannelDescAPIBaseURL is the schema descriptor for api_base_url field.
+	modelchannelDescAPIBaseURL := modelchannelFields[2].Descriptor()
+	// modelchannel.DefaultAPIBaseURL holds the default value on creation for the api_base_url field.
+	modelchannel.DefaultAPIBaseURL = modelchannelDescAPIBaseURL.Default.(string)
+	// modelchannelDescAPIKey is the schema descriptor for api_key field.
+	modelchannelDescAPIKey := modelchannelFields[3].Descriptor()
+	// modelchannel.DefaultAPIKey holds the default value on creation for the api_key field.
+	modelchannel.DefaultAPIKey = modelchannelDescAPIKey.Default.(string)
+	// modelchannelDescProtocol is the schema descriptor for protocol field.
+	modelchannelDescProtocol := modelchannelFields[4].Descriptor()
+	// modelchannel.DefaultProtocol holds the default value on creation for the protocol field.
+	modelchannel.DefaultProtocol = modelchannelDescProtocol.Default.(string)
+	// modelchannelDescModelID is the schema descriptor for model_id field.
+	modelchannelDescModelID := modelchannelFields[5].Descriptor()
+	// modelchannel.DefaultModelID holds the default value on creation for the model_id field.
+	modelchannel.DefaultModelID = modelchannelDescModelID.Default.(string)
+	// modelchannelDescSupportedSizes is the schema descriptor for supported_sizes field.
+	modelchannelDescSupportedSizes := modelchannelFields[6].Descriptor()
+	// modelchannel.DefaultSupportedSizes holds the default value on creation for the supported_sizes field.
+	modelchannel.DefaultSupportedSizes = modelchannelDescSupportedSizes.Default.([]string)
+	// modelchannelDescDefaultQuality is the schema descriptor for default_quality field.
+	modelchannelDescDefaultQuality := modelchannelFields[7].Descriptor()
+	// modelchannel.DefaultDefaultQuality holds the default value on creation for the default_quality field.
+	modelchannel.DefaultDefaultQuality = modelchannelDescDefaultQuality.Default.(string)
+	// modelchannelDescIsEnabled is the schema descriptor for is_enabled field.
+	modelchannelDescIsEnabled := modelchannelFields[8].Descriptor()
+	// modelchannel.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	modelchannel.DefaultIsEnabled = modelchannelDescIsEnabled.Default.(bool)
+	// modelchannelDescIsDefault is the schema descriptor for is_default field.
+	modelchannelDescIsDefault := modelchannelFields[9].Descriptor()
+	// modelchannel.DefaultIsDefault holds the default value on creation for the is_default field.
+	modelchannel.DefaultIsDefault = modelchannelDescIsDefault.Default.(bool)
+	// modelchannelDescSortOrder is the schema descriptor for sort_order field.
+	modelchannelDescSortOrder := modelchannelFields[10].Descriptor()
+	// modelchannel.DefaultSortOrder holds the default value on creation for the sort_order field.
+	modelchannel.DefaultSortOrder = modelchannelDescSortOrder.Default.(int)
+	// modelchannelDescMaxConcurrency is the schema descriptor for max_concurrency field.
+	modelchannelDescMaxConcurrency := modelchannelFields[11].Descriptor()
+	// modelchannel.DefaultMaxConcurrency holds the default value on creation for the max_concurrency field.
+	modelchannel.DefaultMaxConcurrency = modelchannelDescMaxConcurrency.Default.(int)
+	// modelchannelDescTotalRequests is the schema descriptor for total_requests field.
+	modelchannelDescTotalRequests := modelchannelFields[12].Descriptor()
+	// modelchannel.DefaultTotalRequests holds the default value on creation for the total_requests field.
+	modelchannel.DefaultTotalRequests = modelchannelDescTotalRequests.Default.(int)
+	// modelchannelDescSuccessRequests is the schema descriptor for success_requests field.
+	modelchannelDescSuccessRequests := modelchannelFields[13].Descriptor()
+	// modelchannel.DefaultSuccessRequests holds the default value on creation for the success_requests field.
+	modelchannel.DefaultSuccessRequests = modelchannelDescSuccessRequests.Default.(int)
+	// modelchannelDescFailedRequests is the schema descriptor for failed_requests field.
+	modelchannelDescFailedRequests := modelchannelFields[14].Descriptor()
+	// modelchannel.DefaultFailedRequests holds the default value on creation for the failed_requests field.
+	modelchannel.DefaultFailedRequests = modelchannelDescFailedRequests.Default.(int)
+	// modelchannelDescTotalLatencyMs is the schema descriptor for total_latency_ms field.
+	modelchannelDescTotalLatencyMs := modelchannelFields[15].Descriptor()
+	// modelchannel.DefaultTotalLatencyMs holds the default value on creation for the total_latency_ms field.
+	modelchannel.DefaultTotalLatencyMs = modelchannelDescTotalLatencyMs.Default.(int)
+	// modelchannelDescCreatedAt is the schema descriptor for created_at field.
+	modelchannelDescCreatedAt := modelchannelFields[16].Descriptor()
+	// modelchannel.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modelchannel.DefaultCreatedAt = modelchannelDescCreatedAt.Default.(func() time.Time)
+	// modelchannelDescUpdatedAt is the schema descriptor for updated_at field.
+	modelchannelDescUpdatedAt := modelchannelFields[17].Descriptor()
+	// modelchannel.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modelchannel.DefaultUpdatedAt = modelchannelDescUpdatedAt.Default.(func() time.Time)
+	// modelchannel.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modelchannel.UpdateDefaultUpdatedAt = modelchannelDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelchannelDescID is the schema descriptor for id field.
+	modelchannelDescID := modelchannelFields[0].Descriptor()
+	// modelchannel.DefaultID holds the default value on creation for the id field.
+	modelchannel.DefaultID = modelchannelDescID.Default.(func() uuid.UUID)
 	modelpricingFields := schema.ModelPricing{}.Fields()
 	_ = modelpricingFields
 	// modelpricingDescAccessLevel is the schema descriptor for access_level field.
@@ -1074,6 +1297,22 @@ func init() {
 	projecttaskDescCreatedAt := projecttaskFields[11].Descriptor()
 	// projecttask.DefaultCreatedAt holds the default value on creation for the created_at field.
 	projecttask.DefaultCreatedAt = projecttaskDescCreatedAt.Default.(func() time.Time)
+	systemsettingFields := schema.SystemSetting{}.Fields()
+	_ = systemsettingFields
+	// systemsettingDescValue is the schema descriptor for value field.
+	systemsettingDescValue := systemsettingFields[2].Descriptor()
+	// systemsetting.DefaultValue holds the default value on creation for the value field.
+	systemsetting.DefaultValue = systemsettingDescValue.Default.(map[string]interface{})
+	// systemsettingDescUpdatedAt is the schema descriptor for updated_at field.
+	systemsettingDescUpdatedAt := systemsettingFields[3].Descriptor()
+	// systemsetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	systemsetting.DefaultUpdatedAt = systemsettingDescUpdatedAt.Default.(func() time.Time)
+	// systemsetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	systemsetting.UpdateDefaultUpdatedAt = systemsettingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// systemsettingDescID is the schema descriptor for id field.
+	systemsettingDescID := systemsettingFields[0].Descriptor()
+	// systemsetting.DefaultID holds the default value on creation for the id field.
+	systemsetting.DefaultID = systemsettingDescID.Default.(func() uuid.UUID)
 	taskMixin := schema.Task{}.Mixin()
 	taskMixinHooks0 := taskMixin[0].Hooks()
 	task.Hooks[0] = taskMixinHooks0[0]
@@ -1382,12 +1621,16 @@ func init() {
 	user.DefaultDailyImageLimit = userDescDailyImageLimit.Default.(int)
 	// user.DailyImageLimitValidator is a validator for the "daily_image_limit" field. It is called by the builders before save.
 	user.DailyImageLimitValidator = userDescDailyImageLimit.Validators[0].(func(int) error)
+	// userDescCredits is the schema descriptor for credits field.
+	userDescCredits := userFields[12].Descriptor()
+	// user.DefaultCredits holds the default value on creation for the credits field.
+	user.DefaultCredits = userDescCredits.Default.(int)
 	// userDescCreatedAt is the schema descriptor for created_at field.
-	userDescCreatedAt := userFields[14].Descriptor()
+	userDescCreatedAt := userFields[15].Descriptor()
 	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
 	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 	// userDescUpdatedAt is the schema descriptor for updated_at field.
-	userDescUpdatedAt := userFields[15].Descriptor()
+	userDescUpdatedAt := userFields[16].Descriptor()
 	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

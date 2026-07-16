@@ -1,19 +1,21 @@
 /**
- * AppShell -- 全局布局壳（苹果风格）
+ * AppShell -- 主站布局壳（BaseLayout 薄封装）
  *
- * AppHeader（顶栏）+ 主内容区最大宽度 1280px 居中 + 响应式 gutter。
- * 路由页面用 FadeIn 包裹做 240ms 切换过渡。
+ * 主站导航：工具首页 / 内容生成 / 历史记录 / [后台管理(admin)]。
+ * 可折叠 sidebar、AppHeader、main max-w-6xl 由 BaseLayout 提供。
  */
 import type { ReactNode } from "react";
-import { AppHeader } from "./AppHeader";
+import { useAuth } from "../../context/AuthContext";
+import { BaseLayout, type NavItem } from "./BaseLayout";
+import { HomeIcon, SparklesIcon, ClockIcon, ShieldIcon } from "../icons";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-bg">
-      <AppHeader />
-      <main className="px-4 py-6 text-text sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6">{children}</div>
-      </main>
-    </div>
-  );
+  const { isAdmin } = useAuth();
+  const navItems: NavItem[] = [
+    { to: "/", label: "工具首页", icon: <HomeIcon size={18} />, end: true },
+    { to: "/studio", label: "内容生成", icon: <SparklesIcon size={18} /> },
+    { to: "/history", label: "历史记录", icon: <ClockIcon size={18} /> },
+    ...(isAdmin ? [{ to: "/admin", label: "后台管理", icon: <ShieldIcon size={18} /> }] : [])
+  ];
+  return <BaseLayout navItems={navItems}>{children}</BaseLayout>;
 }

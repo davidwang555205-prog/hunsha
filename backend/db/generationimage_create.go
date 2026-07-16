@@ -4,6 +4,7 @@ package db
 
 import (
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationtask"
 	"context"
 	"errors"
 	"fmt"
@@ -72,6 +73,20 @@ func (_c *GenerationImageCreate) SetNillableDownloadURL(v *string) *GenerationIm
 	return _c
 }
 
+// SetThumbURL sets the "thumb_url" field.
+func (_c *GenerationImageCreate) SetThumbURL(v string) *GenerationImageCreate {
+	_c.mutation.SetThumbURL(v)
+	return _c
+}
+
+// SetNillableThumbURL sets the "thumb_url" field if the given value is not nil.
+func (_c *GenerationImageCreate) SetNillableThumbURL(v *string) *GenerationImageCreate {
+	if v != nil {
+		_c.SetThumbURL(*v)
+	}
+	return _c
+}
+
 // SetSource sets the "source" field.
 func (_c *GenerationImageCreate) SetSource(v string) *GenerationImageCreate {
 	_c.mutation.SetSource(v)
@@ -100,6 +115,76 @@ func (_c *GenerationImageCreate) SetNillableImageNumber(v *int) *GenerationImage
 	return _c
 }
 
+// SetStatus sets the "status" field.
+func (_c *GenerationImageCreate) SetStatus(v string) *GenerationImageCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *GenerationImageCreate) SetNillableStatus(v *string) *GenerationImageCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
+	return _c
+}
+
+// SetError sets the "error" field.
+func (_c *GenerationImageCreate) SetError(v string) *GenerationImageCreate {
+	_c.mutation.SetError(v)
+	return _c
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (_c *GenerationImageCreate) SetNillableError(v *string) *GenerationImageCreate {
+	if v != nil {
+		_c.SetError(*v)
+	}
+	return _c
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (_c *GenerationImageCreate) SetLatencyMs(v int) *GenerationImageCreate {
+	_c.mutation.SetLatencyMs(v)
+	return _c
+}
+
+// SetNillableLatencyMs sets the "latency_ms" field if the given value is not nil.
+func (_c *GenerationImageCreate) SetNillableLatencyMs(v *int) *GenerationImageCreate {
+	if v != nil {
+		_c.SetLatencyMs(*v)
+	}
+	return _c
+}
+
+// SetDeleted sets the "deleted" field.
+func (_c *GenerationImageCreate) SetDeleted(v bool) *GenerationImageCreate {
+	_c.mutation.SetDeleted(v)
+	return _c
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (_c *GenerationImageCreate) SetNillableDeleted(v *bool) *GenerationImageCreate {
+	if v != nil {
+		_c.SetDeleted(*v)
+	}
+	return _c
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *GenerationImageCreate) SetDeletedAt(v time.Time) *GenerationImageCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *GenerationImageCreate) SetNillableDeletedAt(v *time.Time) *GenerationImageCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *GenerationImageCreate) SetCreatedAt(v time.Time) *GenerationImageCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -118,6 +203,11 @@ func (_c *GenerationImageCreate) SetNillableCreatedAt(v *time.Time) *GenerationI
 func (_c *GenerationImageCreate) SetID(v string) *GenerationImageCreate {
 	_c.mutation.SetID(v)
 	return _c
+}
+
+// SetTask sets the "task" edge to the GenerationTask entity.
+func (_c *GenerationImageCreate) SetTask(v *GenerationTask) *GenerationImageCreate {
+	return _c.SetTaskID(v.ID)
 }
 
 // Mutation returns the GenerationImageMutation object of the builder.
@@ -167,6 +257,10 @@ func (_c *GenerationImageCreate) defaults() {
 		v := generationimage.DefaultDownloadURL
 		_c.mutation.SetDownloadURL(v)
 	}
+	if _, ok := _c.mutation.ThumbURL(); !ok {
+		v := generationimage.DefaultThumbURL
+		_c.mutation.SetThumbURL(v)
+	}
 	if _, ok := _c.mutation.Source(); !ok {
 		v := generationimage.DefaultSource
 		_c.mutation.SetSource(v)
@@ -174,6 +268,22 @@ func (_c *GenerationImageCreate) defaults() {
 	if _, ok := _c.mutation.ImageNumber(); !ok {
 		v := generationimage.DefaultImageNumber
 		_c.mutation.SetImageNumber(v)
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		v := generationimage.DefaultStatus
+		_c.mutation.SetStatus(v)
+	}
+	if _, ok := _c.mutation.Error(); !ok {
+		v := generationimage.DefaultError
+		_c.mutation.SetError(v)
+	}
+	if _, ok := _c.mutation.LatencyMs(); !ok {
+		v := generationimage.DefaultLatencyMs
+		_c.mutation.SetLatencyMs(v)
+	}
+	if _, ok := _c.mutation.Deleted(); !ok {
+		v := generationimage.DefaultDeleted
+		_c.mutation.SetDeleted(v)
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := generationimage.DefaultCreatedAt()
@@ -195,14 +305,32 @@ func (_c *GenerationImageCreate) check() error {
 	if _, ok := _c.mutation.DownloadURL(); !ok {
 		return &ValidationError{Name: "download_url", err: errors.New(`db: missing required field "GenerationImage.download_url"`)}
 	}
+	if _, ok := _c.mutation.ThumbURL(); !ok {
+		return &ValidationError{Name: "thumb_url", err: errors.New(`db: missing required field "GenerationImage.thumb_url"`)}
+	}
 	if _, ok := _c.mutation.Source(); !ok {
 		return &ValidationError{Name: "source", err: errors.New(`db: missing required field "GenerationImage.source"`)}
 	}
 	if _, ok := _c.mutation.ImageNumber(); !ok {
 		return &ValidationError{Name: "image_number", err: errors.New(`db: missing required field "GenerationImage.image_number"`)}
 	}
+	if _, ok := _c.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`db: missing required field "GenerationImage.status"`)}
+	}
+	if _, ok := _c.mutation.Error(); !ok {
+		return &ValidationError{Name: "error", err: errors.New(`db: missing required field "GenerationImage.error"`)}
+	}
+	if _, ok := _c.mutation.LatencyMs(); !ok {
+		return &ValidationError{Name: "latency_ms", err: errors.New(`db: missing required field "GenerationImage.latency_ms"`)}
+	}
+	if _, ok := _c.mutation.Deleted(); !ok {
+		return &ValidationError{Name: "deleted", err: errors.New(`db: missing required field "GenerationImage.deleted"`)}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "GenerationImage.created_at"`)}
+	}
+	if len(_c.mutation.TaskIDs()) == 0 {
+		return &ValidationError{Name: "task", err: errors.New(`db: missing required edge "GenerationImage.task"`)}
 	}
 	return nil
 }
@@ -240,10 +368,6 @@ func (_c *GenerationImageCreate) createSpec() (*GenerationImage, *sqlgraph.Creat
 		_node.ID = id
 		_spec.ID.Value = id
 	}
-	if value, ok := _c.mutation.TaskID(); ok {
-		_spec.SetField(generationimage.FieldTaskID, field.TypeUUID, value)
-		_node.TaskID = value
-	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(generationimage.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -256,6 +380,10 @@ func (_c *GenerationImageCreate) createSpec() (*GenerationImage, *sqlgraph.Creat
 		_spec.SetField(generationimage.FieldDownloadURL, field.TypeString, value)
 		_node.DownloadURL = value
 	}
+	if value, ok := _c.mutation.ThumbURL(); ok {
+		_spec.SetField(generationimage.FieldThumbURL, field.TypeString, value)
+		_node.ThumbURL = value
+	}
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(generationimage.FieldSource, field.TypeString, value)
 		_node.Source = value
@@ -264,9 +392,46 @@ func (_c *GenerationImageCreate) createSpec() (*GenerationImage, *sqlgraph.Creat
 		_spec.SetField(generationimage.FieldImageNumber, field.TypeInt, value)
 		_node.ImageNumber = value
 	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(generationimage.FieldStatus, field.TypeString, value)
+		_node.Status = value
+	}
+	if value, ok := _c.mutation.Error(); ok {
+		_spec.SetField(generationimage.FieldError, field.TypeString, value)
+		_node.Error = value
+	}
+	if value, ok := _c.mutation.LatencyMs(); ok {
+		_spec.SetField(generationimage.FieldLatencyMs, field.TypeInt, value)
+		_node.LatencyMs = value
+	}
+	if value, ok := _c.mutation.Deleted(); ok {
+		_spec.SetField(generationimage.FieldDeleted, field.TypeBool, value)
+		_node.Deleted = value
+	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(generationimage.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = value
+	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(generationimage.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   generationimage.TaskTable,
+			Columns: []string{generationimage.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationtask.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TaskID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -368,6 +533,18 @@ func (u *GenerationImageUpsert) UpdateDownloadURL() *GenerationImageUpsert {
 	return u
 }
 
+// SetThumbURL sets the "thumb_url" field.
+func (u *GenerationImageUpsert) SetThumbURL(v string) *GenerationImageUpsert {
+	u.Set(generationimage.FieldThumbURL, v)
+	return u
+}
+
+// UpdateThumbURL sets the "thumb_url" field to the value that was provided on create.
+func (u *GenerationImageUpsert) UpdateThumbURL() *GenerationImageUpsert {
+	u.SetExcluded(generationimage.FieldThumbURL)
+	return u
+}
+
 // SetSource sets the "source" field.
 func (u *GenerationImageUpsert) SetSource(v string) *GenerationImageUpsert {
 	u.Set(generationimage.FieldSource, v)
@@ -395,6 +572,78 @@ func (u *GenerationImageUpsert) UpdateImageNumber() *GenerationImageUpsert {
 // AddImageNumber adds v to the "image_number" field.
 func (u *GenerationImageUpsert) AddImageNumber(v int) *GenerationImageUpsert {
 	u.Add(generationimage.FieldImageNumber, v)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *GenerationImageUpsert) SetStatus(v string) *GenerationImageUpsert {
+	u.Set(generationimage.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *GenerationImageUpsert) UpdateStatus() *GenerationImageUpsert {
+	u.SetExcluded(generationimage.FieldStatus)
+	return u
+}
+
+// SetError sets the "error" field.
+func (u *GenerationImageUpsert) SetError(v string) *GenerationImageUpsert {
+	u.Set(generationimage.FieldError, v)
+	return u
+}
+
+// UpdateError sets the "error" field to the value that was provided on create.
+func (u *GenerationImageUpsert) UpdateError() *GenerationImageUpsert {
+	u.SetExcluded(generationimage.FieldError)
+	return u
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (u *GenerationImageUpsert) SetLatencyMs(v int) *GenerationImageUpsert {
+	u.Set(generationimage.FieldLatencyMs, v)
+	return u
+}
+
+// UpdateLatencyMs sets the "latency_ms" field to the value that was provided on create.
+func (u *GenerationImageUpsert) UpdateLatencyMs() *GenerationImageUpsert {
+	u.SetExcluded(generationimage.FieldLatencyMs)
+	return u
+}
+
+// AddLatencyMs adds v to the "latency_ms" field.
+func (u *GenerationImageUpsert) AddLatencyMs(v int) *GenerationImageUpsert {
+	u.Add(generationimage.FieldLatencyMs, v)
+	return u
+}
+
+// SetDeleted sets the "deleted" field.
+func (u *GenerationImageUpsert) SetDeleted(v bool) *GenerationImageUpsert {
+	u.Set(generationimage.FieldDeleted, v)
+	return u
+}
+
+// UpdateDeleted sets the "deleted" field to the value that was provided on create.
+func (u *GenerationImageUpsert) UpdateDeleted() *GenerationImageUpsert {
+	u.SetExcluded(generationimage.FieldDeleted)
+	return u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GenerationImageUpsert) SetDeletedAt(v time.Time) *GenerationImageUpsert {
+	u.Set(generationimage.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GenerationImageUpsert) UpdateDeletedAt() *GenerationImageUpsert {
+	u.SetExcluded(generationimage.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GenerationImageUpsert) ClearDeletedAt() *GenerationImageUpsert {
+	u.SetNull(generationimage.FieldDeletedAt)
 	return u
 }
 
@@ -514,6 +763,20 @@ func (u *GenerationImageUpsertOne) UpdateDownloadURL() *GenerationImageUpsertOne
 	})
 }
 
+// SetThumbURL sets the "thumb_url" field.
+func (u *GenerationImageUpsertOne) SetThumbURL(v string) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetThumbURL(v)
+	})
+}
+
+// UpdateThumbURL sets the "thumb_url" field to the value that was provided on create.
+func (u *GenerationImageUpsertOne) UpdateThumbURL() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateThumbURL()
+	})
+}
+
 // SetSource sets the "source" field.
 func (u *GenerationImageUpsertOne) SetSource(v string) *GenerationImageUpsertOne {
 	return u.Update(func(s *GenerationImageUpsert) {
@@ -546,6 +809,90 @@ func (u *GenerationImageUpsertOne) AddImageNumber(v int) *GenerationImageUpsertO
 func (u *GenerationImageUpsertOne) UpdateImageNumber() *GenerationImageUpsertOne {
 	return u.Update(func(s *GenerationImageUpsert) {
 		s.UpdateImageNumber()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *GenerationImageUpsertOne) SetStatus(v string) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *GenerationImageUpsertOne) UpdateStatus() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetError sets the "error" field.
+func (u *GenerationImageUpsertOne) SetError(v string) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetError(v)
+	})
+}
+
+// UpdateError sets the "error" field to the value that was provided on create.
+func (u *GenerationImageUpsertOne) UpdateError() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateError()
+	})
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (u *GenerationImageUpsertOne) SetLatencyMs(v int) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetLatencyMs(v)
+	})
+}
+
+// AddLatencyMs adds v to the "latency_ms" field.
+func (u *GenerationImageUpsertOne) AddLatencyMs(v int) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.AddLatencyMs(v)
+	})
+}
+
+// UpdateLatencyMs sets the "latency_ms" field to the value that was provided on create.
+func (u *GenerationImageUpsertOne) UpdateLatencyMs() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateLatencyMs()
+	})
+}
+
+// SetDeleted sets the "deleted" field.
+func (u *GenerationImageUpsertOne) SetDeleted(v bool) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetDeleted(v)
+	})
+}
+
+// UpdateDeleted sets the "deleted" field to the value that was provided on create.
+func (u *GenerationImageUpsertOne) UpdateDeleted() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateDeleted()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GenerationImageUpsertOne) SetDeletedAt(v time.Time) *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GenerationImageUpsertOne) UpdateDeletedAt() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GenerationImageUpsertOne) ClearDeletedAt() *GenerationImageUpsertOne {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 
@@ -834,6 +1181,20 @@ func (u *GenerationImageUpsertBulk) UpdateDownloadURL() *GenerationImageUpsertBu
 	})
 }
 
+// SetThumbURL sets the "thumb_url" field.
+func (u *GenerationImageUpsertBulk) SetThumbURL(v string) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetThumbURL(v)
+	})
+}
+
+// UpdateThumbURL sets the "thumb_url" field to the value that was provided on create.
+func (u *GenerationImageUpsertBulk) UpdateThumbURL() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateThumbURL()
+	})
+}
+
 // SetSource sets the "source" field.
 func (u *GenerationImageUpsertBulk) SetSource(v string) *GenerationImageUpsertBulk {
 	return u.Update(func(s *GenerationImageUpsert) {
@@ -866,6 +1227,90 @@ func (u *GenerationImageUpsertBulk) AddImageNumber(v int) *GenerationImageUpsert
 func (u *GenerationImageUpsertBulk) UpdateImageNumber() *GenerationImageUpsertBulk {
 	return u.Update(func(s *GenerationImageUpsert) {
 		s.UpdateImageNumber()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *GenerationImageUpsertBulk) SetStatus(v string) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *GenerationImageUpsertBulk) UpdateStatus() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetError sets the "error" field.
+func (u *GenerationImageUpsertBulk) SetError(v string) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetError(v)
+	})
+}
+
+// UpdateError sets the "error" field to the value that was provided on create.
+func (u *GenerationImageUpsertBulk) UpdateError() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateError()
+	})
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (u *GenerationImageUpsertBulk) SetLatencyMs(v int) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetLatencyMs(v)
+	})
+}
+
+// AddLatencyMs adds v to the "latency_ms" field.
+func (u *GenerationImageUpsertBulk) AddLatencyMs(v int) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.AddLatencyMs(v)
+	})
+}
+
+// UpdateLatencyMs sets the "latency_ms" field to the value that was provided on create.
+func (u *GenerationImageUpsertBulk) UpdateLatencyMs() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateLatencyMs()
+	})
+}
+
+// SetDeleted sets the "deleted" field.
+func (u *GenerationImageUpsertBulk) SetDeleted(v bool) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetDeleted(v)
+	})
+}
+
+// UpdateDeleted sets the "deleted" field to the value that was provided on create.
+func (u *GenerationImageUpsertBulk) UpdateDeleted() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateDeleted()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GenerationImageUpsertBulk) SetDeletedAt(v time.Time) *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GenerationImageUpsertBulk) UpdateDeletedAt() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GenerationImageUpsertBulk) ClearDeletedAt() *GenerationImageUpsertBulk {
+	return u.Update(func(s *GenerationImageUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 

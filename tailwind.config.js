@@ -7,30 +7,31 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "var(--color-primary)",
-          50: "var(--color-primary-50)",
-          100: "var(--color-primary-100)",
-          500: "var(--color-primary-500)",
-          600: "var(--color-primary-600)",
-          700: "var(--color-primary-700)"
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          50: "rgb(var(--color-primary-50) / <alpha-value>)",
+          100: "rgb(var(--color-primary-100) / <alpha-value>)",
+          500: "rgb(var(--color-primary-500) / <alpha-value>)",
+          600: "rgb(var(--color-primary-600) / <alpha-value>)",
+          700: "rgb(var(--color-primary-700) / <alpha-value>)"
         },
         accent: {
-          DEFAULT: "var(--color-accent)",
-          soft: "var(--color-accent-soft)"
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          soft: "rgb(var(--color-accent-soft) / <alpha-value>)"
         },
-        danger: "var(--color-danger)",
-        success: "var(--color-success)",
-        warning: "var(--color-warning)",
-        bg: "var(--color-bg)",
-        surface: "var(--color-surface)",
+        rose: "rgb(var(--color-rose) / <alpha-value>)",
+        danger: "rgb(var(--color-danger) / <alpha-value>)",
+        success: "rgb(var(--color-success) / <alpha-value>)",
+        warning: "rgb(var(--color-warning) / <alpha-value>)",
+        bg: "rgb(var(--color-bg) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
         border: {
-          DEFAULT: "var(--color-border)",
-          strong: "var(--color-border-strong)"
+          DEFAULT: "rgb(var(--color-border) / <alpha-value>)",
+          strong: "rgb(var(--color-border-strong) / <alpha-value>)"
         },
         text: {
-          DEFAULT: "var(--color-text)",
-          muted: "var(--color-text-muted)",
-          subtle: "var(--color-text-subtle)"
+          DEFAULT: "rgb(var(--color-text) / <alpha-value>)",
+          muted: "rgb(var(--color-text-muted) / <alpha-value>)",
+          subtle: "rgb(var(--color-text-subtle) / <alpha-value>)"
         }
       },
       fontFamily: {
@@ -53,7 +54,8 @@ export default {
         4: "var(--space-4)",
         5: "var(--space-5)",
         6: "var(--space-6)",
-        7: "var(--space-7)"
+        7: "var(--space-7)",
+        section: "var(--space-section)"
       },
       borderRadius: {
         sm: "var(--radius-sm)",
@@ -66,6 +68,18 @@ export default {
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
         glow: "var(--shadow-glow)"
+      },
+      zIndex: {
+        base: "var(--z-base)",
+        dropdown: "var(--z-dropdown)",
+        header: "var(--z-header)",
+        popover: "var(--z-popover)",
+        "modal-overlay": "var(--z-modal-overlay)",
+        modal: "var(--z-modal)"
+      },
+      width: {
+        sidebar: "var(--sidebar-width)",
+        "sidebar-collapsed": "var(--sidebar-collapsed)"
       },
       backgroundImage: {
         "brand-gradient": "var(--gradient-brand)",
@@ -81,6 +95,20 @@ export default {
         fast: "var(--duration-fast)",
         base: "var(--duration-base)",
         slow: "var(--duration-slow)"
+      },
+      animation: {
+        "star-movement-bottom": "star-movement-bottom linear infinite alternate",
+        "star-movement-top": "star-movement-top linear infinite alternate"
+      },
+      keyframes: {
+        "star-movement-bottom": {
+          "0%": { transform: "translate(0%, 0%)", opacity: "1" },
+          "100%": { transform: "translate(-100%, 0%)", opacity: "0" }
+        },
+        "star-movement-top": {
+          "0%": { transform: "translate(0%, 0%)", opacity: "1" },
+          "100%": { transform: "translate(100%, 0%)", opacity: "0" }
+        }
       }
     }
   },

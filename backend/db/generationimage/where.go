@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -85,6 +86,11 @@ func DownloadURL(v string) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldEQ(FieldDownloadURL, v))
 }
 
+// ThumbURL applies equality check predicate on the "thumb_url" field. It's identical to ThumbURLEQ.
+func ThumbURL(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldThumbURL, v))
+}
+
 // Source applies equality check predicate on the "source" field. It's identical to SourceEQ.
 func Source(v string) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldEQ(FieldSource, v))
@@ -93,6 +99,31 @@ func Source(v string) predicate.GenerationImage {
 // ImageNumber applies equality check predicate on the "image_number" field. It's identical to ImageNumberEQ.
 func ImageNumber(v int) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldEQ(FieldImageNumber, v))
+}
+
+// Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
+func Status(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldStatus, v))
+}
+
+// Error applies equality check predicate on the "error" field. It's identical to ErrorEQ.
+func Error(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldError, v))
+}
+
+// LatencyMs applies equality check predicate on the "latency_ms" field. It's identical to LatencyMsEQ.
+func LatencyMs(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldLatencyMs, v))
+}
+
+// Deleted applies equality check predicate on the "deleted" field. It's identical to DeletedEQ.
+func Deleted(v bool) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldDeleted, v))
+}
+
+// DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
+func DeletedAt(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldDeletedAt, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
@@ -118,26 +149,6 @@ func TaskIDIn(vs ...uuid.UUID) predicate.GenerationImage {
 // TaskIDNotIn applies the NotIn predicate on the "task_id" field.
 func TaskIDNotIn(vs ...uuid.UUID) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldNotIn(FieldTaskID, vs...))
-}
-
-// TaskIDGT applies the GT predicate on the "task_id" field.
-func TaskIDGT(v uuid.UUID) predicate.GenerationImage {
-	return predicate.GenerationImage(sql.FieldGT(FieldTaskID, v))
-}
-
-// TaskIDGTE applies the GTE predicate on the "task_id" field.
-func TaskIDGTE(v uuid.UUID) predicate.GenerationImage {
-	return predicate.GenerationImage(sql.FieldGTE(FieldTaskID, v))
-}
-
-// TaskIDLT applies the LT predicate on the "task_id" field.
-func TaskIDLT(v uuid.UUID) predicate.GenerationImage {
-	return predicate.GenerationImage(sql.FieldLT(FieldTaskID, v))
-}
-
-// TaskIDLTE applies the LTE predicate on the "task_id" field.
-func TaskIDLTE(v uuid.UUID) predicate.GenerationImage {
-	return predicate.GenerationImage(sql.FieldLTE(FieldTaskID, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -335,6 +346,71 @@ func DownloadURLContainsFold(v string) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldContainsFold(FieldDownloadURL, v))
 }
 
+// ThumbURLEQ applies the EQ predicate on the "thumb_url" field.
+func ThumbURLEQ(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldThumbURL, v))
+}
+
+// ThumbURLNEQ applies the NEQ predicate on the "thumb_url" field.
+func ThumbURLNEQ(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNEQ(FieldThumbURL, v))
+}
+
+// ThumbURLIn applies the In predicate on the "thumb_url" field.
+func ThumbURLIn(vs ...string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldIn(FieldThumbURL, vs...))
+}
+
+// ThumbURLNotIn applies the NotIn predicate on the "thumb_url" field.
+func ThumbURLNotIn(vs ...string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNotIn(FieldThumbURL, vs...))
+}
+
+// ThumbURLGT applies the GT predicate on the "thumb_url" field.
+func ThumbURLGT(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGT(FieldThumbURL, v))
+}
+
+// ThumbURLGTE applies the GTE predicate on the "thumb_url" field.
+func ThumbURLGTE(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGTE(FieldThumbURL, v))
+}
+
+// ThumbURLLT applies the LT predicate on the "thumb_url" field.
+func ThumbURLLT(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLT(FieldThumbURL, v))
+}
+
+// ThumbURLLTE applies the LTE predicate on the "thumb_url" field.
+func ThumbURLLTE(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLTE(FieldThumbURL, v))
+}
+
+// ThumbURLContains applies the Contains predicate on the "thumb_url" field.
+func ThumbURLContains(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldContains(FieldThumbURL, v))
+}
+
+// ThumbURLHasPrefix applies the HasPrefix predicate on the "thumb_url" field.
+func ThumbURLHasPrefix(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldHasPrefix(FieldThumbURL, v))
+}
+
+// ThumbURLHasSuffix applies the HasSuffix predicate on the "thumb_url" field.
+func ThumbURLHasSuffix(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldHasSuffix(FieldThumbURL, v))
+}
+
+// ThumbURLEqualFold applies the EqualFold predicate on the "thumb_url" field.
+func ThumbURLEqualFold(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEqualFold(FieldThumbURL, v))
+}
+
+// ThumbURLContainsFold applies the ContainsFold predicate on the "thumb_url" field.
+func ThumbURLContainsFold(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldContainsFold(FieldThumbURL, v))
+}
+
 // SourceEQ applies the EQ predicate on the "source" field.
 func SourceEQ(v string) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldEQ(FieldSource, v))
@@ -440,6 +516,236 @@ func ImageNumberLTE(v int) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldLTE(FieldImageNumber, v))
 }
 
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// StatusGT applies the GT predicate on the "status" field.
+func StatusGT(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGT(FieldStatus, v))
+}
+
+// StatusGTE applies the GTE predicate on the "status" field.
+func StatusGTE(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGTE(FieldStatus, v))
+}
+
+// StatusLT applies the LT predicate on the "status" field.
+func StatusLT(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLT(FieldStatus, v))
+}
+
+// StatusLTE applies the LTE predicate on the "status" field.
+func StatusLTE(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLTE(FieldStatus, v))
+}
+
+// StatusContains applies the Contains predicate on the "status" field.
+func StatusContains(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldContains(FieldStatus, v))
+}
+
+// StatusHasPrefix applies the HasPrefix predicate on the "status" field.
+func StatusHasPrefix(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldHasPrefix(FieldStatus, v))
+}
+
+// StatusHasSuffix applies the HasSuffix predicate on the "status" field.
+func StatusHasSuffix(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldHasSuffix(FieldStatus, v))
+}
+
+// StatusEqualFold applies the EqualFold predicate on the "status" field.
+func StatusEqualFold(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEqualFold(FieldStatus, v))
+}
+
+// StatusContainsFold applies the ContainsFold predicate on the "status" field.
+func StatusContainsFold(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// ErrorEQ applies the EQ predicate on the "error" field.
+func ErrorEQ(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldError, v))
+}
+
+// ErrorNEQ applies the NEQ predicate on the "error" field.
+func ErrorNEQ(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNEQ(FieldError, v))
+}
+
+// ErrorIn applies the In predicate on the "error" field.
+func ErrorIn(vs ...string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldIn(FieldError, vs...))
+}
+
+// ErrorNotIn applies the NotIn predicate on the "error" field.
+func ErrorNotIn(vs ...string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNotIn(FieldError, vs...))
+}
+
+// ErrorGT applies the GT predicate on the "error" field.
+func ErrorGT(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGT(FieldError, v))
+}
+
+// ErrorGTE applies the GTE predicate on the "error" field.
+func ErrorGTE(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGTE(FieldError, v))
+}
+
+// ErrorLT applies the LT predicate on the "error" field.
+func ErrorLT(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLT(FieldError, v))
+}
+
+// ErrorLTE applies the LTE predicate on the "error" field.
+func ErrorLTE(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLTE(FieldError, v))
+}
+
+// ErrorContains applies the Contains predicate on the "error" field.
+func ErrorContains(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldContains(FieldError, v))
+}
+
+// ErrorHasPrefix applies the HasPrefix predicate on the "error" field.
+func ErrorHasPrefix(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldHasPrefix(FieldError, v))
+}
+
+// ErrorHasSuffix applies the HasSuffix predicate on the "error" field.
+func ErrorHasSuffix(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldHasSuffix(FieldError, v))
+}
+
+// ErrorEqualFold applies the EqualFold predicate on the "error" field.
+func ErrorEqualFold(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEqualFold(FieldError, v))
+}
+
+// ErrorContainsFold applies the ContainsFold predicate on the "error" field.
+func ErrorContainsFold(v string) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldContainsFold(FieldError, v))
+}
+
+// LatencyMsEQ applies the EQ predicate on the "latency_ms" field.
+func LatencyMsEQ(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldLatencyMs, v))
+}
+
+// LatencyMsNEQ applies the NEQ predicate on the "latency_ms" field.
+func LatencyMsNEQ(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNEQ(FieldLatencyMs, v))
+}
+
+// LatencyMsIn applies the In predicate on the "latency_ms" field.
+func LatencyMsIn(vs ...int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldIn(FieldLatencyMs, vs...))
+}
+
+// LatencyMsNotIn applies the NotIn predicate on the "latency_ms" field.
+func LatencyMsNotIn(vs ...int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNotIn(FieldLatencyMs, vs...))
+}
+
+// LatencyMsGT applies the GT predicate on the "latency_ms" field.
+func LatencyMsGT(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGT(FieldLatencyMs, v))
+}
+
+// LatencyMsGTE applies the GTE predicate on the "latency_ms" field.
+func LatencyMsGTE(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGTE(FieldLatencyMs, v))
+}
+
+// LatencyMsLT applies the LT predicate on the "latency_ms" field.
+func LatencyMsLT(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLT(FieldLatencyMs, v))
+}
+
+// LatencyMsLTE applies the LTE predicate on the "latency_ms" field.
+func LatencyMsLTE(v int) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLTE(FieldLatencyMs, v))
+}
+
+// DeletedEQ applies the EQ predicate on the "deleted" field.
+func DeletedEQ(v bool) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldDeleted, v))
+}
+
+// DeletedNEQ applies the NEQ predicate on the "deleted" field.
+func DeletedNEQ(v bool) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNEQ(FieldDeleted, v))
+}
+
+// DeletedAtEQ applies the EQ predicate on the "deleted_at" field.
+func DeletedAtEQ(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtNEQ applies the NEQ predicate on the "deleted_at" field.
+func DeletedAtNEQ(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtIn applies the In predicate on the "deleted_at" field.
+func DeletedAtIn(vs ...time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtNotIn applies the NotIn predicate on the "deleted_at" field.
+func DeletedAtNotIn(vs ...time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNotIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtGT applies the GT predicate on the "deleted_at" field.
+func DeletedAtGT(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGT(FieldDeletedAt, v))
+}
+
+// DeletedAtGTE applies the GTE predicate on the "deleted_at" field.
+func DeletedAtGTE(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldGTE(FieldDeletedAt, v))
+}
+
+// DeletedAtLT applies the LT predicate on the "deleted_at" field.
+func DeletedAtLT(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLT(FieldDeletedAt, v))
+}
+
+// DeletedAtLTE applies the LTE predicate on the "deleted_at" field.
+func DeletedAtLTE(v time.Time) predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldLTE(FieldDeletedAt, v))
+}
+
+// DeletedAtIsNil applies the IsNil predicate on the "deleted_at" field.
+func DeletedAtIsNil() predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldIsNull(FieldDeletedAt))
+}
+
+// DeletedAtNotNil applies the NotNil predicate on the "deleted_at" field.
+func DeletedAtNotNil() predicate.GenerationImage {
+	return predicate.GenerationImage(sql.FieldNotNull(FieldDeletedAt))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldEQ(FieldCreatedAt, v))
@@ -478,6 +784,29 @@ func CreatedAtLT(v time.Time) predicate.GenerationImage {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.GenerationImage {
 	return predicate.GenerationImage(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// HasTask applies the HasEdge predicate on the "task" edge.
+func HasTask() predicate.GenerationImage {
+	return predicate.GenerationImage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTaskWith applies the HasEdge predicate on the "task" edge with a given conditions (other predicates).
+func HasTaskWith(preds ...predicate.GenerationTask) predicate.GenerationImage {
+	return predicate.GenerationImage(func(s *sql.Selector) {
+		step := newTaskStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

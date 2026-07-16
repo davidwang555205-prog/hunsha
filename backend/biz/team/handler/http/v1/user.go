@@ -97,8 +97,12 @@ func NewTeamGroupUserHandler(i *do.Injector) (*TeamGroupUserHandler, error) {
 //	@Router			/api/v1/teams/users/login [post]
 func (h *TeamGroupUserHandler) Login(c *web.Context, req domain.TeamLoginReq) error {
 	ctx := c.Request().Context()
-	if !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
-		return errcode.ErrForbidden
+	// bridal 单租户开发阶段：captcha_token 为空时跳过校验（前端暂未接图形验证码）。
+	// 生产环境应前端接入 /api/v1/public/captcha challenge/redeem 并传 captcha_token。
+	if req.CaptchaToken != "" {
+		if !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
+			return errcode.ErrForbidden
+		}
 	}
 
 	user, err := h.usecase.Login(ctx, &req)
@@ -111,6 +115,12 @@ func (h *TeamGroupUserHandler) Login(c *web.Context, req domain.TeamLoginReq) er
 	_, err = h.authMiddleware.Session.Save(c, consts.MonkeyCodeAITeamSession, user.ID, user)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "save session failed", "error", err)
+		return errcode.ErrInternalServer
+	}
+	// bridal：同时写 AISession，让 generation/credits/engines 等 8 模块的 middleware.Auth 能读到。
+	// team 路由仍读 TeamSession（TeamAuth），两套 session 同一 user，bridal 单租户统一鉴权。
+	if _, err = h.authMiddleware.Session.Save(c, consts.MonkeyCodeAISession, user.ID, user); err != nil {
+		h.logger.ErrorContext(ctx, "save ai session failed", "error", err)
 		return errcode.ErrInternalServer
 	}
 
@@ -140,6 +150,10 @@ func (h *TeamGroupUserHandler) Logout(c *web.Context) error {
 	err := h.authMiddleware.Session.Del(c, consts.MonkeyCodeAITeamSession, user.User.ID)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "delete session failed", "error", err)
+	}
+	// bridal：同步清 AISession（与 Login 写双 session 对应）。
+	if err := h.authMiddleware.Session.Del(c, consts.MonkeyCodeAISession, user.User.ID); err != nil {
+		h.logger.ErrorContext(ctx, "delete ai session failed", "error", err)
 	}
 
 	return c.Success(nil)
@@ -322,10 +336,13 @@ func (h *TeamGroupUserHandler) UpdateUser(c *web.Context, req domain.UpdateTeamU
 	if err != nil {
 		return err
 	}
-	// 如果设置了禁用用户，删除该用户相关联的 cookie
+	// 如果设置了禁用用户，删除该用户相关联的 cookie（bridal 双 session 都清）
 	if req.IsBlocked != nil && *req.IsBlocked {
-		err := h.authMiddleware.Session.Trunc(c.Request().Context(), consts.MonkeyCodeAITeamSession, resp.User.ID)
-		if err != nil {
+		ctx := c.Request().Context()
+		if err := h.authMiddleware.Session.Trunc(ctx, consts.MonkeyCodeAITeamSession, resp.User.ID); err != nil {
+			return err
+		}
+		if err := h.authMiddleware.Session.Trunc(ctx, consts.MonkeyCodeAISession, resp.User.ID); err != nil {
 			return err
 		}
 	}

@@ -1,52 +1,43 @@
 /**
  * API 请求/响应类型 -- 前后端单一事实源
  *
- * 从后端 Go struct 1:1 推导：
- *   - bridalauth/types.go: PublicUser / AccountSummary
- *   - bridalauth/usecase.go: LoginResp / MeResp / Summary / AccountSummary
- *   - generation/usecase.go: GenerateReq / SanitizedTask / GenerateResp
- *   - generation/repo.go: ImageRecord / FileInput
- *   - generation/prompt/prompt.go: Params（对应前端 PromptParams）
- *
- * 响应体扁平（无 code/message 包装），错误体统一为 { error: "中文文案" }。
+ * 认证切 MonkeyCode team（cookie session），用户类型对应 backend/domain.User：
+ *   - login/status/logout/成员管理 走 /api/v1/teams/users/*（web.Resp 包装 {code,message,data}，client 自动解包 data）
+ *   - 8 模块（generation/credits/engines/categories/channels/syssetting）走 bridal 路径，响应扁平
+ * 错误体：8 模块 { error }，team { code, message }，client 归一化为 error||message。
  */
-
 import type { PromptParams } from "../types";
 
-/** 对应 bridalauth.PublicUser（types.go:66），V2 扩展 credits/role/isDisabled/allowedChannels */
-export type UserRole = "super_admin" | "admin" | "user";
+/** 对应 consts.UserRole（consts/user.go:26-29）：bridal admin=enterprise，受限成员=subaccount */
+export type UserRole = "individual" | "enterprise" | "subaccount" | "admin";
 
+/** 对应 domain.User（domain/user.go:88），team login/status 返回的 Resp.data */
 export type ApiUser = {
   id: string;
+  name: string;
+  avatar_url: string;
+  email: string;
+  role: UserRole;
+  status: string;
+  is_blocked: boolean;
+  wechat_mp_bound: boolean;
+  has_password: boolean;
   username: string;
   displayName: string;
-  role: UserRole;
   dailyImageLimit: number;
   credits: number;
-  isDisabled: boolean;
-  allowedChannels: string[] | null;
-  lastActiveAt: string | null;
-  hasUnlimitedImageGeneration: boolean;
+  team?: Team | null;
 };
 
-/** 会话：token + user，存 localStorage（sessionStorageKey） */
-export type Session = {
-  token: string;
-  user: ApiUser;
-};
+/** 对应 domain.Team */
+export type Team = { id: string; name: string };
 
-/** 对应 bridalauth.AccountSummary（usecase.go:152），V2 增 credits/lastActiveAt */
-export type AccountSummary = {
-  user: ApiUser;
-  requestCount: number;
-  successCount: number;
-  failedCount: number;
-  generatedImageCount: number;
-  dailyGeneratedImageCount: number;
-  lastGeneratedAt: string | null;
-  credits: number;
-  lastActiveAt: string | null;
-};
+/** 会话：cookie session 无 token，仅持有当前 user（内存态，刷新靠 /status 恢复） */
+export type Session = { user: ApiUser };
+
+/** 对应 domain.TeamUser（team /status 返回的 Resp.data） */
+export type TeamUser = { user: ApiUser; team: Team | null; login?: boolean };
+export type StatusResponse = TeamUser;
 
 /** 对应 generation.ImageRecord（repo.go:30） */
 export type GeneratedImage = {
@@ -55,6 +46,10 @@ export type GeneratedImage = {
   url: string;
   downloadUrl: string;
   source: "local" | "remote";
+  /** 参考图类型：scene=场景参考图, product=婚纱产品图；生成图无此字段，旧历史记录无此字段兜底当产品图 */
+  kind?: "scene" | "product";
+  /** 列表/详情缩略图 URL（COS imageMogr2 等比缩放 480px，~260KB）；缺省兜底用 url */
+  thumbUrl?: string;
 };
 
 /** 对应 generation.SanitizedTask（usecase.go:86） */
@@ -73,29 +68,35 @@ export type HistoryRecord = {
   images: GeneratedImage[];
   error?: string;
   uploadedImageCount: number;
+  /** 用户上传的参考图（后端存 MinIO 后返回，旧记录可能为空） */
+  referenceImages?: GeneratedImage[];
   channelId?: string | null;
+  /** 给大模型的提示词（仅管理员侧返回，用户侧为空数组） */
+  prompts?: string[];
+  /** 小红书发布反馈，null=未反馈 */
+  feedback?: TaskFeedback | null;
 };
 
-/** 对应 bridalauth.Summary（usecase.go:105） */
-export type Summary = {
-  requestCount: number;
-  successCount: number;
-  generatedImageCount: number;
-  retentionDays: number;
+/** 小红书发布反馈（对应后端 types.TaskFeedback） */
+export type TaskFeedback = {
+  noteUrl: string;
+  views: number;
+  likes: number;
+  collects: number;
+  comments: number;
+  shares: number;
+  /** ISO 时间，空=未反馈 */
+  submittedAt?: string;
 };
 
-/** 对应 bridalauth.LoginResp（usecase.go:62），非 admin 无 accounts */
-export type LoginResponse = {
-  token: string;
-  user: ApiUser;
-  accounts?: AccountSummary[];
-};
-
-/** 对应 bridalauth.MeResp（usecase.go:96） */
-export type MeResponse = {
-  user: ApiUser;
-  accounts?: AccountSummary[];
-  summary: Summary;
+/** POST /api/v1/generation/tasks/:id/feedback 请求体 */
+export type SubmitFeedbackRequest = {
+  noteUrl: string;
+  views: number;
+  likes: number;
+  collects: number;
+  comments: number;
+  shares: number;
 };
 
 /** 历史列表响应（handler.go:83）{ history: SanitizedTask[] } */
@@ -103,21 +104,41 @@ export type HistoryResponse = {
   history: HistoryRecord[];
 };
 
+/** 生图统计（GET /api/v1/generation/stats，对应后端 generation.StatsResp） */
+export type GenerationStats = {
+  requestCount: number;
+  successCount: number;
+  failedCount: number;
+  imageCount: number;
+  dailyImages: number;
+  lastGeneratedAt: number;
+};
+
+/** 单日趋势聚合（上海时区日期），对应后端 generation.TrendDay */
+export type TrendDay = {
+  date: string;
+  total: number;
+  success: number;
+  failed: number;
+  images: number;
+};
+
+/** 单条模型线路的趋势，对应后端 generation.ChannelTrend */
+export type ChannelTrend = {
+  channelId: string;
+  channelName: string;
+  days: TrendDay[];
+};
+
+/** 趋势统计（GET /api/v1/generation/stats/trend，对应后端 generation.StatsTrendResp） */
+export type GenerationStatsTrend = {
+  days: TrendDay[];
+  channels: ChannelTrend[];
+};
+
 /** 对应 generation.GenerateResp（usecase.go:132）{ record: SanitizedTask } */
 export type GenerateResponse = {
   record: HistoryRecord;
-};
-
-/** POST /api/admin/users 201 响应 */
-export type CreateUserResponse = {
-  user: ApiUser;
-  accounts: AccountSummary[];
-};
-
-/** PATCH /api/admin/users/:id 响应 */
-export type UpdateUserResponse = {
-  user: ApiUser;
-  accounts: AccountSummary[];
 };
 
 /** 对应 generation.FileInput（usecase.go:77），前端参考图 base64 */
@@ -138,38 +159,72 @@ export type GenerateRequest = {
   body: string;
   tags: string[];
   topic: string;
-  referenceImages: ReferenceImageUpload[];
+  /** 场景参考图（0~1 张，可选），传了则锁定在该场景生成 */
+  sceneReferenceImage?: ReferenceImageUpload;
+  /** 婚纱产品图（4~6 张，必传） */
+  productReferenceImages: ReferenceImageUpload[];
   size: string;
   quality: string;
 };
 
-/** POST /api/login 请求体 */
+/** POST /api/v1/teams/users/login 请求体（captcha_token 为空时后端跳过校验） */
 export type LoginRequest = {
-  username: string;
+  email: string;
   password: string;
+  captcha_token?: string;
 };
 
-/** POST /api/admin/users 请求体（V2 增 credits/role/allowedChannels） */
+/** login 响应 = Resp.data = ApiUser（cookie 由后端 Set-Cookie 建立，无 token） */
+export type LoginResponse = ApiUser;
+
+/** team 成员角色（consts/team.go:6-7） */
+export type TeamMemberRole = "admin" | "user";
+
+/** 对应 domain.TeamMemberInfo（team MemberList 返回的成员，无 bridalauth 统计字段） */
+export type TeamMemberInfo = {
+  user: ApiUser;
+  role: TeamMemberRole;
+  created_at: number;
+  last_active_at: number;
+};
+
+/** GET /api/v1/teams/users 响应 = Resp.data */
+export type MemberListResponse = {
+  members: TeamMemberInfo[];
+  member_limit: number;
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+/** 创号/重置密码返回的初始密码（仅回传一次） */
+export type TeamUserPassword = { email: string; password: string };
+
+/** POST /api/v1/teams/users/with-password 请求体（批量建 subaccount 成员） */
 export type CreateUserRequest = {
-  username: string;
-  displayName?: string;
-  password: string;
+  emails: string[];
   dailyImageLimit: number;
-  credits?: number;
-  role?: UserRole;
-  allowedChannels?: string[] | null;
 };
 
-/** PATCH /api/admin/users/:id 请求体（V2 支持全字段） */
-export type UpdateUserRequest = {
-  dailyImageLimit?: number;
-  password?: string;
-  credits?: number;
-  role?: UserRole;
-  displayName?: string;
-  isDisabled?: boolean;
-  allowedChannels?: string[] | null;
+/** 创号响应 = Resp.data，含初始密码 */
+export type CreateUserResponse = {
+  users: TeamUser[];
+  passwords: TeamUserPassword[];
 };
+
+/** PUT /api/v1/teams/users/:id 请求体（bridal 扩展 dailyImageLimit/credits） */
+export type UpdateUserRequest = {
+  name?: string;
+  is_blocked?: boolean;
+  dailyImageLimit?: number;
+  credits?: number;
+};
+
+/** 更新响应 = Resp.data */
+export type UpdateUserResponse = { user: ApiUser };
+
+/** 重置密码响应 = Resp.data */
+export type ResetPasswordResponse = TeamUserPassword;
 
 /** 统一错误：归一化后的 HTTP 错误，401 触发全局登出 */
 export type ApiError = Error & {
@@ -199,12 +254,14 @@ export type Channel = {
   id: string;
   name: string;
   apiBaseUrl: string;
+  protocol: string;
   modelId: string;
   supportedSizes: string[];
   defaultQuality: string;
   isEnabled: boolean;
   isDefault: boolean;
   sortOrder: number;
+  maxConcurrency: number;
   apiKey?: string;
   stats?: ChannelStats | null;
   createdAt: string;
@@ -218,12 +275,14 @@ export type CreateChannelRequest = {
   name: string;
   apiBaseUrl: string;
   apiKey: string;
+  protocol?: string;
   modelId: string;
   supportedSizes?: string[];
   defaultQuality?: string;
   isEnabled?: boolean;
   isDefault?: boolean;
   sortOrder?: number;
+  maxConcurrency?: number;
 };
 
 export type UpdateChannelRequest = Partial<Omit<CreateChannelRequest, "id">>;
@@ -234,6 +293,7 @@ export type Category = {
   name: string;
   icon: string;
   engine: string;
+  description: string;
   sortOrder: number;
   isEnabled: boolean;
   config: Record<string, unknown>;
@@ -248,6 +308,7 @@ export type CreateCategoryRequest = {
   name: string;
   icon?: string;
   engine: string;
+  description?: string;
   sortOrder?: number;
   isEnabled?: boolean;
   config?: Record<string, unknown>;
@@ -276,6 +337,8 @@ export type GenerationTask = {
   tags: string[];
   topic: string;
   resultImages: GeneratedImage[];
+  /** 用户上传的参考图（scene/product，恢复任务时回显；进行中任务可能为空） */
+  referenceImages?: GeneratedImage[];
   subTaskStatus: SubTaskStatus[];
   error: string;
   totalCount: number;
@@ -293,7 +356,10 @@ export type CreateTaskRequest = {
   body: string;
   tags: string[];
   topic: string;
-  referenceImages: ReferenceImageUpload[];
+  /** 场景参考图（0~1 张，可选），传了则锁定在该场景生成 */
+  sceneReferenceImage?: ReferenceImageUpload;
+  /** 婚纱产品图（4~6 张，必传） */
+  productReferenceImages: ReferenceImageUpload[];
   size: string;
   quality: string;
   channelId?: string;
@@ -320,6 +386,10 @@ export type TaskDetailResponse = { task: GenerationTask };
 export type CreditTransaction = {
   id: string;
   userId: string;
+  username: string;
+  displayName: string;
+  name: string;
+  email: string;
   type: "recharge" | "consume" | "adjust";
   amount: number;
   balanceAfter: number;
@@ -330,16 +400,23 @@ export type CreditTransaction = {
 
 export type CreditTransactionListResponse = { transactions: CreditTransaction[] };
 
+export type AllCreditTransactionsResponse = {
+  transactions: CreditTransaction[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 export type AdjustCreditsRequest = {
   amount: number;
   type?: "recharge" | "adjust";
   description?: string;
 };
 
+/** 调整积分响应（账号概要改走 MemberList，此处只回 user + balance） */
 export type AdjustCreditsResponse = {
   user: ApiUser;
   balance: number;
-  accounts: AccountSummary[];
 };
 
 /** 历史分页响应（V2） */
@@ -354,7 +431,104 @@ export type HistoryQuery = {
   page?: number;
   pageSize?: number;
   status?: "success" | "failed";
-  startDate?: string;
-  endDate?: string;
+  startTime?: string;
+  endTime?: string;
   q?: string;
+  taskId?: string;
+  /** admin 按用户筛选 */
+  userId?: string;
 };
+
+/** 系统设置（后台可配运行时配置，如 retention_days 数据保留天数） */
+export type SystemSetting = {
+  key: string;
+  value: Record<string, unknown>;
+  updatedAt: string;
+};
+
+export type SettingsListResponse = { settings: SystemSetting[] };
+
+export type UpdateSettingRequest = {
+  value: Record<string, unknown>;
+};
+
+export type UpdateSettingResponse = { setting: SystemSetting };
+
+/** 内容引擎配置（后台可配，config 存可编辑素材如主题覆盖文案） */
+export type ContentEngine = {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  config: Record<string, unknown>;
+  isEnabled: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EngineListResponse = { engines: ContentEngine[] };
+
+/** 主题覆盖文案（每个主题 10 字段，均 string[]，可选--未覆盖字段用默认） */
+export type TopicOverride = {
+  audiences?: string[];
+  focuses?: string[];
+  concerns?: string[];
+  proofs?: string[];
+  scenes?: string[];
+  materials?: string[];
+  services?: string[];
+  takeaways?: string[];
+  tones?: string[];
+  tagExtras?: string[];
+};
+
+/** 默认素材（编辑弹窗与 config.seeding 合并显示；只声明结构化编辑的组，其他组宽松） */
+export type DefaultAssets = {
+  xiaohongshuTopicOverrides?: Record<string, TopicOverride>;
+  titleStarters?: string[];
+  titleAngles?: string[];
+  titleClosers?: string[];
+  [key: string]: unknown;
+};
+
+export type CreateEngineRequest = {
+  key: string;
+  name: string;
+  description?: string;
+  config?: Record<string, unknown>;
+  isEnabled?: boolean;
+  sortOrder?: number;
+};
+
+export type UpdateEngineRequest = Partial<CreateEngineRequest>;
+
+/** 关键词档案（镜像 backend/biz/generation/prompt/assets.go KeywordProfile） */
+export type PromptKeywordProfile = {
+  promptLine: string;
+  negativeLine: string;
+};
+
+/** 生图 prompt 素材（镜像 backend/biz/generation/prompt/assets.go Assets，即 content_engines.config.imagePrompt 存储格式）。
+ *  由后端 PromptOptions 接口返回 MergeAssets 合并后的当前生效值；字段全可选，未配置字段用代码默认。 */
+export type PromptAssets = {
+  materialImageTypes?: string[];
+  wornImageTypes?: string[];
+  categoryLines?: Record<string, string>;
+  bridalStyleLines?: Record<string, string>;
+  dressStyleLines?: Record<string, string>;
+  imageTypeLines?: Record<string, string>;
+  sceneLines?: Record<string, string>;
+  modelLines?: Record<string, string>;
+  seasonLines?: Record<string, string>;
+  lightLines?: Record<string, string>;
+  bridalImageKeywordProfiles?: Record<string, PromptKeywordProfile>;
+  bridalScenesByImageType?: Record<string, string[]>;
+  dressScenesByImageType?: Record<string, string[]>;
+  bridalReferenceDetails?: string[];
+  dressReferenceDetails?: string[];
+  negativeRules?: string[];
+};
+
+/** GET /api/engines/:key/prompt-options 响应 */
+export type PromptOptionsResponse = { assets: PromptAssets };

@@ -33,12 +33,12 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated) return;
     setIsLoading(true);
     try {
-      const payload = await listCategories();
-      setCategories(payload.categories);
+      const catPayload = await listCategories();
+      setCategories(catPayload.categories);
       setCurrentId((prev) => {
-        const exists = payload.categories.some((c) => c.id === prev);
+        const exists = catPayload.categories.some((c) => c.id === prev);
         if (exists) return prev;
-        return payload.categories[0]?.id ?? null;
+        return catPayload.categories[0]?.id ?? null;
       });
     } catch {
       // 401 由 client 统一处理

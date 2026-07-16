@@ -3,7 +3,9 @@
 package db
 
 import (
+	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
+	"bridal/backend/ent/types"
 	"context"
 	"errors"
 	"fmt"
@@ -190,6 +192,158 @@ func (_c *GenerationTaskCreate) SetNillableLatencyMs(v *int) *GenerationTaskCrea
 	return _c
 }
 
+// SetTotalCount sets the "total_count" field.
+func (_c *GenerationTaskCreate) SetTotalCount(v int) *GenerationTaskCreate {
+	_c.mutation.SetTotalCount(v)
+	return _c
+}
+
+// SetNillableTotalCount sets the "total_count" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableTotalCount(v *int) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetTotalCount(*v)
+	}
+	return _c
+}
+
+// SetCompletedCount sets the "completed_count" field.
+func (_c *GenerationTaskCreate) SetCompletedCount(v int) *GenerationTaskCreate {
+	_c.mutation.SetCompletedCount(v)
+	return _c
+}
+
+// SetNillableCompletedCount sets the "completed_count" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableCompletedCount(v *int) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetCompletedCount(*v)
+	}
+	return _c
+}
+
+// SetEstimatedSeconds sets the "estimated_seconds" field.
+func (_c *GenerationTaskCreate) SetEstimatedSeconds(v int) *GenerationTaskCreate {
+	_c.mutation.SetEstimatedSeconds(v)
+	return _c
+}
+
+// SetNillableEstimatedSeconds sets the "estimated_seconds" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableEstimatedSeconds(v *int) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetEstimatedSeconds(*v)
+	}
+	return _c
+}
+
+// SetCategoryID sets the "category_id" field.
+func (_c *GenerationTaskCreate) SetCategoryID(v uuid.UUID) *GenerationTaskCreate {
+	_c.mutation.SetCategoryID(v)
+	return _c
+}
+
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableCategoryID(v *uuid.UUID) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetCategoryID(*v)
+	}
+	return _c
+}
+
+// SetChannelID sets the "channel_id" field.
+func (_c *GenerationTaskCreate) SetChannelID(v uuid.UUID) *GenerationTaskCreate {
+	_c.mutation.SetChannelID(v)
+	return _c
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableChannelID(v *uuid.UUID) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetChannelID(*v)
+	}
+	return _c
+}
+
+// SetStartedAt sets the "started_at" field.
+func (_c *GenerationTaskCreate) SetStartedAt(v time.Time) *GenerationTaskCreate {
+	_c.mutation.SetStartedAt(v)
+	return _c
+}
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableStartedAt(v *time.Time) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetStartedAt(*v)
+	}
+	return _c
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (_c *GenerationTaskCreate) SetCompletedAt(v time.Time) *GenerationTaskCreate {
+	_c.mutation.SetCompletedAt(v)
+	return _c
+}
+
+// SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableCompletedAt(v *time.Time) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetCompletedAt(*v)
+	}
+	return _c
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (_c *GenerationTaskCreate) SetReferenceImages(v []types.ReferenceImage) *GenerationTaskCreate {
+	_c.mutation.SetReferenceImages(v)
+	return _c
+}
+
+// SetPrompts sets the "prompts" field.
+func (_c *GenerationTaskCreate) SetPrompts(v []string) *GenerationTaskCreate {
+	_c.mutation.SetPrompts(v)
+	return _c
+}
+
+// SetFeedback sets the "feedback" field.
+func (_c *GenerationTaskCreate) SetFeedback(v types.TaskFeedback) *GenerationTaskCreate {
+	_c.mutation.SetFeedback(v)
+	return _c
+}
+
+// SetNillableFeedback sets the "feedback" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableFeedback(v *types.TaskFeedback) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetFeedback(*v)
+	}
+	return _c
+}
+
+// SetDeleted sets the "deleted" field.
+func (_c *GenerationTaskCreate) SetDeleted(v bool) *GenerationTaskCreate {
+	_c.mutation.SetDeleted(v)
+	return _c
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableDeleted(v *bool) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetDeleted(*v)
+	}
+	return _c
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *GenerationTaskCreate) SetDeletedAt(v time.Time) *GenerationTaskCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableDeletedAt(v *time.Time) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *GenerationTaskCreate) SetCreatedAt(v time.Time) *GenerationTaskCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -216,6 +370,21 @@ func (_c *GenerationTaskCreate) SetNillableID(v *uuid.UUID) *GenerationTaskCreat
 		_c.SetID(*v)
 	}
 	return _c
+}
+
+// AddImageIDs adds the "images" edge to the GenerationImage entity by IDs.
+func (_c *GenerationTaskCreate) AddImageIDs(ids ...string) *GenerationTaskCreate {
+	_c.mutation.AddImageIDs(ids...)
+	return _c
+}
+
+// AddImages adds the "images" edges to the GenerationImage entity.
+func (_c *GenerationTaskCreate) AddImages(v ...*GenerationImage) *GenerationTaskCreate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddImageIDs(ids...)
 }
 
 // Mutation returns the GenerationTaskMutation object of the builder.
@@ -301,6 +470,22 @@ func (_c *GenerationTaskCreate) defaults() {
 		v := generationtask.DefaultLatencyMs
 		_c.mutation.SetLatencyMs(v)
 	}
+	if _, ok := _c.mutation.TotalCount(); !ok {
+		v := generationtask.DefaultTotalCount
+		_c.mutation.SetTotalCount(v)
+	}
+	if _, ok := _c.mutation.CompletedCount(); !ok {
+		v := generationtask.DefaultCompletedCount
+		_c.mutation.SetCompletedCount(v)
+	}
+	if _, ok := _c.mutation.EstimatedSeconds(); !ok {
+		v := generationtask.DefaultEstimatedSeconds
+		_c.mutation.SetEstimatedSeconds(v)
+	}
+	if _, ok := _c.mutation.Deleted(); !ok {
+		v := generationtask.DefaultDeleted
+		_c.mutation.SetDeleted(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := generationtask.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -351,6 +536,18 @@ func (_c *GenerationTaskCreate) check() error {
 	}
 	if _, ok := _c.mutation.LatencyMs(); !ok {
 		return &ValidationError{Name: "latency_ms", err: errors.New(`db: missing required field "GenerationTask.latency_ms"`)}
+	}
+	if _, ok := _c.mutation.TotalCount(); !ok {
+		return &ValidationError{Name: "total_count", err: errors.New(`db: missing required field "GenerationTask.total_count"`)}
+	}
+	if _, ok := _c.mutation.CompletedCount(); !ok {
+		return &ValidationError{Name: "completed_count", err: errors.New(`db: missing required field "GenerationTask.completed_count"`)}
+	}
+	if _, ok := _c.mutation.EstimatedSeconds(); !ok {
+		return &ValidationError{Name: "estimated_seconds", err: errors.New(`db: missing required field "GenerationTask.estimated_seconds"`)}
+	}
+	if _, ok := _c.mutation.Deleted(); !ok {
+		return &ValidationError{Name: "deleted", err: errors.New(`db: missing required field "GenerationTask.deleted"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "GenerationTask.created_at"`)}
@@ -443,9 +640,73 @@ func (_c *GenerationTaskCreate) createSpec() (*GenerationTask, *sqlgraph.CreateS
 		_spec.SetField(generationtask.FieldLatencyMs, field.TypeInt, value)
 		_node.LatencyMs = value
 	}
+	if value, ok := _c.mutation.TotalCount(); ok {
+		_spec.SetField(generationtask.FieldTotalCount, field.TypeInt, value)
+		_node.TotalCount = value
+	}
+	if value, ok := _c.mutation.CompletedCount(); ok {
+		_spec.SetField(generationtask.FieldCompletedCount, field.TypeInt, value)
+		_node.CompletedCount = value
+	}
+	if value, ok := _c.mutation.EstimatedSeconds(); ok {
+		_spec.SetField(generationtask.FieldEstimatedSeconds, field.TypeInt, value)
+		_node.EstimatedSeconds = value
+	}
+	if value, ok := _c.mutation.CategoryID(); ok {
+		_spec.SetField(generationtask.FieldCategoryID, field.TypeUUID, value)
+		_node.CategoryID = value
+	}
+	if value, ok := _c.mutation.ChannelID(); ok {
+		_spec.SetField(generationtask.FieldChannelID, field.TypeUUID, value)
+		_node.ChannelID = value
+	}
+	if value, ok := _c.mutation.StartedAt(); ok {
+		_spec.SetField(generationtask.FieldStartedAt, field.TypeTime, value)
+		_node.StartedAt = value
+	}
+	if value, ok := _c.mutation.CompletedAt(); ok {
+		_spec.SetField(generationtask.FieldCompletedAt, field.TypeTime, value)
+		_node.CompletedAt = value
+	}
+	if value, ok := _c.mutation.ReferenceImages(); ok {
+		_spec.SetField(generationtask.FieldReferenceImages, field.TypeJSON, value)
+		_node.ReferenceImages = value
+	}
+	if value, ok := _c.mutation.Prompts(); ok {
+		_spec.SetField(generationtask.FieldPrompts, field.TypeJSON, value)
+		_node.Prompts = value
+	}
+	if value, ok := _c.mutation.Feedback(); ok {
+		_spec.SetField(generationtask.FieldFeedback, field.TypeJSON, value)
+		_node.Feedback = value
+	}
+	if value, ok := _c.mutation.Deleted(); ok {
+		_spec.SetField(generationtask.FieldDeleted, field.TypeBool, value)
+		_node.Deleted = value
+	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(generationtask.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = value
+	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(generationtask.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if nodes := _c.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -664,6 +925,216 @@ func (u *GenerationTaskUpsert) UpdateLatencyMs() *GenerationTaskUpsert {
 // AddLatencyMs adds v to the "latency_ms" field.
 func (u *GenerationTaskUpsert) AddLatencyMs(v int) *GenerationTaskUpsert {
 	u.Add(generationtask.FieldLatencyMs, v)
+	return u
+}
+
+// SetTotalCount sets the "total_count" field.
+func (u *GenerationTaskUpsert) SetTotalCount(v int) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldTotalCount, v)
+	return u
+}
+
+// UpdateTotalCount sets the "total_count" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateTotalCount() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldTotalCount)
+	return u
+}
+
+// AddTotalCount adds v to the "total_count" field.
+func (u *GenerationTaskUpsert) AddTotalCount(v int) *GenerationTaskUpsert {
+	u.Add(generationtask.FieldTotalCount, v)
+	return u
+}
+
+// SetCompletedCount sets the "completed_count" field.
+func (u *GenerationTaskUpsert) SetCompletedCount(v int) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldCompletedCount, v)
+	return u
+}
+
+// UpdateCompletedCount sets the "completed_count" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateCompletedCount() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldCompletedCount)
+	return u
+}
+
+// AddCompletedCount adds v to the "completed_count" field.
+func (u *GenerationTaskUpsert) AddCompletedCount(v int) *GenerationTaskUpsert {
+	u.Add(generationtask.FieldCompletedCount, v)
+	return u
+}
+
+// SetEstimatedSeconds sets the "estimated_seconds" field.
+func (u *GenerationTaskUpsert) SetEstimatedSeconds(v int) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldEstimatedSeconds, v)
+	return u
+}
+
+// UpdateEstimatedSeconds sets the "estimated_seconds" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateEstimatedSeconds() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldEstimatedSeconds)
+	return u
+}
+
+// AddEstimatedSeconds adds v to the "estimated_seconds" field.
+func (u *GenerationTaskUpsert) AddEstimatedSeconds(v int) *GenerationTaskUpsert {
+	u.Add(generationtask.FieldEstimatedSeconds, v)
+	return u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *GenerationTaskUpsert) SetCategoryID(v uuid.UUID) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldCategoryID, v)
+	return u
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateCategoryID() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldCategoryID)
+	return u
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *GenerationTaskUpsert) ClearCategoryID() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldCategoryID)
+	return u
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *GenerationTaskUpsert) SetChannelID(v uuid.UUID) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldChannelID, v)
+	return u
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateChannelID() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldChannelID)
+	return u
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (u *GenerationTaskUpsert) ClearChannelID() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldChannelID)
+	return u
+}
+
+// SetStartedAt sets the "started_at" field.
+func (u *GenerationTaskUpsert) SetStartedAt(v time.Time) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldStartedAt, v)
+	return u
+}
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateStartedAt() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldStartedAt)
+	return u
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *GenerationTaskUpsert) ClearStartedAt() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldStartedAt)
+	return u
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *GenerationTaskUpsert) SetCompletedAt(v time.Time) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldCompletedAt, v)
+	return u
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateCompletedAt() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldCompletedAt)
+	return u
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *GenerationTaskUpsert) ClearCompletedAt() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldCompletedAt)
+	return u
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (u *GenerationTaskUpsert) SetReferenceImages(v []types.ReferenceImage) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldReferenceImages, v)
+	return u
+}
+
+// UpdateReferenceImages sets the "reference_images" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateReferenceImages() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldReferenceImages)
+	return u
+}
+
+// ClearReferenceImages clears the value of the "reference_images" field.
+func (u *GenerationTaskUpsert) ClearReferenceImages() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldReferenceImages)
+	return u
+}
+
+// SetPrompts sets the "prompts" field.
+func (u *GenerationTaskUpsert) SetPrompts(v []string) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldPrompts, v)
+	return u
+}
+
+// UpdatePrompts sets the "prompts" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdatePrompts() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldPrompts)
+	return u
+}
+
+// ClearPrompts clears the value of the "prompts" field.
+func (u *GenerationTaskUpsert) ClearPrompts() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldPrompts)
+	return u
+}
+
+// SetFeedback sets the "feedback" field.
+func (u *GenerationTaskUpsert) SetFeedback(v types.TaskFeedback) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldFeedback, v)
+	return u
+}
+
+// UpdateFeedback sets the "feedback" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateFeedback() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldFeedback)
+	return u
+}
+
+// ClearFeedback clears the value of the "feedback" field.
+func (u *GenerationTaskUpsert) ClearFeedback() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldFeedback)
+	return u
+}
+
+// SetDeleted sets the "deleted" field.
+func (u *GenerationTaskUpsert) SetDeleted(v bool) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldDeleted, v)
+	return u
+}
+
+// UpdateDeleted sets the "deleted" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateDeleted() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldDeleted)
+	return u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GenerationTaskUpsert) SetDeletedAt(v time.Time) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateDeletedAt() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GenerationTaskUpsert) ClearDeletedAt() *GenerationTaskUpsert {
+	u.SetNull(generationtask.FieldDeletedAt)
 	return u
 }
 
@@ -920,6 +1391,251 @@ func (u *GenerationTaskUpsertOne) AddLatencyMs(v int) *GenerationTaskUpsertOne {
 func (u *GenerationTaskUpsertOne) UpdateLatencyMs() *GenerationTaskUpsertOne {
 	return u.Update(func(s *GenerationTaskUpsert) {
 		s.UpdateLatencyMs()
+	})
+}
+
+// SetTotalCount sets the "total_count" field.
+func (u *GenerationTaskUpsertOne) SetTotalCount(v int) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetTotalCount(v)
+	})
+}
+
+// AddTotalCount adds v to the "total_count" field.
+func (u *GenerationTaskUpsertOne) AddTotalCount(v int) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.AddTotalCount(v)
+	})
+}
+
+// UpdateTotalCount sets the "total_count" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateTotalCount() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateTotalCount()
+	})
+}
+
+// SetCompletedCount sets the "completed_count" field.
+func (u *GenerationTaskUpsertOne) SetCompletedCount(v int) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetCompletedCount(v)
+	})
+}
+
+// AddCompletedCount adds v to the "completed_count" field.
+func (u *GenerationTaskUpsertOne) AddCompletedCount(v int) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.AddCompletedCount(v)
+	})
+}
+
+// UpdateCompletedCount sets the "completed_count" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateCompletedCount() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateCompletedCount()
+	})
+}
+
+// SetEstimatedSeconds sets the "estimated_seconds" field.
+func (u *GenerationTaskUpsertOne) SetEstimatedSeconds(v int) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetEstimatedSeconds(v)
+	})
+}
+
+// AddEstimatedSeconds adds v to the "estimated_seconds" field.
+func (u *GenerationTaskUpsertOne) AddEstimatedSeconds(v int) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.AddEstimatedSeconds(v)
+	})
+}
+
+// UpdateEstimatedSeconds sets the "estimated_seconds" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateEstimatedSeconds() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateEstimatedSeconds()
+	})
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *GenerationTaskUpsertOne) SetCategoryID(v uuid.UUID) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetCategoryID(v)
+	})
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateCategoryID() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateCategoryID()
+	})
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *GenerationTaskUpsertOne) ClearCategoryID() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearCategoryID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *GenerationTaskUpsertOne) SetChannelID(v uuid.UUID) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateChannelID() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateChannelID()
+	})
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (u *GenerationTaskUpsertOne) ClearChannelID() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearChannelID()
+	})
+}
+
+// SetStartedAt sets the "started_at" field.
+func (u *GenerationTaskUpsertOne) SetStartedAt(v time.Time) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetStartedAt(v)
+	})
+}
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateStartedAt() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateStartedAt()
+	})
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *GenerationTaskUpsertOne) ClearStartedAt() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearStartedAt()
+	})
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *GenerationTaskUpsertOne) SetCompletedAt(v time.Time) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetCompletedAt(v)
+	})
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateCompletedAt() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateCompletedAt()
+	})
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *GenerationTaskUpsertOne) ClearCompletedAt() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearCompletedAt()
+	})
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (u *GenerationTaskUpsertOne) SetReferenceImages(v []types.ReferenceImage) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetReferenceImages(v)
+	})
+}
+
+// UpdateReferenceImages sets the "reference_images" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateReferenceImages() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateReferenceImages()
+	})
+}
+
+// ClearReferenceImages clears the value of the "reference_images" field.
+func (u *GenerationTaskUpsertOne) ClearReferenceImages() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearReferenceImages()
+	})
+}
+
+// SetPrompts sets the "prompts" field.
+func (u *GenerationTaskUpsertOne) SetPrompts(v []string) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetPrompts(v)
+	})
+}
+
+// UpdatePrompts sets the "prompts" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdatePrompts() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdatePrompts()
+	})
+}
+
+// ClearPrompts clears the value of the "prompts" field.
+func (u *GenerationTaskUpsertOne) ClearPrompts() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearPrompts()
+	})
+}
+
+// SetFeedback sets the "feedback" field.
+func (u *GenerationTaskUpsertOne) SetFeedback(v types.TaskFeedback) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetFeedback(v)
+	})
+}
+
+// UpdateFeedback sets the "feedback" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateFeedback() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateFeedback()
+	})
+}
+
+// ClearFeedback clears the value of the "feedback" field.
+func (u *GenerationTaskUpsertOne) ClearFeedback() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearFeedback()
+	})
+}
+
+// SetDeleted sets the "deleted" field.
+func (u *GenerationTaskUpsertOne) SetDeleted(v bool) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetDeleted(v)
+	})
+}
+
+// UpdateDeleted sets the "deleted" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateDeleted() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateDeleted()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GenerationTaskUpsertOne) SetDeletedAt(v time.Time) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateDeletedAt() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GenerationTaskUpsertOne) ClearDeletedAt() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 
@@ -1345,6 +2061,251 @@ func (u *GenerationTaskUpsertBulk) AddLatencyMs(v int) *GenerationTaskUpsertBulk
 func (u *GenerationTaskUpsertBulk) UpdateLatencyMs() *GenerationTaskUpsertBulk {
 	return u.Update(func(s *GenerationTaskUpsert) {
 		s.UpdateLatencyMs()
+	})
+}
+
+// SetTotalCount sets the "total_count" field.
+func (u *GenerationTaskUpsertBulk) SetTotalCount(v int) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetTotalCount(v)
+	})
+}
+
+// AddTotalCount adds v to the "total_count" field.
+func (u *GenerationTaskUpsertBulk) AddTotalCount(v int) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.AddTotalCount(v)
+	})
+}
+
+// UpdateTotalCount sets the "total_count" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateTotalCount() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateTotalCount()
+	})
+}
+
+// SetCompletedCount sets the "completed_count" field.
+func (u *GenerationTaskUpsertBulk) SetCompletedCount(v int) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetCompletedCount(v)
+	})
+}
+
+// AddCompletedCount adds v to the "completed_count" field.
+func (u *GenerationTaskUpsertBulk) AddCompletedCount(v int) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.AddCompletedCount(v)
+	})
+}
+
+// UpdateCompletedCount sets the "completed_count" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateCompletedCount() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateCompletedCount()
+	})
+}
+
+// SetEstimatedSeconds sets the "estimated_seconds" field.
+func (u *GenerationTaskUpsertBulk) SetEstimatedSeconds(v int) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetEstimatedSeconds(v)
+	})
+}
+
+// AddEstimatedSeconds adds v to the "estimated_seconds" field.
+func (u *GenerationTaskUpsertBulk) AddEstimatedSeconds(v int) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.AddEstimatedSeconds(v)
+	})
+}
+
+// UpdateEstimatedSeconds sets the "estimated_seconds" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateEstimatedSeconds() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateEstimatedSeconds()
+	})
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *GenerationTaskUpsertBulk) SetCategoryID(v uuid.UUID) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetCategoryID(v)
+	})
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateCategoryID() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateCategoryID()
+	})
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *GenerationTaskUpsertBulk) ClearCategoryID() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearCategoryID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *GenerationTaskUpsertBulk) SetChannelID(v uuid.UUID) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateChannelID() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateChannelID()
+	})
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (u *GenerationTaskUpsertBulk) ClearChannelID() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearChannelID()
+	})
+}
+
+// SetStartedAt sets the "started_at" field.
+func (u *GenerationTaskUpsertBulk) SetStartedAt(v time.Time) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetStartedAt(v)
+	})
+}
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateStartedAt() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateStartedAt()
+	})
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *GenerationTaskUpsertBulk) ClearStartedAt() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearStartedAt()
+	})
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *GenerationTaskUpsertBulk) SetCompletedAt(v time.Time) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetCompletedAt(v)
+	})
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateCompletedAt() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateCompletedAt()
+	})
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *GenerationTaskUpsertBulk) ClearCompletedAt() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearCompletedAt()
+	})
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (u *GenerationTaskUpsertBulk) SetReferenceImages(v []types.ReferenceImage) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetReferenceImages(v)
+	})
+}
+
+// UpdateReferenceImages sets the "reference_images" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateReferenceImages() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateReferenceImages()
+	})
+}
+
+// ClearReferenceImages clears the value of the "reference_images" field.
+func (u *GenerationTaskUpsertBulk) ClearReferenceImages() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearReferenceImages()
+	})
+}
+
+// SetPrompts sets the "prompts" field.
+func (u *GenerationTaskUpsertBulk) SetPrompts(v []string) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetPrompts(v)
+	})
+}
+
+// UpdatePrompts sets the "prompts" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdatePrompts() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdatePrompts()
+	})
+}
+
+// ClearPrompts clears the value of the "prompts" field.
+func (u *GenerationTaskUpsertBulk) ClearPrompts() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearPrompts()
+	})
+}
+
+// SetFeedback sets the "feedback" field.
+func (u *GenerationTaskUpsertBulk) SetFeedback(v types.TaskFeedback) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetFeedback(v)
+	})
+}
+
+// UpdateFeedback sets the "feedback" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateFeedback() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateFeedback()
+	})
+}
+
+// ClearFeedback clears the value of the "feedback" field.
+func (u *GenerationTaskUpsertBulk) ClearFeedback() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearFeedback()
+	})
+}
+
+// SetDeleted sets the "deleted" field.
+func (u *GenerationTaskUpsertBulk) SetDeleted(v bool) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetDeleted(v)
+	})
+}
+
+// UpdateDeleted sets the "deleted" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateDeleted() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateDeleted()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GenerationTaskUpsertBulk) SetDeletedAt(v time.Time) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateDeletedAt() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GenerationTaskUpsertBulk) ClearDeletedAt() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 

@@ -4,6 +4,7 @@ package db
 
 import (
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationtask"
 	"bridal/backend/db/predicate"
 	"context"
 	"errors"
@@ -86,6 +87,20 @@ func (_u *GenerationImageUpdate) SetNillableDownloadURL(v *string) *GenerationIm
 	return _u
 }
 
+// SetThumbURL sets the "thumb_url" field.
+func (_u *GenerationImageUpdate) SetThumbURL(v string) *GenerationImageUpdate {
+	_u.mutation.SetThumbURL(v)
+	return _u
+}
+
+// SetNillableThumbURL sets the "thumb_url" field if the given value is not nil.
+func (_u *GenerationImageUpdate) SetNillableThumbURL(v *string) *GenerationImageUpdate {
+	if v != nil {
+		_u.SetThumbURL(*v)
+	}
+	return _u
+}
+
 // SetSource sets the "source" field.
 func (_u *GenerationImageUpdate) SetSource(v string) *GenerationImageUpdate {
 	_u.mutation.SetSource(v)
@@ -121,6 +136,89 @@ func (_u *GenerationImageUpdate) AddImageNumber(v int) *GenerationImageUpdate {
 	return _u
 }
 
+// SetStatus sets the "status" field.
+func (_u *GenerationImageUpdate) SetStatus(v string) *GenerationImageUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *GenerationImageUpdate) SetNillableStatus(v *string) *GenerationImageUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetError sets the "error" field.
+func (_u *GenerationImageUpdate) SetError(v string) *GenerationImageUpdate {
+	_u.mutation.SetError(v)
+	return _u
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (_u *GenerationImageUpdate) SetNillableError(v *string) *GenerationImageUpdate {
+	if v != nil {
+		_u.SetError(*v)
+	}
+	return _u
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (_u *GenerationImageUpdate) SetLatencyMs(v int) *GenerationImageUpdate {
+	_u.mutation.ResetLatencyMs()
+	_u.mutation.SetLatencyMs(v)
+	return _u
+}
+
+// SetNillableLatencyMs sets the "latency_ms" field if the given value is not nil.
+func (_u *GenerationImageUpdate) SetNillableLatencyMs(v *int) *GenerationImageUpdate {
+	if v != nil {
+		_u.SetLatencyMs(*v)
+	}
+	return _u
+}
+
+// AddLatencyMs adds value to the "latency_ms" field.
+func (_u *GenerationImageUpdate) AddLatencyMs(v int) *GenerationImageUpdate {
+	_u.mutation.AddLatencyMs(v)
+	return _u
+}
+
+// SetDeleted sets the "deleted" field.
+func (_u *GenerationImageUpdate) SetDeleted(v bool) *GenerationImageUpdate {
+	_u.mutation.SetDeleted(v)
+	return _u
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (_u *GenerationImageUpdate) SetNillableDeleted(v *bool) *GenerationImageUpdate {
+	if v != nil {
+		_u.SetDeleted(*v)
+	}
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *GenerationImageUpdate) SetDeletedAt(v time.Time) *GenerationImageUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *GenerationImageUpdate) SetNillableDeletedAt(v *time.Time) *GenerationImageUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *GenerationImageUpdate) ClearDeletedAt() *GenerationImageUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *GenerationImageUpdate) SetCreatedAt(v time.Time) *GenerationImageUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -135,9 +233,20 @@ func (_u *GenerationImageUpdate) SetNillableCreatedAt(v *time.Time) *GenerationI
 	return _u
 }
 
+// SetTask sets the "task" edge to the GenerationTask entity.
+func (_u *GenerationImageUpdate) SetTask(v *GenerationTask) *GenerationImageUpdate {
+	return _u.SetTaskID(v.ID)
+}
+
 // Mutation returns the GenerationImageMutation object of the builder.
 func (_u *GenerationImageUpdate) Mutation() *GenerationImageMutation {
 	return _u.mutation
+}
+
+// ClearTask clears the "task" edge to the GenerationTask entity.
+func (_u *GenerationImageUpdate) ClearTask() *GenerationImageUpdate {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -167,6 +276,14 @@ func (_u *GenerationImageUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *GenerationImageUpdate) check() error {
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
+		return errors.New(`db: clearing a required unique edge "GenerationImage.task"`)
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *GenerationImageUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *GenerationImageUpdate {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -174,6 +291,9 @@ func (_u *GenerationImageUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder))
 }
 
 func (_u *GenerationImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(generationimage.Table, generationimage.Columns, sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -181,9 +301,6 @@ func (_u *GenerationImageUpdate) sqlSave(ctx context.Context) (_node int, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.TaskID(); ok {
-		_spec.SetField(generationimage.FieldTaskID, field.TypeUUID, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(generationimage.FieldName, field.TypeString, value)
@@ -194,6 +311,9 @@ func (_u *GenerationImageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.DownloadURL(); ok {
 		_spec.SetField(generationimage.FieldDownloadURL, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.ThumbURL(); ok {
+		_spec.SetField(generationimage.FieldThumbURL, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(generationimage.FieldSource, field.TypeString, value)
 	}
@@ -203,8 +323,58 @@ func (_u *GenerationImageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.AddedImageNumber(); ok {
 		_spec.AddField(generationimage.FieldImageNumber, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(generationimage.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Error(); ok {
+		_spec.SetField(generationimage.FieldError, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LatencyMs(); ok {
+		_spec.SetField(generationimage.FieldLatencyMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLatencyMs(); ok {
+		_spec.AddField(generationimage.FieldLatencyMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Deleted(); ok {
+		_spec.SetField(generationimage.FieldDeleted, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(generationimage.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(generationimage.FieldDeletedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(generationimage.FieldCreatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   generationimage.TaskTable,
+			Columns: []string{generationimage.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationtask.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   generationimage.TaskTable,
+			Columns: []string{generationimage.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationtask.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
@@ -284,6 +454,20 @@ func (_u *GenerationImageUpdateOne) SetNillableDownloadURL(v *string) *Generatio
 	return _u
 }
 
+// SetThumbURL sets the "thumb_url" field.
+func (_u *GenerationImageUpdateOne) SetThumbURL(v string) *GenerationImageUpdateOne {
+	_u.mutation.SetThumbURL(v)
+	return _u
+}
+
+// SetNillableThumbURL sets the "thumb_url" field if the given value is not nil.
+func (_u *GenerationImageUpdateOne) SetNillableThumbURL(v *string) *GenerationImageUpdateOne {
+	if v != nil {
+		_u.SetThumbURL(*v)
+	}
+	return _u
+}
+
 // SetSource sets the "source" field.
 func (_u *GenerationImageUpdateOne) SetSource(v string) *GenerationImageUpdateOne {
 	_u.mutation.SetSource(v)
@@ -319,6 +503,89 @@ func (_u *GenerationImageUpdateOne) AddImageNumber(v int) *GenerationImageUpdate
 	return _u
 }
 
+// SetStatus sets the "status" field.
+func (_u *GenerationImageUpdateOne) SetStatus(v string) *GenerationImageUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *GenerationImageUpdateOne) SetNillableStatus(v *string) *GenerationImageUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetError sets the "error" field.
+func (_u *GenerationImageUpdateOne) SetError(v string) *GenerationImageUpdateOne {
+	_u.mutation.SetError(v)
+	return _u
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (_u *GenerationImageUpdateOne) SetNillableError(v *string) *GenerationImageUpdateOne {
+	if v != nil {
+		_u.SetError(*v)
+	}
+	return _u
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (_u *GenerationImageUpdateOne) SetLatencyMs(v int) *GenerationImageUpdateOne {
+	_u.mutation.ResetLatencyMs()
+	_u.mutation.SetLatencyMs(v)
+	return _u
+}
+
+// SetNillableLatencyMs sets the "latency_ms" field if the given value is not nil.
+func (_u *GenerationImageUpdateOne) SetNillableLatencyMs(v *int) *GenerationImageUpdateOne {
+	if v != nil {
+		_u.SetLatencyMs(*v)
+	}
+	return _u
+}
+
+// AddLatencyMs adds value to the "latency_ms" field.
+func (_u *GenerationImageUpdateOne) AddLatencyMs(v int) *GenerationImageUpdateOne {
+	_u.mutation.AddLatencyMs(v)
+	return _u
+}
+
+// SetDeleted sets the "deleted" field.
+func (_u *GenerationImageUpdateOne) SetDeleted(v bool) *GenerationImageUpdateOne {
+	_u.mutation.SetDeleted(v)
+	return _u
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (_u *GenerationImageUpdateOne) SetNillableDeleted(v *bool) *GenerationImageUpdateOne {
+	if v != nil {
+		_u.SetDeleted(*v)
+	}
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *GenerationImageUpdateOne) SetDeletedAt(v time.Time) *GenerationImageUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *GenerationImageUpdateOne) SetNillableDeletedAt(v *time.Time) *GenerationImageUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *GenerationImageUpdateOne) ClearDeletedAt() *GenerationImageUpdateOne {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *GenerationImageUpdateOne) SetCreatedAt(v time.Time) *GenerationImageUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -333,9 +600,20 @@ func (_u *GenerationImageUpdateOne) SetNillableCreatedAt(v *time.Time) *Generati
 	return _u
 }
 
+// SetTask sets the "task" edge to the GenerationTask entity.
+func (_u *GenerationImageUpdateOne) SetTask(v *GenerationTask) *GenerationImageUpdateOne {
+	return _u.SetTaskID(v.ID)
+}
+
 // Mutation returns the GenerationImageMutation object of the builder.
 func (_u *GenerationImageUpdateOne) Mutation() *GenerationImageMutation {
 	return _u.mutation
+}
+
+// ClearTask clears the "task" edge to the GenerationTask entity.
+func (_u *GenerationImageUpdateOne) ClearTask() *GenerationImageUpdateOne {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // Where appends a list predicates to the GenerationImageUpdate builder.
@@ -378,6 +656,14 @@ func (_u *GenerationImageUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *GenerationImageUpdateOne) check() error {
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
+		return errors.New(`db: clearing a required unique edge "GenerationImage.task"`)
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *GenerationImageUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *GenerationImageUpdateOne {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -385,6 +671,9 @@ func (_u *GenerationImageUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilde
 }
 
 func (_u *GenerationImageUpdateOne) sqlSave(ctx context.Context) (_node *GenerationImage, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(generationimage.Table, generationimage.Columns, sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -410,9 +699,6 @@ func (_u *GenerationImageUpdateOne) sqlSave(ctx context.Context) (_node *Generat
 			}
 		}
 	}
-	if value, ok := _u.mutation.TaskID(); ok {
-		_spec.SetField(generationimage.FieldTaskID, field.TypeUUID, value)
-	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(generationimage.FieldName, field.TypeString, value)
 	}
@@ -421,6 +707,9 @@ func (_u *GenerationImageUpdateOne) sqlSave(ctx context.Context) (_node *Generat
 	}
 	if value, ok := _u.mutation.DownloadURL(); ok {
 		_spec.SetField(generationimage.FieldDownloadURL, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ThumbURL(); ok {
+		_spec.SetField(generationimage.FieldThumbURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(generationimage.FieldSource, field.TypeString, value)
@@ -431,8 +720,58 @@ func (_u *GenerationImageUpdateOne) sqlSave(ctx context.Context) (_node *Generat
 	if value, ok := _u.mutation.AddedImageNumber(); ok {
 		_spec.AddField(generationimage.FieldImageNumber, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(generationimage.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Error(); ok {
+		_spec.SetField(generationimage.FieldError, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LatencyMs(); ok {
+		_spec.SetField(generationimage.FieldLatencyMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLatencyMs(); ok {
+		_spec.AddField(generationimage.FieldLatencyMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Deleted(); ok {
+		_spec.SetField(generationimage.FieldDeleted, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(generationimage.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(generationimage.FieldDeletedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(generationimage.FieldCreatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   generationimage.TaskTable,
+			Columns: []string{generationimage.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationtask.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   generationimage.TaskTable,
+			Columns: []string{generationimage.TaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationtask.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	_node = &GenerationImage{config: _u.config}

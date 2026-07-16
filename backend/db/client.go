@@ -22,6 +22,9 @@ import (
 	"bridal/backend/db/agentskillversion"
 	"bridal/backend/db/agentsyncjob"
 	"bridal/backend/db/audit"
+	"bridal/backend/db/category"
+	"bridal/backend/db/contentengine"
+	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
@@ -37,6 +40,7 @@ import (
 	"bridal/backend/db/mcpusertoolsetting"
 	"bridal/backend/db/model"
 	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelchannel"
 	"bridal/backend/db/modelpricing"
 	"bridal/backend/db/notifychannel"
 	"bridal/backend/db/notifysendlog"
@@ -47,6 +51,7 @@ import (
 	"bridal/backend/db/projectissue"
 	"bridal/backend/db/projectissuecomment"
 	"bridal/backend/db/projecttask"
+	"bridal/backend/db/systemsetting"
 	"bridal/backend/db/task"
 	"bridal/backend/db/taskmodelswitch"
 	"bridal/backend/db/taskusagestat"
@@ -104,6 +109,12 @@ type Client struct {
 	AgentSyncJob *AgentSyncJobClient
 	// Audit is the client for interacting with the Audit builders.
 	Audit *AuditClient
+	// Category is the client for interacting with the Category builders.
+	Category *CategoryClient
+	// ContentEngine is the client for interacting with the ContentEngine builders.
+	ContentEngine *ContentEngineClient
+	// CreditTransaction is the client for interacting with the CreditTransaction builders.
+	CreditTransaction *CreditTransactionClient
 	// GenerationImage is the client for interacting with the GenerationImage builders.
 	GenerationImage *GenerationImageClient
 	// GenerationTask is the client for interacting with the GenerationTask builders.
@@ -134,6 +145,8 @@ type Client struct {
 	Model *ModelClient
 	// ModelApiKey is the client for interacting with the ModelApiKey builders.
 	ModelApiKey *ModelApiKeyClient
+	// ModelChannel is the client for interacting with the ModelChannel builders.
+	ModelChannel *ModelChannelClient
 	// ModelPricing is the client for interacting with the ModelPricing builders.
 	ModelPricing *ModelPricingClient
 	// NotifyChannel is the client for interacting with the NotifyChannel builders.
@@ -154,6 +167,8 @@ type Client struct {
 	ProjectIssueComment *ProjectIssueCommentClient
 	// ProjectTask is the client for interacting with the ProjectTask builders.
 	ProjectTask *ProjectTaskClient
+	// SystemSetting is the client for interacting with the SystemSetting builders.
+	SystemSetting *SystemSettingClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// TaskModelSwitch is the client for interacting with the TaskModelSwitch builders.
@@ -216,6 +231,9 @@ func (c *Client) init() {
 	c.AgentSkillVersion = NewAgentSkillVersionClient(c.config)
 	c.AgentSyncJob = NewAgentSyncJobClient(c.config)
 	c.Audit = NewAuditClient(c.config)
+	c.Category = NewCategoryClient(c.config)
+	c.ContentEngine = NewContentEngineClient(c.config)
+	c.CreditTransaction = NewCreditTransactionClient(c.config)
 	c.GenerationImage = NewGenerationImageClient(c.config)
 	c.GenerationTask = NewGenerationTaskClient(c.config)
 	c.GitBot = NewGitBotClient(c.config)
@@ -231,6 +249,7 @@ func (c *Client) init() {
 	c.MCPUserToolSetting = NewMCPUserToolSettingClient(c.config)
 	c.Model = NewModelClient(c.config)
 	c.ModelApiKey = NewModelApiKeyClient(c.config)
+	c.ModelChannel = NewModelChannelClient(c.config)
 	c.ModelPricing = NewModelPricingClient(c.config)
 	c.NotifyChannel = NewNotifyChannelClient(c.config)
 	c.NotifySendLog = NewNotifySendLogClient(c.config)
@@ -241,6 +260,7 @@ func (c *Client) init() {
 	c.ProjectIssue = NewProjectIssueClient(c.config)
 	c.ProjectIssueComment = NewProjectIssueCommentClient(c.config)
 	c.ProjectTask = NewProjectTaskClient(c.config)
+	c.SystemSetting = NewSystemSettingClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.TaskModelSwitch = NewTaskModelSwitchClient(c.config)
 	c.TaskUsageStat = NewTaskUsageStatClient(c.config)
@@ -364,6 +384,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AgentSkillVersion:         NewAgentSkillVersionClient(cfg),
 		AgentSyncJob:              NewAgentSyncJobClient(cfg),
 		Audit:                     NewAuditClient(cfg),
+		Category:                  NewCategoryClient(cfg),
+		ContentEngine:             NewContentEngineClient(cfg),
+		CreditTransaction:         NewCreditTransactionClient(cfg),
 		GenerationImage:           NewGenerationImageClient(cfg),
 		GenerationTask:            NewGenerationTaskClient(cfg),
 		GitBot:                    NewGitBotClient(cfg),
@@ -379,6 +402,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MCPUserToolSetting:        NewMCPUserToolSettingClient(cfg),
 		Model:                     NewModelClient(cfg),
 		ModelApiKey:               NewModelApiKeyClient(cfg),
+		ModelChannel:              NewModelChannelClient(cfg),
 		ModelPricing:              NewModelPricingClient(cfg),
 		NotifyChannel:             NewNotifyChannelClient(cfg),
 		NotifySendLog:             NewNotifySendLogClient(cfg),
@@ -389,6 +413,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProjectIssue:              NewProjectIssueClient(cfg),
 		ProjectIssueComment:       NewProjectIssueCommentClient(cfg),
 		ProjectTask:               NewProjectTaskClient(cfg),
+		SystemSetting:             NewSystemSettingClient(cfg),
 		Task:                      NewTaskClient(cfg),
 		TaskModelSwitch:           NewTaskModelSwitchClient(cfg),
 		TaskUsageStat:             NewTaskUsageStatClient(cfg),
@@ -439,6 +464,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AgentSkillVersion:         NewAgentSkillVersionClient(cfg),
 		AgentSyncJob:              NewAgentSyncJobClient(cfg),
 		Audit:                     NewAuditClient(cfg),
+		Category:                  NewCategoryClient(cfg),
+		ContentEngine:             NewContentEngineClient(cfg),
+		CreditTransaction:         NewCreditTransactionClient(cfg),
 		GenerationImage:           NewGenerationImageClient(cfg),
 		GenerationTask:            NewGenerationTaskClient(cfg),
 		GitBot:                    NewGitBotClient(cfg),
@@ -454,6 +482,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MCPUserToolSetting:        NewMCPUserToolSettingClient(cfg),
 		Model:                     NewModelClient(cfg),
 		ModelApiKey:               NewModelApiKeyClient(cfg),
+		ModelChannel:              NewModelChannelClient(cfg),
 		ModelPricing:              NewModelPricingClient(cfg),
 		NotifyChannel:             NewNotifyChannelClient(cfg),
 		NotifySendLog:             NewNotifySendLogClient(cfg),
@@ -464,6 +493,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProjectIssue:              NewProjectIssueClient(cfg),
 		ProjectIssueComment:       NewProjectIssueCommentClient(cfg),
 		ProjectTask:               NewProjectTaskClient(cfg),
+		SystemSetting:             NewSystemSettingClient(cfg),
 		Task:                      NewTaskClient(cfg),
 		TaskModelSwitch:           NewTaskModelSwitchClient(cfg),
 		TaskUsageStat:             NewTaskUsageStatClient(cfg),
@@ -515,17 +545,18 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AgentPlugin, c.AgentPluginRepo, c.AgentPluginVersion, c.AgentRule,
 		c.AgentRuleVersion, c.AgentSkill, c.AgentSkillGroupBinding, c.AgentSkillRepo,
-		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.GenerationImage,
-		c.GenerationTask, c.GitBot, c.GitBotTask, c.GitBotUser, c.GitIdentity,
-		c.GitTask, c.Host, c.Image, c.MCPTool, c.MCPToolCall, c.MCPUpstream,
-		c.MCPUserToolSetting, c.Model, c.ModelApiKey, c.ModelPricing, c.NotifyChannel,
+		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.Category, c.ContentEngine,
+		c.CreditTransaction, c.GenerationImage, c.GenerationTask, c.GitBot,
+		c.GitBotTask, c.GitBotUser, c.GitIdentity, c.GitTask, c.Host, c.Image,
+		c.MCPTool, c.MCPToolCall, c.MCPUpstream, c.MCPUserToolSetting, c.Model,
+		c.ModelApiKey, c.ModelChannel, c.ModelPricing, c.NotifyChannel,
 		c.NotifySendLog, c.NotifySubscription, c.Project, c.ProjectCollaborator,
-		c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask, c.Task,
-		c.TaskModelSwitch, c.TaskUsageStat, c.TaskVirtualMachine, c.Team,
-		c.TeamExtensionImageArchive, c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage,
-		c.TeamGroupMCPUpstream, c.TeamGroupMember, c.TeamGroupModel, c.TeamHost,
-		c.TeamImage, c.TeamMember, c.TeamModel, c.TeamOIDCConfig, c.User,
-		c.UserIdentity, c.VirtualMachine,
+		c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask,
+		c.SystemSetting, c.Task, c.TaskModelSwitch, c.TaskUsageStat,
+		c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive, c.TeamGroup,
+		c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream, c.TeamGroupMember,
+		c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember, c.TeamModel,
+		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine,
 	} {
 		n.Use(hooks...)
 	}
@@ -537,17 +568,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AgentPlugin, c.AgentPluginRepo, c.AgentPluginVersion, c.AgentRule,
 		c.AgentRuleVersion, c.AgentSkill, c.AgentSkillGroupBinding, c.AgentSkillRepo,
-		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.GenerationImage,
-		c.GenerationTask, c.GitBot, c.GitBotTask, c.GitBotUser, c.GitIdentity,
-		c.GitTask, c.Host, c.Image, c.MCPTool, c.MCPToolCall, c.MCPUpstream,
-		c.MCPUserToolSetting, c.Model, c.ModelApiKey, c.ModelPricing, c.NotifyChannel,
+		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.Category, c.ContentEngine,
+		c.CreditTransaction, c.GenerationImage, c.GenerationTask, c.GitBot,
+		c.GitBotTask, c.GitBotUser, c.GitIdentity, c.GitTask, c.Host, c.Image,
+		c.MCPTool, c.MCPToolCall, c.MCPUpstream, c.MCPUserToolSetting, c.Model,
+		c.ModelApiKey, c.ModelChannel, c.ModelPricing, c.NotifyChannel,
 		c.NotifySendLog, c.NotifySubscription, c.Project, c.ProjectCollaborator,
-		c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask, c.Task,
-		c.TaskModelSwitch, c.TaskUsageStat, c.TaskVirtualMachine, c.Team,
-		c.TeamExtensionImageArchive, c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage,
-		c.TeamGroupMCPUpstream, c.TeamGroupMember, c.TeamGroupModel, c.TeamHost,
-		c.TeamImage, c.TeamMember, c.TeamModel, c.TeamOIDCConfig, c.User,
-		c.UserIdentity, c.VirtualMachine,
+		c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask,
+		c.SystemSetting, c.Task, c.TaskModelSwitch, c.TaskUsageStat,
+		c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive, c.TeamGroup,
+		c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream, c.TeamGroupMember,
+		c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember, c.TeamModel,
+		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -578,6 +610,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AgentSyncJob.mutate(ctx, m)
 	case *AuditMutation:
 		return c.Audit.mutate(ctx, m)
+	case *CategoryMutation:
+		return c.Category.mutate(ctx, m)
+	case *ContentEngineMutation:
+		return c.ContentEngine.mutate(ctx, m)
+	case *CreditTransactionMutation:
+		return c.CreditTransaction.mutate(ctx, m)
 	case *GenerationImageMutation:
 		return c.GenerationImage.mutate(ctx, m)
 	case *GenerationTaskMutation:
@@ -608,6 +646,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Model.mutate(ctx, m)
 	case *ModelApiKeyMutation:
 		return c.ModelApiKey.mutate(ctx, m)
+	case *ModelChannelMutation:
+		return c.ModelChannel.mutate(ctx, m)
 	case *ModelPricingMutation:
 		return c.ModelPricing.mutate(ctx, m)
 	case *NotifyChannelMutation:
@@ -628,6 +668,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProjectIssueComment.mutate(ctx, m)
 	case *ProjectTaskMutation:
 		return c.ProjectTask.mutate(ctx, m)
+	case *SystemSettingMutation:
+		return c.SystemSetting.mutate(ctx, m)
 	case *TaskMutation:
 		return c.Task.mutate(ctx, m)
 	case *TaskModelSwitchMutation:
@@ -2344,6 +2386,405 @@ func (c *AuditClient) mutate(ctx context.Context, m *AuditMutation) (Value, erro
 	}
 }
 
+// CategoryClient is a client for the Category schema.
+type CategoryClient struct {
+	config
+}
+
+// NewCategoryClient returns a client for the Category from the given config.
+func NewCategoryClient(c config) *CategoryClient {
+	return &CategoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `category.Hooks(f(g(h())))`.
+func (c *CategoryClient) Use(hooks ...Hook) {
+	c.hooks.Category = append(c.hooks.Category, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `category.Intercept(f(g(h())))`.
+func (c *CategoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Category = append(c.inters.Category, interceptors...)
+}
+
+// Create returns a builder for creating a Category entity.
+func (c *CategoryClient) Create() *CategoryCreate {
+	mutation := newCategoryMutation(c.config, OpCreate)
+	return &CategoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Category entities.
+func (c *CategoryClient) CreateBulk(builders ...*CategoryCreate) *CategoryCreateBulk {
+	return &CategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CategoryClient) MapCreateBulk(slice any, setFunc func(*CategoryCreate, int)) *CategoryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CategoryCreateBulk{err: fmt.Errorf("calling to CategoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CategoryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Category.
+func (c *CategoryClient) Update() *CategoryUpdate {
+	mutation := newCategoryMutation(c.config, OpUpdate)
+	return &CategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CategoryClient) UpdateOne(_m *Category) *CategoryUpdateOne {
+	mutation := newCategoryMutation(c.config, OpUpdateOne, withCategory(_m))
+	return &CategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CategoryClient) UpdateOneID(id uuid.UUID) *CategoryUpdateOne {
+	mutation := newCategoryMutation(c.config, OpUpdateOne, withCategoryID(id))
+	return &CategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Category.
+func (c *CategoryClient) Delete() *CategoryDelete {
+	mutation := newCategoryMutation(c.config, OpDelete)
+	return &CategoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CategoryClient) DeleteOne(_m *Category) *CategoryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CategoryClient) DeleteOneID(id uuid.UUID) *CategoryDeleteOne {
+	builder := c.Delete().Where(category.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CategoryDeleteOne{builder}
+}
+
+// Query returns a query builder for Category.
+func (c *CategoryClient) Query() *CategoryQuery {
+	return &CategoryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCategory},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Category entity by its id.
+func (c *CategoryClient) Get(ctx context.Context, id uuid.UUID) (*Category, error) {
+	return c.Query().Where(category.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CategoryClient) GetX(ctx context.Context, id uuid.UUID) *Category {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CategoryClient) Hooks() []Hook {
+	return c.hooks.Category
+}
+
+// Interceptors returns the client interceptors.
+func (c *CategoryClient) Interceptors() []Interceptor {
+	return c.inters.Category
+}
+
+func (c *CategoryClient) mutate(ctx context.Context, m *CategoryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CategoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown Category mutation op: %q", m.Op())
+	}
+}
+
+// ContentEngineClient is a client for the ContentEngine schema.
+type ContentEngineClient struct {
+	config
+}
+
+// NewContentEngineClient returns a client for the ContentEngine from the given config.
+func NewContentEngineClient(c config) *ContentEngineClient {
+	return &ContentEngineClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `contentengine.Hooks(f(g(h())))`.
+func (c *ContentEngineClient) Use(hooks ...Hook) {
+	c.hooks.ContentEngine = append(c.hooks.ContentEngine, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `contentengine.Intercept(f(g(h())))`.
+func (c *ContentEngineClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ContentEngine = append(c.inters.ContentEngine, interceptors...)
+}
+
+// Create returns a builder for creating a ContentEngine entity.
+func (c *ContentEngineClient) Create() *ContentEngineCreate {
+	mutation := newContentEngineMutation(c.config, OpCreate)
+	return &ContentEngineCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ContentEngine entities.
+func (c *ContentEngineClient) CreateBulk(builders ...*ContentEngineCreate) *ContentEngineCreateBulk {
+	return &ContentEngineCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ContentEngineClient) MapCreateBulk(slice any, setFunc func(*ContentEngineCreate, int)) *ContentEngineCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ContentEngineCreateBulk{err: fmt.Errorf("calling to ContentEngineClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ContentEngineCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ContentEngineCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ContentEngine.
+func (c *ContentEngineClient) Update() *ContentEngineUpdate {
+	mutation := newContentEngineMutation(c.config, OpUpdate)
+	return &ContentEngineUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ContentEngineClient) UpdateOne(_m *ContentEngine) *ContentEngineUpdateOne {
+	mutation := newContentEngineMutation(c.config, OpUpdateOne, withContentEngine(_m))
+	return &ContentEngineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ContentEngineClient) UpdateOneID(id uuid.UUID) *ContentEngineUpdateOne {
+	mutation := newContentEngineMutation(c.config, OpUpdateOne, withContentEngineID(id))
+	return &ContentEngineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ContentEngine.
+func (c *ContentEngineClient) Delete() *ContentEngineDelete {
+	mutation := newContentEngineMutation(c.config, OpDelete)
+	return &ContentEngineDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ContentEngineClient) DeleteOne(_m *ContentEngine) *ContentEngineDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ContentEngineClient) DeleteOneID(id uuid.UUID) *ContentEngineDeleteOne {
+	builder := c.Delete().Where(contentengine.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ContentEngineDeleteOne{builder}
+}
+
+// Query returns a query builder for ContentEngine.
+func (c *ContentEngineClient) Query() *ContentEngineQuery {
+	return &ContentEngineQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeContentEngine},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ContentEngine entity by its id.
+func (c *ContentEngineClient) Get(ctx context.Context, id uuid.UUID) (*ContentEngine, error) {
+	return c.Query().Where(contentengine.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ContentEngineClient) GetX(ctx context.Context, id uuid.UUID) *ContentEngine {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ContentEngineClient) Hooks() []Hook {
+	return c.hooks.ContentEngine
+}
+
+// Interceptors returns the client interceptors.
+func (c *ContentEngineClient) Interceptors() []Interceptor {
+	return c.inters.ContentEngine
+}
+
+func (c *ContentEngineClient) mutate(ctx context.Context, m *ContentEngineMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ContentEngineCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ContentEngineUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ContentEngineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ContentEngineDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown ContentEngine mutation op: %q", m.Op())
+	}
+}
+
+// CreditTransactionClient is a client for the CreditTransaction schema.
+type CreditTransactionClient struct {
+	config
+}
+
+// NewCreditTransactionClient returns a client for the CreditTransaction from the given config.
+func NewCreditTransactionClient(c config) *CreditTransactionClient {
+	return &CreditTransactionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `credittransaction.Hooks(f(g(h())))`.
+func (c *CreditTransactionClient) Use(hooks ...Hook) {
+	c.hooks.CreditTransaction = append(c.hooks.CreditTransaction, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `credittransaction.Intercept(f(g(h())))`.
+func (c *CreditTransactionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CreditTransaction = append(c.inters.CreditTransaction, interceptors...)
+}
+
+// Create returns a builder for creating a CreditTransaction entity.
+func (c *CreditTransactionClient) Create() *CreditTransactionCreate {
+	mutation := newCreditTransactionMutation(c.config, OpCreate)
+	return &CreditTransactionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CreditTransaction entities.
+func (c *CreditTransactionClient) CreateBulk(builders ...*CreditTransactionCreate) *CreditTransactionCreateBulk {
+	return &CreditTransactionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CreditTransactionClient) MapCreateBulk(slice any, setFunc func(*CreditTransactionCreate, int)) *CreditTransactionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CreditTransactionCreateBulk{err: fmt.Errorf("calling to CreditTransactionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CreditTransactionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CreditTransactionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CreditTransaction.
+func (c *CreditTransactionClient) Update() *CreditTransactionUpdate {
+	mutation := newCreditTransactionMutation(c.config, OpUpdate)
+	return &CreditTransactionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CreditTransactionClient) UpdateOne(_m *CreditTransaction) *CreditTransactionUpdateOne {
+	mutation := newCreditTransactionMutation(c.config, OpUpdateOne, withCreditTransaction(_m))
+	return &CreditTransactionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CreditTransactionClient) UpdateOneID(id uuid.UUID) *CreditTransactionUpdateOne {
+	mutation := newCreditTransactionMutation(c.config, OpUpdateOne, withCreditTransactionID(id))
+	return &CreditTransactionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CreditTransaction.
+func (c *CreditTransactionClient) Delete() *CreditTransactionDelete {
+	mutation := newCreditTransactionMutation(c.config, OpDelete)
+	return &CreditTransactionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CreditTransactionClient) DeleteOne(_m *CreditTransaction) *CreditTransactionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CreditTransactionClient) DeleteOneID(id uuid.UUID) *CreditTransactionDeleteOne {
+	builder := c.Delete().Where(credittransaction.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CreditTransactionDeleteOne{builder}
+}
+
+// Query returns a query builder for CreditTransaction.
+func (c *CreditTransactionClient) Query() *CreditTransactionQuery {
+	return &CreditTransactionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCreditTransaction},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CreditTransaction entity by its id.
+func (c *CreditTransactionClient) Get(ctx context.Context, id uuid.UUID) (*CreditTransaction, error) {
+	return c.Query().Where(credittransaction.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CreditTransactionClient) GetX(ctx context.Context, id uuid.UUID) *CreditTransaction {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CreditTransactionClient) Hooks() []Hook {
+	return c.hooks.CreditTransaction
+}
+
+// Interceptors returns the client interceptors.
+func (c *CreditTransactionClient) Interceptors() []Interceptor {
+	return c.inters.CreditTransaction
+}
+
+func (c *CreditTransactionClient) mutate(ctx context.Context, m *CreditTransactionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CreditTransactionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CreditTransactionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CreditTransactionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CreditTransactionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown CreditTransaction mutation op: %q", m.Op())
+	}
+}
+
 // GenerationImageClient is a client for the GenerationImage schema.
 type GenerationImageClient struct {
 	config
@@ -2450,6 +2891,22 @@ func (c *GenerationImageClient) GetX(ctx context.Context, id string) *Generation
 		panic(err)
 	}
 	return obj
+}
+
+// QueryTask queries the task edge of a GenerationImage.
+func (c *GenerationImageClient) QueryTask(_m *GenerationImage) *GenerationTaskQuery {
+	query := (&GenerationTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(generationimage.Table, generationimage.FieldID, id),
+			sqlgraph.To(generationtask.Table, generationtask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, generationimage.TaskTable, generationimage.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -2583,6 +3040,22 @@ func (c *GenerationTaskClient) GetX(ctx context.Context, id uuid.UUID) *Generati
 		panic(err)
 	}
 	return obj
+}
+
+// QueryImages queries the images edge of a GenerationTask.
+func (c *GenerationTaskClient) QueryImages(_m *GenerationTask) *GenerationImageQuery {
+	query := (&GenerationImageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(generationtask.Table, generationtask.FieldID, id),
+			sqlgraph.To(generationimage.Table, generationimage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, generationtask.ImagesTable, generationtask.ImagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -5123,6 +5596,139 @@ func (c *ModelApiKeyClient) mutate(ctx context.Context, m *ModelApiKeyMutation) 
 	}
 }
 
+// ModelChannelClient is a client for the ModelChannel schema.
+type ModelChannelClient struct {
+	config
+}
+
+// NewModelChannelClient returns a client for the ModelChannel from the given config.
+func NewModelChannelClient(c config) *ModelChannelClient {
+	return &ModelChannelClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `modelchannel.Hooks(f(g(h())))`.
+func (c *ModelChannelClient) Use(hooks ...Hook) {
+	c.hooks.ModelChannel = append(c.hooks.ModelChannel, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `modelchannel.Intercept(f(g(h())))`.
+func (c *ModelChannelClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ModelChannel = append(c.inters.ModelChannel, interceptors...)
+}
+
+// Create returns a builder for creating a ModelChannel entity.
+func (c *ModelChannelClient) Create() *ModelChannelCreate {
+	mutation := newModelChannelMutation(c.config, OpCreate)
+	return &ModelChannelCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ModelChannel entities.
+func (c *ModelChannelClient) CreateBulk(builders ...*ModelChannelCreate) *ModelChannelCreateBulk {
+	return &ModelChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ModelChannelClient) MapCreateBulk(slice any, setFunc func(*ModelChannelCreate, int)) *ModelChannelCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ModelChannelCreateBulk{err: fmt.Errorf("calling to ModelChannelClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ModelChannelCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ModelChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ModelChannel.
+func (c *ModelChannelClient) Update() *ModelChannelUpdate {
+	mutation := newModelChannelMutation(c.config, OpUpdate)
+	return &ModelChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ModelChannelClient) UpdateOne(_m *ModelChannel) *ModelChannelUpdateOne {
+	mutation := newModelChannelMutation(c.config, OpUpdateOne, withModelChannel(_m))
+	return &ModelChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ModelChannelClient) UpdateOneID(id uuid.UUID) *ModelChannelUpdateOne {
+	mutation := newModelChannelMutation(c.config, OpUpdateOne, withModelChannelID(id))
+	return &ModelChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ModelChannel.
+func (c *ModelChannelClient) Delete() *ModelChannelDelete {
+	mutation := newModelChannelMutation(c.config, OpDelete)
+	return &ModelChannelDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ModelChannelClient) DeleteOne(_m *ModelChannel) *ModelChannelDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ModelChannelClient) DeleteOneID(id uuid.UUID) *ModelChannelDeleteOne {
+	builder := c.Delete().Where(modelchannel.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ModelChannelDeleteOne{builder}
+}
+
+// Query returns a query builder for ModelChannel.
+func (c *ModelChannelClient) Query() *ModelChannelQuery {
+	return &ModelChannelQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeModelChannel},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ModelChannel entity by its id.
+func (c *ModelChannelClient) Get(ctx context.Context, id uuid.UUID) (*ModelChannel, error) {
+	return c.Query().Where(modelchannel.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ModelChannelClient) GetX(ctx context.Context, id uuid.UUID) *ModelChannel {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ModelChannelClient) Hooks() []Hook {
+	return c.hooks.ModelChannel
+}
+
+// Interceptors returns the client interceptors.
+func (c *ModelChannelClient) Interceptors() []Interceptor {
+	return c.inters.ModelChannel
+}
+
+func (c *ModelChannelClient) mutate(ctx context.Context, m *ModelChannelMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ModelChannelCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ModelChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ModelChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ModelChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown ModelChannel mutation op: %q", m.Op())
+	}
+}
+
 // ModelPricingClient is a client for the ModelPricing schema.
 type ModelPricingClient struct {
 	config
@@ -6942,6 +7548,139 @@ func (c *ProjectTaskClient) mutate(ctx context.Context, m *ProjectTaskMutation) 
 		return (&ProjectTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("db: unknown ProjectTask mutation op: %q", m.Op())
+	}
+}
+
+// SystemSettingClient is a client for the SystemSetting schema.
+type SystemSettingClient struct {
+	config
+}
+
+// NewSystemSettingClient returns a client for the SystemSetting from the given config.
+func NewSystemSettingClient(c config) *SystemSettingClient {
+	return &SystemSettingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `systemsetting.Hooks(f(g(h())))`.
+func (c *SystemSettingClient) Use(hooks ...Hook) {
+	c.hooks.SystemSetting = append(c.hooks.SystemSetting, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `systemsetting.Intercept(f(g(h())))`.
+func (c *SystemSettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SystemSetting = append(c.inters.SystemSetting, interceptors...)
+}
+
+// Create returns a builder for creating a SystemSetting entity.
+func (c *SystemSettingClient) Create() *SystemSettingCreate {
+	mutation := newSystemSettingMutation(c.config, OpCreate)
+	return &SystemSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SystemSetting entities.
+func (c *SystemSettingClient) CreateBulk(builders ...*SystemSettingCreate) *SystemSettingCreateBulk {
+	return &SystemSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SystemSettingClient) MapCreateBulk(slice any, setFunc func(*SystemSettingCreate, int)) *SystemSettingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SystemSettingCreateBulk{err: fmt.Errorf("calling to SystemSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SystemSettingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SystemSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SystemSetting.
+func (c *SystemSettingClient) Update() *SystemSettingUpdate {
+	mutation := newSystemSettingMutation(c.config, OpUpdate)
+	return &SystemSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SystemSettingClient) UpdateOne(_m *SystemSetting) *SystemSettingUpdateOne {
+	mutation := newSystemSettingMutation(c.config, OpUpdateOne, withSystemSetting(_m))
+	return &SystemSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SystemSettingClient) UpdateOneID(id uuid.UUID) *SystemSettingUpdateOne {
+	mutation := newSystemSettingMutation(c.config, OpUpdateOne, withSystemSettingID(id))
+	return &SystemSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SystemSetting.
+func (c *SystemSettingClient) Delete() *SystemSettingDelete {
+	mutation := newSystemSettingMutation(c.config, OpDelete)
+	return &SystemSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SystemSettingClient) DeleteOne(_m *SystemSetting) *SystemSettingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SystemSettingClient) DeleteOneID(id uuid.UUID) *SystemSettingDeleteOne {
+	builder := c.Delete().Where(systemsetting.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SystemSettingDeleteOne{builder}
+}
+
+// Query returns a query builder for SystemSetting.
+func (c *SystemSettingClient) Query() *SystemSettingQuery {
+	return &SystemSettingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSystemSetting},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SystemSetting entity by its id.
+func (c *SystemSettingClient) Get(ctx context.Context, id uuid.UUID) (*SystemSetting, error) {
+	return c.Query().Where(systemsetting.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SystemSettingClient) GetX(ctx context.Context, id uuid.UUID) *SystemSetting {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SystemSettingClient) Hooks() []Hook {
+	return c.hooks.SystemSetting
+}
+
+// Interceptors returns the client interceptors.
+func (c *SystemSettingClient) Interceptors() []Interceptor {
+	return c.inters.SystemSetting
+}
+
+func (c *SystemSettingClient) mutate(ctx context.Context, m *SystemSettingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SystemSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SystemSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SystemSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SystemSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown SystemSetting mutation op: %q", m.Op())
 	}
 }
 
@@ -10950,30 +11689,30 @@ type (
 	hooks struct {
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
 		AgentSkill, AgentSkillGroupBinding, AgentSkillRepo, AgentSkillVersion,
-		AgentSyncJob, Audit, GenerationImage, GenerationTask, GitBot, GitBotTask,
-		GitBotUser, GitIdentity, GitTask, Host, Image, MCPTool, MCPToolCall,
-		MCPUpstream, MCPUserToolSetting, Model, ModelApiKey, ModelPricing,
-		NotifyChannel, NotifySendLog, NotifySubscription, Project, ProjectCollaborator,
-		ProjectGitBot, ProjectIssue, ProjectIssueComment, ProjectTask, Task,
-		TaskModelSwitch, TaskUsageStat, TaskVirtualMachine, Team,
-		TeamExtensionImageArchive, TeamGroup, TeamGroupHost, TeamGroupImage,
-		TeamGroupMCPUpstream, TeamGroupMember, TeamGroupModel, TeamHost, TeamImage,
-		TeamMember, TeamModel, TeamOIDCConfig, User, UserIdentity,
-		VirtualMachine []ent.Hook
+		AgentSyncJob, Audit, Category, ContentEngine, CreditTransaction,
+		GenerationImage, GenerationTask, GitBot, GitBotTask, GitBotUser, GitIdentity,
+		GitTask, Host, Image, MCPTool, MCPToolCall, MCPUpstream, MCPUserToolSetting,
+		Model, ModelApiKey, ModelChannel, ModelPricing, NotifyChannel, NotifySendLog,
+		NotifySubscription, Project, ProjectCollaborator, ProjectGitBot, ProjectIssue,
+		ProjectIssueComment, ProjectTask, SystemSetting, Task, TaskModelSwitch,
+		TaskUsageStat, TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup,
+		TeamGroupHost, TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember,
+		TeamGroupModel, TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig,
+		User, UserIdentity, VirtualMachine []ent.Hook
 	}
 	inters struct {
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
 		AgentSkill, AgentSkillGroupBinding, AgentSkillRepo, AgentSkillVersion,
-		AgentSyncJob, Audit, GenerationImage, GenerationTask, GitBot, GitBotTask,
-		GitBotUser, GitIdentity, GitTask, Host, Image, MCPTool, MCPToolCall,
-		MCPUpstream, MCPUserToolSetting, Model, ModelApiKey, ModelPricing,
-		NotifyChannel, NotifySendLog, NotifySubscription, Project, ProjectCollaborator,
-		ProjectGitBot, ProjectIssue, ProjectIssueComment, ProjectTask, Task,
-		TaskModelSwitch, TaskUsageStat, TaskVirtualMachine, Team,
-		TeamExtensionImageArchive, TeamGroup, TeamGroupHost, TeamGroupImage,
-		TeamGroupMCPUpstream, TeamGroupMember, TeamGroupModel, TeamHost, TeamImage,
-		TeamMember, TeamModel, TeamOIDCConfig, User, UserIdentity,
-		VirtualMachine []ent.Interceptor
+		AgentSyncJob, Audit, Category, ContentEngine, CreditTransaction,
+		GenerationImage, GenerationTask, GitBot, GitBotTask, GitBotUser, GitIdentity,
+		GitTask, Host, Image, MCPTool, MCPToolCall, MCPUpstream, MCPUserToolSetting,
+		Model, ModelApiKey, ModelChannel, ModelPricing, NotifyChannel, NotifySendLog,
+		NotifySubscription, Project, ProjectCollaborator, ProjectGitBot, ProjectIssue,
+		ProjectIssueComment, ProjectTask, SystemSetting, Task, TaskModelSwitch,
+		TaskUsageStat, TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup,
+		TeamGroupHost, TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember,
+		TeamGroupModel, TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig,
+		User, UserIdentity, VirtualMachine []ent.Interceptor
 	}
 )
 

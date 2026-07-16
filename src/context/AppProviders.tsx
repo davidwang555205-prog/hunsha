@@ -8,12 +8,15 @@ import type { ReactNode } from "react";
 import { AuthProvider } from "./AuthContext";
 import { DataProvider } from "./DataContext";
 import { CategoryProvider } from "./CategoryContext";
+import { NotificationProvider } from "./NotificationContext";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <DataProvider>
-        <CategoryProvider>{children}</CategoryProvider>
+        <CategoryProvider>
+          <NotificationProvider>{children}</NotificationProvider>
+        </CategoryProvider>
       </DataProvider>
     </AuthProvider>
   );

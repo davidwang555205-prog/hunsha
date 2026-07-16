@@ -226,12 +226,19 @@ func (u *TeamGroupUserUsecase) MemberList(ctx context.Context, teamUser *domain.
 	if err != nil {
 		return nil, err
 	}
-	members, err := u.repo.MemberList(ctx, teamUser.GetTeamID(), req.Role)
+	members, total, err := u.repo.MemberList(ctx, teamUser.GetTeamID(), req.Role, req.Q, req.Page, req.PageSize)
 	if err != nil {
 		return nil, err
 	}
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
 	return &domain.MemberListResp{
 		MemberLimit: team.MemberLimit,
+		Total:       total,
+		Page:        page,
+		PageSize:    req.PageSize,
 		Members: cvt.Iter(members, func(_ int, member *db.TeamMember) *domain.TeamMemberInfo {
 			var lastActiveAtTs int64
 			if member.Edges.User != nil && u.activeRepo != nil {

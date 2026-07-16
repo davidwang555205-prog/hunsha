@@ -14,6 +14,9 @@ import (
 	"bridal/backend/db/agentskillversion"
 	"bridal/backend/db/agentsyncjob"
 	"bridal/backend/db/audit"
+	"bridal/backend/db/category"
+	"bridal/backend/db/contentengine"
+	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
@@ -29,6 +32,7 @@ import (
 	"bridal/backend/db/mcpusertoolsetting"
 	"bridal/backend/db/model"
 	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelchannel"
 	"bridal/backend/db/modelpricing"
 	"bridal/backend/db/notifychannel"
 	"bridal/backend/db/notifysendlog"
@@ -39,6 +43,7 @@ import (
 	"bridal/backend/db/projectissue"
 	"bridal/backend/db/projectissuecomment"
 	"bridal/backend/db/projecttask"
+	"bridal/backend/db/systemsetting"
 	"bridal/backend/db/task"
 	"bridal/backend/db/taskmodelswitch"
 	"bridal/backend/db/taskusagestat"
@@ -139,6 +144,9 @@ func checkColumn(t, c string) error {
 			agentskillversion.Table:         agentskillversion.ValidColumn,
 			agentsyncjob.Table:              agentsyncjob.ValidColumn,
 			audit.Table:                     audit.ValidColumn,
+			category.Table:                  category.ValidColumn,
+			contentengine.Table:             contentengine.ValidColumn,
+			credittransaction.Table:         credittransaction.ValidColumn,
 			generationimage.Table:           generationimage.ValidColumn,
 			generationtask.Table:            generationtask.ValidColumn,
 			gitbot.Table:                    gitbot.ValidColumn,
@@ -154,6 +162,7 @@ func checkColumn(t, c string) error {
 			mcpusertoolsetting.Table:        mcpusertoolsetting.ValidColumn,
 			model.Table:                     model.ValidColumn,
 			modelapikey.Table:               modelapikey.ValidColumn,
+			modelchannel.Table:              modelchannel.ValidColumn,
 			modelpricing.Table:              modelpricing.ValidColumn,
 			notifychannel.Table:             notifychannel.ValidColumn,
 			notifysendlog.Table:             notifysendlog.ValidColumn,
@@ -164,6 +173,7 @@ func checkColumn(t, c string) error {
 			projectissue.Table:              projectissue.ValidColumn,
 			projectissuecomment.Table:       projectissuecomment.ValidColumn,
 			projecttask.Table:               projecttask.ValidColumn,
+			systemsetting.Table:             systemsetting.ValidColumn,
 			task.Table:                      task.ValidColumn,
 			taskmodelswitch.Table:           taskmodelswitch.ValidColumn,
 			taskusagestat.Table:             taskusagestat.ValidColumn,

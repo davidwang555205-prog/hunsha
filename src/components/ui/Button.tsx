@@ -6,7 +6,7 @@
  * props 范式遵循 react-bits：className 透传 + ...props 透传到根 DOM。
  */
 import { cva, type VariantProps } from "class-variance-authority";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Spinner } from "./Spinner";
 
 const buttonVariants = cva(
@@ -22,7 +22,8 @@ const buttonVariants = cva(
         primary: "bg-primary text-white shadow-sm hover:bg-primary-600",
         secondary: "bg-surface text-text ring-1 ring-border hover:bg-bg hover:ring-border-strong",
         ghost: "text-text-muted hover:bg-bg hover:text-text",
-        danger: "bg-danger text-white shadow-sm hover:brightness-95"
+        danger: "bg-danger text-white shadow-sm hover:brightness-95",
+        link: "text-primary px-1 py-0.5 font-normal underline-offset-2 hover:underline"
       },
       size: {
         sm: "px-3 py-1.5 text-sm",
@@ -44,18 +45,13 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
     children: ReactNode;
   };
 
-export function Button({
-  variant,
-  size,
-  block,
-  loading = false,
-  disabled,
-  className,
-  children,
-  ...props
-}: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant, size, block, loading = false, disabled, className, children, ...props },
+  ref
+) {
   return (
     <button
+      ref={ref}
       className={buttonVariants({ variant, size, block, className })}
       disabled={disabled || loading}
       {...props}
@@ -64,6 +60,6 @@ export function Button({
       {children}
     </button>
   );
-}
+});
 
 export { buttonVariants };

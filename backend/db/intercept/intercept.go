@@ -18,6 +18,9 @@ import (
 	"bridal/backend/db/agentskillversion"
 	"bridal/backend/db/agentsyncjob"
 	"bridal/backend/db/audit"
+	"bridal/backend/db/category"
+	"bridal/backend/db/contentengine"
+	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
@@ -33,6 +36,7 @@ import (
 	"bridal/backend/db/mcpusertoolsetting"
 	"bridal/backend/db/model"
 	"bridal/backend/db/modelapikey"
+	"bridal/backend/db/modelchannel"
 	"bridal/backend/db/modelpricing"
 	"bridal/backend/db/notifychannel"
 	"bridal/backend/db/notifysendlog"
@@ -44,6 +48,7 @@ import (
 	"bridal/backend/db/projectissue"
 	"bridal/backend/db/projectissuecomment"
 	"bridal/backend/db/projecttask"
+	"bridal/backend/db/systemsetting"
 	"bridal/backend/db/task"
 	"bridal/backend/db/taskmodelswitch"
 	"bridal/backend/db/taskusagestat"
@@ -419,6 +424,87 @@ func (f TraverseAudit) Traverse(ctx context.Context, q db.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *db.AuditQuery", q)
+}
+
+// The CategoryFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CategoryFunc func(context.Context, *db.CategoryQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f CategoryFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.CategoryQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.CategoryQuery", q)
+}
+
+// The TraverseCategory type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCategory func(context.Context, *db.CategoryQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCategory) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCategory) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.CategoryQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.CategoryQuery", q)
+}
+
+// The ContentEngineFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ContentEngineFunc func(context.Context, *db.ContentEngineQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f ContentEngineFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.ContentEngineQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.ContentEngineQuery", q)
+}
+
+// The TraverseContentEngine type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseContentEngine func(context.Context, *db.ContentEngineQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseContentEngine) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseContentEngine) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.ContentEngineQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.ContentEngineQuery", q)
+}
+
+// The CreditTransactionFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CreditTransactionFunc func(context.Context, *db.CreditTransactionQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f CreditTransactionFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.CreditTransactionQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.CreditTransactionQuery", q)
+}
+
+// The TraverseCreditTransaction type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCreditTransaction func(context.Context, *db.CreditTransactionQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCreditTransaction) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCreditTransaction) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.CreditTransactionQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.CreditTransactionQuery", q)
 }
 
 // The GenerationImageFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -826,6 +912,33 @@ func (f TraverseModelApiKey) Traverse(ctx context.Context, q db.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *db.ModelApiKeyQuery", q)
 }
 
+// The ModelChannelFunc type is an adapter to allow the use of ordinary function as a Querier.
+type ModelChannelFunc func(context.Context, *db.ModelChannelQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f ModelChannelFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.ModelChannelQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.ModelChannelQuery", q)
+}
+
+// The TraverseModelChannel type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseModelChannel func(context.Context, *db.ModelChannelQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseModelChannel) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseModelChannel) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.ModelChannelQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.ModelChannelQuery", q)
+}
+
 // The ModelPricingFunc type is an adapter to allow the use of ordinary function as a Querier.
 type ModelPricingFunc func(context.Context, *db.ModelPricingQuery) (db.Value, error)
 
@@ -1094,6 +1207,33 @@ func (f TraverseProjectTask) Traverse(ctx context.Context, q db.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *db.ProjectTaskQuery", q)
+}
+
+// The SystemSettingFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SystemSettingFunc func(context.Context, *db.SystemSettingQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f SystemSettingFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.SystemSettingQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.SystemSettingQuery", q)
+}
+
+// The TraverseSystemSetting type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSystemSetting func(context.Context, *db.SystemSettingQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSystemSetting) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSystemSetting) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.SystemSettingQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.SystemSettingQuery", q)
 }
 
 // The TaskFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1661,6 +1801,12 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.AgentSyncJobQuery, predicate.AgentSyncJob, agentsyncjob.OrderOption]{typ: db.TypeAgentSyncJob, tq: q}, nil
 	case *db.AuditQuery:
 		return &query[*db.AuditQuery, predicate.Audit, audit.OrderOption]{typ: db.TypeAudit, tq: q}, nil
+	case *db.CategoryQuery:
+		return &query[*db.CategoryQuery, predicate.Category, category.OrderOption]{typ: db.TypeCategory, tq: q}, nil
+	case *db.ContentEngineQuery:
+		return &query[*db.ContentEngineQuery, predicate.ContentEngine, contentengine.OrderOption]{typ: db.TypeContentEngine, tq: q}, nil
+	case *db.CreditTransactionQuery:
+		return &query[*db.CreditTransactionQuery, predicate.CreditTransaction, credittransaction.OrderOption]{typ: db.TypeCreditTransaction, tq: q}, nil
 	case *db.GenerationImageQuery:
 		return &query[*db.GenerationImageQuery, predicate.GenerationImage, generationimage.OrderOption]{typ: db.TypeGenerationImage, tq: q}, nil
 	case *db.GenerationTaskQuery:
@@ -1691,6 +1837,8 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.ModelQuery, predicate.Model, model.OrderOption]{typ: db.TypeModel, tq: q}, nil
 	case *db.ModelApiKeyQuery:
 		return &query[*db.ModelApiKeyQuery, predicate.ModelApiKey, modelapikey.OrderOption]{typ: db.TypeModelApiKey, tq: q}, nil
+	case *db.ModelChannelQuery:
+		return &query[*db.ModelChannelQuery, predicate.ModelChannel, modelchannel.OrderOption]{typ: db.TypeModelChannel, tq: q}, nil
 	case *db.ModelPricingQuery:
 		return &query[*db.ModelPricingQuery, predicate.ModelPricing, modelpricing.OrderOption]{typ: db.TypeModelPricing, tq: q}, nil
 	case *db.NotifyChannelQuery:
@@ -1711,6 +1859,8 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.ProjectIssueCommentQuery, predicate.ProjectIssueComment, projectissuecomment.OrderOption]{typ: db.TypeProjectIssueComment, tq: q}, nil
 	case *db.ProjectTaskQuery:
 		return &query[*db.ProjectTaskQuery, predicate.ProjectTask, projecttask.OrderOption]{typ: db.TypeProjectTask, tq: q}, nil
+	case *db.SystemSettingQuery:
+		return &query[*db.SystemSettingQuery, predicate.SystemSetting, systemsetting.OrderOption]{typ: db.TypeSystemSetting, tq: q}, nil
 	case *db.TaskQuery:
 		return &query[*db.TaskQuery, predicate.Task, task.OrderOption]{typ: db.TypeTask, tq: q}, nil
 	case *db.TaskModelSwitchQuery:

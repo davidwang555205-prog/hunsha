@@ -6,9 +6,12 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
+
+	"bridal/backend/ent/types"
 )
 
 // GenerationTask 生图任务，对应 Node history 表。
@@ -41,6 +44,18 @@ func (GenerationTask) Fields() []ent.Field {
 		field.String("prompt_hash").Default(""),
 		field.Int("uploaded_image_count").Default(0),
 		field.Int("latency_ms").Default(0),
+		field.Int("total_count").Default(0),
+		field.Int("completed_count").Default(0),
+		field.Int("estimated_seconds").Default(0),
+		field.UUID("category_id", uuid.UUID{}).Optional(),
+		field.UUID("channel_id", uuid.UUID{}).Optional(),
+		field.Time("started_at").Optional(),
+		field.Time("completed_at").Optional(),
+		field.JSON("reference_images", []types.ReferenceImage{}).Optional(),
+		field.JSON("prompts", []string{}).Optional(),                  // 每张图给大模型的英文提示词，管理员复盘用（用户侧不返回）
+		field.JSON("feedback", types.TaskFeedback{}).Optional(),        // 小红书发布反馈：笔记链接 + 阅读/点赞/收藏/评论
+		field.Bool("deleted").Default(false),                           // 逻辑删除标记（定时清理过期历史时置 true，MinIO 文件保留）
+		field.Time("deleted_at").Optional(),                            // 逻辑删除时间
 		field.Time("created_at").Default(time.Now),
 	}
 }
@@ -53,7 +68,9 @@ func (GenerationTask) Indexes() []ent.Index {
 }
 
 func (GenerationTask) Edges() []ent.Edge {
-	// 不用 ent edge：bridal 用显式 task_id 字段关联，避免 ent 自动外键列名
-	// (generation_task_images) 与 migration (task_id) 不一致。查询走两步：先 task 再按 task_id 查 images。
-	return nil
+	// task -> images 1:N。image 侧 edge.From("task").Ref("images").Field("task_id") 显式指定列名，
+	// 复用 migration 000024 已建的 task_id 列，避免 ent 自动外键列名冲突。
+	return []ent.Edge{
+		edge.To("images", GenerationImage.Type),
+	}
 }

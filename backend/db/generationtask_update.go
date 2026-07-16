@@ -3,8 +3,10 @@
 package db
 
 import (
+	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/predicate"
+	"bridal/backend/ent/types"
 	"context"
 	"errors"
 	"fmt"
@@ -225,6 +227,239 @@ func (_u *GenerationTaskUpdate) AddLatencyMs(v int) *GenerationTaskUpdate {
 	return _u
 }
 
+// SetTotalCount sets the "total_count" field.
+func (_u *GenerationTaskUpdate) SetTotalCount(v int) *GenerationTaskUpdate {
+	_u.mutation.ResetTotalCount()
+	_u.mutation.SetTotalCount(v)
+	return _u
+}
+
+// SetNillableTotalCount sets the "total_count" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableTotalCount(v *int) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetTotalCount(*v)
+	}
+	return _u
+}
+
+// AddTotalCount adds value to the "total_count" field.
+func (_u *GenerationTaskUpdate) AddTotalCount(v int) *GenerationTaskUpdate {
+	_u.mutation.AddTotalCount(v)
+	return _u
+}
+
+// SetCompletedCount sets the "completed_count" field.
+func (_u *GenerationTaskUpdate) SetCompletedCount(v int) *GenerationTaskUpdate {
+	_u.mutation.ResetCompletedCount()
+	_u.mutation.SetCompletedCount(v)
+	return _u
+}
+
+// SetNillableCompletedCount sets the "completed_count" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableCompletedCount(v *int) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetCompletedCount(*v)
+	}
+	return _u
+}
+
+// AddCompletedCount adds value to the "completed_count" field.
+func (_u *GenerationTaskUpdate) AddCompletedCount(v int) *GenerationTaskUpdate {
+	_u.mutation.AddCompletedCount(v)
+	return _u
+}
+
+// SetEstimatedSeconds sets the "estimated_seconds" field.
+func (_u *GenerationTaskUpdate) SetEstimatedSeconds(v int) *GenerationTaskUpdate {
+	_u.mutation.ResetEstimatedSeconds()
+	_u.mutation.SetEstimatedSeconds(v)
+	return _u
+}
+
+// SetNillableEstimatedSeconds sets the "estimated_seconds" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableEstimatedSeconds(v *int) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetEstimatedSeconds(*v)
+	}
+	return _u
+}
+
+// AddEstimatedSeconds adds value to the "estimated_seconds" field.
+func (_u *GenerationTaskUpdate) AddEstimatedSeconds(v int) *GenerationTaskUpdate {
+	_u.mutation.AddEstimatedSeconds(v)
+	return _u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (_u *GenerationTaskUpdate) SetCategoryID(v uuid.UUID) *GenerationTaskUpdate {
+	_u.mutation.SetCategoryID(v)
+	return _u
+}
+
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableCategoryID(v *uuid.UUID) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetCategoryID(*v)
+	}
+	return _u
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (_u *GenerationTaskUpdate) ClearCategoryID() *GenerationTaskUpdate {
+	_u.mutation.ClearCategoryID()
+	return _u
+}
+
+// SetChannelID sets the "channel_id" field.
+func (_u *GenerationTaskUpdate) SetChannelID(v uuid.UUID) *GenerationTaskUpdate {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableChannelID(v *uuid.UUID) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (_u *GenerationTaskUpdate) ClearChannelID() *GenerationTaskUpdate {
+	_u.mutation.ClearChannelID()
+	return _u
+}
+
+// SetStartedAt sets the "started_at" field.
+func (_u *GenerationTaskUpdate) SetStartedAt(v time.Time) *GenerationTaskUpdate {
+	_u.mutation.SetStartedAt(v)
+	return _u
+}
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableStartedAt(v *time.Time) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetStartedAt(*v)
+	}
+	return _u
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (_u *GenerationTaskUpdate) ClearStartedAt() *GenerationTaskUpdate {
+	_u.mutation.ClearStartedAt()
+	return _u
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (_u *GenerationTaskUpdate) SetCompletedAt(v time.Time) *GenerationTaskUpdate {
+	_u.mutation.SetCompletedAt(v)
+	return _u
+}
+
+// SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableCompletedAt(v *time.Time) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetCompletedAt(*v)
+	}
+	return _u
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (_u *GenerationTaskUpdate) ClearCompletedAt() *GenerationTaskUpdate {
+	_u.mutation.ClearCompletedAt()
+	return _u
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (_u *GenerationTaskUpdate) SetReferenceImages(v []types.ReferenceImage) *GenerationTaskUpdate {
+	_u.mutation.SetReferenceImages(v)
+	return _u
+}
+
+// AppendReferenceImages appends value to the "reference_images" field.
+func (_u *GenerationTaskUpdate) AppendReferenceImages(v []types.ReferenceImage) *GenerationTaskUpdate {
+	_u.mutation.AppendReferenceImages(v)
+	return _u
+}
+
+// ClearReferenceImages clears the value of the "reference_images" field.
+func (_u *GenerationTaskUpdate) ClearReferenceImages() *GenerationTaskUpdate {
+	_u.mutation.ClearReferenceImages()
+	return _u
+}
+
+// SetPrompts sets the "prompts" field.
+func (_u *GenerationTaskUpdate) SetPrompts(v []string) *GenerationTaskUpdate {
+	_u.mutation.SetPrompts(v)
+	return _u
+}
+
+// AppendPrompts appends value to the "prompts" field.
+func (_u *GenerationTaskUpdate) AppendPrompts(v []string) *GenerationTaskUpdate {
+	_u.mutation.AppendPrompts(v)
+	return _u
+}
+
+// ClearPrompts clears the value of the "prompts" field.
+func (_u *GenerationTaskUpdate) ClearPrompts() *GenerationTaskUpdate {
+	_u.mutation.ClearPrompts()
+	return _u
+}
+
+// SetFeedback sets the "feedback" field.
+func (_u *GenerationTaskUpdate) SetFeedback(v types.TaskFeedback) *GenerationTaskUpdate {
+	_u.mutation.SetFeedback(v)
+	return _u
+}
+
+// SetNillableFeedback sets the "feedback" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableFeedback(v *types.TaskFeedback) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetFeedback(*v)
+	}
+	return _u
+}
+
+// ClearFeedback clears the value of the "feedback" field.
+func (_u *GenerationTaskUpdate) ClearFeedback() *GenerationTaskUpdate {
+	_u.mutation.ClearFeedback()
+	return _u
+}
+
+// SetDeleted sets the "deleted" field.
+func (_u *GenerationTaskUpdate) SetDeleted(v bool) *GenerationTaskUpdate {
+	_u.mutation.SetDeleted(v)
+	return _u
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableDeleted(v *bool) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetDeleted(*v)
+	}
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *GenerationTaskUpdate) SetDeletedAt(v time.Time) *GenerationTaskUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableDeletedAt(v *time.Time) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *GenerationTaskUpdate) ClearDeletedAt() *GenerationTaskUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *GenerationTaskUpdate) SetCreatedAt(v time.Time) *GenerationTaskUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -239,9 +474,45 @@ func (_u *GenerationTaskUpdate) SetNillableCreatedAt(v *time.Time) *GenerationTa
 	return _u
 }
 
+// AddImageIDs adds the "images" edge to the GenerationImage entity by IDs.
+func (_u *GenerationTaskUpdate) AddImageIDs(ids ...string) *GenerationTaskUpdate {
+	_u.mutation.AddImageIDs(ids...)
+	return _u
+}
+
+// AddImages adds the "images" edges to the GenerationImage entity.
+func (_u *GenerationTaskUpdate) AddImages(v ...*GenerationImage) *GenerationTaskUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddImageIDs(ids...)
+}
+
 // Mutation returns the GenerationTaskMutation object of the builder.
 func (_u *GenerationTaskUpdate) Mutation() *GenerationTaskMutation {
 	return _u.mutation
+}
+
+// ClearImages clears all "images" edges to the GenerationImage entity.
+func (_u *GenerationTaskUpdate) ClearImages() *GenerationTaskUpdate {
+	_u.mutation.ClearImages()
+	return _u
+}
+
+// RemoveImageIDs removes the "images" edge to GenerationImage entities by IDs.
+func (_u *GenerationTaskUpdate) RemoveImageIDs(ids ...string) *GenerationTaskUpdate {
+	_u.mutation.RemoveImageIDs(ids...)
+	return _u
+}
+
+// RemoveImages removes "images" edges to GenerationImage entities.
+func (_u *GenerationTaskUpdate) RemoveImages(v ...*GenerationImage) *GenerationTaskUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveImageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -336,8 +607,132 @@ func (_u *GenerationTaskUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.AddedLatencyMs(); ok {
 		_spec.AddField(generationtask.FieldLatencyMs, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.TotalCount(); ok {
+		_spec.SetField(generationtask.FieldTotalCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCount(); ok {
+		_spec.AddField(generationtask.FieldTotalCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CompletedCount(); ok {
+		_spec.SetField(generationtask.FieldCompletedCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCompletedCount(); ok {
+		_spec.AddField(generationtask.FieldCompletedCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EstimatedSeconds(); ok {
+		_spec.SetField(generationtask.FieldEstimatedSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedEstimatedSeconds(); ok {
+		_spec.AddField(generationtask.FieldEstimatedSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CategoryID(); ok {
+		_spec.SetField(generationtask.FieldCategoryID, field.TypeUUID, value)
+	}
+	if _u.mutation.CategoryIDCleared() {
+		_spec.ClearField(generationtask.FieldCategoryID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ChannelID(); ok {
+		_spec.SetField(generationtask.FieldChannelID, field.TypeUUID, value)
+	}
+	if _u.mutation.ChannelIDCleared() {
+		_spec.ClearField(generationtask.FieldChannelID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.StartedAt(); ok {
+		_spec.SetField(generationtask.FieldStartedAt, field.TypeTime, value)
+	}
+	if _u.mutation.StartedAtCleared() {
+		_spec.ClearField(generationtask.FieldStartedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CompletedAt(); ok {
+		_spec.SetField(generationtask.FieldCompletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.CompletedAtCleared() {
+		_spec.ClearField(generationtask.FieldCompletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ReferenceImages(); ok {
+		_spec.SetField(generationtask.FieldReferenceImages, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedReferenceImages(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, generationtask.FieldReferenceImages, value)
+		})
+	}
+	if _u.mutation.ReferenceImagesCleared() {
+		_spec.ClearField(generationtask.FieldReferenceImages, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Prompts(); ok {
+		_spec.SetField(generationtask.FieldPrompts, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPrompts(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, generationtask.FieldPrompts, value)
+		})
+	}
+	if _u.mutation.PromptsCleared() {
+		_spec.ClearField(generationtask.FieldPrompts, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Feedback(); ok {
+		_spec.SetField(generationtask.FieldFeedback, field.TypeJSON, value)
+	}
+	if _u.mutation.FeedbackCleared() {
+		_spec.ClearField(generationtask.FieldFeedback, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Deleted(); ok {
+		_spec.SetField(generationtask.FieldDeleted, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(generationtask.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(generationtask.FieldDeletedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(generationtask.FieldCreatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedImagesIDs(); len(nodes) > 0 && !_u.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
@@ -555,6 +950,239 @@ func (_u *GenerationTaskUpdateOne) AddLatencyMs(v int) *GenerationTaskUpdateOne 
 	return _u
 }
 
+// SetTotalCount sets the "total_count" field.
+func (_u *GenerationTaskUpdateOne) SetTotalCount(v int) *GenerationTaskUpdateOne {
+	_u.mutation.ResetTotalCount()
+	_u.mutation.SetTotalCount(v)
+	return _u
+}
+
+// SetNillableTotalCount sets the "total_count" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableTotalCount(v *int) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetTotalCount(*v)
+	}
+	return _u
+}
+
+// AddTotalCount adds value to the "total_count" field.
+func (_u *GenerationTaskUpdateOne) AddTotalCount(v int) *GenerationTaskUpdateOne {
+	_u.mutation.AddTotalCount(v)
+	return _u
+}
+
+// SetCompletedCount sets the "completed_count" field.
+func (_u *GenerationTaskUpdateOne) SetCompletedCount(v int) *GenerationTaskUpdateOne {
+	_u.mutation.ResetCompletedCount()
+	_u.mutation.SetCompletedCount(v)
+	return _u
+}
+
+// SetNillableCompletedCount sets the "completed_count" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableCompletedCount(v *int) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetCompletedCount(*v)
+	}
+	return _u
+}
+
+// AddCompletedCount adds value to the "completed_count" field.
+func (_u *GenerationTaskUpdateOne) AddCompletedCount(v int) *GenerationTaskUpdateOne {
+	_u.mutation.AddCompletedCount(v)
+	return _u
+}
+
+// SetEstimatedSeconds sets the "estimated_seconds" field.
+func (_u *GenerationTaskUpdateOne) SetEstimatedSeconds(v int) *GenerationTaskUpdateOne {
+	_u.mutation.ResetEstimatedSeconds()
+	_u.mutation.SetEstimatedSeconds(v)
+	return _u
+}
+
+// SetNillableEstimatedSeconds sets the "estimated_seconds" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableEstimatedSeconds(v *int) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetEstimatedSeconds(*v)
+	}
+	return _u
+}
+
+// AddEstimatedSeconds adds value to the "estimated_seconds" field.
+func (_u *GenerationTaskUpdateOne) AddEstimatedSeconds(v int) *GenerationTaskUpdateOne {
+	_u.mutation.AddEstimatedSeconds(v)
+	return _u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (_u *GenerationTaskUpdateOne) SetCategoryID(v uuid.UUID) *GenerationTaskUpdateOne {
+	_u.mutation.SetCategoryID(v)
+	return _u
+}
+
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableCategoryID(v *uuid.UUID) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetCategoryID(*v)
+	}
+	return _u
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (_u *GenerationTaskUpdateOne) ClearCategoryID() *GenerationTaskUpdateOne {
+	_u.mutation.ClearCategoryID()
+	return _u
+}
+
+// SetChannelID sets the "channel_id" field.
+func (_u *GenerationTaskUpdateOne) SetChannelID(v uuid.UUID) *GenerationTaskUpdateOne {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableChannelID(v *uuid.UUID) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (_u *GenerationTaskUpdateOne) ClearChannelID() *GenerationTaskUpdateOne {
+	_u.mutation.ClearChannelID()
+	return _u
+}
+
+// SetStartedAt sets the "started_at" field.
+func (_u *GenerationTaskUpdateOne) SetStartedAt(v time.Time) *GenerationTaskUpdateOne {
+	_u.mutation.SetStartedAt(v)
+	return _u
+}
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableStartedAt(v *time.Time) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetStartedAt(*v)
+	}
+	return _u
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (_u *GenerationTaskUpdateOne) ClearStartedAt() *GenerationTaskUpdateOne {
+	_u.mutation.ClearStartedAt()
+	return _u
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (_u *GenerationTaskUpdateOne) SetCompletedAt(v time.Time) *GenerationTaskUpdateOne {
+	_u.mutation.SetCompletedAt(v)
+	return _u
+}
+
+// SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableCompletedAt(v *time.Time) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetCompletedAt(*v)
+	}
+	return _u
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (_u *GenerationTaskUpdateOne) ClearCompletedAt() *GenerationTaskUpdateOne {
+	_u.mutation.ClearCompletedAt()
+	return _u
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (_u *GenerationTaskUpdateOne) SetReferenceImages(v []types.ReferenceImage) *GenerationTaskUpdateOne {
+	_u.mutation.SetReferenceImages(v)
+	return _u
+}
+
+// AppendReferenceImages appends value to the "reference_images" field.
+func (_u *GenerationTaskUpdateOne) AppendReferenceImages(v []types.ReferenceImage) *GenerationTaskUpdateOne {
+	_u.mutation.AppendReferenceImages(v)
+	return _u
+}
+
+// ClearReferenceImages clears the value of the "reference_images" field.
+func (_u *GenerationTaskUpdateOne) ClearReferenceImages() *GenerationTaskUpdateOne {
+	_u.mutation.ClearReferenceImages()
+	return _u
+}
+
+// SetPrompts sets the "prompts" field.
+func (_u *GenerationTaskUpdateOne) SetPrompts(v []string) *GenerationTaskUpdateOne {
+	_u.mutation.SetPrompts(v)
+	return _u
+}
+
+// AppendPrompts appends value to the "prompts" field.
+func (_u *GenerationTaskUpdateOne) AppendPrompts(v []string) *GenerationTaskUpdateOne {
+	_u.mutation.AppendPrompts(v)
+	return _u
+}
+
+// ClearPrompts clears the value of the "prompts" field.
+func (_u *GenerationTaskUpdateOne) ClearPrompts() *GenerationTaskUpdateOne {
+	_u.mutation.ClearPrompts()
+	return _u
+}
+
+// SetFeedback sets the "feedback" field.
+func (_u *GenerationTaskUpdateOne) SetFeedback(v types.TaskFeedback) *GenerationTaskUpdateOne {
+	_u.mutation.SetFeedback(v)
+	return _u
+}
+
+// SetNillableFeedback sets the "feedback" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableFeedback(v *types.TaskFeedback) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetFeedback(*v)
+	}
+	return _u
+}
+
+// ClearFeedback clears the value of the "feedback" field.
+func (_u *GenerationTaskUpdateOne) ClearFeedback() *GenerationTaskUpdateOne {
+	_u.mutation.ClearFeedback()
+	return _u
+}
+
+// SetDeleted sets the "deleted" field.
+func (_u *GenerationTaskUpdateOne) SetDeleted(v bool) *GenerationTaskUpdateOne {
+	_u.mutation.SetDeleted(v)
+	return _u
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableDeleted(v *bool) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetDeleted(*v)
+	}
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *GenerationTaskUpdateOne) SetDeletedAt(v time.Time) *GenerationTaskUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableDeletedAt(v *time.Time) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *GenerationTaskUpdateOne) ClearDeletedAt() *GenerationTaskUpdateOne {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *GenerationTaskUpdateOne) SetCreatedAt(v time.Time) *GenerationTaskUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -569,9 +1197,45 @@ func (_u *GenerationTaskUpdateOne) SetNillableCreatedAt(v *time.Time) *Generatio
 	return _u
 }
 
+// AddImageIDs adds the "images" edge to the GenerationImage entity by IDs.
+func (_u *GenerationTaskUpdateOne) AddImageIDs(ids ...string) *GenerationTaskUpdateOne {
+	_u.mutation.AddImageIDs(ids...)
+	return _u
+}
+
+// AddImages adds the "images" edges to the GenerationImage entity.
+func (_u *GenerationTaskUpdateOne) AddImages(v ...*GenerationImage) *GenerationTaskUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddImageIDs(ids...)
+}
+
 // Mutation returns the GenerationTaskMutation object of the builder.
 func (_u *GenerationTaskUpdateOne) Mutation() *GenerationTaskMutation {
 	return _u.mutation
+}
+
+// ClearImages clears all "images" edges to the GenerationImage entity.
+func (_u *GenerationTaskUpdateOne) ClearImages() *GenerationTaskUpdateOne {
+	_u.mutation.ClearImages()
+	return _u
+}
+
+// RemoveImageIDs removes the "images" edge to GenerationImage entities by IDs.
+func (_u *GenerationTaskUpdateOne) RemoveImageIDs(ids ...string) *GenerationTaskUpdateOne {
+	_u.mutation.RemoveImageIDs(ids...)
+	return _u
+}
+
+// RemoveImages removes "images" edges to GenerationImage entities.
+func (_u *GenerationTaskUpdateOne) RemoveImages(v ...*GenerationImage) *GenerationTaskUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveImageIDs(ids...)
 }
 
 // Where appends a list predicates to the GenerationTaskUpdate builder.
@@ -696,8 +1360,132 @@ func (_u *GenerationTaskUpdateOne) sqlSave(ctx context.Context) (_node *Generati
 	if value, ok := _u.mutation.AddedLatencyMs(); ok {
 		_spec.AddField(generationtask.FieldLatencyMs, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.TotalCount(); ok {
+		_spec.SetField(generationtask.FieldTotalCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCount(); ok {
+		_spec.AddField(generationtask.FieldTotalCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CompletedCount(); ok {
+		_spec.SetField(generationtask.FieldCompletedCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCompletedCount(); ok {
+		_spec.AddField(generationtask.FieldCompletedCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EstimatedSeconds(); ok {
+		_spec.SetField(generationtask.FieldEstimatedSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedEstimatedSeconds(); ok {
+		_spec.AddField(generationtask.FieldEstimatedSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.CategoryID(); ok {
+		_spec.SetField(generationtask.FieldCategoryID, field.TypeUUID, value)
+	}
+	if _u.mutation.CategoryIDCleared() {
+		_spec.ClearField(generationtask.FieldCategoryID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ChannelID(); ok {
+		_spec.SetField(generationtask.FieldChannelID, field.TypeUUID, value)
+	}
+	if _u.mutation.ChannelIDCleared() {
+		_spec.ClearField(generationtask.FieldChannelID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.StartedAt(); ok {
+		_spec.SetField(generationtask.FieldStartedAt, field.TypeTime, value)
+	}
+	if _u.mutation.StartedAtCleared() {
+		_spec.ClearField(generationtask.FieldStartedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CompletedAt(); ok {
+		_spec.SetField(generationtask.FieldCompletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.CompletedAtCleared() {
+		_spec.ClearField(generationtask.FieldCompletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ReferenceImages(); ok {
+		_spec.SetField(generationtask.FieldReferenceImages, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedReferenceImages(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, generationtask.FieldReferenceImages, value)
+		})
+	}
+	if _u.mutation.ReferenceImagesCleared() {
+		_spec.ClearField(generationtask.FieldReferenceImages, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Prompts(); ok {
+		_spec.SetField(generationtask.FieldPrompts, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPrompts(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, generationtask.FieldPrompts, value)
+		})
+	}
+	if _u.mutation.PromptsCleared() {
+		_spec.ClearField(generationtask.FieldPrompts, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Feedback(); ok {
+		_spec.SetField(generationtask.FieldFeedback, field.TypeJSON, value)
+	}
+	if _u.mutation.FeedbackCleared() {
+		_spec.ClearField(generationtask.FieldFeedback, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Deleted(); ok {
+		_spec.SetField(generationtask.FieldDeleted, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(generationtask.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(generationtask.FieldDeletedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(generationtask.FieldCreatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedImagesIDs(); len(nodes) > 0 && !_u.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   generationtask.ImagesTable,
+			Columns: []string{generationtask.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(generationimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	_node = &GenerationTask{config: _u.config}

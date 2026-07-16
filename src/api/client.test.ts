@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { apiRequest, setTokenGetter, setUnauthorizedHandler } from './client'
+import { apiRequest, setUnauthorizedHandler } from './client'
 
 // Mock global fetch
 const mockFetch = vi.fn()
@@ -7,41 +7,69 @@ vi.stubGlobal('fetch', mockFetch)
 
 beforeEach(() => {
   mockFetch.mockReset()
-  setTokenGetter(() => null)
   setUnauthorizedHandler(() => {})
 })
 
 describe('apiRequest', () => {
-  it('returns parsed JSON on successful response', async () => {
+  it('returns parsed JSON on successful response (8 模块扁平)', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ token: 'abc', user: { id: '1' } }),
+      json: async () => ({ channels: [] }),
     })
 
-    const result = await apiRequest('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ username: 'admin', password: 'pass' }),
-    })
+    const result = await apiRequest('/api/channels')
 
-    expect(result).toEqual({ token: 'abc', user: { id: '1' } })
+    expect(result).toEqual({ channels: [] })
     expect(mockFetch).toHaveBeenCalledOnce()
   })
 
-  it('injects Authorization header when token is available', async () => {
-    setTokenGetter(() => 'my-token')
+  it('解包 web.Resp {code,message,data} -> data（team 路由）', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ ok: true }),
+      json: async () => ({ code: 0, message: 'success', data: { id: '1', email: 'a@b.com' } }),
+    })
+
+    const result = await apiRequest('/api/v1/teams/users/status')
+
+    expect(result).toEqual({ id: '1', email: 'a@b.com' })
+  })
+
+  it('web.Resp 业务码非 0（HTTP 200）抛 ApiError，不再静默返回 data=null', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ code: 10606, message: '登录失败', data: null }),
+    })
+
+    await expect(
+      apiRequest('/api/v1/teams/users/login', { method: 'POST', body: '{}' })
+    ).rejects.toMatchObject({ message: '登录失败', statusCode: 200 })
+  })
+
+  it('web.Resp 业务码非 0 即使省略 data 也抛 ApiError，避免错误登录态跳页', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ code: 10606, message: '登录失败' }),
+    })
+
+    await expect(
+      apiRequest('/api/v1/teams/users/login', { method: 'POST', body: '{}' })
+    ).rejects.toMatchObject({ message: '登录失败', statusCode: 200 })
+  })
+
+  it('sends credentials: include (cookie session)', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
     })
 
     await apiRequest('/api/me')
 
-    const callArgs = mockFetch.mock.calls[0]
-    const headers = callArgs[1].headers as Headers
-    expect(headers.get('Authorization')).toBe('Bearer my-token')
+    expect(mockFetch.mock.calls[0][1].credentials).toBe('include')
   })
 
-  it('throws ApiError with statusCode on non-ok response', async () => {
+  it('throws ApiError with statusCode on non-ok response (error 字段)', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -51,6 +79,19 @@ describe('apiRequest', () => {
     await expect(apiRequest('/api/me')).rejects.toMatchObject({
       message: '服务器内部错误',
       statusCode: 500,
+    })
+  })
+
+  it('错误归一化：team {message} 字段也识别', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ code: 1, message: '参数错误' }),
+    })
+
+    await expect(apiRequest('/api/v1/teams/users')).rejects.toMatchObject({
+      message: '参数错误',
+      statusCode: 400,
     })
   })
 
@@ -73,9 +114,9 @@ describe('apiRequest', () => {
       json: async () => ({}),
     })
 
-    await apiRequest('/api/login', {
+    await apiRequest('/api/v1/teams/users/login', {
       method: 'POST',
-      body: JSON.stringify({ username: 'a' }),
+      body: JSON.stringify({ email: 'a@b.com', password: 'x' }),
     })
 
     const headers = mockFetch.mock.calls[0][1].headers as Headers

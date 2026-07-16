@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 
-	taskrepo "bridal/backend/biz/task/repo"
 	"bridal/backend/consts"
 	"bridal/backend/db"
 	"bridal/backend/db/enttest"
@@ -26,8 +25,7 @@ func TestTaskHook_OnStateChange_FinishedUpdatesTaskStatusAndCompletedAt(t *testi
 	defer client.Close()
 
 	repo := &taskHookRepoStub{
-		taskRepo: &taskrepo.TaskRepo{},
-		client:   client,
+		client: client,
 	}
 
 	userID := uuid.New()
@@ -79,8 +77,7 @@ func TestTaskHook_OnStateChange_FinishedUpdatesTaskStatusAndCompletedAt(t *testi
 }
 
 type taskHookRepoStub struct {
-	taskRepo *taskrepo.TaskRepo
-	client   *db.Client
+	client *db.Client
 }
 
 func (s *taskHookRepoStub) GetByID(ctx context.Context, id uuid.UUID) (*db.Task, error) {

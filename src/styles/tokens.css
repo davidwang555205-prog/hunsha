@@ -2,43 +2,49 @@
  * 苹果风格设计系统 Design Tokens -- 单一事实源
  *
  * 设计语言：apple.com 风格，高端克制。
- * - 配色：黑白灰基底，Apple 蓝 (#0071e3) 作为品牌点缀
+ * - 配色：黑白灰基底，品牌靛紫 (#4334b6) + 粉红辅助（OCR 自配色.png）
  * - 圆角：8/12px，卡片 16px
  * - 阴影：极淡，几乎不可见的层次感
  * - 动效：300ms 以内 ease-out，无 bounce/elastic
  * - 字体：系统字体栈 (-apple-system, SF Pro)，中文 PingFang SC
  * - 禁止：AI 风格渐变色、花哨动画、过度装饰
  *
+ * 颜色变量用 `R G B` 空格格式（非 hex），配合 tailwind config 的
+ * `rgb(var(--color-x) / <alpha-value>)`，使 bg-text/N、bg-surface/N 等带 alpha
+ * 修饰符的语义色生效（hex 会让 rgb(var/α) 非法 -> 透明）。
+ * 直接用 var(--color-x) 的地方（index.css、组件 inline style）须包 rgb(var(--color-x))。
+ *
  * 深色模式预留：未来加 :root[data-theme="dark"] 覆盖变量即可（本轮 YAGNI 不实现）。
  */
 :root {
-  /* ===== 品牌色（Apple 蓝，仅作点缀） ===== */
-  --color-primary: #0071e3;
-  --color-primary-50: #e8f1fd;
-  --color-primary-100: #d1e3fb;
-  --color-primary-500: #0071e3;
-  --color-primary-600: #0066c8;
-  --color-primary-700: #0058ab;
+  /* ===== 品牌色（靛紫 #4334b6，OCR 自上层目录配色.png） ===== */
+  --color-primary: 67 52 182;
+  --color-primary-50: 243 243 252;
+  --color-primary-100: 228 228 247;
+  --color-primary-500: 67 52 182;
+  --color-primary-600: 58 44 158;
+  --color-primary-700: 50 42 138;
 
-  /* 强调色保持克制：用深灰替代粉色 */
-  --color-accent-soft: #e8e8ed;
-  --color-accent: #6e6e73;
-  --color-danger: #ff3b30;
+  /* 粉红辅助色（OCR 自配色.png：浪漫婚纱调性，用于渐变与点缀） */
+  --color-accent-soft: 248 185 186;
+  --color-accent: 247 121 124;
+  --color-rose: 246 57 61;
+  --color-danger: 255 59 48;
 
   /* ===== 中性色（Apple 灰阶） ===== */
-  --color-bg: #f5f5f7;
-  --color-surface: #ffffff;
-  --color-border: #d2d2d7;
-  --color-border-strong: #a1a1a6;
-  --color-text: #1d1d1f;
-  --color-text-muted: #6e6e73;
-  --color-text-subtle: #86868b;
+  --color-bg: 245 245 247;
+  --color-surface: 255 255 255;
+  --color-border: 210 210 215;
+  --color-border-strong: 161 161 166;
+  --color-text: 29 29 31;
+  --color-text-muted: 110 110 115;
+  --color-text-subtle: 134 134 139;
 
   /* ===== 语义色 ===== */
-  --color-danger: #ff3b30;
-  --color-success: #34c759;
-  --color-warning: #ff9500;
-  --color-info: #0071e3;
+  --color-danger: 255 59 48;
+  --color-success: 52 199 89;
+  --color-warning: 255 149 0;
+  --color-info: 67 52 182;
 
   /* ===== 字体（系统字体栈） ===== */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
@@ -63,6 +69,8 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  /* 页面级模块间距：比 space-6 更呼吸，苹果风留白，用于 BaseLayout 顶层模块分隔 */
+  --space-section: 40px;
 
   /* ===== 圆角（Apple 风格：克制） ===== */
   --radius-sm: 8px;
@@ -84,8 +92,20 @@
   --duration-base: 240ms;
   --duration-slow: 300ms;
 
-  /* ===== 渐变（苹果风格禁用品牌渐变，保留为纯色兜底） ===== */
-  --gradient-brand: #0071e3;
-  --gradient-soft: #f5f5f7;
-  --gradient-text: #1d1d1f;
+  /* ===== 层级 z-index（统一管理，杜绝散落硬编码） ===== */
+  --z-base: 1;
+  --z-dropdown: 10;
+  --z-header: 30;
+  --z-popover: 40;
+  --z-modal-overlay: 50;
+  --z-modal: 60;
+
+  /* ===== 侧边栏宽度（可折叠：展开 220px / 收起 64px） ===== */
+  --sidebar-width: 13.75rem;
+  --sidebar-collapsed: 4rem;
+
+  /* ===== 品牌渐变（克制的品牌双色/三色渐变，非 AI 花哨渐变；作 background-image 值，颜色走 rgb(var(--color-x)) 单一事实源） ===== */
+  --gradient-brand: linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%);
+  --gradient-soft: linear-gradient(180deg, rgb(var(--color-surface)) 0%, rgb(var(--color-bg)) 100%);
+  --gradient-text: linear-gradient(90deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 50%, rgb(var(--color-rose)) 100%);
 }

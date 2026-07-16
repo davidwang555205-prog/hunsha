@@ -36,6 +36,12 @@ type Tx struct {
 	AgentSyncJob *AgentSyncJobClient
 	// Audit is the client for interacting with the Audit builders.
 	Audit *AuditClient
+	// Category is the client for interacting with the Category builders.
+	Category *CategoryClient
+	// ContentEngine is the client for interacting with the ContentEngine builders.
+	ContentEngine *ContentEngineClient
+	// CreditTransaction is the client for interacting with the CreditTransaction builders.
+	CreditTransaction *CreditTransactionClient
 	// GenerationImage is the client for interacting with the GenerationImage builders.
 	GenerationImage *GenerationImageClient
 	// GenerationTask is the client for interacting with the GenerationTask builders.
@@ -66,6 +72,8 @@ type Tx struct {
 	Model *ModelClient
 	// ModelApiKey is the client for interacting with the ModelApiKey builders.
 	ModelApiKey *ModelApiKeyClient
+	// ModelChannel is the client for interacting with the ModelChannel builders.
+	ModelChannel *ModelChannelClient
 	// ModelPricing is the client for interacting with the ModelPricing builders.
 	ModelPricing *ModelPricingClient
 	// NotifyChannel is the client for interacting with the NotifyChannel builders.
@@ -86,6 +94,8 @@ type Tx struct {
 	ProjectIssueComment *ProjectIssueCommentClient
 	// ProjectTask is the client for interacting with the ProjectTask builders.
 	ProjectTask *ProjectTaskClient
+	// SystemSetting is the client for interacting with the SystemSetting builders.
+	SystemSetting *SystemSettingClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// TaskModelSwitch is the client for interacting with the TaskModelSwitch builders.
@@ -268,6 +278,9 @@ func (tx *Tx) init() {
 	tx.AgentSkillVersion = NewAgentSkillVersionClient(tx.config)
 	tx.AgentSyncJob = NewAgentSyncJobClient(tx.config)
 	tx.Audit = NewAuditClient(tx.config)
+	tx.Category = NewCategoryClient(tx.config)
+	tx.ContentEngine = NewContentEngineClient(tx.config)
+	tx.CreditTransaction = NewCreditTransactionClient(tx.config)
 	tx.GenerationImage = NewGenerationImageClient(tx.config)
 	tx.GenerationTask = NewGenerationTaskClient(tx.config)
 	tx.GitBot = NewGitBotClient(tx.config)
@@ -283,6 +296,7 @@ func (tx *Tx) init() {
 	tx.MCPUserToolSetting = NewMCPUserToolSettingClient(tx.config)
 	tx.Model = NewModelClient(tx.config)
 	tx.ModelApiKey = NewModelApiKeyClient(tx.config)
+	tx.ModelChannel = NewModelChannelClient(tx.config)
 	tx.ModelPricing = NewModelPricingClient(tx.config)
 	tx.NotifyChannel = NewNotifyChannelClient(tx.config)
 	tx.NotifySendLog = NewNotifySendLogClient(tx.config)
@@ -293,6 +307,7 @@ func (tx *Tx) init() {
 	tx.ProjectIssue = NewProjectIssueClient(tx.config)
 	tx.ProjectIssueComment = NewProjectIssueCommentClient(tx.config)
 	tx.ProjectTask = NewProjectTaskClient(tx.config)
+	tx.SystemSetting = NewSystemSettingClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.TaskModelSwitch = NewTaskModelSwitchClient(tx.config)
 	tx.TaskUsageStat = NewTaskUsageStatClient(tx.config)

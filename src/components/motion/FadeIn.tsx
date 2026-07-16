@@ -1,8 +1,12 @@
 /**
  * FadeIn -- 入场包装器（借鉴 react-bits FadeContent/AnimatedContent）
  *
- * blur + fade + 方向 + delay，用 motion 的 useInView 触发（进入视口才动画）。
+ * fade + 方向 + delay，用 motion 的 useInView 触发（进入视口才动画）。
  * 用于路由页面切换淡入、面板展开、列表 stagger 入场。
+ *
+ * 注意：不用 filter:blur —— 该属性会创建层叠上下文 + fixed 包含块，把页面内
+ * 的 fixed 弹窗困住（被顶栏压住）。只用 opacity + transform；transform 终态
+ * motion 输出 transform:none，不残留包含块。弹窗一律走 Modal（Portal 到 body）。
  */
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
@@ -50,8 +54,8 @@ export function FadeIn({
   return (
     <MotionTag
       className={className}
-      initial={{ opacity: 0, filter: "blur(4px)", x: offset.x, y: offset.y }}
-      whileInView={{ opacity: 1, filter: "blur(0px)", x: 0, y: 0 }}
+      initial={{ opacity: 0, x: offset.x, y: offset.y }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once, amount }}
       transition={{ duration: duration / 1000, delay: delay / 1000, ease: [0.16, 1, 0.3, 1] }}
     >

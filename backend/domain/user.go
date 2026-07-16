@@ -98,6 +98,11 @@ type User struct {
 	Identities    []*UserIdentity   `json:"identities"`
 	Team          *Team             `json:"team,omitempty"`
 	HasPassword   bool              `json:"has_password"`
+	// bridal 业务字段（ent users 表 bridal 扩展，team.Login 返回的 User 自带）
+	Username        string `json:"username"`
+	DisplayName     string `json:"displayName"`
+	DailyImageLimit int    `json:"dailyImageLimit"`
+	Credits         int    `json:"credits"`
 }
 
 type SubscriptionResp struct {
@@ -120,6 +125,10 @@ func (u *User) From(src *db.User) *User {
 	u.Status = src.Status
 	u.IsBlocked = src.IsBlocked
 	u.HasPassword = src.Password != ""
+	u.Username = src.Username
+	u.DisplayName = src.DisplayName
+	u.DailyImageLimit = src.DailyImageLimit
+	u.Credits = src.Credits
 	u.Identities = cvt.Iter(src.Edges.Identities, func(_ int, i *db.UserIdentity) *UserIdentity {
 		return cvt.From(i, &UserIdentity{})
 	})
@@ -127,6 +136,30 @@ func (u *User) From(src *db.User) *User {
 		u.Team = cvt.From(teams[0], &Team{})
 	}
 	return u
+}
+
+// bridal 每日生图额度常量（与 Node maxDailyImageLimit/defaultDailyImageLimit 一致）。
+const (
+	MaxDailyImageLimit     = 1000
+	DefaultDailyImageLimit = 20
+)
+
+// HasUnlimitedImageGeneration bridal 业务：团队所有者(enterprise)与系统管理员(admin)
+// 不受每日生图额度限制，其余角色(subaccount/individual)受 DailyImageLimit 限制。
+func (u *User) HasUnlimitedImageGeneration() bool {
+	return u.Role == consts.UserRoleEnterprise || u.Role == consts.UserRoleAdmin
+}
+
+// NormalizeDailyImageLimit 与 Node normalizeDailyImageLimit 一致：
+// 负值返回 fallback，否则 max(0, min(1000, value))。
+func NormalizeDailyImageLimit(value, fallback int) int {
+	if value < 0 {
+		return fallback
+	}
+	if value > MaxDailyImageLimit {
+		return MaxDailyImageLimit
+	}
+	return value
 }
 
 type UserIdentity struct {

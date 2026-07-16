@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -113,6 +114,51 @@ func UploadedImageCount(v int) predicate.GenerationTask {
 // LatencyMs applies equality check predicate on the "latency_ms" field. It's identical to LatencyMsEQ.
 func LatencyMs(v int) predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldEQ(FieldLatencyMs, v))
+}
+
+// TotalCount applies equality check predicate on the "total_count" field. It's identical to TotalCountEQ.
+func TotalCount(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldTotalCount, v))
+}
+
+// CompletedCount applies equality check predicate on the "completed_count" field. It's identical to CompletedCountEQ.
+func CompletedCount(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldCompletedCount, v))
+}
+
+// EstimatedSeconds applies equality check predicate on the "estimated_seconds" field. It's identical to EstimatedSecondsEQ.
+func EstimatedSeconds(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldEstimatedSeconds, v))
+}
+
+// CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
+func CategoryID(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldCategoryID, v))
+}
+
+// ChannelID applies equality check predicate on the "channel_id" field. It's identical to ChannelIDEQ.
+func ChannelID(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldChannelID, v))
+}
+
+// StartedAt applies equality check predicate on the "started_at" field. It's identical to StartedAtEQ.
+func StartedAt(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldStartedAt, v))
+}
+
+// CompletedAt applies equality check predicate on the "completed_at" field. It's identical to CompletedAtEQ.
+func CompletedAt(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldCompletedAt, v))
+}
+
+// Deleted applies equality check predicate on the "deleted" field. It's identical to DeletedEQ.
+func Deleted(v bool) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldDeleted, v))
+}
+
+// DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
+func DeletedAt(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldDeletedAt, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
@@ -825,6 +871,416 @@ func LatencyMsLTE(v int) predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldLTE(FieldLatencyMs, v))
 }
 
+// TotalCountEQ applies the EQ predicate on the "total_count" field.
+func TotalCountEQ(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldTotalCount, v))
+}
+
+// TotalCountNEQ applies the NEQ predicate on the "total_count" field.
+func TotalCountNEQ(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldTotalCount, v))
+}
+
+// TotalCountIn applies the In predicate on the "total_count" field.
+func TotalCountIn(vs ...int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldTotalCount, vs...))
+}
+
+// TotalCountNotIn applies the NotIn predicate on the "total_count" field.
+func TotalCountNotIn(vs ...int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldTotalCount, vs...))
+}
+
+// TotalCountGT applies the GT predicate on the "total_count" field.
+func TotalCountGT(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldTotalCount, v))
+}
+
+// TotalCountGTE applies the GTE predicate on the "total_count" field.
+func TotalCountGTE(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldTotalCount, v))
+}
+
+// TotalCountLT applies the LT predicate on the "total_count" field.
+func TotalCountLT(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldTotalCount, v))
+}
+
+// TotalCountLTE applies the LTE predicate on the "total_count" field.
+func TotalCountLTE(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldTotalCount, v))
+}
+
+// CompletedCountEQ applies the EQ predicate on the "completed_count" field.
+func CompletedCountEQ(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldCompletedCount, v))
+}
+
+// CompletedCountNEQ applies the NEQ predicate on the "completed_count" field.
+func CompletedCountNEQ(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldCompletedCount, v))
+}
+
+// CompletedCountIn applies the In predicate on the "completed_count" field.
+func CompletedCountIn(vs ...int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldCompletedCount, vs...))
+}
+
+// CompletedCountNotIn applies the NotIn predicate on the "completed_count" field.
+func CompletedCountNotIn(vs ...int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldCompletedCount, vs...))
+}
+
+// CompletedCountGT applies the GT predicate on the "completed_count" field.
+func CompletedCountGT(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldCompletedCount, v))
+}
+
+// CompletedCountGTE applies the GTE predicate on the "completed_count" field.
+func CompletedCountGTE(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldCompletedCount, v))
+}
+
+// CompletedCountLT applies the LT predicate on the "completed_count" field.
+func CompletedCountLT(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldCompletedCount, v))
+}
+
+// CompletedCountLTE applies the LTE predicate on the "completed_count" field.
+func CompletedCountLTE(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldCompletedCount, v))
+}
+
+// EstimatedSecondsEQ applies the EQ predicate on the "estimated_seconds" field.
+func EstimatedSecondsEQ(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldEstimatedSeconds, v))
+}
+
+// EstimatedSecondsNEQ applies the NEQ predicate on the "estimated_seconds" field.
+func EstimatedSecondsNEQ(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldEstimatedSeconds, v))
+}
+
+// EstimatedSecondsIn applies the In predicate on the "estimated_seconds" field.
+func EstimatedSecondsIn(vs ...int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldEstimatedSeconds, vs...))
+}
+
+// EstimatedSecondsNotIn applies the NotIn predicate on the "estimated_seconds" field.
+func EstimatedSecondsNotIn(vs ...int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldEstimatedSeconds, vs...))
+}
+
+// EstimatedSecondsGT applies the GT predicate on the "estimated_seconds" field.
+func EstimatedSecondsGT(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldEstimatedSeconds, v))
+}
+
+// EstimatedSecondsGTE applies the GTE predicate on the "estimated_seconds" field.
+func EstimatedSecondsGTE(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldEstimatedSeconds, v))
+}
+
+// EstimatedSecondsLT applies the LT predicate on the "estimated_seconds" field.
+func EstimatedSecondsLT(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldEstimatedSeconds, v))
+}
+
+// EstimatedSecondsLTE applies the LTE predicate on the "estimated_seconds" field.
+func EstimatedSecondsLTE(v int) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldEstimatedSeconds, v))
+}
+
+// CategoryIDEQ applies the EQ predicate on the "category_id" field.
+func CategoryIDEQ(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldCategoryID, v))
+}
+
+// CategoryIDNEQ applies the NEQ predicate on the "category_id" field.
+func CategoryIDNEQ(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldCategoryID, v))
+}
+
+// CategoryIDIn applies the In predicate on the "category_id" field.
+func CategoryIDIn(vs ...uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldCategoryID, vs...))
+}
+
+// CategoryIDNotIn applies the NotIn predicate on the "category_id" field.
+func CategoryIDNotIn(vs ...uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldCategoryID, vs...))
+}
+
+// CategoryIDGT applies the GT predicate on the "category_id" field.
+func CategoryIDGT(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldCategoryID, v))
+}
+
+// CategoryIDGTE applies the GTE predicate on the "category_id" field.
+func CategoryIDGTE(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldCategoryID, v))
+}
+
+// CategoryIDLT applies the LT predicate on the "category_id" field.
+func CategoryIDLT(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldCategoryID, v))
+}
+
+// CategoryIDLTE applies the LTE predicate on the "category_id" field.
+func CategoryIDLTE(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldCategoryID, v))
+}
+
+// CategoryIDIsNil applies the IsNil predicate on the "category_id" field.
+func CategoryIDIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldCategoryID))
+}
+
+// CategoryIDNotNil applies the NotNil predicate on the "category_id" field.
+func CategoryIDNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldCategoryID))
+}
+
+// ChannelIDEQ applies the EQ predicate on the "channel_id" field.
+func ChannelIDEQ(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldChannelID, v))
+}
+
+// ChannelIDNEQ applies the NEQ predicate on the "channel_id" field.
+func ChannelIDNEQ(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldChannelID, v))
+}
+
+// ChannelIDIn applies the In predicate on the "channel_id" field.
+func ChannelIDIn(vs ...uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldChannelID, vs...))
+}
+
+// ChannelIDNotIn applies the NotIn predicate on the "channel_id" field.
+func ChannelIDNotIn(vs ...uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldChannelID, vs...))
+}
+
+// ChannelIDGT applies the GT predicate on the "channel_id" field.
+func ChannelIDGT(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldChannelID, v))
+}
+
+// ChannelIDGTE applies the GTE predicate on the "channel_id" field.
+func ChannelIDGTE(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldChannelID, v))
+}
+
+// ChannelIDLT applies the LT predicate on the "channel_id" field.
+func ChannelIDLT(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldChannelID, v))
+}
+
+// ChannelIDLTE applies the LTE predicate on the "channel_id" field.
+func ChannelIDLTE(v uuid.UUID) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldChannelID, v))
+}
+
+// ChannelIDIsNil applies the IsNil predicate on the "channel_id" field.
+func ChannelIDIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldChannelID))
+}
+
+// ChannelIDNotNil applies the NotNil predicate on the "channel_id" field.
+func ChannelIDNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldChannelID))
+}
+
+// StartedAtEQ applies the EQ predicate on the "started_at" field.
+func StartedAtEQ(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldStartedAt, v))
+}
+
+// StartedAtNEQ applies the NEQ predicate on the "started_at" field.
+func StartedAtNEQ(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldStartedAt, v))
+}
+
+// StartedAtIn applies the In predicate on the "started_at" field.
+func StartedAtIn(vs ...time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldStartedAt, vs...))
+}
+
+// StartedAtNotIn applies the NotIn predicate on the "started_at" field.
+func StartedAtNotIn(vs ...time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldStartedAt, vs...))
+}
+
+// StartedAtGT applies the GT predicate on the "started_at" field.
+func StartedAtGT(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldStartedAt, v))
+}
+
+// StartedAtGTE applies the GTE predicate on the "started_at" field.
+func StartedAtGTE(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldStartedAt, v))
+}
+
+// StartedAtLT applies the LT predicate on the "started_at" field.
+func StartedAtLT(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldStartedAt, v))
+}
+
+// StartedAtLTE applies the LTE predicate on the "started_at" field.
+func StartedAtLTE(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldStartedAt, v))
+}
+
+// StartedAtIsNil applies the IsNil predicate on the "started_at" field.
+func StartedAtIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldStartedAt))
+}
+
+// StartedAtNotNil applies the NotNil predicate on the "started_at" field.
+func StartedAtNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldStartedAt))
+}
+
+// CompletedAtEQ applies the EQ predicate on the "completed_at" field.
+func CompletedAtEQ(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldCompletedAt, v))
+}
+
+// CompletedAtNEQ applies the NEQ predicate on the "completed_at" field.
+func CompletedAtNEQ(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldCompletedAt, v))
+}
+
+// CompletedAtIn applies the In predicate on the "completed_at" field.
+func CompletedAtIn(vs ...time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldCompletedAt, vs...))
+}
+
+// CompletedAtNotIn applies the NotIn predicate on the "completed_at" field.
+func CompletedAtNotIn(vs ...time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldCompletedAt, vs...))
+}
+
+// CompletedAtGT applies the GT predicate on the "completed_at" field.
+func CompletedAtGT(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldCompletedAt, v))
+}
+
+// CompletedAtGTE applies the GTE predicate on the "completed_at" field.
+func CompletedAtGTE(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldCompletedAt, v))
+}
+
+// CompletedAtLT applies the LT predicate on the "completed_at" field.
+func CompletedAtLT(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldCompletedAt, v))
+}
+
+// CompletedAtLTE applies the LTE predicate on the "completed_at" field.
+func CompletedAtLTE(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldCompletedAt, v))
+}
+
+// CompletedAtIsNil applies the IsNil predicate on the "completed_at" field.
+func CompletedAtIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldCompletedAt))
+}
+
+// CompletedAtNotNil applies the NotNil predicate on the "completed_at" field.
+func CompletedAtNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldCompletedAt))
+}
+
+// ReferenceImagesIsNil applies the IsNil predicate on the "reference_images" field.
+func ReferenceImagesIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldReferenceImages))
+}
+
+// ReferenceImagesNotNil applies the NotNil predicate on the "reference_images" field.
+func ReferenceImagesNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldReferenceImages))
+}
+
+// PromptsIsNil applies the IsNil predicate on the "prompts" field.
+func PromptsIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldPrompts))
+}
+
+// PromptsNotNil applies the NotNil predicate on the "prompts" field.
+func PromptsNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldPrompts))
+}
+
+// FeedbackIsNil applies the IsNil predicate on the "feedback" field.
+func FeedbackIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldFeedback))
+}
+
+// FeedbackNotNil applies the NotNil predicate on the "feedback" field.
+func FeedbackNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldFeedback))
+}
+
+// DeletedEQ applies the EQ predicate on the "deleted" field.
+func DeletedEQ(v bool) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldDeleted, v))
+}
+
+// DeletedNEQ applies the NEQ predicate on the "deleted" field.
+func DeletedNEQ(v bool) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldDeleted, v))
+}
+
+// DeletedAtEQ applies the EQ predicate on the "deleted_at" field.
+func DeletedAtEQ(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtNEQ applies the NEQ predicate on the "deleted_at" field.
+func DeletedAtNEQ(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtIn applies the In predicate on the "deleted_at" field.
+func DeletedAtIn(vs ...time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtNotIn applies the NotIn predicate on the "deleted_at" field.
+func DeletedAtNotIn(vs ...time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtGT applies the GT predicate on the "deleted_at" field.
+func DeletedAtGT(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldDeletedAt, v))
+}
+
+// DeletedAtGTE applies the GTE predicate on the "deleted_at" field.
+func DeletedAtGTE(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldDeletedAt, v))
+}
+
+// DeletedAtLT applies the LT predicate on the "deleted_at" field.
+func DeletedAtLT(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldDeletedAt, v))
+}
+
+// DeletedAtLTE applies the LTE predicate on the "deleted_at" field.
+func DeletedAtLTE(v time.Time) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldDeletedAt, v))
+}
+
+// DeletedAtIsNil applies the IsNil predicate on the "deleted_at" field.
+func DeletedAtIsNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIsNull(FieldDeletedAt))
+}
+
+// DeletedAtNotNil applies the NotNil predicate on the "deleted_at" field.
+func DeletedAtNotNil() predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotNull(FieldDeletedAt))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldEQ(FieldCreatedAt, v))
@@ -863,6 +1319,29 @@ func CreatedAtLT(v time.Time) predicate.GenerationTask {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// HasImages applies the HasEdge predicate on the "images" edge.
+func HasImages() predicate.GenerationTask {
+	return predicate.GenerationTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ImagesTable, ImagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasImagesWith applies the HasEdge predicate on the "images" edge with a given conditions (other predicates).
+func HasImagesWith(preds ...predicate.GenerationImage) predicate.GenerationTask {
+	return predicate.GenerationTask(func(s *sql.Selector) {
+		step := newImagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

@@ -8,6 +8,7 @@ import { NavLink } from "react-router-dom";
 const items = [
   { to: "/admin", label: "概览", end: true },
   { to: "/admin/users", label: "用户管理", end: false },
+  { to: "/admin/history", label: "生图历史", end: false },
   { to: "/admin/channels", label: "模型线路", end: false },
   { to: "/admin/categories", label: "类目管理", end: false },
   { to: "/admin/credits", label: "积分记录", end: false }

@@ -1,304 +1,464 @@
 /**
- * AdminUsersPage -- 用户管理（V2，苹果风格）
+ * AdminUsersPage -- 用户管理（team MemberList）
  *
  * 路由 /admin/users。功能：
- * - 用户列表（用户名/显示名/角色/积分/今日已用/总请求/成功率/最近活跃）
- * - 创建用户（含角色、初始积分、每日上限、可用线路）
- * - 编辑用户（角色、积分、禁用、密码、每日上限）
- * - 积分充值/调整
- * - 删除用户（super_admin）
- *
- * 复用 V2 admin API：listAccounts/createUser/updateUser/deleteUser/adjustCredits。
+ * - 成员列表（listMembers，分页 + 搜索）
+ * - 创建成员（email 批量 + dailyImageLimit，返回初始密码，结构化展示 + 复制）
+ * - 编辑成员（name/dailyImageLimit + 重置密码）
+ * - 删除成员（admin）
+ * - 列表行：Switch 停用/启用即时切换、积分调整弹窗、积分流水跳转
  */
-import { Fragment, useState } from "react";
-import { useData } from "../../context/DataContext";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import {
-  createUser,
-  updateUser,
-  deleteUser,
-  adjustCredits
-} from "../../api/admin";
+import { listMembers, createUser, updateUser, deleteUser, adjustCredits, resetPassword } from "../../api/admin";
 import { isUnauthorizedError } from "../../types/api";
-import type { UserRole } from "../../types/api";
-import { AdminSubNav } from "../../components/admin/AdminSubNav";
+import type { TeamMemberInfo, TeamUserPassword } from "../../types/api";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
+import { Modal } from "../../components/ui/Modal";
+import { Switch } from "../../components/ui/Switch";
+import { Pagination } from "../../components/ui/Pagination";
 import { inputClass } from "../../studio/constants";
-import { formatDate } from "../../lib/format";
-
-type Draft = {
-  displayName: string;
-  role: UserRole;
-  credits: string;
-  dailyImageLimit: string;
-  isDisabled: boolean;
-  password: string;
-  creditAmount: string;
-  creditDesc: string;
-};
-
-const emptyDraft: Draft = {
-  displayName: "",
-  role: "user",
-  credits: "100",
-  dailyImageLimit: "20",
-  isDisabled: false,
-  password: "",
-  creditAmount: "",
-  creditDesc: ""
-};
+import { formatDate, pickUserLabel } from "../../lib/format";
+import { copyText } from "../../lib/clipboard";
 
 export function AdminUsersPage() {
-  const { accounts, refresh, setAccounts } = useData();
-  const { session, isSuperAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const [members, setMembers] = useState<TeamMemberInfo[]>([]);
   const [message, setMessage] = useState("");
-  const [busyUserId, setBusyUserId] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<TeamMemberInfo | null>(null);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
 
-  // 新建账号表单
-  const [nu, setNu] = useState({ username: "", displayName: "", password: "", dailyImageLimit: "20", credits: "100", role: "user" as UserRole });
+  // 创建表单（team：email 批量 + dailyImageLimit）
+  const [nu, setNu] = useState({
+    emails: "",
+    dailyImageLimit: "20"
+  });
 
-  const draftOf = (userId: string): Draft => drafts[userId] ?? emptyDraft;
-  const setDraft = (userId: string, patch: Partial<Draft>) =>
-    setDrafts((cur) => ({ ...cur, [userId]: { ...draftOf(userId), ...patch } }));
+  // 编辑表单（仅 name/dailyImageLimit；停用启用走列表行开关，积分走独立弹窗）
+  const [ed, setEd] = useState({
+    name: "",
+    dailyImageLimit: "20"
+  });
+
+  // 创建后初始密码（结构化展示 + 复制，仅显示一次）
+  const [createdPasswords, setCreatedPasswords] = useState<TeamUserPassword[] | null>(null);
+  // 重置密码结果（仅显示一次）
+  const [resetResult, setResetResult] = useState<TeamUserPassword | null>(null);
+  // 积分调整弹窗目标
+  const [creditTarget, setCreditTarget] = useState<TeamMemberInfo | null>(null);
+  const [creditForm, setCreditForm] = useState({ amount: "", desc: "" });
+
+  const fetchMembers = useCallback(async (p: number, size: number, q: string) => {
+    try {
+      const payload = await listMembers(p, size, q.trim() || undefined);
+      setMembers(payload.members);
+      setTotal(payload.total);
+      setPage(payload.page || p);
+      setPageSize(size);
+    } catch (err) {
+      if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "加载成员失败。");
+    }
+  }, []);
+
+  const reload = () => fetchMembers(page, pageSize, query);
+
+  // 搜索防抖（含初始加载）：query 变化 500ms 后查第 1 页（与 HistoryPage 一致）
+  useEffect(() => {
+    const t = setTimeout(() => void fetchMembers(1, pageSize, query), 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const openEdit = (m: TeamMemberInfo) => {
+    setEditing(m);
+    setEd({
+      name: m.user.displayName || m.user.name || "",
+      dailyImageLimit: String(m.user.dailyImageLimit ?? 0)
+    });
+    setResetResult(null);
+    setMessage("");
+  };
 
   const handleCreate = async () => {
+    const emails = nu.emails
+      .split(/[\s,，;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (emails.length === 0) {
+      setMessage("请输入至少一个邮箱。");
+      return;
+    }
+    setBusy(true);
     setMessage("");
     try {
       const payload = await createUser({
-        username: nu.username,
-        displayName: nu.displayName || undefined,
-        password: nu.password,
-        dailyImageLimit: Math.max(0, Math.floor(Number(nu.dailyImageLimit) || 0)),
-        credits: Math.max(0, Math.floor(Number(nu.credits) || 0)),
-        role: nu.role
+        emails,
+        dailyImageLimit: Math.max(0, Math.floor(Number(nu.dailyImageLimit) || 0))
       });
-      setAccounts(payload.accounts || []);
-      setNu({ username: "", displayName: "", password: "", dailyImageLimit: "20", credits: "100", role: "user" });
-      setMessage(`已创建账号：${payload.user.username}`);
-      await refresh();
+      setNu({ emails: "", dailyImageLimit: "20" });
+      setShowCreate(false);
+      setCreatedPasswords(payload.passwords);
+      setMessage(`已创建 ${payload.users.length} 个成员，请复制保存初始密码。`);
+      await reload();
     } catch (err) {
-      if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "创建账号失败。");
+      if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "创建成员失败。");
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleSave = async (userId: string) => {
-    const d = draftOf(userId);
-    setBusyUserId(userId);
+  const handleSave = async () => {
+    if (!editing) return;
+    setBusy(true);
     setMessage("");
     try {
-      const payload = await updateUser(userId, {
-        displayName: d.displayName || undefined,
-        role: d.role,
-        credits: d.credits !== "" ? Math.max(0, Math.floor(Number(d.credits))) : undefined,
-        dailyImageLimit: d.dailyImageLimit !== "" ? Math.max(0, Math.floor(Number(d.dailyImageLimit))) : undefined,
-        isDisabled: d.isDisabled,
-        password: d.password || undefined
+      const payload = await updateUser(editing.user.id, {
+        name: ed.name || undefined,
+        dailyImageLimit: ed.dailyImageLimit !== "" ? Math.max(0, Math.floor(Number(ed.dailyImageLimit))) : undefined
       });
-      setAccounts(payload.accounts || []);
-      setEditingId(null);
-      setMessage(`已更新 ${payload.user.username} 的信息。`);
-      await refresh();
+      setEditing(null);
+      setMessage(`已更新 ${payload.user.username || payload.user.email} 的信息。`);
+      await reload();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "更新失败。");
     } finally {
-      setBusyUserId("");
+      setBusy(false);
     }
   };
 
-  const handleAdjustCredits = async (userId: string) => {
-    const d = draftOf(userId);
-    const amount = Math.floor(Number(d.creditAmount));
+  // 列表行开关：停用/启用即时切换（不可停用自己）
+  const handleToggleBlocked = async (m: TeamMemberInfo) => {
+    if (m.user.id === user?.id) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await updateUser(m.user.id, { is_blocked: !m.user.is_blocked });
+      setMessage(`${m.user.email} 已${m.user.is_blocked ? "启用" : "停用"}。`);
+      await reload();
+    } catch (err) {
+      if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "操作失败。");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // 积分调整（独立弹窗）
+  const handleAdjustCredits = async () => {
+    if (!creditTarget) return;
+    const amount = Math.floor(Number(creditForm.amount));
     if (!Number.isFinite(amount) || amount === 0) {
       setMessage("积分调整数量需为非零数字。");
       return;
     }
-    setBusyUserId(userId);
+    setBusy(true);
     setMessage("");
     try {
-      const payload = await adjustCredits(userId, { amount, description: d.creditDesc || undefined });
-      setAccounts(payload.accounts || []);
-      setDraft(userId, { creditAmount: "", creditDesc: "" });
-      setMessage(`已调整 ${payload.user.username} 的积分，当前余额 ${payload.balance}。`);
-      await refresh();
+      const payload = await adjustCredits(creditTarget.user.id, { amount, description: creditForm.desc || undefined });
+      setCreditForm({ amount: "", desc: "" });
+      setCreditTarget(null);
+      setMessage(`已调整 ${creditTarget.user.email} 的积分，当前余额 ${payload.balance}。`);
+      await reload();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "调整积分失败。");
     } finally {
-      setBusyUserId("");
+      setBusy(false);
+    }
+  };
+
+  // 重置密码（后端生成新随机密码，返回明文一次）
+  const handleResetPassword = async () => {
+    if (!editing) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const result = await resetPassword(editing.user.id);
+      setResetResult(result);
+      setMessage(`已重置 ${result.email} 的密码，请复制保存。`);
+    } catch (err) {
+      if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "重置密码失败。");
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleDelete = async (userId: string) => {
-    if (!isSuperAdmin) {
-      setMessage("仅超级管理员可删除账号。");
-      return;
-    }
-    if (!window.confirm("确认删除该账号？此操作不可撤销。")) return;
-    setBusyUserId(userId);
+    if (!isAdmin) return;
+    if (!window.confirm("确认删除该成员？此操作不可撤销。")) return;
+    setBusy(true);
     setMessage("");
     try {
-      const payload = await deleteUser(userId);
-      setAccounts(payload.accounts || []);
-      setMessage("已删除账号。");
-      await refresh();
+      await deleteUser(userId);
+      setMessage("已删除成员。");
+      await reload();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "删除失败。");
     } finally {
-      setBusyUserId("");
+      setBusy(false);
     }
   };
 
-  const roleLabel = (r: UserRole) => (r === "super_admin" ? "超管" : r === "admin" ? "管理员" : "用户");
+  const copyAllPasswords = async (list: TeamUserPassword[]) => {
+    const text = list.map((p) => `${p.email} : ${p.password}`).join("\n");
+    await copyText(text);
+    setMessage("已复制全部账号密码。");
+  };
+
+  const roleLabel = (m: TeamMemberInfo) =>
+    m.user.role === "enterprise"
+      ? "所有者"
+      : m.user.role === "admin"
+        ? "管理员"
+        : m.role === "admin"
+          ? "组管理员"
+          : "成员";
 
   return (
     <>
-      <PageHeader title="用户管理" subtitle="创建账号、管理角色与积分" />
-      <AdminSubNav />
+      <PageHeader title="用户管理" subtitle="创建成员、管理额度与积分" />
 
-      {/* 创建账号 */}
-      <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-text">创建新账号</h2>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <Field label="账号">
-            <Input value={nu.username} onChange={(e) => setNu({ ...nu, username: e.target.value })} placeholder="username" />
-          </Field>
-          <Field label="显示名">
-            <Input value={nu.displayName} onChange={(e) => setNu({ ...nu, displayName: e.target.value })} />
-          </Field>
-          <Field label="密码">
-            <Input type="password" value={nu.password} onChange={(e) => setNu({ ...nu, password: e.target.value })} />
-          </Field>
-          <Field label="角色">
-            <select className={inputClass} value={nu.role} onChange={(e) => setNu({ ...nu, role: e.target.value as UserRole })}>
-              <option value="user">用户</option>
-              <option value="admin">管理员</option>
-              {isSuperAdmin && <option value="super_admin">超级管理员</option>}
-            </select>
-          </Field>
-          <Field label="初始积分">
-            <Input type="number" value={nu.credits} onChange={(e) => setNu({ ...nu, credits: e.target.value })} />
-          </Field>
-          <Field label="每日上限">
-            <Input type="number" value={nu.dailyImageLimit} onChange={(e) => setNu({ ...nu, dailyImageLimit: e.target.value })} />
-          </Field>
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <Button variant="primary" size="sm" onClick={handleCreate} disabled={!nu.username || !nu.password}>
-            创建账号
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button variant="primary" size="sm" onClick={() => { setShowCreate(true); setMessage(""); }}>
+            创建新成员
           </Button>
-          {message && <span className="text-sm text-text-muted">{message}</span>}
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索邮箱 / 账号 / 显示名"
+            className="w-64"
+          />
         </div>
-      </section>
+        {message && <span className="whitespace-pre-line text-sm text-text-muted">{message}</span>}
+      </div>
 
-      {/* 用户列表 */}
+      {/* 成员列表 */}
       <section className="rounded-lg border border-border bg-surface shadow-sm">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-base font-semibold text-text">账号列表（{accounts.length}）</h2>
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="text-base font-semibold text-text">成员列表（{total}）</h2>
         </div>
         <div className="overflow-x-auto brand-scrollbar">
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead>
               <tr>
-                {["账号", "角色", "积分", "请求", "图片", "今日", "最近活跃", "操作"].map((h) => (
-                  <th key={h} className="whitespace-nowrap border-b border-border py-2 px-3 text-xs font-medium text-text-muted">{h}</th>
+                {["成员", "角色", "积分", "每日额度", "状态", "最近活跃", "操作"].map((h) => (
+                  <th key={h} className="whitespace-nowrap border-b border-border px-3 py-2 text-xs font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {accounts.map((a) => {
-                const isEditing = editingId === a.user.id;
-                const d = draftOf(a.user.id);
-                const isSelf = a.user.id === session?.user.id;
+              {members.map((m) => {
+                const isSelf = m.user.id === user?.id;
                 return (
-                  <Fragment key={a.user.id}>
-                    <tr className="border-b border-border/50 hover:bg-bg">
-                      <td className="px-3 py-3">
-                        <div className="font-medium text-text">{a.user.displayName || a.user.username}</div>
-                        <div className="text-xs text-text-muted">@{a.user.username}{a.user.isDisabled && " · 已禁用"}</div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="rounded-full bg-bg px-2 py-0.5 text-xs text-text-muted">{roleLabel(a.user.role)}</span>
-                      </td>
-                      <td className="px-3 py-3 text-text">{a.credits}</td>
-                      <td className="px-3 py-3 text-text">{a.requestCount}</td>
-                      <td className="px-3 py-3 text-text">{a.generatedImageCount}</td>
-                      <td className="px-3 py-3 text-text">{a.dailyGeneratedImageCount}</td>
-                      <td className="px-3 py-3 text-xs text-text-muted">{a.lastGeneratedAt ? formatDate(a.lastGeneratedAt) : "-"}</td>
-                      <td className="px-3 py-3">
-                        <div className="flex gap-1">
-                          <Button variant="secondary" size="sm" onClick={() => { setEditingId(isEditing ? null : a.user.id); setDraft(a.user.id, { ...emptyDraft, displayName: a.user.displayName, role: a.user.role, credits: String(a.credits), dailyImageLimit: String(a.user.dailyImageLimit), isDisabled: a.user.isDisabled }); }}>
-                            {isEditing ? "收起" : "编辑"}
-                          </Button>
-                          {isSuperAdmin && !isSelf && (
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(a.user.id)} loading={busyUserId === a.user.id}>
-                              删除
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    {isEditing && (
-                      <tr className="bg-bg/50">
-                        <td colSpan={8} className="px-5 py-4">
-                          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                            <Field label="显示名">
-                              <Input value={d.displayName} onChange={(e) => setDraft(a.user.id, { displayName: e.target.value })} />
-                            </Field>
-                            <Field label="角色">
-                              <select className={inputClass} value={d.role} onChange={(e) => setDraft(a.user.id, { role: e.target.value as UserRole })}>
-                                <option value="user">用户</option>
-                                <option value="admin">管理员</option>
-                                {isSuperAdmin && <option value="super_admin">超级管理员</option>}
-                              </select>
-                            </Field>
-                            <Field label="积分余额">
-                              <Input type="number" value={d.credits} onChange={(e) => setDraft(a.user.id, { credits: e.target.value })} />
-                            </Field>
-                            <Field label="每日上限">
-                              <Input type="number" value={d.dailyImageLimit} onChange={(e) => setDraft(a.user.id, { dailyImageLimit: e.target.value })} />
-                            </Field>
-                            <Field label="重置密码">
-                              <Input type="password" value={d.password} onChange={(e) => setDraft(a.user.id, { password: e.target.value })} placeholder="留空不改" />
-                            </Field>
-                            <Field label="禁用账号">
-                              <label className="flex items-center gap-2 pt-2.5">
-                                <input type="checkbox" checked={d.isDisabled} disabled={isSelf} onChange={(e) => setDraft(a.user.id, { isDisabled: e.target.checked })} />
-                                <span className="text-sm text-text">{d.isDisabled ? "已禁用" : "启用中"}</span>
-                              </label>
-                            </Field>
-                          </div>
-                          {/* 积分调整 */}
-                          <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-border pt-3">
-                            <Field label="积分调整（正=充值 负=扣减）">
-                              <Input type="number" value={d.creditAmount} onChange={(e) => setDraft(a.user.id, { creditAmount: e.target.value })} placeholder="如 100 或 -50" className="w-40" />
-                            </Field>
-                            <Field label="说明">
-                              <Input value={d.creditDesc} onChange={(e) => setDraft(a.user.id, { creditDesc: e.target.value })} placeholder="可选" className="w-48" />
-                            </Field>
-                            <Button variant="secondary" size="sm" onClick={() => handleAdjustCredits(a.user.id)} loading={busyUserId === a.user.id}>
-                              调整积分
-                            </Button>
-                          </div>
-                          <div className="mt-3 flex gap-2">
-                            <Button variant="primary" size="sm" onClick={() => handleSave(a.user.id)} loading={busyUserId === a.user.id}>
-                              保存
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>取消</Button>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
+                  <tr key={m.user.id} className="border-b border-border/50 hover:bg-bg">
+                    <td className="px-3 py-3">
+                      <div className="font-medium text-text">{pickUserLabel(m.user)}</div>
+                      <div className="text-xs text-text-muted">{m.user.email}</div>
+                    </td>
+                    <td className="px-3 py-3"><span className="rounded-full bg-bg px-2 py-0.5 text-xs text-text-muted">{roleLabel(m)}</span></td>
+                    <td className="px-3 py-3">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => navigate(`/admin/credits?userId=${encodeURIComponent(m.user.id)}`)}
+                        title="查看该成员积分流水"
+                      >
+                        {m.user.credits}
+                      </Button>
+                    </td>
+                    <td className="px-3 py-3 text-text">
+                      {m.user.role === "enterprise" || m.user.role === "admin" ? "不限" : m.user.dailyImageLimit}
+                    </td>
+                    <td className="px-3 py-3">
+                      <Switch
+                        checked={!m.user.is_blocked}
+                        onChange={() => void handleToggleBlocked(m)}
+                        disabled={isSelf || busy}
+                        label={m.user.is_blocked ? "点击启用" : "点击停用"}
+                      />
+                    </td>
+                    <td className="px-3 py-3 text-xs text-text-muted">
+                      {m.last_active_at ? formatDate(new Date(m.last_active_at * 1000).toISOString()) : "-"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        <Button variant="secondary" size="sm" onClick={() => { setCreditTarget(m); setCreditForm({ amount: "", desc: "" }); setMessage(""); }}>积分</Button>
+                        <Button variant="secondary" size="sm" onClick={() => openEdit(m)}>编辑</Button>
+                        {isAdmin && !isSelf && (
+                          <Button variant="ghost" size="sm" onClick={() => void handleDelete(m.user.id)} loading={busy}>删除</Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
+              {members.length === 0 && (
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-text-muted">暂无匹配成员</td></tr>
+              )}
             </tbody>
           </table>
         </div>
+        <div className="border-t border-border px-5 py-3">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            pageSizeOptions={[12, 20, 50]}
+            onPageChange={(p) => void fetchMembers(p, pageSize, query)}
+            onPageSizeChange={(s) => void fetchMembers(1, s, query)}
+          />
+        </div>
       </section>
+
+      {/* 创建成员弹窗 */}
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="创建新成员"
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>取消</Button>
+            <Button variant="primary" size="sm" onClick={handleCreate} loading={busy} disabled={!nu.emails}>创建</Button>
+          </>
+        }
+      >
+        <div className="grid gap-3">
+          <Field label="邮箱（多个用空格/逗号分隔，批量创建 subaccount 成员）">
+            <textarea
+              className={inputClass}
+              rows={3}
+              value={nu.emails}
+              onChange={(e) => setNu({ ...nu, emails: e.target.value })}
+              placeholder="user1@example.com, user2@example.com"
+            />
+          </Field>
+          <Field label="每日生图上限（enterprise/admin 不受限，此值对 subaccount 生效）">
+            <Input type="number" value={nu.dailyImageLimit} onChange={(e) => setNu({ ...nu, dailyImageLimit: e.target.value })} />
+          </Field>
+          <p className="text-xs text-text-muted">创建后后端生成随机初始密码，仅在弹窗中显示一次，请及时复制保存。</p>
+        </div>
+      </Modal>
+
+      {/* 创建后初始密码展示弹窗 */}
+      <Modal
+        open={!!createdPasswords}
+        onClose={() => setCreatedPasswords(null)}
+        title="初始密码（请立即复制保存）"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => void copyAllPasswords(createdPasswords ?? [])}>全部复制</Button>
+            <Button variant="primary" size="sm" onClick={() => setCreatedPasswords(null)}>我已保存</Button>
+          </>
+        }
+      >
+        <div className="space-y-2">
+          {createdPasswords?.map((p) => (
+            <div key={p.email} className="flex items-center justify-between gap-2 rounded-md bg-bg px-3 py-2">
+              <div className="min-w-0 text-sm">
+                <div className="truncate font-medium text-text">{p.email}</div>
+                <div className="truncate font-mono text-text-muted">{p.password}</div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={async () => { await copyText(`${p.email} : ${p.password}`); setMessage(`已复制 ${p.email}。`); }}>复制</Button>
+            </div>
+          ))}
+          <p className="text-xs text-danger">⚠️ 密码仅显示一次，关闭后将无法再次查看，请务必复制保存。</p>
+        </div>
+      </Modal>
+
+      {/* 编辑成员弹窗 */}
+      <Modal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="编辑成员"
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>取消</Button>
+            <Button variant="primary" size="sm" onClick={handleSave} loading={busy}>保存</Button>
+          </>
+        }
+      >
+        {editing && (
+          <>
+            <p className="mb-4 text-xs text-text-muted">{editing.user.email}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="显示名"><Input value={ed.name} onChange={(e) => setEd({ ...ed, name: e.target.value })} /></Field>
+              <Field label="每日限制"><Input type="number" value={ed.dailyImageLimit} onChange={(e) => setEd({ ...ed, dailyImageLimit: e.target.value })} /></Field>
+            </div>
+            <div className="mt-4 flex items-center justify-between rounded-md border border-border bg-bg/50 p-3">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-text">重置密码</p>
+                <p className="text-xs text-text-muted">生成新随机密码，原密码立即失效。新密码仅显示一次。</p>
+              </div>
+              <Button variant="secondary" size="sm" onClick={handleResetPassword} loading={busy}>重置密码</Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* 重置密码结果弹窗 */}
+      <Modal
+        open={!!resetResult}
+        onClose={() => setResetResult(null)}
+        title="新密码（请立即复制保存）"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={async () => { if (resetResult) { await copyText(`${resetResult.email} : ${resetResult.password}`); setMessage("已复制新密码。"); } }}>复制</Button>
+            <Button variant="primary" size="sm" onClick={() => setResetResult(null)}>我已保存</Button>
+          </>
+        }
+      >
+        {resetResult && (
+          <div className="space-y-2">
+            <div className="rounded-md bg-bg px-3 py-2 text-sm">
+              <div className="font-medium text-text">{resetResult.email}</div>
+              <div className="font-mono text-text-muted">{resetResult.password}</div>
+            </div>
+            <p className="text-xs text-danger">⚠️ 密码仅显示一次，关闭后将无法再次查看。</p>
+          </div>
+        )}
+      </Modal>
+
+      {/* 积分调整弹窗 */}
+      <Modal
+        open={!!creditTarget}
+        onClose={() => setCreditTarget(null)}
+        title="调整积分"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setCreditTarget(null)}>取消</Button>
+            <Button variant="primary" size="sm" onClick={handleAdjustCredits} loading={busy}>调整</Button>
+          </>
+        }
+      >
+        {creditTarget && (
+          <div className="grid gap-3">
+            <p className="text-xs text-text-muted">{creditTarget.user.displayName || creditTarget.user.email}（当前余额 {creditTarget.user.credits}）</p>
+            <Field label="数量（正=增加 负=扣减）">
+              <Input type="number" value={creditForm.amount} onChange={(e) => setCreditForm({ ...creditForm, amount: e.target.value })} placeholder="如 100 或 -50" />
+            </Field>
+            <Field label="说明">
+              <Input value={creditForm.desc} onChange={(e) => setCreditForm({ ...creditForm, desc: e.target.value })} placeholder="可选" />
+            </Field>
+          </div>
+        )}
+      </Modal>
     </>
   );
 }

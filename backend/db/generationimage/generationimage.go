@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -21,14 +22,35 @@ const (
 	FieldURL = "url"
 	// FieldDownloadURL holds the string denoting the download_url field in the database.
 	FieldDownloadURL = "download_url"
+	// FieldThumbURL holds the string denoting the thumb_url field in the database.
+	FieldThumbURL = "thumb_url"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
 	// FieldImageNumber holds the string denoting the image_number field in the database.
 	FieldImageNumber = "image_number"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
+	// FieldError holds the string denoting the error field in the database.
+	FieldError = "error"
+	// FieldLatencyMs holds the string denoting the latency_ms field in the database.
+	FieldLatencyMs = "latency_ms"
+	// FieldDeleted holds the string denoting the deleted field in the database.
+	FieldDeleted = "deleted"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeTask holds the string denoting the task edge name in mutations.
+	EdgeTask = "task"
 	// Table holds the table name of the generationimage in the database.
 	Table = "generation_images"
+	// TaskTable is the table that holds the task relation/edge.
+	TaskTable = "generation_images"
+	// TaskInverseTable is the table name for the GenerationTask entity.
+	// It exists in this package in order to avoid circular dependency with the "generationtask" package.
+	TaskInverseTable = "generation_tasks"
+	// TaskColumn is the table column denoting the task relation/edge.
+	TaskColumn = "task_id"
 )
 
 // Columns holds all SQL columns for generationimage fields.
@@ -38,8 +60,14 @@ var Columns = []string{
 	FieldName,
 	FieldURL,
 	FieldDownloadURL,
+	FieldThumbURL,
 	FieldSource,
 	FieldImageNumber,
+	FieldStatus,
+	FieldError,
+	FieldLatencyMs,
+	FieldDeleted,
+	FieldDeletedAt,
 	FieldCreatedAt,
 }
 
@@ -60,10 +88,20 @@ var (
 	DefaultURL string
 	// DefaultDownloadURL holds the default value on creation for the "download_url" field.
 	DefaultDownloadURL string
+	// DefaultThumbURL holds the default value on creation for the "thumb_url" field.
+	DefaultThumbURL string
 	// DefaultSource holds the default value on creation for the "source" field.
 	DefaultSource string
 	// DefaultImageNumber holds the default value on creation for the "image_number" field.
 	DefaultImageNumber int
+	// DefaultStatus holds the default value on creation for the "status" field.
+	DefaultStatus string
+	// DefaultError holds the default value on creation for the "error" field.
+	DefaultError string
+	// DefaultLatencyMs holds the default value on creation for the "latency_ms" field.
+	DefaultLatencyMs int
+	// DefaultDeleted holds the default value on creation for the "deleted" field.
+	DefaultDeleted bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
@@ -96,6 +134,11 @@ func ByDownloadURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDownloadURL, opts...).ToFunc()
 }
 
+// ByThumbURL orders the results by the thumb_url field.
+func ByThumbURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldThumbURL, opts...).ToFunc()
+}
+
 // BySource orders the results by the source field.
 func BySource(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSource, opts...).ToFunc()
@@ -106,7 +149,46 @@ func ByImageNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImageNumber, opts...).ToFunc()
 }
 
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByError orders the results by the error field.
+func ByError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldError, opts...).ToFunc()
+}
+
+// ByLatencyMs orders the results by the latency_ms field.
+func ByLatencyMs(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLatencyMs, opts...).ToFunc()
+}
+
+// ByDeleted orders the results by the deleted field.
+func ByDeleted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeleted, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByTaskField orders the results by task field.
+func ByTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTaskStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newTaskStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TaskInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
+	)
 }

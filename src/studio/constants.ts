@@ -1,42 +1,32 @@
 /**
  * 工作台共享常量与辅助函数
  *
- * 选项数组、initialParams、getSettingsGenerationTitle 等，StudioPage 与（未来）拆出的
- * ParamsForm/ContentPanel 共用。从原 App.tsx 顶层迁移，逻辑零改动。
+ * 选项数组、initialParams、getSettingsGenerationTitle 等，StudioPage 共用。
+ * 此处保留固定枚举（品类/图片类型/尺寸/质量）与基础辅助函数。
  */
 import {
   getDailyFashionSeedingSelection,
   type FashionSeedingDailySlot,
   type FashionSeedingTopic
-} from "../utils/generateFashionSeedingContent";
-import { isSceneCompatibleWithImageType } from "../data/bridalDressSceneOptions";
+} from "../utils/fashionSeeding";
 import type {
-  BridalStyle,
-  DressStyle,
   ImageType,
-  LightPreference,
   ProductCategory,
-  PromptParams,
-  Season
+  PromptParams
 } from "../types";
 
 export const productCategoryOptions: ProductCategory[] = ["婚纱 / 礼服", "裙装 / 女装"];
-export const bridalStyleOptions: BridalStyle[] = [
-  "极简缎面婚纱",
-  "法式蕾丝婚纱",
-  "A-line 婚纱",
-  "鱼尾婚纱",
-  "公主裙婚纱",
-  "轻婚纱",
-  "短款婚纱",
-  "晚宴礼服",
-  "自定义"
-];
-export const dressStyleOptions: DressStyle[] = ["连衣裙", "衬衫裙", "针织裙", "吊带裙", "A字裙", "半裙", "度假长裙", "通勤裙", "自定义"];
 export const imageTypeOptions: ImageType[] = ["产品上身图", "对镜穿搭图", "生活场景图", "非产品氛围图", "拍摄花絮 / 材质图", "产品静物图"];
-export const seasonOptions: Season[] = ["春", "夏", "秋", "冬"];
-export const lightPreferenceOptions: LightPreference[] = ["自动匹配", "清晨自然光", "午后柔光", "傍晚金色光", "室内窗边光", "酒店暖光", "婚礼现场自然光"];
-export const sizeOptions = ["1152x1536", "1024x1024", "1024x1536", "1536x1024"];
+// 图片尺寸（宽高比），用户在生图设置选择，后端按渠道协议适配：
+//   openai 协议（官方 OpenAI/WalaAPI）-> 分辨率 size（3:4->1152x1536）；
+//   openrouter 协议 -> 按模型 supported_parameters 传 aspect_ratio/resolution，不支持则不传（模型自决）。
+export const imageSizeOptions = [
+  { value: "3:4", label: "3:4 竖图" },
+  { value: "1:1", label: "1:1 方图" },
+  { value: "16:9", label: "16:9 横图" },
+  { value: "4:3", label: "4:3 横图" }
+];
+export const defaultImageSize = "3:4";
 export const qualityOptions = [
   { value: "medium", label: "M / standard" },
   { value: "low", label: "L / low" },
@@ -69,10 +59,6 @@ export const inputClass =
 export const labelClass = "text-sm font-medium text-text";
 export const mutedClass = "text-sm leading-6 text-text-muted";
 export const panelClass = "rounded-md bg-surface p-5 shadow-sm ring-1 ring-border";
-export const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition duration-fast ease-out hover:bg-primary-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
-export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-md bg-surface px-4 py-2.5 text-sm font-medium text-text ring-1 ring-border transition duration-fast ease-out hover:bg-bg hover:ring-border-strong active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
 
 export function updateField<K extends keyof PromptParams>(params: PromptParams, key: K, value: PromptParams[K]) {
   return { ...params, [key]: value };
@@ -105,32 +91,3 @@ export function getDefaultContentTopic(productCategory: ProductCategory, dailySl
   if (productCategory === "婚纱 / 礼服") return preferredBridalContentTopic;
   return getDailyFashionSeedingSelection(productCategory, new Date(), dailySlot).topic;
 }
-
-export function handleCategoryChangeHelper(
-  current: PromptParams,
-  productCategory: ProductCategory,
-  dailySlot: FashionSeedingDailySlot
-): { params: PromptParams; topic: FashionSeedingTopic } {
-  const topic = getDefaultContentTopic(productCategory, dailySlot);
-  const nextParams: PromptParams = {
-    ...current,
-    productCategory,
-    modelChoice: productCategory === "婚纱 / 礼服" ? "亚洲新娘感模特 25–35" : "轻熟风裙装模特 28–40",
-    scenePreference: isSceneCompatibleWithImageType(productCategory, current.imageType, current.scenePreference)
-      ? current.scenePreference
-      : "自动匹配"
-  };
-  return { params: nextParams, topic };
-}
-
-export function handleImageTypeChangeHelper(current: PromptParams, imageType: ImageType): PromptParams {
-  return {
-    ...current,
-    imageType,
-    scenePreference: isSceneCompatibleWithImageType(current.productCategory, imageType, current.scenePreference)
-      ? current.scenePreference
-      : "自动匹配"
-  };
-}
-
-export { isSceneCompatibleWithImageType };

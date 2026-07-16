@@ -165,6 +165,48 @@ func (_m *AuditQuery) Page(ctx context.Context, page, size int) ([]*Audit, *Page
 	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
 }
 
+func (_m *CategoryQuery) Page(ctx context.Context, page, size int) ([]*Category, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
+func (_m *ContentEngineQuery) Page(ctx context.Context, page, size int) ([]*ContentEngine, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
+func (_m *CreditTransactionQuery) Page(ctx context.Context, page, size int) ([]*CreditTransaction, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
 func (_m *GenerationImageQuery) Page(ctx context.Context, page, size int) ([]*GenerationImage, *PageInfo, error) {
 	cnt, err := _m.Count(ctx)
 	if err != nil {
@@ -375,6 +417,20 @@ func (_m *ModelApiKeyQuery) Page(ctx context.Context, page, size int) ([]*ModelA
 	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
 }
 
+func (_m *ModelChannelQuery) Page(ctx context.Context, page, size int) ([]*ModelChannel, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
 func (_m *ModelPricingQuery) Page(ctx context.Context, page, size int) ([]*ModelPricing, *PageInfo, error) {
 	cnt, err := _m.Count(ctx)
 	if err != nil {
@@ -502,6 +558,20 @@ func (_m *ProjectIssueCommentQuery) Page(ctx context.Context, page, size int) ([
 }
 
 func (_m *ProjectTaskQuery) Page(ctx context.Context, page, size int) ([]*ProjectTask, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
+func (_m *SystemSettingQuery) Page(ctx context.Context, page, size int) ([]*SystemSetting, *PageInfo, error) {
 	cnt, err := _m.Count(ctx)
 	if err != nil {
 		return nil, nil, err

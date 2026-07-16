@@ -32,7 +32,7 @@ func TestGeneratePromptGolden(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.ID, func(t *testing.T) {
-			got := GeneratePrompt(c.Params, c.Ctx)
+			got := GeneratePrompt(c.Params, c.Ctx, nil)
 			if got != c.Prompt {
 				t.Errorf("GeneratePrompt 与 Node golden 输出不一致\n用例: %s\n期望长度: %d\n实际长度: %d\n---期望---\n%s\n---实际---\n%s",
 					c.ID, len(c.Prompt), len(got), c.Prompt, got)

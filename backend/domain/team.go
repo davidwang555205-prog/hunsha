@@ -54,13 +54,13 @@ type TeamGroupUserRepo interface {
 	ModifyGroupUsers(ctx context.Context, groupID uuid.UUID, userIDs []uuid.UUID) ([]*db.TeamGroupMember, error)
 	DeleteGroupUser(ctx context.Context, groupID, userID uuid.UUID) error
 	Login(ctx context.Context, req *TeamLoginReq) (*db.User, error)
-	MemberList(ctx context.Context, teamID uuid.UUID, role consts.TeamMemberRole) ([]*db.TeamMember, error)
+	MemberList(ctx context.Context, teamID uuid.UUID, role consts.TeamMemberRole, q string, page, pageSize int) ([]*db.TeamMember, int, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, currentPassword, newPassword string) error
 	GetTeam(ctx context.Context, teamID uuid.UUID) (*db.Team, error)
 	UpdateUser(ctx context.Context, userID uuid.UUID, req *UpdateTeamUserReq) (*db.User, error)
 	DeleteUser(ctx context.Context, teamID, userID uuid.UUID) error
 	GetMembersByIDs(ctx context.Context, teamID uuid.UUID, userIDs []uuid.UUID) ([]*db.TeamMember, error)
-	GetMember(ctx context.Context, teamID, userID uuid.UUID) (*db.TeamMember, error)
+	GetMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID) (*db.TeamMember, error)
 	InitTeam(ctx context.Context, email, name, password, image string) (*InitTeamResult, error)
 }
 
@@ -73,7 +73,7 @@ type TeamPolicyRepo interface {
 	GetTeam(ctx context.Context, teamID uuid.UUID) (*db.Team, error)
 	GetTeamByUserID(ctx context.Context, userID uuid.UUID) (*db.Team, error)
 	UpdateTaskVMIdlePolicy(ctx context.Context, teamID uuid.UUID, req *UpdateTeamTaskVMIdlePolicyReq) (*db.Team, error)
-	GetMember(ctx context.Context, teamID, userID uuid.UUID) (*db.TeamMember, error)
+	GetMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID) (*db.TeamMember, error)
 }
 
 type Team struct {
@@ -274,8 +274,9 @@ type TeamLogoutResp struct {
 
 // AddTeamUserReq 创建团队成员请求
 type AddTeamUserReq struct {
-	Emails  []string  `json:"emails" validate:"required"`    // 邮箱列表
-	GroupID uuid.UUID `json:"group_id" validate:"omitempty"` // 团队组ID
+	Emails          []string  `json:"emails" validate:"required"`    // 邮箱列表
+	GroupID         uuid.UUID `json:"group_id" validate:"omitempty"` // 团队组ID
+	DailyImageLimit int       `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：批量成员每日生图额度（0 用默认）
 }
 
 type AddTeamUserWithPasswordReq struct {
@@ -309,9 +310,10 @@ type DeleteTeamUserReq struct {
 
 // AddTeamAdminReq 创建团队管理员请求
 type AddTeamAdminReq struct {
-	Email    string `json:"email" validate:"required,email"` // 邮箱
-	Name     string `json:"name" validate:"required"`        // 姓名
-	Password string `json:"-" swaggerignore:"true"`
+	Email           string `json:"email" validate:"required,email"` // 邮箱
+	Name            string `json:"name" validate:"required"`        // 姓名
+	Password        string `json:"-" swaggerignore:"true"`
+	DailyImageLimit int    `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：admin 不受限，此值仅存档
 }
 
 // AddTeamAdminResp 创建团队管理员响应
@@ -322,13 +324,19 @@ type AddTeamAdminResp struct {
 
 // MemberListReq 获取团队成员列表请求
 type MemberListReq struct {
-	Role consts.TeamMemberRole `query:"role" validate:"omitempty"`
+	Role     consts.TeamMemberRole `query:"role" validate:"omitempty"`
+	Page     int                   `query:"page" validate:"omitempty"`
+	PageSize int                   `query:"pageSize" validate:"omitempty"`
+	Q        string                `query:"q" validate:"omitempty"`
 }
 
 // MemberListResp 获取团队成员列表响应
 type MemberListResp struct {
 	Members     []*TeamMemberInfo `json:"members"`
 	MemberLimit int               `json:"member_limit"`
+	Total       int               `json:"total"`
+	Page        int               `json:"page"`
+	PageSize    int               `json:"pageSize"`
 }
 
 // TeamMemberInfo 团队成员信息
@@ -360,9 +368,11 @@ type ChangePasswordResp struct {
 
 // UpdateTeamUserReq 更新团队用户信息请求
 type UpdateTeamUserReq struct {
-	UserID    uuid.UUID `param:"user_id" validate:"required" json:"-" swaggerignore:"true"`
-	Name      *string   `json:"name" validate:"omitempty"`
-	IsBlocked *bool     `json:"is_blocked" validate:"omitempty"`
+	UserID          uuid.UUID `param:"user_id" validate:"required" json:"-" swaggerignore:"true"`
+	Name            *string   `json:"name" validate:"omitempty"`
+	IsBlocked       *bool     `json:"is_blocked" validate:"omitempty"`
+	DailyImageLimit *int      `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：每日生图额度
+	Credits         *int      `json:"credits" validate:"omitempty"`         // bridal 扩展：积分余额
 }
 
 // UpdateTeamUserResp 更新团队用户信息响应

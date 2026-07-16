@@ -6,8 +6,8 @@
 @tailwind utilities;
 
 :root {
-  color: var(--color-text);
-  background: var(--color-bg);
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-bg));
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,9 +23,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: var(--font-sans);
-  color: var(--color-text);
+  color: rgb(var(--color-text));
   /* 苹果风格：纯净浅灰底，无渐变光晕 */
-  background: var(--color-bg);
+  background: rgb(var(--color-bg));
   background-attachment: fixed;
 }
 
@@ -41,13 +41,13 @@ textarea {
 }
 
 ::selection {
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  background: rgb(var(--color-primary-100));
+  color: rgb(var(--color-primary-700));
 }
 
 /* 滚动条（克制灰） */
 .brand-scrollbar {
-  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-color: rgb(var(--color-border-strong)) transparent;
   scrollbar-width: thin;
 }
 
@@ -60,7 +60,7 @@ textarea {
 }
 
 .brand-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
+  background: rgb(var(--color-border-strong));
   border-radius: var(--radius-full);
 }
 
@@ -71,14 +71,14 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
+  background: rgb(var(--color-border-strong));
   border-radius: var(--radius-full);
 }
 
 /* 焦点态：键盘可见光环 */
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--color-primary-50);
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-50));
 }
 
 /* ProgressBar 不确定态：色块左右扫描 */
@@ -88,5 +88,26 @@ textarea {
   }
   100% {
     transform: translateX(420%);
+  }
+}
+
+/* ProgressBar 活跃态：填充体内高光持续左->右流动，宽度停顿时也传达工作中 */
+@keyframes shimmer-flow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ProgressBar 末端光点：透明度呼吸脉冲 */
+@keyframes edge-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
   }
 }

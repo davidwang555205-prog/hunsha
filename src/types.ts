@@ -93,4 +93,6 @@ export type PromptParams = {
   bridalKeywordProfileId?: BridalImageKeywordProfileId;
   /** 对齐后端 prompt.Params.GeneratedImageName（prompt.go:23），生图时由调用方填写 */
   generatedImageName?: string;
+  /** 传了场景参考图则 true：强制复用场景图环境生成（对齐后端 prompt.Params.SceneLocked） */
+  sceneLocked?: boolean;
 };

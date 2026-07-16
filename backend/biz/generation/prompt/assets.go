@@ -2,6 +2,11 @@ package prompt
 
 // 映射表与常量，1:1 迁移自 server/prompt.mjs（真实源码，逐字节复制）。
 // 注意：含 CJK / 特殊 Unicode（en-dash U+2013）的 key 务必逐字节复制，不可改写。
+//
+// 配置化：MaterialImageTypes ... NegativeRules 等 16 项素材可由 content_engines.config.imagePrompt
+// 运行时覆盖（见 Assets + MergeAssets + DefaultAssets）。phoneSpecification / phoneSeriesShotPlans 涉及
+// 图组连续性（硬规则5），锁定不配置化，保留包级常量。brandDirection / compositionLine / cameraFeelLine
+// 为固定品牌约束，不配置化。
 
 // autoScene 自动匹配场景标识。
 const autoScene = "自动匹配"
@@ -120,44 +125,44 @@ var lightLines = map[string]string{
 	"婚礼现场自然光":  "Lighting: natural wedding-site light, realistic, emotional, and not over-staged.",
 }
 
-// keywordProfile 关键词档案 {promptLine, negativeLine}（8 个）。
-type keywordProfile struct {
-	promptLine   string
-	negativeLine string
+// KeywordProfile 关键词档案 {PromptLine, NegativeLine}（8 个，导出供 JSON 反序列化配置覆盖）。
+type KeywordProfile struct {
+	PromptLine   string `json:"promptLine"`
+	NegativeLine string `json:"negativeLine"`
 }
 
-var bridalImageKeywordProfiles = map[string]keywordProfile{
+var bridalImageKeywordProfiles = map[string]KeywordProfile{
 	"realCustomerFitting": {
-		promptLine:   "Xiaohongshu real customer fitting keywords: real bridal fitting client, authentic trial fitting, fitting room mirror, natural customer posture, subtle hesitation, body-comfort confirmation, consultant presence only when useful, real boutique appointment record.",
-		negativeLine: "Avoid fake testimonial look, avoid influencer pose, avoid over-retouched customer face, avoid forced smile, avoid luxury showroom exaggeration, avoid making the customer look like a runway model.",
+		PromptLine:   "Xiaohongshu real customer fitting keywords: real bridal fitting client, authentic trial fitting, fitting room mirror, natural customer posture, subtle hesitation, body-comfort confirmation, consultant presence only when useful, real boutique appointment record.",
+		NegativeLine: "Avoid fake testimonial look, avoid influencer pose, avoid over-retouched customer face, avoid forced smile, avoid luxury showroom exaggeration, avoid making the customer look like a runway model.",
 	},
 	"phoneMirrorSelfieFitting": {
-		promptLine:   "Xiaohongshu phone mirror selfie fitting keywords: handheld phone visible in mirror, full-length fitting-room mirror selfie, real bridal client, natural arm holding phone, honest phone-camera perspective, clear waistline and hemline, fitting room mirror reflection, subtle unfiltered trial fitting mood.",
-		negativeLine: "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection, avoid collage, avoid split screen, avoid triptych, avoid contact sheet, avoid repeated person, avoid multiple viewpoints in one image, avoid changing the phone color, case, lens count, camera layout, dimensions, or accessories between frames.",
+		PromptLine:   "Xiaohongshu phone mirror selfie fitting keywords: handheld phone visible in mirror, full-length fitting-room mirror selfie, real bridal client, natural arm holding phone, honest phone-camera perspective, clear waistline and hemline, fitting room mirror reflection, subtle unfiltered trial fitting mood.",
+		NegativeLine: "Avoid influencer selfie pose, avoid beauty-filter face, avoid stretched legs, avoid phone blocking the gown structure, avoid readable phone screen, avoid messy private background, avoid distorted mirror reflection, avoid collage, avoid split screen, avoid triptych, avoid contact sheet, avoid repeated person, avoid multiple viewpoints in one image, avoid changing the phone color, case, lens count, camera layout, dimensions, or accessories between frames.",
 	},
 	"companionFitting": {
-		promptLine:   "Xiaohongshu companion fitting keywords: mother or close friend accompanying the bride, companion-view photo, quiet reaction, seated companion near mirror, subtle emotional witness, real fitting-room relationship, not staged.",
-		negativeLine: "Avoid dramatic family scene, avoid companion stealing focus, avoid exaggerated crying reaction, avoid staged variety-show mood.",
+		PromptLine:   "Xiaohongshu companion fitting keywords: mother or close friend accompanying the bride, companion-view photo, quiet reaction, seated companion near mirror, subtle emotional witness, real fitting-room relationship, not staged.",
+		NegativeLine: "Avoid dramatic family scene, avoid companion stealing focus, avoid exaggerated crying reaction, avoid staged variety-show mood.",
 	},
 	"fittingPrep": {
-		promptLine:   "Xiaohongshu fitting-prep keywords: appointment-card, fitting checklist, one non-readable phone fitting preview, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
-		negativeLine: "Avoid cluttered checklist, avoid readable personal data, avoid anxiety-driven body comparison, avoid cheap guide-card layout.",
+		PromptLine:   "Xiaohongshu fitting-prep keywords: appointment card, fitting checklist, one non-readable phone fitting preview, fabric swatches, veil options, beading adjustment tools, clean preparation table, no private information visible.",
+		NegativeLine: "Avoid cluttered checklist, avoid readable personal data, avoid anxiety-driven body comparison, avoid cheap guide-card layout.",
 	},
 	"fittingServiceDetail": {
-		promptLine:   "Xiaohongshu boutique service keywords: bridal consultant, hands adjusting veil, hands using beading adjustment tools near the gown waistline, train adjustment, waistline check, neckline explanation, gentle professional service, respectful distance, real appointment process.",
-		negativeLine: "Avoid broken hands, avoid hands merging into skirt, avoid hard-selling consultant body language, avoid factory inspection mood.",
+		PromptLine:   "Xiaohongshu boutique service keywords: bridal consultant, hands adjusting veil, hands using beading adjustment tools near the gown waistline, train adjustment, waistline check, neckline explanation, gentle professional service, respectful distance, real appointment process.",
+		NegativeLine: "Avoid broken hands, avoid hands merging into skirt, avoid hard-selling consultant body language, avoid factory inspection mood.",
 	},
 	"brandLaunch": {
-		promptLine:   "Xiaohongshu bridal brand launch keywords: new collection release, design logic, silhouette breakdown, neckline and waistline clarity, train length, fabric evidence, collection mood board, premium but restrained lookbook.",
-		negativeLine: "Avoid empty luxury advertising, avoid runway exaggeration, avoid fashion-show styling, avoid over-polished campaign image without garment detail.",
+		PromptLine:   "Xiaohongshu bridal brand launch keywords: new collection release, design logic, silhouette breakdown, neckline and waistline clarity, train length, fabric evidence, collection mood board, premium but restrained lookbook.",
+		NegativeLine: "Avoid empty luxury advertising, avoid runway exaggeration, avoid fashion-show styling, avoid over-polished campaign image without garment detail.",
 	},
 	"storePublishing": {
-		promptLine:   "Xiaohongshu bridal boutique publishing keywords: fitting room environment, appointment-ready boutique, clean dress rack, mirror, soft curtain, waiting corner, real store order, trust-building service detail, inviting but not flashy.",
-		negativeLine: "Avoid messy store background, avoid cheap bridal studio look, avoid over-decorated wedding showroom, avoid cold empty showroom.",
+		PromptLine:   "Xiaohongshu bridal boutique publishing keywords: fitting room environment, appointment-ready boutique, clean dress rack, mirror, soft curtain, waiting corner, real store order, trust-building service detail, inviting but not flashy.",
+		NegativeLine: "Avoid messy store background, avoid cheap bridal studio look, avoid over-decorated wedding showroom, avoid cold empty showroom.",
 	},
 	"bridalMaterialProof": {
-		promptLine:   "Xiaohongshu bridal material proof keywords: lace close-up, satin drape, embroidery, beadwork, veil texture, hemline layers, fabric swatches, hanger, dress rack, tactile white fabric detail, soft daylight.",
-		negativeLine: "Avoid fake lace texture, avoid plastic satin shine, avoid overexposed white fabric, avoid losing beadwork and embroidery detail.",
+		PromptLine:   "Xiaohongshu bridal material proof keywords: lace close-up, satin drape, embroidery, beadwork, veil texture, hemline layers, fabric swatches, hanger, dress rack, tactile white fabric detail, soft daylight.",
+		NegativeLine: "Avoid fake lace texture, avoid plastic satin shine, avoid overexposed white fabric, avoid losing beadwork and embroidery detail.",
 	},
 }
 
@@ -212,7 +217,7 @@ var negativeRules = []string{
 	"Avoid product deformation.",
 }
 
-// phoneSeriesShotPlans 手机系列镜头计划（5 个）。
+// phoneSeriesShotPlans 手机系列镜头计划（5 个，图组连续性，锁定不配置化）。
 var phoneSeriesShotPlans = []string{
 	"a straight-on full-length mirror selfie at eye level",
 	"a single clean side-profile mirror selfie",
@@ -221,5 +226,105 @@ var phoneSeriesShotPlans = []string{
 	"a top-down still-life review view of the same phone and fitting details on a side table",
 }
 
-// phoneSpecification 手机身份固定描述（用于图组连续性，与 Node buildSeriesPhoneContinuityLine 内一致）。
+// phoneSpecification 手机身份固定描述（图组连续性，锁定不配置化，与 Node buildSeriesPhoneContinuityLine 内一致）。
 const phoneSpecification = "one unbranded modern smartphone with a matte graphite back, a slim transparent case with dark edges, three separate circular rear camera lenses in a triangular arrangement, one small flash beside the lenses, no logo, no charm, and fixed dimensions"
+
+// Assets 可配置化的 image prompt 素材集合。
+// 运行时从 content_engines.config.imagePrompt 加载，字段为零值时 MergeAssets 降级到 DefaultAssets。
+type Assets struct {
+	MaterialImageTypes         []string                  `json:"materialImageTypes"`
+	WornImageTypes             []string                  `json:"wornImageTypes"`
+	CategoryLines              map[string]string         `json:"categoryLines"`
+	BridalStyleLines           map[string]string         `json:"bridalStyleLines"`
+	DressStyleLines            map[string]string         `json:"dressStyleLines"`
+	ImageTypeLines             map[string]string         `json:"imageTypeLines"`
+	SceneLines                 map[string]string         `json:"sceneLines"`
+	ModelLines                 map[string]string         `json:"modelLines"`
+	SeasonLines                map[string]string         `json:"seasonLines"`
+	LightLines                 map[string]string         `json:"lightLines"`
+	BridalImageKeywordProfiles map[string]KeywordProfile `json:"bridalImageKeywordProfiles"`
+	BridalScenesByImageType    map[string][]string       `json:"bridalScenesByImageType"`
+	DressScenesByImageType     map[string][]string       `json:"dressScenesByImageType"`
+	BridalReferenceDetails     []string                  `json:"bridalReferenceDetails"`
+	DressReferenceDetails      []string                  `json:"dressReferenceDetails"`
+	NegativeRules              []string                  `json:"negativeRules"`
+}
+
+// DefaultAssets 代码默认素材（引用上方包级 var，1:1 迁移自 server/prompt.mjs）。
+// 空 config（MergeAssets(nil)）返回此默认，保证 golden test 输出不变。
+var DefaultAssets = Assets{
+	MaterialImageTypes:         materialImageTypes,
+	WornImageTypes:             wornImageTypes,
+	CategoryLines:              categoryLines,
+	BridalStyleLines:           bridalStyleLines,
+	DressStyleLines:            dressStyleLines,
+	ImageTypeLines:             imageTypeLines,
+	SceneLines:                 sceneLines,
+	ModelLines:                 modelLines,
+	SeasonLines:                seasonLines,
+	LightLines:                 lightLines,
+	BridalImageKeywordProfiles: bridalImageKeywordProfiles,
+	BridalScenesByImageType:    bridalScenesByImageType,
+	DressScenesByImageType:     dressScenesByImageType,
+	BridalReferenceDetails:     bridalReferenceDetails,
+	DressReferenceDetails:      dressReferenceDetails,
+	NegativeRules:              negativeRules,
+}
+
+// MergeAssets 合并外部配置与默认素材：cfg 为 nil 返回 DefaultAssets；cfg 某字段为零值则保留默认。
+// 保证空 config 行为等价纯默认（golden test 不变）。永不阻塞生图：任何配置缺失都降级到代码默认。
+func MergeAssets(cfg *Assets) *Assets {
+	if cfg == nil {
+		return &DefaultAssets
+	}
+	a := DefaultAssets // copy 默认值
+	if len(cfg.MaterialImageTypes) > 0 {
+		a.MaterialImageTypes = cfg.MaterialImageTypes
+	}
+	if len(cfg.WornImageTypes) > 0 {
+		a.WornImageTypes = cfg.WornImageTypes
+	}
+	if len(cfg.CategoryLines) > 0 {
+		a.CategoryLines = cfg.CategoryLines
+	}
+	if len(cfg.BridalStyleLines) > 0 {
+		a.BridalStyleLines = cfg.BridalStyleLines
+	}
+	if len(cfg.DressStyleLines) > 0 {
+		a.DressStyleLines = cfg.DressStyleLines
+	}
+	if len(cfg.ImageTypeLines) > 0 {
+		a.ImageTypeLines = cfg.ImageTypeLines
+	}
+	if len(cfg.SceneLines) > 0 {
+		a.SceneLines = cfg.SceneLines
+	}
+	if len(cfg.ModelLines) > 0 {
+		a.ModelLines = cfg.ModelLines
+	}
+	if len(cfg.SeasonLines) > 0 {
+		a.SeasonLines = cfg.SeasonLines
+	}
+	if len(cfg.LightLines) > 0 {
+		a.LightLines = cfg.LightLines
+	}
+	if len(cfg.BridalImageKeywordProfiles) > 0 {
+		a.BridalImageKeywordProfiles = cfg.BridalImageKeywordProfiles
+	}
+	if len(cfg.BridalScenesByImageType) > 0 {
+		a.BridalScenesByImageType = cfg.BridalScenesByImageType
+	}
+	if len(cfg.DressScenesByImageType) > 0 {
+		a.DressScenesByImageType = cfg.DressScenesByImageType
+	}
+	if len(cfg.BridalReferenceDetails) > 0 {
+		a.BridalReferenceDetails = cfg.BridalReferenceDetails
+	}
+	if len(cfg.DressReferenceDetails) > 0 {
+		a.DressReferenceDetails = cfg.DressReferenceDetails
+	}
+	if len(cfg.NegativeRules) > 0 {
+		a.NegativeRules = cfg.NegativeRules
+	}
+	return &a
+}

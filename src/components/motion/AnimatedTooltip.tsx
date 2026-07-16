@@ -35,7 +35,7 @@ export function AnimatedTooltip({ content, children, side = "top" }: AnimatedToo
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: yOffset, scale: 0.96 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className={`pointer-events-none absolute left-1/2 z-50 w-max max-w-xs -translate-x-1/2 rounded-md bg-[var(--color-text)] px-3 py-2 text-xs leading-5 text-surface shadow-md ${
+            className={`pointer-events-none absolute left-1/2 z-50 w-max max-w-xs -translate-x-1/2 rounded-md bg-text px-3 py-2 text-xs leading-5 text-surface shadow-md ${
               side === "top" ? "bottom-full mb-2" : "top-full mt-2"
             }`}
           >

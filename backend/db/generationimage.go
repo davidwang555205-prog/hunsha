@@ -4,6 +4,7 @@ package db
 
 import (
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationtask"
 	"fmt"
 	"strings"
 	"time"
@@ -26,13 +27,48 @@ type GenerationImage struct {
 	URL string `json:"url,omitempty"`
 	// DownloadURL holds the value of the "download_url" field.
 	DownloadURL string `json:"download_url,omitempty"`
+	// ThumbURL holds the value of the "thumb_url" field.
+	ThumbURL string `json:"thumb_url,omitempty"`
 	// Source holds the value of the "source" field.
 	Source string `json:"source,omitempty"`
 	// ImageNumber holds the value of the "image_number" field.
 	ImageNumber int `json:"image_number,omitempty"`
+	// Status holds the value of the "status" field.
+	Status string `json:"status,omitempty"`
+	// Error holds the value of the "error" field.
+	Error string `json:"error,omitempty"`
+	// LatencyMs holds the value of the "latency_ms" field.
+	LatencyMs int `json:"latency_ms,omitempty"`
+	// Deleted holds the value of the "deleted" field.
+	Deleted bool `json:"deleted,omitempty"`
+	// DeletedAt holds the value of the "deleted_at" field.
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the GenerationImageQuery when eager-loading is set.
+	Edges        GenerationImageEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// GenerationImageEdges holds the relations/edges for other nodes in the graph.
+type GenerationImageEdges struct {
+	// Task holds the value of the task edge.
+	Task *GenerationTask `json:"task,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// TaskOrErr returns the Task value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e GenerationImageEdges) TaskOrErr() (*GenerationTask, error) {
+	if e.Task != nil {
+		return e.Task, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: generationtask.Label}
+	}
+	return nil, &NotLoadedError{edge: "task"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -40,11 +76,13 @@ func (*GenerationImage) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case generationimage.FieldImageNumber:
+		case generationimage.FieldDeleted:
+			values[i] = new(sql.NullBool)
+		case generationimage.FieldImageNumber, generationimage.FieldLatencyMs:
 			values[i] = new(sql.NullInt64)
-		case generationimage.FieldID, generationimage.FieldName, generationimage.FieldURL, generationimage.FieldDownloadURL, generationimage.FieldSource:
+		case generationimage.FieldID, generationimage.FieldName, generationimage.FieldURL, generationimage.FieldDownloadURL, generationimage.FieldThumbURL, generationimage.FieldSource, generationimage.FieldStatus, generationimage.FieldError:
 			values[i] = new(sql.NullString)
-		case generationimage.FieldCreatedAt:
+		case generationimage.FieldDeletedAt, generationimage.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case generationimage.FieldTaskID:
 			values[i] = new(uuid.UUID)
@@ -93,6 +131,12 @@ func (_m *GenerationImage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DownloadURL = value.String
 			}
+		case generationimage.FieldThumbURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field thumb_url", values[i])
+			} else if value.Valid {
+				_m.ThumbURL = value.String
+			}
 		case generationimage.FieldSource:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field source", values[i])
@@ -104,6 +148,36 @@ func (_m *GenerationImage) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field image_number", values[i])
 			} else if value.Valid {
 				_m.ImageNumber = int(value.Int64)
+			}
+		case generationimage.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = value.String
+			}
+		case generationimage.FieldError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field error", values[i])
+			} else if value.Valid {
+				_m.Error = value.String
+			}
+		case generationimage.FieldLatencyMs:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field latency_ms", values[i])
+			} else if value.Valid {
+				_m.LatencyMs = int(value.Int64)
+			}
+		case generationimage.FieldDeleted:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted", values[i])
+			} else if value.Valid {
+				_m.Deleted = value.Bool
+			}
+		case generationimage.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = value.Time
 			}
 		case generationimage.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -122,6 +196,11 @@ func (_m *GenerationImage) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *GenerationImage) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryTask queries the "task" edge of the GenerationImage entity.
+func (_m *GenerationImage) QueryTask() *GenerationTaskQuery {
+	return NewGenerationImageClient(_m.config).QueryTask(_m)
 }
 
 // Update returns a builder for updating this GenerationImage.
@@ -159,11 +238,29 @@ func (_m *GenerationImage) String() string {
 	builder.WriteString("download_url=")
 	builder.WriteString(_m.DownloadURL)
 	builder.WriteString(", ")
+	builder.WriteString("thumb_url=")
+	builder.WriteString(_m.ThumbURL)
+	builder.WriteString(", ")
 	builder.WriteString("source=")
 	builder.WriteString(_m.Source)
 	builder.WriteString(", ")
 	builder.WriteString("image_number=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ImageNumber))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(_m.Status)
+	builder.WriteString(", ")
+	builder.WriteString("error=")
+	builder.WriteString(_m.Error)
+	builder.WriteString(", ")
+	builder.WriteString("latency_ms=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LatencyMs))
+	builder.WriteString(", ")
+	builder.WriteString("deleted=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Deleted))
+	builder.WriteString(", ")
+	builder.WriteString("deleted_at=")
+	builder.WriteString(_m.DeletedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

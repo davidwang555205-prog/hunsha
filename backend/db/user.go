@@ -44,6 +44,8 @@ type User struct {
 	DisplayName string `json:"display_name,omitempty"`
 	// DailyImageLimit holds the value of the "daily_image_limit" field.
 	DailyImageLimit int `json:"daily_image_limit,omitempty"`
+	// Credits holds the value of the "credits" field.
+	Credits int `json:"credits,omitempty"`
 	// PasswordSalt holds the value of the "password_salt" field.
 	PasswordSalt string `json:"password_salt,omitempty"`
 	// PasswordHash holds the value of the "password_hash" field.
@@ -305,7 +307,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case user.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
-		case user.FieldDailyImageLimit:
+		case user.FieldDailyImageLimit, user.FieldCredits:
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldEmail, user.FieldAvatarURL, user.FieldPassword, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldDisplayName, user.FieldPasswordSalt, user.FieldPasswordHash:
 			values[i] = new(sql.NullString)
@@ -407,6 +409,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field daily_image_limit", values[i])
 			} else if value.Valid {
 				_m.DailyImageLimit = int(value.Int64)
+			}
+		case user.FieldCredits:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field credits", values[i])
+			} else if value.Valid {
+				_m.Credits = int(value.Int64)
 			}
 		case user.FieldPasswordSalt:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -608,6 +616,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("daily_image_limit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DailyImageLimit))
+	builder.WriteString(", ")
+	builder.WriteString("credits=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Credits))
 	builder.WriteString(", ")
 	builder.WriteString("password_salt=")
 	builder.WriteString(_m.PasswordSalt)
