@@ -5,7 +5,7 @@
  * - 列表（名称/协议/模型/状态/统计：调用次数/成功率/平均耗时）
  * - 创建/编辑（弹窗：名称/协议/API Base/API Key/模型 ID/支持尺寸/默认质量/启用/默认/排序）
  * - 删除（默认线路不可删）
- * - Redfox 小红书数据服务 Key（独立于生图线路，管理员可在此更新）
+ * - Redfox 跨平台数据服务 Key（独立于生图线路，管理员可在此更新）
  */
 import { useEffect, useState } from "react";
 import { listChannels, createChannel, updateChannel, deleteChannel, listSettings, updateSetting } from "../../api/admin";
@@ -99,7 +99,7 @@ export function AdminChannelsPage() {
       setRedfoxConfigured(response.setting.value.configured === true);
       setRedfoxMaskedKey(typeof response.setting.value.maskedKey === "string" ? response.setting.value.maskedKey : "");
       setRedfoxKey("");
-      setMessage("Redfox 数据服务 Key 已更新，下一次采集立即生效。");
+      setMessage("Redfox 数据服务 Key 已更新，后续采集将自动使用新凭证。");
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "Redfox Key 保存失败。");
     } finally {
@@ -188,11 +188,6 @@ export function AdminChannelsPage() {
       <PageHeader
         title="模型线路"
         subtitle="配置 AI 生图模型线路，支持多协议与多线路统计"
-        actions={
-          <Button variant="primary" size="sm" onClick={() => { setShowCreate(true); setEditingId(null); setDraft(emptyDraft); }}>
-            新增线路
-          </Button>
-        }
       />
 
       {message && <div className="rounded-md bg-bg px-3 py-2 text-sm text-text-muted ring-1 ring-border">{message}</div>}
@@ -259,32 +254,65 @@ export function AdminChannelsPage() {
         </div>
       </Modal>
 
-      <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-text">Redfox 小红书数据服务</h2>
-            <p className="mt-1 text-sm text-text-muted">
-              用于生图历史中的笔记、账号及相似账号数据采集。{redfoxConfigured ? `当前已配置（${redfoxMaskedKey || "已隐藏"}）。` : "当前未配置。"}
+      <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+        <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)]">
+          <div className="p-5 sm:p-6">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              数据服务凭证
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h2 className="text-lg font-semibold tracking-tight text-text">Redfox 跨平台数据服务</h2>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">一份 Key，多平台复用</span>
+            </div>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
+              同一份 API Key 可用于 Redfox 支持的多个内容平台。当前系统已接入小红书的笔记、账号与相似账号采集；后续扩展其他平台时无需重复配置。
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-text-muted">
+              {['内容数据采集', '账号数据分析', '多平台持续扩展'].map((item) => (
+                <span key={item} className="rounded-md bg-bg px-2.5 py-1.5 ring-1 ring-border">{item}</span>
+              ))}
+            </div>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <Input
-              className="sm:w-80"
-              type="password"
-              autoComplete="new-password"
-              value={redfoxKey}
-              onChange={(e) => setRedfoxKey(e.target.value)}
-              placeholder={redfoxConfigured ? "输入新 Key 以替换" : "ak_..."}
-            />
-            <Button variant="primary" size="sm" onClick={handleSaveRedfox} loading={savingRedfox}>
-              {redfoxConfigured ? "更换 Key" : "保存 Key"}
-            </Button>
+
+          <div className="border-t border-border bg-bg/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-text">服务 Key</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">仅服务端加密保存，不会回显原文。</p>
+              </div>
+              <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${redfoxConfigured ? "bg-success/10 text-success" : "bg-surface text-text-muted ring-1 ring-border"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${redfoxConfigured ? "bg-success" : "bg-text-subtle"}`} />
+                {redfoxConfigured ? "已配置" : "未配置"}
+              </span>
+            </div>
+            {redfoxConfigured && redfoxMaskedKey && <p className="mt-4 text-xs text-text-subtle">当前凭证：{redfoxMaskedKey}</p>}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Input
+                type="password"
+                autoComplete="new-password"
+                value={redfoxKey}
+                onChange={(e) => setRedfoxKey(e.target.value)}
+                placeholder={redfoxConfigured ? "粘贴新 Key 以更新" : "粘贴 Redfox API Key"}
+              />
+              <Button className="shrink-0" variant="primary" size="sm" onClick={handleSaveRedfox} loading={savingRedfox}>
+                {redfoxConfigured ? "更新 Key" : "保存 Key"}
+              </Button>
+            </div>
           </div>
         </div>
-        <p className="mt-3 text-xs text-text-subtle">Key 仅保存在服务端并加密存储；列表只展示脱敏状态，不会回显原文。</p>
       </section>
 
       <section className="rounded-lg border border-border bg-surface shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-text">生图模型线路</h2>
+            <p className="mt-1 text-xs text-text-muted">管理用于图片生成的模型、协议与调用参数。</p>
+          </div>
+          <Button variant="primary" size="sm" onClick={() => { setShowCreate(true); setEditingId(null); setDraft(emptyDraft); }}>
+            新增线路
+          </Button>
+        </div>
         <div className="overflow-x-auto brand-scrollbar">
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead>
