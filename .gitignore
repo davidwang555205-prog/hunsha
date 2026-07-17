@@ -34,5 +34,6 @@ backend/server
 /.claude/
 
 # 本地生成的缓存与构建辅助产物
+/.cache/
 /docs/ocr_output/
 /progress-active.png
