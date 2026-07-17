@@ -740,6 +740,30 @@ func (f VirtualMachineFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.VirtualMachineMutation", m)
 }
 
+// The XHSNoteSnapshotFunc type is an adapter to allow the use of ordinary
+// function as XHSNoteSnapshot mutator.
+type XHSNoteSnapshotFunc func(context.Context, *db.XHSNoteSnapshotMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f XHSNoteSnapshotFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.XHSNoteSnapshotMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.XHSNoteSnapshotMutation", m)
+}
+
+// The XHSNoteTrackingFunc type is an adapter to allow the use of ordinary
+// function as XHSNoteTracking mutator.
+type XHSNoteTrackingFunc func(context.Context, *db.XHSNoteTrackingMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f XHSNoteTrackingFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.XHSNoteTrackingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.XHSNoteTrackingMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, db.Mutation) bool
 

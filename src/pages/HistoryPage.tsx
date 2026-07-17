@@ -279,7 +279,7 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
       ) : hasRecords ? (
         <div className="flex flex-col gap-4">
           {records.map((record) => (
-            <HistoryCard key={record.id} record={record} onOpenDetail={setDetail} onMessage={setMessage} onFeedbackSubmitted={refresh} />
+            <HistoryCard key={record.id} record={record} onOpenDetail={setDetail} onMessage={setMessage} />
           ))}
         </div>
       ) : (
@@ -327,10 +327,6 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
         record={detail}
         onClose={() => setDetail(null)}
         isAdmin={adminMode}
-        onFeedbackSubmitted={(task) => {
-          setDetail(task);
-          refresh();
-        }}
       />
     </>
   );

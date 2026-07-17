@@ -4,11 +4,7 @@
  * 选项数组、initialParams、getSettingsGenerationTitle 等，StudioPage 共用。
  * 此处保留固定枚举（品类/图片类型/尺寸/质量）与基础辅助函数。
  */
-import {
-  getDailyFashionSeedingSelection,
-  type FashionSeedingDailySlot,
-  type FashionSeedingTopic
-} from "../utils/fashionSeeding";
+import type { FashionSeedingTopic } from "../utils/fashionSeeding";
 import type {
   ImageType,
   ProductCategory,
@@ -34,7 +30,6 @@ export const qualityOptions = [
   { value: "auto", label: "Auto" }
 ];
 export const defaultImageQuality = "medium";
-export const preferredBridalContentTopic: FashionSeedingTopic = "真实客户试纱";
 
 export const initialParams: PromptParams = {
   productCategory: "婚纱 / 礼服",
@@ -50,9 +45,8 @@ export const initialParams: PromptParams = {
   generationNonce: 0
 };
 
-const initialDailySelection = getDailyFashionSeedingSelection(initialParams.productCategory, new Date(), 1);
-export const initialContentTopic: FashionSeedingTopic =
-  initialParams.productCategory === "婚纱 / 礼服" ? preferredBridalContentTopic : initialDailySelection.topic;
+// 首个可选主题由工作台拉取内容引擎 JSON 后设置，前端不保留主题默认值。
+export const initialContentTopic: FashionSeedingTopic = "";
 
 export const inputClass =
   "w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-text outline-none transition duration-fast ease-out focus:border-primary focus:ring-2 focus:ring-primary-50 disabled:cursor-not-allowed disabled:bg-bg disabled:text-text-subtle";
@@ -85,9 +79,4 @@ export function getSettingsGenerationBody(params: PromptParams) {
   if (params.customProductName.trim()) rows.push(`自定义款式：${params.customProductName.trim()}`);
   if (params.extraRequirement.trim()) rows.push(`补充要求：${params.extraRequirement.trim()}`);
   return rows.join("\n");
-}
-
-export function getDefaultContentTopic(productCategory: ProductCategory, dailySlot: FashionSeedingDailySlot) {
-  if (productCategory === "婚纱 / 礼服") return preferredBridalContentTopic;
-  return getDailyFashionSeedingSelection(productCategory, new Date(), dailySlot).topic;
 }

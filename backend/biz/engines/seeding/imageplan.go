@@ -454,8 +454,8 @@ func GenerateFashionSeedingContent(input FashionSeedingInput, assets *Assets) Fa
 	if input.ImageCount == 3 {
 		imageCount = 3
 	}
-	safeTopic, variantIndex, variantCount, daily := computeScalarFields(input)
-	copyDraft := buildCopyFromKit(assets, safeTopic, variantIndex)
+	safeTopic, variantIndex, variantCount, daily := computeScalarFields(input, assets)
+	copyDraft := buildCopyFromKit(assets, input.ProductCategory, safeTopic, variantIndex)
 	imageDrafts := getImageDrafts(assets, input.ProductCategory, safeTopic)
 	if len(imageDrafts) > imageCount {
 		imageDrafts = imageDrafts[:imageCount]

@@ -9,6 +9,7 @@ package seeding
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -36,19 +37,6 @@ var xiaohongshuBridalTopicOptions = []string{
 	"婚纱店发布",
 }
 
-// BridalFashionTopicOptions 婚纱主题列表（TS :169-181，顺序不可变）
-var BridalFashionTopicOptions = []string{
-	"试纱体验",
-	"真实客户试纱", "手机对镜自拍试纱", "试纱陪同视角", "试纱避坑准备", "婚纱品牌发布", "婚纱店发布",
-	"极简新娘", "法式婚纱", "草坪婚礼", "酒店婚礼", "海边旅拍", "登记照", "晚宴礼服", "婚礼前一天", "新娘独处时刻",
-}
-
-// DressFashionTopicOptions 裙装主题列表（TS :183-194，顺序不可变）
-var DressFashionTopicOptions = []string{
-	"通勤裙装", "约会裙装", "周末裙装", "度假长裙", "艺术馆穿搭",
-	"下午茶", "晚餐约会", "轻熟日常", "秋冬裙装", "一条裙子的多场景",
-}
-
 // IsXiaohongshuBridalTopic 小红书婚纱主题判定（TS :198-205）
 func IsXiaohongshuBridalTopic(topic string) bool {
 	for _, t := range xiaohongshuBridalTopicOptions {
@@ -59,26 +47,115 @@ func IsXiaohongshuBridalTopic(topic string) bool {
 	return false
 }
 
-// IsBridalFashionTopic 婚纱品类主题判定（TS :202-205）
-func IsBridalFashionTopic(topic string) bool {
-	for _, t := range BridalFashionTopicOptions {
-		if t == topic {
-			return true
-		}
-	}
-	return false
-}
-
 func getTopicOptions(productCategory string) []string {
+	assets := DefaultAssets()
 	if productCategory == ProductCategoryBridal {
-		return BridalFashionTopicOptions
+		return append([]string(nil), assets.BridalTopics...)
 	}
-	return DressFashionTopicOptions
+	return append([]string(nil), assets.DressTopics...)
 }
 
 // GetFashionSeedingTopicOptions 暴露主题选项（TS :230-232）
 func GetFashionSeedingTopicOptions(productCategory string) []string {
-	return getTopicOptions(productCategory)
+	return append([]string(nil), getTopicOptions(productCategory)...)
+}
+
+// GetConfiguredTopicOptions 返回当前内容引擎配置的主题。*Topics 是唯一主题来源，
+// 可在 JSON 中新增、改名、删除；Visible*Topics 只兼容旧白名单数据。
+func GetConfiguredTopicOptions(productCategory string, assets *Assets) []string {
+	defaults := getTopicOptions(productCategory)
+	if assets == nil {
+		return append([]string(nil), defaults...)
+	}
+	topics := assets.DressTopics
+	if productCategory == ProductCategoryBridal {
+		topics = assets.BridalTopics
+	}
+	if len(topics) == 0 {
+		topics = assets.VisibleDressTopics
+		if productCategory == ProductCategoryBridal {
+			topics = assets.VisibleBridalTopics
+		}
+	}
+	if len(topics) == 0 {
+		return defaults
+	}
+	configured := make([]string, 0, len(topics))
+	for _, topic := range topics {
+		if strings.TrimSpace(topic) != "" && !contains(configured, topic) {
+			configured = append(configured, topic)
+		}
+	}
+	if len(configured) == 0 {
+		return defaults
+	}
+	return configured
+}
+
+// ValidateTopicVisibilityConfig 在保存前校验主题数组格式。主题名称由 JSON 自身定义，
+// 不与代码枚举比对，因此可以新增、改名或删除主题。
+func ValidateTopicVisibilityConfig(config map[string]any) error {
+	if config == nil {
+		return nil
+	}
+	seedingRaw, ok := config["seeding"]
+	if !ok || seedingRaw == nil {
+		return nil
+	}
+	seeding, ok := seedingRaw.(map[string]any)
+	if !ok {
+		return fmt.Errorf("config.seeding 必须是 JSON 对象")
+	}
+	for _, rule := range []struct {
+		field string
+	}{
+		{field: "bridalTopics"},
+		{field: "dressTopics"},
+		{field: "visibleBridalTopics"},
+		{field: "visibleDressTopics"},
+	} {
+		raw, exists := seeding[rule.field]
+		if !exists || raw == nil {
+			continue
+		}
+		topics, err := topicListFromConfig(raw)
+		if err != nil {
+			return fmt.Errorf("config.seeding.%s %w", rule.field, err)
+		}
+		if len(topics) == 0 {
+			return fmt.Errorf("config.seeding.%s 不能为空", rule.field)
+		}
+		seen := make(map[string]bool, len(topics))
+		for _, topic := range topics {
+			if topic == "" || strings.TrimSpace(topic) != topic {
+				return fmt.Errorf("config.seeding.%s 包含空白主题名 %q", rule.field, topic)
+			}
+			if seen[topic] {
+				return fmt.Errorf("config.seeding.%s 包含重复主题 %q", rule.field, topic)
+			}
+			seen[topic] = true
+		}
+	}
+	return nil
+}
+
+func topicListFromConfig(raw any) ([]string, error) {
+	switch values := raw.(type) {
+	case []string:
+		return values, nil
+	case []any:
+		topics := make([]string, len(values))
+		for i, value := range values {
+			topic, ok := value.(string)
+			if !ok {
+				return nil, fmt.Errorf("必须是字符串数组")
+			}
+			topics[i] = topic
+		}
+		return topics, nil
+	default:
+		return nil, fmt.Errorf("必须是字符串数组")
+	}
 }
 
 func pad2(v int) string {
@@ -117,7 +194,10 @@ type DailySelection struct {
 
 // GetDailyFashionSeedingSelection 每日选题（TS :238-258）
 func GetDailyFashionSeedingSelection(productCategory string, d time.Time, dailySlot int) DailySelection {
-	topicOptions := getTopicOptions(productCategory)
+	return getDailyFashionSeedingSelection(productCategory, d, dailySlot, getTopicOptions(productCategory))
+}
+
+func getDailyFashionSeedingSelection(productCategory string, d time.Time, dailySlot int, topicOptions []string) DailySelection {
 	safeSlot := resolveDailySlot(dailySlot)
 	globalPostIndex := getDayNumber(d)*int64(DailyPostCount) + int64(safeSlot-1)
 	n := int64(len(topicOptions))
@@ -141,12 +221,12 @@ func pick(items []string, index int) string {
 
 // VariantAxes 15 轴选择索引（TS :118-135）
 type VariantAxes struct {
-	VariantIndex                   int
-	Primary, Secondary, Tertiary   int
-	Audience, Focus, Concern       int
-	Proof, Scene, Material         int
-	Service, Takeaway, Tone        int
-	TagA, TagB, TagC               int
+	VariantIndex                 int
+	Primary, Secondary, Tertiary int
+	Audience, Focus, Concern     int
+	Proof, Scene, Material       int
+	Service, Takeaway, Tone      int
+	TagA, TagB, TagC             int
 }
 
 // GetVariantAxes 十进制分解 + 线性同余映射 15 轴（TS :2137-2161）
@@ -204,9 +284,9 @@ func contains(items []string, v string) bool {
 // computeScalarFields 主入口的标量字段计算（TS generateFashionSeedingContent :3065-3076 的标量部分）。
 // 返回 safeTopic, variantIndex, variantCount, daily。用原始 input.Topic 判定 variantIndex 分支
 // （与 TS 一致，不是 safeTopic）。
-func computeScalarFields(input FashionSeedingInput) (safeTopic string, variantIndex int, variantCount int, daily DailySelection) {
-	daily = GetDailyFashionSeedingSelection(input.ProductCategory, input.Date, input.DailySlot)
-	topicOptions := getTopicOptions(input.ProductCategory)
+func computeScalarFields(input FashionSeedingInput, assets *Assets) (safeTopic string, variantIndex int, variantCount int, daily DailySelection) {
+	topicOptions := GetConfiguredTopicOptions(input.ProductCategory, assets)
+	daily = getDailyFashionSeedingSelection(input.ProductCategory, input.Date, input.DailySlot, topicOptions)
 	safeTopic = daily.Topic
 	if input.Topic != "" && contains(topicOptions, input.Topic) {
 		safeTopic = input.Topic

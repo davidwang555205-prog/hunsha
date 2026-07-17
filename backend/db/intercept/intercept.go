@@ -69,6 +69,8 @@ import (
 	"bridal/backend/db/user"
 	"bridal/backend/db/useridentity"
 	"bridal/backend/db/virtualmachine"
+	"bridal/backend/db/xhsnotesnapshot"
+	"bridal/backend/db/xhsnotetracking"
 
 	"entgo.io/ent/dialect/sql"
 )
@@ -1776,6 +1778,60 @@ func (f TraverseVirtualMachine) Traverse(ctx context.Context, q db.Query) error 
 	return fmt.Errorf("unexpected query type %T. expect *db.VirtualMachineQuery", q)
 }
 
+// The XHSNoteSnapshotFunc type is an adapter to allow the use of ordinary function as a Querier.
+type XHSNoteSnapshotFunc func(context.Context, *db.XHSNoteSnapshotQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f XHSNoteSnapshotFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.XHSNoteSnapshotQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.XHSNoteSnapshotQuery", q)
+}
+
+// The TraverseXHSNoteSnapshot type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseXHSNoteSnapshot func(context.Context, *db.XHSNoteSnapshotQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseXHSNoteSnapshot) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseXHSNoteSnapshot) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.XHSNoteSnapshotQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.XHSNoteSnapshotQuery", q)
+}
+
+// The XHSNoteTrackingFunc type is an adapter to allow the use of ordinary function as a Querier.
+type XHSNoteTrackingFunc func(context.Context, *db.XHSNoteTrackingQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f XHSNoteTrackingFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.XHSNoteTrackingQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.XHSNoteTrackingQuery", q)
+}
+
+// The TraverseXHSNoteTracking type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseXHSNoteTracking func(context.Context, *db.XHSNoteTrackingQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseXHSNoteTracking) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseXHSNoteTracking) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.XHSNoteTrackingQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.XHSNoteTrackingQuery", q)
+}
+
 // NewQuery returns the generic Query interface for the given typed query.
 func NewQuery(q db.Query) (Query, error) {
 	switch q := q.(type) {
@@ -1901,6 +1957,10 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.UserIdentityQuery, predicate.UserIdentity, useridentity.OrderOption]{typ: db.TypeUserIdentity, tq: q}, nil
 	case *db.VirtualMachineQuery:
 		return &query[*db.VirtualMachineQuery, predicate.VirtualMachine, virtualmachine.OrderOption]{typ: db.TypeVirtualMachine, tq: q}, nil
+	case *db.XHSNoteSnapshotQuery:
+		return &query[*db.XHSNoteSnapshotQuery, predicate.XHSNoteSnapshot, xhsnotesnapshot.OrderOption]{typ: db.TypeXHSNoteSnapshot, tq: q}, nil
+	case *db.XHSNoteTrackingQuery:
+		return &query[*db.XHSNoteTrackingQuery, predicate.XHSNoteTracking, xhsnotetracking.OrderOption]{typ: db.TypeXHSNoteTracking, tq: q}, nil
 	default:
 		return nil, fmt.Errorf("unknown query type %T", q)
 	}

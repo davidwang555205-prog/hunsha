@@ -66,6 +66,8 @@ import (
 	"bridal/backend/db/user"
 	"bridal/backend/db/useridentity"
 	"bridal/backend/db/virtualmachine"
+	"bridal/backend/db/xhsnotesnapshot"
+	"bridal/backend/db/xhsnotetracking"
 	"bridal/backend/ent/types"
 	"context"
 	"errors"
@@ -148,6 +150,8 @@ const (
 	TypeUser                      = "User"
 	TypeUserIdentity              = "UserIdentity"
 	TypeVirtualMachine            = "VirtualMachine"
+	TypeXHSNoteSnapshot           = "XHSNoteSnapshot"
+	TypeXHSNoteTracking           = "XHSNoteTracking"
 )
 
 // AgentPluginMutation represents an operation that mutates the AgentPlugin nodes in the graph.
@@ -58994,6 +58998,8 @@ type UserMutation struct {
 	adddaily_image_limit          *int
 	credits                       *int
 	addcredits                    *int
+	visible_category_ids          *[]uuid.UUID
+	appendvisible_category_ids    []uuid.UUID
 	password_salt                 *string
 	password_hash                 *string
 	created_at                    *time.Time
@@ -59768,6 +59774,71 @@ func (m *UserMutation) AddedCredits() (r int, exists bool) {
 func (m *UserMutation) ResetCredits() {
 	m.credits = nil
 	m.addcredits = nil
+}
+
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (m *UserMutation) SetVisibleCategoryIds(u []uuid.UUID) {
+	m.visible_category_ids = &u
+	m.appendvisible_category_ids = nil
+}
+
+// VisibleCategoryIds returns the value of the "visible_category_ids" field in the mutation.
+func (m *UserMutation) VisibleCategoryIds() (r []uuid.UUID, exists bool) {
+	v := m.visible_category_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVisibleCategoryIds returns the old "visible_category_ids" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldVisibleCategoryIds(ctx context.Context) (v []uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVisibleCategoryIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVisibleCategoryIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVisibleCategoryIds: %w", err)
+	}
+	return oldValue.VisibleCategoryIds, nil
+}
+
+// AppendVisibleCategoryIds adds u to the "visible_category_ids" field.
+func (m *UserMutation) AppendVisibleCategoryIds(u []uuid.UUID) {
+	m.appendvisible_category_ids = append(m.appendvisible_category_ids, u...)
+}
+
+// AppendedVisibleCategoryIds returns the list of values that were appended to the "visible_category_ids" field in this mutation.
+func (m *UserMutation) AppendedVisibleCategoryIds() ([]uuid.UUID, bool) {
+	if len(m.appendvisible_category_ids) == 0 {
+		return nil, false
+	}
+	return m.appendvisible_category_ids, true
+}
+
+// ClearVisibleCategoryIds clears the value of the "visible_category_ids" field.
+func (m *UserMutation) ClearVisibleCategoryIds() {
+	m.visible_category_ids = nil
+	m.appendvisible_category_ids = nil
+	m.clearedFields[user.FieldVisibleCategoryIds] = struct{}{}
+}
+
+// VisibleCategoryIdsCleared returns if the "visible_category_ids" field was cleared in this mutation.
+func (m *UserMutation) VisibleCategoryIdsCleared() bool {
+	_, ok := m.clearedFields[user.FieldVisibleCategoryIds]
+	return ok
+}
+
+// ResetVisibleCategoryIds resets all changes to the "visible_category_ids" field.
+func (m *UserMutation) ResetVisibleCategoryIds() {
+	m.visible_category_ids = nil
+	m.appendvisible_category_ids = nil
+	delete(m.clearedFields, user.FieldVisibleCategoryIds)
 }
 
 // SetPasswordSalt sets the "password_salt" field.
@@ -61108,7 +61179,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.deleted_at != nil {
 		fields = append(fields, user.FieldDeletedAt)
 	}
@@ -61147,6 +61218,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.credits != nil {
 		fields = append(fields, user.FieldCredits)
+	}
+	if m.visible_category_ids != nil {
+		fields = append(fields, user.FieldVisibleCategoryIds)
 	}
 	if m.password_salt != nil {
 		fields = append(fields, user.FieldPasswordSalt)
@@ -61194,6 +61268,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.DailyImageLimit()
 	case user.FieldCredits:
 		return m.Credits()
+	case user.FieldVisibleCategoryIds:
+		return m.VisibleCategoryIds()
 	case user.FieldPasswordSalt:
 		return m.PasswordSalt()
 	case user.FieldPasswordHash:
@@ -61237,6 +61313,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDailyImageLimit(ctx)
 	case user.FieldCredits:
 		return m.OldCredits(ctx)
+	case user.FieldVisibleCategoryIds:
+		return m.OldVisibleCategoryIds(ctx)
 	case user.FieldPasswordSalt:
 		return m.OldPasswordSalt(ctx)
 	case user.FieldPasswordHash:
@@ -61345,6 +61423,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCredits(v)
 		return nil
+	case user.FieldVisibleCategoryIds:
+		v, ok := value.([]uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVisibleCategoryIds(v)
+		return nil
 	case user.FieldPasswordSalt:
 		v, ok := value.(string)
 		if !ok {
@@ -61451,6 +61536,9 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldDisplayName) {
 		fields = append(fields, user.FieldDisplayName)
 	}
+	if m.FieldCleared(user.FieldVisibleCategoryIds) {
+		fields = append(fields, user.FieldVisibleCategoryIds)
+	}
 	if m.FieldCleared(user.FieldPasswordSalt) {
 		fields = append(fields, user.FieldPasswordSalt)
 	}
@@ -61491,6 +61579,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldDisplayName:
 		m.ClearDisplayName()
+		return nil
+	case user.FieldVisibleCategoryIds:
+		m.ClearVisibleCategoryIds()
 		return nil
 	case user.FieldPasswordSalt:
 		m.ClearPasswordSalt()
@@ -61544,6 +61635,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldCredits:
 		m.ResetCredits()
+		return nil
+	case user.FieldVisibleCategoryIds:
+		m.ResetVisibleCategoryIds()
 		return nil
 	case user.FieldPasswordSalt:
 		m.ResetPasswordSalt()
@@ -65521,4 +65615,3192 @@ func (m *VirtualMachineMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown VirtualMachine edge %s", name)
+}
+
+// XHSNoteSnapshotMutation represents an operation that mutates the XHSNoteSnapshot nodes in the graph.
+type XHSNoteSnapshotMutation struct {
+	config
+	op                     Op
+	typ                    string
+	id                     *uuid.UUID
+	tracking_id            *uuid.UUID
+	sequence               *int
+	addsequence            *int
+	trigger                *string
+	status                 *string
+	error                  *string
+	captured_at            *time.Time
+	work_updated_at        *string
+	views                  *int
+	addviews               *int
+	likes                  *int
+	addlikes               *int
+	collects               *int
+	addcollects            *int
+	comments               *int
+	addcomments            *int
+	shares                 *int
+	addshares              *int
+	account_name           *string
+	account_avatar         *string
+	account_display_id     *string
+	account_user_id        *string
+	account_description    *string
+	account_fans           *int
+	addaccount_fans        *int
+	account_total_works    *int
+	addaccount_total_works *int
+	account_likes          *int
+	addaccount_likes       *int
+	account_collects       *int
+	addaccount_collects    *int
+	account_follows        *int
+	addaccount_follows     *int
+	account_updated_at     *string
+	similar_accounts       *[]types.XHSSimilarAccount
+	appendsimilar_accounts []types.XHSSimilarAccount
+	similar_summary        *string
+	created_at             *time.Time
+	clearedFields          map[string]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*XHSNoteSnapshot, error)
+	predicates             []predicate.XHSNoteSnapshot
+}
+
+var _ ent.Mutation = (*XHSNoteSnapshotMutation)(nil)
+
+// xhsnotesnapshotOption allows management of the mutation configuration using functional options.
+type xhsnotesnapshotOption func(*XHSNoteSnapshotMutation)
+
+// newXHSNoteSnapshotMutation creates new mutation for the XHSNoteSnapshot entity.
+func newXHSNoteSnapshotMutation(c config, op Op, opts ...xhsnotesnapshotOption) *XHSNoteSnapshotMutation {
+	m := &XHSNoteSnapshotMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeXHSNoteSnapshot,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withXHSNoteSnapshotID sets the ID field of the mutation.
+func withXHSNoteSnapshotID(id uuid.UUID) xhsnotesnapshotOption {
+	return func(m *XHSNoteSnapshotMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *XHSNoteSnapshot
+		)
+		m.oldValue = func(ctx context.Context) (*XHSNoteSnapshot, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().XHSNoteSnapshot.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withXHSNoteSnapshot sets the old XHSNoteSnapshot of the mutation.
+func withXHSNoteSnapshot(node *XHSNoteSnapshot) xhsnotesnapshotOption {
+	return func(m *XHSNoteSnapshotMutation) {
+		m.oldValue = func(context.Context) (*XHSNoteSnapshot, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m XHSNoteSnapshotMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m XHSNoteSnapshotMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("db: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of XHSNoteSnapshot entities.
+func (m *XHSNoteSnapshotMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *XHSNoteSnapshotMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *XHSNoteSnapshotMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().XHSNoteSnapshot.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTrackingID sets the "tracking_id" field.
+func (m *XHSNoteSnapshotMutation) SetTrackingID(u uuid.UUID) {
+	m.tracking_id = &u
+}
+
+// TrackingID returns the value of the "tracking_id" field in the mutation.
+func (m *XHSNoteSnapshotMutation) TrackingID() (r uuid.UUID, exists bool) {
+	v := m.tracking_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingID returns the old "tracking_id" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldTrackingID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingID: %w", err)
+	}
+	return oldValue.TrackingID, nil
+}
+
+// ResetTrackingID resets all changes to the "tracking_id" field.
+func (m *XHSNoteSnapshotMutation) ResetTrackingID() {
+	m.tracking_id = nil
+}
+
+// SetSequence sets the "sequence" field.
+func (m *XHSNoteSnapshotMutation) SetSequence(i int) {
+	m.sequence = &i
+	m.addsequence = nil
+}
+
+// Sequence returns the value of the "sequence" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Sequence() (r int, exists bool) {
+	v := m.sequence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSequence returns the old "sequence" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldSequence(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSequence is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSequence requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSequence: %w", err)
+	}
+	return oldValue.Sequence, nil
+}
+
+// AddSequence adds i to the "sequence" field.
+func (m *XHSNoteSnapshotMutation) AddSequence(i int) {
+	if m.addsequence != nil {
+		*m.addsequence += i
+	} else {
+		m.addsequence = &i
+	}
+}
+
+// AddedSequence returns the value that was added to the "sequence" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedSequence() (r int, exists bool) {
+	v := m.addsequence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSequence resets all changes to the "sequence" field.
+func (m *XHSNoteSnapshotMutation) ResetSequence() {
+	m.sequence = nil
+	m.addsequence = nil
+}
+
+// SetTrigger sets the "trigger" field.
+func (m *XHSNoteSnapshotMutation) SetTrigger(s string) {
+	m.trigger = &s
+}
+
+// Trigger returns the value of the "trigger" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Trigger() (r string, exists bool) {
+	v := m.trigger
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrigger returns the old "trigger" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldTrigger(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrigger is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrigger requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrigger: %w", err)
+	}
+	return oldValue.Trigger, nil
+}
+
+// ResetTrigger resets all changes to the "trigger" field.
+func (m *XHSNoteSnapshotMutation) ResetTrigger() {
+	m.trigger = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *XHSNoteSnapshotMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *XHSNoteSnapshotMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetError sets the "error" field.
+func (m *XHSNoteSnapshotMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *XHSNoteSnapshotMutation) ResetError() {
+	m.error = nil
+}
+
+// SetCapturedAt sets the "captured_at" field.
+func (m *XHSNoteSnapshotMutation) SetCapturedAt(t time.Time) {
+	m.captured_at = &t
+}
+
+// CapturedAt returns the value of the "captured_at" field in the mutation.
+func (m *XHSNoteSnapshotMutation) CapturedAt() (r time.Time, exists bool) {
+	v := m.captured_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCapturedAt returns the old "captured_at" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldCapturedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCapturedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCapturedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCapturedAt: %w", err)
+	}
+	return oldValue.CapturedAt, nil
+}
+
+// ResetCapturedAt resets all changes to the "captured_at" field.
+func (m *XHSNoteSnapshotMutation) ResetCapturedAt() {
+	m.captured_at = nil
+}
+
+// SetWorkUpdatedAt sets the "work_updated_at" field.
+func (m *XHSNoteSnapshotMutation) SetWorkUpdatedAt(s string) {
+	m.work_updated_at = &s
+}
+
+// WorkUpdatedAt returns the value of the "work_updated_at" field in the mutation.
+func (m *XHSNoteSnapshotMutation) WorkUpdatedAt() (r string, exists bool) {
+	v := m.work_updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkUpdatedAt returns the old "work_updated_at" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldWorkUpdatedAt(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkUpdatedAt: %w", err)
+	}
+	return oldValue.WorkUpdatedAt, nil
+}
+
+// ResetWorkUpdatedAt resets all changes to the "work_updated_at" field.
+func (m *XHSNoteSnapshotMutation) ResetWorkUpdatedAt() {
+	m.work_updated_at = nil
+}
+
+// SetViews sets the "views" field.
+func (m *XHSNoteSnapshotMutation) SetViews(i int) {
+	m.views = &i
+	m.addviews = nil
+}
+
+// Views returns the value of the "views" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Views() (r int, exists bool) {
+	v := m.views
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldViews returns the old "views" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldViews(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldViews is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldViews requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldViews: %w", err)
+	}
+	return oldValue.Views, nil
+}
+
+// AddViews adds i to the "views" field.
+func (m *XHSNoteSnapshotMutation) AddViews(i int) {
+	if m.addviews != nil {
+		*m.addviews += i
+	} else {
+		m.addviews = &i
+	}
+}
+
+// AddedViews returns the value that was added to the "views" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedViews() (r int, exists bool) {
+	v := m.addviews
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetViews resets all changes to the "views" field.
+func (m *XHSNoteSnapshotMutation) ResetViews() {
+	m.views = nil
+	m.addviews = nil
+}
+
+// SetLikes sets the "likes" field.
+func (m *XHSNoteSnapshotMutation) SetLikes(i int) {
+	m.likes = &i
+	m.addlikes = nil
+}
+
+// Likes returns the value of the "likes" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Likes() (r int, exists bool) {
+	v := m.likes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLikes returns the old "likes" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldLikes(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLikes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLikes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLikes: %w", err)
+	}
+	return oldValue.Likes, nil
+}
+
+// AddLikes adds i to the "likes" field.
+func (m *XHSNoteSnapshotMutation) AddLikes(i int) {
+	if m.addlikes != nil {
+		*m.addlikes += i
+	} else {
+		m.addlikes = &i
+	}
+}
+
+// AddedLikes returns the value that was added to the "likes" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedLikes() (r int, exists bool) {
+	v := m.addlikes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLikes resets all changes to the "likes" field.
+func (m *XHSNoteSnapshotMutation) ResetLikes() {
+	m.likes = nil
+	m.addlikes = nil
+}
+
+// SetCollects sets the "collects" field.
+func (m *XHSNoteSnapshotMutation) SetCollects(i int) {
+	m.collects = &i
+	m.addcollects = nil
+}
+
+// Collects returns the value of the "collects" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Collects() (r int, exists bool) {
+	v := m.collects
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCollects returns the old "collects" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldCollects(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCollects is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCollects requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCollects: %w", err)
+	}
+	return oldValue.Collects, nil
+}
+
+// AddCollects adds i to the "collects" field.
+func (m *XHSNoteSnapshotMutation) AddCollects(i int) {
+	if m.addcollects != nil {
+		*m.addcollects += i
+	} else {
+		m.addcollects = &i
+	}
+}
+
+// AddedCollects returns the value that was added to the "collects" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedCollects() (r int, exists bool) {
+	v := m.addcollects
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCollects resets all changes to the "collects" field.
+func (m *XHSNoteSnapshotMutation) ResetCollects() {
+	m.collects = nil
+	m.addcollects = nil
+}
+
+// SetComments sets the "comments" field.
+func (m *XHSNoteSnapshotMutation) SetComments(i int) {
+	m.comments = &i
+	m.addcomments = nil
+}
+
+// Comments returns the value of the "comments" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Comments() (r int, exists bool) {
+	v := m.comments
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComments returns the old "comments" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldComments(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComments is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComments requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComments: %w", err)
+	}
+	return oldValue.Comments, nil
+}
+
+// AddComments adds i to the "comments" field.
+func (m *XHSNoteSnapshotMutation) AddComments(i int) {
+	if m.addcomments != nil {
+		*m.addcomments += i
+	} else {
+		m.addcomments = &i
+	}
+}
+
+// AddedComments returns the value that was added to the "comments" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedComments() (r int, exists bool) {
+	v := m.addcomments
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetComments resets all changes to the "comments" field.
+func (m *XHSNoteSnapshotMutation) ResetComments() {
+	m.comments = nil
+	m.addcomments = nil
+}
+
+// SetShares sets the "shares" field.
+func (m *XHSNoteSnapshotMutation) SetShares(i int) {
+	m.shares = &i
+	m.addshares = nil
+}
+
+// Shares returns the value of the "shares" field in the mutation.
+func (m *XHSNoteSnapshotMutation) Shares() (r int, exists bool) {
+	v := m.shares
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShares returns the old "shares" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldShares(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShares is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShares requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShares: %w", err)
+	}
+	return oldValue.Shares, nil
+}
+
+// AddShares adds i to the "shares" field.
+func (m *XHSNoteSnapshotMutation) AddShares(i int) {
+	if m.addshares != nil {
+		*m.addshares += i
+	} else {
+		m.addshares = &i
+	}
+}
+
+// AddedShares returns the value that was added to the "shares" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedShares() (r int, exists bool) {
+	v := m.addshares
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetShares resets all changes to the "shares" field.
+func (m *XHSNoteSnapshotMutation) ResetShares() {
+	m.shares = nil
+	m.addshares = nil
+}
+
+// SetAccountName sets the "account_name" field.
+func (m *XHSNoteSnapshotMutation) SetAccountName(s string) {
+	m.account_name = &s
+}
+
+// AccountName returns the value of the "account_name" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountName() (r string, exists bool) {
+	v := m.account_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountName returns the old "account_name" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountName: %w", err)
+	}
+	return oldValue.AccountName, nil
+}
+
+// ResetAccountName resets all changes to the "account_name" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountName() {
+	m.account_name = nil
+}
+
+// SetAccountAvatar sets the "account_avatar" field.
+func (m *XHSNoteSnapshotMutation) SetAccountAvatar(s string) {
+	m.account_avatar = &s
+}
+
+// AccountAvatar returns the value of the "account_avatar" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountAvatar() (r string, exists bool) {
+	v := m.account_avatar
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountAvatar returns the old "account_avatar" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountAvatar(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountAvatar is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountAvatar requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountAvatar: %w", err)
+	}
+	return oldValue.AccountAvatar, nil
+}
+
+// ResetAccountAvatar resets all changes to the "account_avatar" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountAvatar() {
+	m.account_avatar = nil
+}
+
+// SetAccountDisplayID sets the "account_display_id" field.
+func (m *XHSNoteSnapshotMutation) SetAccountDisplayID(s string) {
+	m.account_display_id = &s
+}
+
+// AccountDisplayID returns the value of the "account_display_id" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountDisplayID() (r string, exists bool) {
+	v := m.account_display_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountDisplayID returns the old "account_display_id" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountDisplayID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountDisplayID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountDisplayID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountDisplayID: %w", err)
+	}
+	return oldValue.AccountDisplayID, nil
+}
+
+// ResetAccountDisplayID resets all changes to the "account_display_id" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountDisplayID() {
+	m.account_display_id = nil
+}
+
+// SetAccountUserID sets the "account_user_id" field.
+func (m *XHSNoteSnapshotMutation) SetAccountUserID(s string) {
+	m.account_user_id = &s
+}
+
+// AccountUserID returns the value of the "account_user_id" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountUserID() (r string, exists bool) {
+	v := m.account_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountUserID returns the old "account_user_id" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountUserID: %w", err)
+	}
+	return oldValue.AccountUserID, nil
+}
+
+// ResetAccountUserID resets all changes to the "account_user_id" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountUserID() {
+	m.account_user_id = nil
+}
+
+// SetAccountDescription sets the "account_description" field.
+func (m *XHSNoteSnapshotMutation) SetAccountDescription(s string) {
+	m.account_description = &s
+}
+
+// AccountDescription returns the value of the "account_description" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountDescription() (r string, exists bool) {
+	v := m.account_description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountDescription returns the old "account_description" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountDescription: %w", err)
+	}
+	return oldValue.AccountDescription, nil
+}
+
+// ResetAccountDescription resets all changes to the "account_description" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountDescription() {
+	m.account_description = nil
+}
+
+// SetAccountFans sets the "account_fans" field.
+func (m *XHSNoteSnapshotMutation) SetAccountFans(i int) {
+	m.account_fans = &i
+	m.addaccount_fans = nil
+}
+
+// AccountFans returns the value of the "account_fans" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountFans() (r int, exists bool) {
+	v := m.account_fans
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountFans returns the old "account_fans" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountFans(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountFans is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountFans requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountFans: %w", err)
+	}
+	return oldValue.AccountFans, nil
+}
+
+// AddAccountFans adds i to the "account_fans" field.
+func (m *XHSNoteSnapshotMutation) AddAccountFans(i int) {
+	if m.addaccount_fans != nil {
+		*m.addaccount_fans += i
+	} else {
+		m.addaccount_fans = &i
+	}
+}
+
+// AddedAccountFans returns the value that was added to the "account_fans" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedAccountFans() (r int, exists bool) {
+	v := m.addaccount_fans
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountFans resets all changes to the "account_fans" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountFans() {
+	m.account_fans = nil
+	m.addaccount_fans = nil
+}
+
+// SetAccountTotalWorks sets the "account_total_works" field.
+func (m *XHSNoteSnapshotMutation) SetAccountTotalWorks(i int) {
+	m.account_total_works = &i
+	m.addaccount_total_works = nil
+}
+
+// AccountTotalWorks returns the value of the "account_total_works" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountTotalWorks() (r int, exists bool) {
+	v := m.account_total_works
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountTotalWorks returns the old "account_total_works" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountTotalWorks(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountTotalWorks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountTotalWorks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountTotalWorks: %w", err)
+	}
+	return oldValue.AccountTotalWorks, nil
+}
+
+// AddAccountTotalWorks adds i to the "account_total_works" field.
+func (m *XHSNoteSnapshotMutation) AddAccountTotalWorks(i int) {
+	if m.addaccount_total_works != nil {
+		*m.addaccount_total_works += i
+	} else {
+		m.addaccount_total_works = &i
+	}
+}
+
+// AddedAccountTotalWorks returns the value that was added to the "account_total_works" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedAccountTotalWorks() (r int, exists bool) {
+	v := m.addaccount_total_works
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountTotalWorks resets all changes to the "account_total_works" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountTotalWorks() {
+	m.account_total_works = nil
+	m.addaccount_total_works = nil
+}
+
+// SetAccountLikes sets the "account_likes" field.
+func (m *XHSNoteSnapshotMutation) SetAccountLikes(i int) {
+	m.account_likes = &i
+	m.addaccount_likes = nil
+}
+
+// AccountLikes returns the value of the "account_likes" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountLikes() (r int, exists bool) {
+	v := m.account_likes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountLikes returns the old "account_likes" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountLikes(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountLikes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountLikes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountLikes: %w", err)
+	}
+	return oldValue.AccountLikes, nil
+}
+
+// AddAccountLikes adds i to the "account_likes" field.
+func (m *XHSNoteSnapshotMutation) AddAccountLikes(i int) {
+	if m.addaccount_likes != nil {
+		*m.addaccount_likes += i
+	} else {
+		m.addaccount_likes = &i
+	}
+}
+
+// AddedAccountLikes returns the value that was added to the "account_likes" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedAccountLikes() (r int, exists bool) {
+	v := m.addaccount_likes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountLikes resets all changes to the "account_likes" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountLikes() {
+	m.account_likes = nil
+	m.addaccount_likes = nil
+}
+
+// SetAccountCollects sets the "account_collects" field.
+func (m *XHSNoteSnapshotMutation) SetAccountCollects(i int) {
+	m.account_collects = &i
+	m.addaccount_collects = nil
+}
+
+// AccountCollects returns the value of the "account_collects" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountCollects() (r int, exists bool) {
+	v := m.account_collects
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountCollects returns the old "account_collects" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountCollects(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountCollects is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountCollects requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountCollects: %w", err)
+	}
+	return oldValue.AccountCollects, nil
+}
+
+// AddAccountCollects adds i to the "account_collects" field.
+func (m *XHSNoteSnapshotMutation) AddAccountCollects(i int) {
+	if m.addaccount_collects != nil {
+		*m.addaccount_collects += i
+	} else {
+		m.addaccount_collects = &i
+	}
+}
+
+// AddedAccountCollects returns the value that was added to the "account_collects" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedAccountCollects() (r int, exists bool) {
+	v := m.addaccount_collects
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountCollects resets all changes to the "account_collects" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountCollects() {
+	m.account_collects = nil
+	m.addaccount_collects = nil
+}
+
+// SetAccountFollows sets the "account_follows" field.
+func (m *XHSNoteSnapshotMutation) SetAccountFollows(i int) {
+	m.account_follows = &i
+	m.addaccount_follows = nil
+}
+
+// AccountFollows returns the value of the "account_follows" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountFollows() (r int, exists bool) {
+	v := m.account_follows
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountFollows returns the old "account_follows" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountFollows(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountFollows is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountFollows requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountFollows: %w", err)
+	}
+	return oldValue.AccountFollows, nil
+}
+
+// AddAccountFollows adds i to the "account_follows" field.
+func (m *XHSNoteSnapshotMutation) AddAccountFollows(i int) {
+	if m.addaccount_follows != nil {
+		*m.addaccount_follows += i
+	} else {
+		m.addaccount_follows = &i
+	}
+}
+
+// AddedAccountFollows returns the value that was added to the "account_follows" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedAccountFollows() (r int, exists bool) {
+	v := m.addaccount_follows
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountFollows resets all changes to the "account_follows" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountFollows() {
+	m.account_follows = nil
+	m.addaccount_follows = nil
+}
+
+// SetAccountUpdatedAt sets the "account_updated_at" field.
+func (m *XHSNoteSnapshotMutation) SetAccountUpdatedAt(s string) {
+	m.account_updated_at = &s
+}
+
+// AccountUpdatedAt returns the value of the "account_updated_at" field in the mutation.
+func (m *XHSNoteSnapshotMutation) AccountUpdatedAt() (r string, exists bool) {
+	v := m.account_updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountUpdatedAt returns the old "account_updated_at" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldAccountUpdatedAt(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountUpdatedAt: %w", err)
+	}
+	return oldValue.AccountUpdatedAt, nil
+}
+
+// ResetAccountUpdatedAt resets all changes to the "account_updated_at" field.
+func (m *XHSNoteSnapshotMutation) ResetAccountUpdatedAt() {
+	m.account_updated_at = nil
+}
+
+// SetSimilarAccounts sets the "similar_accounts" field.
+func (m *XHSNoteSnapshotMutation) SetSimilarAccounts(tsa []types.XHSSimilarAccount) {
+	m.similar_accounts = &tsa
+	m.appendsimilar_accounts = nil
+}
+
+// SimilarAccounts returns the value of the "similar_accounts" field in the mutation.
+func (m *XHSNoteSnapshotMutation) SimilarAccounts() (r []types.XHSSimilarAccount, exists bool) {
+	v := m.similar_accounts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSimilarAccounts returns the old "similar_accounts" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldSimilarAccounts(ctx context.Context) (v []types.XHSSimilarAccount, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSimilarAccounts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSimilarAccounts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSimilarAccounts: %w", err)
+	}
+	return oldValue.SimilarAccounts, nil
+}
+
+// AppendSimilarAccounts adds tsa to the "similar_accounts" field.
+func (m *XHSNoteSnapshotMutation) AppendSimilarAccounts(tsa []types.XHSSimilarAccount) {
+	m.appendsimilar_accounts = append(m.appendsimilar_accounts, tsa...)
+}
+
+// AppendedSimilarAccounts returns the list of values that were appended to the "similar_accounts" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AppendedSimilarAccounts() ([]types.XHSSimilarAccount, bool) {
+	if len(m.appendsimilar_accounts) == 0 {
+		return nil, false
+	}
+	return m.appendsimilar_accounts, true
+}
+
+// ResetSimilarAccounts resets all changes to the "similar_accounts" field.
+func (m *XHSNoteSnapshotMutation) ResetSimilarAccounts() {
+	m.similar_accounts = nil
+	m.appendsimilar_accounts = nil
+}
+
+// SetSimilarSummary sets the "similar_summary" field.
+func (m *XHSNoteSnapshotMutation) SetSimilarSummary(s string) {
+	m.similar_summary = &s
+}
+
+// SimilarSummary returns the value of the "similar_summary" field in the mutation.
+func (m *XHSNoteSnapshotMutation) SimilarSummary() (r string, exists bool) {
+	v := m.similar_summary
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSimilarSummary returns the old "similar_summary" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldSimilarSummary(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSimilarSummary is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSimilarSummary requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSimilarSummary: %w", err)
+	}
+	return oldValue.SimilarSummary, nil
+}
+
+// ResetSimilarSummary resets all changes to the "similar_summary" field.
+func (m *XHSNoteSnapshotMutation) ResetSimilarSummary() {
+	m.similar_summary = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *XHSNoteSnapshotMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *XHSNoteSnapshotMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *XHSNoteSnapshotMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the XHSNoteSnapshotMutation builder.
+func (m *XHSNoteSnapshotMutation) Where(ps ...predicate.XHSNoteSnapshot) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the XHSNoteSnapshotMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *XHSNoteSnapshotMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.XHSNoteSnapshot, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *XHSNoteSnapshotMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *XHSNoteSnapshotMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (XHSNoteSnapshot).
+func (m *XHSNoteSnapshotMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *XHSNoteSnapshotMutation) Fields() []string {
+	fields := make([]string, 0, 26)
+	if m.tracking_id != nil {
+		fields = append(fields, xhsnotesnapshot.FieldTrackingID)
+	}
+	if m.sequence != nil {
+		fields = append(fields, xhsnotesnapshot.FieldSequence)
+	}
+	if m.trigger != nil {
+		fields = append(fields, xhsnotesnapshot.FieldTrigger)
+	}
+	if m.status != nil {
+		fields = append(fields, xhsnotesnapshot.FieldStatus)
+	}
+	if m.error != nil {
+		fields = append(fields, xhsnotesnapshot.FieldError)
+	}
+	if m.captured_at != nil {
+		fields = append(fields, xhsnotesnapshot.FieldCapturedAt)
+	}
+	if m.work_updated_at != nil {
+		fields = append(fields, xhsnotesnapshot.FieldWorkUpdatedAt)
+	}
+	if m.views != nil {
+		fields = append(fields, xhsnotesnapshot.FieldViews)
+	}
+	if m.likes != nil {
+		fields = append(fields, xhsnotesnapshot.FieldLikes)
+	}
+	if m.collects != nil {
+		fields = append(fields, xhsnotesnapshot.FieldCollects)
+	}
+	if m.comments != nil {
+		fields = append(fields, xhsnotesnapshot.FieldComments)
+	}
+	if m.shares != nil {
+		fields = append(fields, xhsnotesnapshot.FieldShares)
+	}
+	if m.account_name != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountName)
+	}
+	if m.account_avatar != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountAvatar)
+	}
+	if m.account_display_id != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountDisplayID)
+	}
+	if m.account_user_id != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountUserID)
+	}
+	if m.account_description != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountDescription)
+	}
+	if m.account_fans != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountFans)
+	}
+	if m.account_total_works != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountTotalWorks)
+	}
+	if m.account_likes != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountLikes)
+	}
+	if m.account_collects != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountCollects)
+	}
+	if m.account_follows != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountFollows)
+	}
+	if m.account_updated_at != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountUpdatedAt)
+	}
+	if m.similar_accounts != nil {
+		fields = append(fields, xhsnotesnapshot.FieldSimilarAccounts)
+	}
+	if m.similar_summary != nil {
+		fields = append(fields, xhsnotesnapshot.FieldSimilarSummary)
+	}
+	if m.created_at != nil {
+		fields = append(fields, xhsnotesnapshot.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *XHSNoteSnapshotMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case xhsnotesnapshot.FieldTrackingID:
+		return m.TrackingID()
+	case xhsnotesnapshot.FieldSequence:
+		return m.Sequence()
+	case xhsnotesnapshot.FieldTrigger:
+		return m.Trigger()
+	case xhsnotesnapshot.FieldStatus:
+		return m.Status()
+	case xhsnotesnapshot.FieldError:
+		return m.Error()
+	case xhsnotesnapshot.FieldCapturedAt:
+		return m.CapturedAt()
+	case xhsnotesnapshot.FieldWorkUpdatedAt:
+		return m.WorkUpdatedAt()
+	case xhsnotesnapshot.FieldViews:
+		return m.Views()
+	case xhsnotesnapshot.FieldLikes:
+		return m.Likes()
+	case xhsnotesnapshot.FieldCollects:
+		return m.Collects()
+	case xhsnotesnapshot.FieldComments:
+		return m.Comments()
+	case xhsnotesnapshot.FieldShares:
+		return m.Shares()
+	case xhsnotesnapshot.FieldAccountName:
+		return m.AccountName()
+	case xhsnotesnapshot.FieldAccountAvatar:
+		return m.AccountAvatar()
+	case xhsnotesnapshot.FieldAccountDisplayID:
+		return m.AccountDisplayID()
+	case xhsnotesnapshot.FieldAccountUserID:
+		return m.AccountUserID()
+	case xhsnotesnapshot.FieldAccountDescription:
+		return m.AccountDescription()
+	case xhsnotesnapshot.FieldAccountFans:
+		return m.AccountFans()
+	case xhsnotesnapshot.FieldAccountTotalWorks:
+		return m.AccountTotalWorks()
+	case xhsnotesnapshot.FieldAccountLikes:
+		return m.AccountLikes()
+	case xhsnotesnapshot.FieldAccountCollects:
+		return m.AccountCollects()
+	case xhsnotesnapshot.FieldAccountFollows:
+		return m.AccountFollows()
+	case xhsnotesnapshot.FieldAccountUpdatedAt:
+		return m.AccountUpdatedAt()
+	case xhsnotesnapshot.FieldSimilarAccounts:
+		return m.SimilarAccounts()
+	case xhsnotesnapshot.FieldSimilarSummary:
+		return m.SimilarSummary()
+	case xhsnotesnapshot.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *XHSNoteSnapshotMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case xhsnotesnapshot.FieldTrackingID:
+		return m.OldTrackingID(ctx)
+	case xhsnotesnapshot.FieldSequence:
+		return m.OldSequence(ctx)
+	case xhsnotesnapshot.FieldTrigger:
+		return m.OldTrigger(ctx)
+	case xhsnotesnapshot.FieldStatus:
+		return m.OldStatus(ctx)
+	case xhsnotesnapshot.FieldError:
+		return m.OldError(ctx)
+	case xhsnotesnapshot.FieldCapturedAt:
+		return m.OldCapturedAt(ctx)
+	case xhsnotesnapshot.FieldWorkUpdatedAt:
+		return m.OldWorkUpdatedAt(ctx)
+	case xhsnotesnapshot.FieldViews:
+		return m.OldViews(ctx)
+	case xhsnotesnapshot.FieldLikes:
+		return m.OldLikes(ctx)
+	case xhsnotesnapshot.FieldCollects:
+		return m.OldCollects(ctx)
+	case xhsnotesnapshot.FieldComments:
+		return m.OldComments(ctx)
+	case xhsnotesnapshot.FieldShares:
+		return m.OldShares(ctx)
+	case xhsnotesnapshot.FieldAccountName:
+		return m.OldAccountName(ctx)
+	case xhsnotesnapshot.FieldAccountAvatar:
+		return m.OldAccountAvatar(ctx)
+	case xhsnotesnapshot.FieldAccountDisplayID:
+		return m.OldAccountDisplayID(ctx)
+	case xhsnotesnapshot.FieldAccountUserID:
+		return m.OldAccountUserID(ctx)
+	case xhsnotesnapshot.FieldAccountDescription:
+		return m.OldAccountDescription(ctx)
+	case xhsnotesnapshot.FieldAccountFans:
+		return m.OldAccountFans(ctx)
+	case xhsnotesnapshot.FieldAccountTotalWorks:
+		return m.OldAccountTotalWorks(ctx)
+	case xhsnotesnapshot.FieldAccountLikes:
+		return m.OldAccountLikes(ctx)
+	case xhsnotesnapshot.FieldAccountCollects:
+		return m.OldAccountCollects(ctx)
+	case xhsnotesnapshot.FieldAccountFollows:
+		return m.OldAccountFollows(ctx)
+	case xhsnotesnapshot.FieldAccountUpdatedAt:
+		return m.OldAccountUpdatedAt(ctx)
+	case xhsnotesnapshot.FieldSimilarAccounts:
+		return m.OldSimilarAccounts(ctx)
+	case xhsnotesnapshot.FieldSimilarSummary:
+		return m.OldSimilarSummary(ctx)
+	case xhsnotesnapshot.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown XHSNoteSnapshot field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *XHSNoteSnapshotMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case xhsnotesnapshot.FieldTrackingID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingID(v)
+		return nil
+	case xhsnotesnapshot.FieldSequence:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSequence(v)
+		return nil
+	case xhsnotesnapshot.FieldTrigger:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrigger(v)
+		return nil
+	case xhsnotesnapshot.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case xhsnotesnapshot.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case xhsnotesnapshot.FieldCapturedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCapturedAt(v)
+		return nil
+	case xhsnotesnapshot.FieldWorkUpdatedAt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkUpdatedAt(v)
+		return nil
+	case xhsnotesnapshot.FieldViews:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetViews(v)
+		return nil
+	case xhsnotesnapshot.FieldLikes:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLikes(v)
+		return nil
+	case xhsnotesnapshot.FieldCollects:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCollects(v)
+		return nil
+	case xhsnotesnapshot.FieldComments:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComments(v)
+		return nil
+	case xhsnotesnapshot.FieldShares:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShares(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountName(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountAvatar:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountAvatar(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountDisplayID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountDisplayID(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountUserID(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountDescription(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountFans:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountFans(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountTotalWorks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountTotalWorks(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountLikes:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountLikes(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountCollects:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountCollects(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountFollows:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountFollows(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountUpdatedAt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountUpdatedAt(v)
+		return nil
+	case xhsnotesnapshot.FieldSimilarAccounts:
+		v, ok := value.([]types.XHSSimilarAccount)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSimilarAccounts(v)
+		return nil
+	case xhsnotesnapshot.FieldSimilarSummary:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSimilarSummary(v)
+		return nil
+	case xhsnotesnapshot.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown XHSNoteSnapshot field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *XHSNoteSnapshotMutation) AddedFields() []string {
+	var fields []string
+	if m.addsequence != nil {
+		fields = append(fields, xhsnotesnapshot.FieldSequence)
+	}
+	if m.addviews != nil {
+		fields = append(fields, xhsnotesnapshot.FieldViews)
+	}
+	if m.addlikes != nil {
+		fields = append(fields, xhsnotesnapshot.FieldLikes)
+	}
+	if m.addcollects != nil {
+		fields = append(fields, xhsnotesnapshot.FieldCollects)
+	}
+	if m.addcomments != nil {
+		fields = append(fields, xhsnotesnapshot.FieldComments)
+	}
+	if m.addshares != nil {
+		fields = append(fields, xhsnotesnapshot.FieldShares)
+	}
+	if m.addaccount_fans != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountFans)
+	}
+	if m.addaccount_total_works != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountTotalWorks)
+	}
+	if m.addaccount_likes != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountLikes)
+	}
+	if m.addaccount_collects != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountCollects)
+	}
+	if m.addaccount_follows != nil {
+		fields = append(fields, xhsnotesnapshot.FieldAccountFollows)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *XHSNoteSnapshotMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case xhsnotesnapshot.FieldSequence:
+		return m.AddedSequence()
+	case xhsnotesnapshot.FieldViews:
+		return m.AddedViews()
+	case xhsnotesnapshot.FieldLikes:
+		return m.AddedLikes()
+	case xhsnotesnapshot.FieldCollects:
+		return m.AddedCollects()
+	case xhsnotesnapshot.FieldComments:
+		return m.AddedComments()
+	case xhsnotesnapshot.FieldShares:
+		return m.AddedShares()
+	case xhsnotesnapshot.FieldAccountFans:
+		return m.AddedAccountFans()
+	case xhsnotesnapshot.FieldAccountTotalWorks:
+		return m.AddedAccountTotalWorks()
+	case xhsnotesnapshot.FieldAccountLikes:
+		return m.AddedAccountLikes()
+	case xhsnotesnapshot.FieldAccountCollects:
+		return m.AddedAccountCollects()
+	case xhsnotesnapshot.FieldAccountFollows:
+		return m.AddedAccountFollows()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *XHSNoteSnapshotMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case xhsnotesnapshot.FieldSequence:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSequence(v)
+		return nil
+	case xhsnotesnapshot.FieldViews:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddViews(v)
+		return nil
+	case xhsnotesnapshot.FieldLikes:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLikes(v)
+		return nil
+	case xhsnotesnapshot.FieldCollects:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCollects(v)
+		return nil
+	case xhsnotesnapshot.FieldComments:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddComments(v)
+		return nil
+	case xhsnotesnapshot.FieldShares:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddShares(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountFans:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountFans(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountTotalWorks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountTotalWorks(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountLikes:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountLikes(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountCollects:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountCollects(v)
+		return nil
+	case xhsnotesnapshot.FieldAccountFollows:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountFollows(v)
+		return nil
+	}
+	return fmt.Errorf("unknown XHSNoteSnapshot numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *XHSNoteSnapshotMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *XHSNoteSnapshotMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *XHSNoteSnapshotMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown XHSNoteSnapshot nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *XHSNoteSnapshotMutation) ResetField(name string) error {
+	switch name {
+	case xhsnotesnapshot.FieldTrackingID:
+		m.ResetTrackingID()
+		return nil
+	case xhsnotesnapshot.FieldSequence:
+		m.ResetSequence()
+		return nil
+	case xhsnotesnapshot.FieldTrigger:
+		m.ResetTrigger()
+		return nil
+	case xhsnotesnapshot.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case xhsnotesnapshot.FieldError:
+		m.ResetError()
+		return nil
+	case xhsnotesnapshot.FieldCapturedAt:
+		m.ResetCapturedAt()
+		return nil
+	case xhsnotesnapshot.FieldWorkUpdatedAt:
+		m.ResetWorkUpdatedAt()
+		return nil
+	case xhsnotesnapshot.FieldViews:
+		m.ResetViews()
+		return nil
+	case xhsnotesnapshot.FieldLikes:
+		m.ResetLikes()
+		return nil
+	case xhsnotesnapshot.FieldCollects:
+		m.ResetCollects()
+		return nil
+	case xhsnotesnapshot.FieldComments:
+		m.ResetComments()
+		return nil
+	case xhsnotesnapshot.FieldShares:
+		m.ResetShares()
+		return nil
+	case xhsnotesnapshot.FieldAccountName:
+		m.ResetAccountName()
+		return nil
+	case xhsnotesnapshot.FieldAccountAvatar:
+		m.ResetAccountAvatar()
+		return nil
+	case xhsnotesnapshot.FieldAccountDisplayID:
+		m.ResetAccountDisplayID()
+		return nil
+	case xhsnotesnapshot.FieldAccountUserID:
+		m.ResetAccountUserID()
+		return nil
+	case xhsnotesnapshot.FieldAccountDescription:
+		m.ResetAccountDescription()
+		return nil
+	case xhsnotesnapshot.FieldAccountFans:
+		m.ResetAccountFans()
+		return nil
+	case xhsnotesnapshot.FieldAccountTotalWorks:
+		m.ResetAccountTotalWorks()
+		return nil
+	case xhsnotesnapshot.FieldAccountLikes:
+		m.ResetAccountLikes()
+		return nil
+	case xhsnotesnapshot.FieldAccountCollects:
+		m.ResetAccountCollects()
+		return nil
+	case xhsnotesnapshot.FieldAccountFollows:
+		m.ResetAccountFollows()
+		return nil
+	case xhsnotesnapshot.FieldAccountUpdatedAt:
+		m.ResetAccountUpdatedAt()
+		return nil
+	case xhsnotesnapshot.FieldSimilarAccounts:
+		m.ResetSimilarAccounts()
+		return nil
+	case xhsnotesnapshot.FieldSimilarSummary:
+		m.ResetSimilarSummary()
+		return nil
+	case xhsnotesnapshot.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown XHSNoteSnapshot field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *XHSNoteSnapshotMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *XHSNoteSnapshotMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *XHSNoteSnapshotMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *XHSNoteSnapshotMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *XHSNoteSnapshotMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown XHSNoteSnapshot unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *XHSNoteSnapshotMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown XHSNoteSnapshot edge %s", name)
+}
+
+// XHSNoteTrackingMutation represents an operation that mutates the XHSNoteTracking nodes in the graph.
+type XHSNoteTrackingMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	task_id               *uuid.UUID
+	user_id               *uuid.UUID
+	note_url              *string
+	canonical_url         *string
+	work_id               *string
+	account_user_id       *string
+	account_id            *string
+	title                 *string
+	body                  *string
+	cover_url             *string
+	work_type             *string
+	published_at          *string
+	user_refresh_count    *int
+	adduser_refresh_count *int
+	created_at            *time.Time
+	updated_at            *time.Time
+	clearedFields         map[string]struct{}
+	done                  bool
+	oldValue              func(context.Context) (*XHSNoteTracking, error)
+	predicates            []predicate.XHSNoteTracking
+}
+
+var _ ent.Mutation = (*XHSNoteTrackingMutation)(nil)
+
+// xhsnotetrackingOption allows management of the mutation configuration using functional options.
+type xhsnotetrackingOption func(*XHSNoteTrackingMutation)
+
+// newXHSNoteTrackingMutation creates new mutation for the XHSNoteTracking entity.
+func newXHSNoteTrackingMutation(c config, op Op, opts ...xhsnotetrackingOption) *XHSNoteTrackingMutation {
+	m := &XHSNoteTrackingMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeXHSNoteTracking,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withXHSNoteTrackingID sets the ID field of the mutation.
+func withXHSNoteTrackingID(id uuid.UUID) xhsnotetrackingOption {
+	return func(m *XHSNoteTrackingMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *XHSNoteTracking
+		)
+		m.oldValue = func(ctx context.Context) (*XHSNoteTracking, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().XHSNoteTracking.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withXHSNoteTracking sets the old XHSNoteTracking of the mutation.
+func withXHSNoteTracking(node *XHSNoteTracking) xhsnotetrackingOption {
+	return func(m *XHSNoteTrackingMutation) {
+		m.oldValue = func(context.Context) (*XHSNoteTracking, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m XHSNoteTrackingMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m XHSNoteTrackingMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("db: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of XHSNoteTracking entities.
+func (m *XHSNoteTrackingMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *XHSNoteTrackingMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *XHSNoteTrackingMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().XHSNoteTracking.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTaskID sets the "task_id" field.
+func (m *XHSNoteTrackingMutation) SetTaskID(u uuid.UUID) {
+	m.task_id = &u
+}
+
+// TaskID returns the value of the "task_id" field in the mutation.
+func (m *XHSNoteTrackingMutation) TaskID() (r uuid.UUID, exists bool) {
+	v := m.task_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaskID returns the old "task_id" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldTaskID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaskID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaskID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaskID: %w", err)
+	}
+	return oldValue.TaskID, nil
+}
+
+// ResetTaskID resets all changes to the "task_id" field.
+func (m *XHSNoteTrackingMutation) ResetTaskID() {
+	m.task_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *XHSNoteTrackingMutation) SetUserID(u uuid.UUID) {
+	m.user_id = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *XHSNoteTrackingMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *XHSNoteTrackingMutation) ResetUserID() {
+	m.user_id = nil
+}
+
+// SetNoteURL sets the "note_url" field.
+func (m *XHSNoteTrackingMutation) SetNoteURL(s string) {
+	m.note_url = &s
+}
+
+// NoteURL returns the value of the "note_url" field in the mutation.
+func (m *XHSNoteTrackingMutation) NoteURL() (r string, exists bool) {
+	v := m.note_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNoteURL returns the old "note_url" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldNoteURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNoteURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNoteURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNoteURL: %w", err)
+	}
+	return oldValue.NoteURL, nil
+}
+
+// ResetNoteURL resets all changes to the "note_url" field.
+func (m *XHSNoteTrackingMutation) ResetNoteURL() {
+	m.note_url = nil
+}
+
+// SetCanonicalURL sets the "canonical_url" field.
+func (m *XHSNoteTrackingMutation) SetCanonicalURL(s string) {
+	m.canonical_url = &s
+}
+
+// CanonicalURL returns the value of the "canonical_url" field in the mutation.
+func (m *XHSNoteTrackingMutation) CanonicalURL() (r string, exists bool) {
+	v := m.canonical_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCanonicalURL returns the old "canonical_url" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldCanonicalURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCanonicalURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCanonicalURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCanonicalURL: %w", err)
+	}
+	return oldValue.CanonicalURL, nil
+}
+
+// ResetCanonicalURL resets all changes to the "canonical_url" field.
+func (m *XHSNoteTrackingMutation) ResetCanonicalURL() {
+	m.canonical_url = nil
+}
+
+// SetWorkID sets the "work_id" field.
+func (m *XHSNoteTrackingMutation) SetWorkID(s string) {
+	m.work_id = &s
+}
+
+// WorkID returns the value of the "work_id" field in the mutation.
+func (m *XHSNoteTrackingMutation) WorkID() (r string, exists bool) {
+	v := m.work_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkID returns the old "work_id" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldWorkID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkID: %w", err)
+	}
+	return oldValue.WorkID, nil
+}
+
+// ResetWorkID resets all changes to the "work_id" field.
+func (m *XHSNoteTrackingMutation) ResetWorkID() {
+	m.work_id = nil
+}
+
+// SetAccountUserID sets the "account_user_id" field.
+func (m *XHSNoteTrackingMutation) SetAccountUserID(s string) {
+	m.account_user_id = &s
+}
+
+// AccountUserID returns the value of the "account_user_id" field in the mutation.
+func (m *XHSNoteTrackingMutation) AccountUserID() (r string, exists bool) {
+	v := m.account_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountUserID returns the old "account_user_id" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldAccountUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountUserID: %w", err)
+	}
+	return oldValue.AccountUserID, nil
+}
+
+// ResetAccountUserID resets all changes to the "account_user_id" field.
+func (m *XHSNoteTrackingMutation) ResetAccountUserID() {
+	m.account_user_id = nil
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *XHSNoteTrackingMutation) SetAccountID(s string) {
+	m.account_id = &s
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *XHSNoteTrackingMutation) AccountID() (r string, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldAccountID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *XHSNoteTrackingMutation) ResetAccountID() {
+	m.account_id = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *XHSNoteTrackingMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *XHSNoteTrackingMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *XHSNoteTrackingMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetBody sets the "body" field.
+func (m *XHSNoteTrackingMutation) SetBody(s string) {
+	m.body = &s
+}
+
+// Body returns the value of the "body" field in the mutation.
+func (m *XHSNoteTrackingMutation) Body() (r string, exists bool) {
+	v := m.body
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBody returns the old "body" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldBody(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBody is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBody requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBody: %w", err)
+	}
+	return oldValue.Body, nil
+}
+
+// ResetBody resets all changes to the "body" field.
+func (m *XHSNoteTrackingMutation) ResetBody() {
+	m.body = nil
+}
+
+// SetCoverURL sets the "cover_url" field.
+func (m *XHSNoteTrackingMutation) SetCoverURL(s string) {
+	m.cover_url = &s
+}
+
+// CoverURL returns the value of the "cover_url" field in the mutation.
+func (m *XHSNoteTrackingMutation) CoverURL() (r string, exists bool) {
+	v := m.cover_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCoverURL returns the old "cover_url" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldCoverURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCoverURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCoverURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCoverURL: %w", err)
+	}
+	return oldValue.CoverURL, nil
+}
+
+// ResetCoverURL resets all changes to the "cover_url" field.
+func (m *XHSNoteTrackingMutation) ResetCoverURL() {
+	m.cover_url = nil
+}
+
+// SetWorkType sets the "work_type" field.
+func (m *XHSNoteTrackingMutation) SetWorkType(s string) {
+	m.work_type = &s
+}
+
+// WorkType returns the value of the "work_type" field in the mutation.
+func (m *XHSNoteTrackingMutation) WorkType() (r string, exists bool) {
+	v := m.work_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkType returns the old "work_type" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldWorkType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkType: %w", err)
+	}
+	return oldValue.WorkType, nil
+}
+
+// ResetWorkType resets all changes to the "work_type" field.
+func (m *XHSNoteTrackingMutation) ResetWorkType() {
+	m.work_type = nil
+}
+
+// SetPublishedAt sets the "published_at" field.
+func (m *XHSNoteTrackingMutation) SetPublishedAt(s string) {
+	m.published_at = &s
+}
+
+// PublishedAt returns the value of the "published_at" field in the mutation.
+func (m *XHSNoteTrackingMutation) PublishedAt() (r string, exists bool) {
+	v := m.published_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublishedAt returns the old "published_at" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldPublishedAt(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublishedAt: %w", err)
+	}
+	return oldValue.PublishedAt, nil
+}
+
+// ResetPublishedAt resets all changes to the "published_at" field.
+func (m *XHSNoteTrackingMutation) ResetPublishedAt() {
+	m.published_at = nil
+}
+
+// SetUserRefreshCount sets the "user_refresh_count" field.
+func (m *XHSNoteTrackingMutation) SetUserRefreshCount(i int) {
+	m.user_refresh_count = &i
+	m.adduser_refresh_count = nil
+}
+
+// UserRefreshCount returns the value of the "user_refresh_count" field in the mutation.
+func (m *XHSNoteTrackingMutation) UserRefreshCount() (r int, exists bool) {
+	v := m.user_refresh_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserRefreshCount returns the old "user_refresh_count" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldUserRefreshCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserRefreshCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserRefreshCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserRefreshCount: %w", err)
+	}
+	return oldValue.UserRefreshCount, nil
+}
+
+// AddUserRefreshCount adds i to the "user_refresh_count" field.
+func (m *XHSNoteTrackingMutation) AddUserRefreshCount(i int) {
+	if m.adduser_refresh_count != nil {
+		*m.adduser_refresh_count += i
+	} else {
+		m.adduser_refresh_count = &i
+	}
+}
+
+// AddedUserRefreshCount returns the value that was added to the "user_refresh_count" field in this mutation.
+func (m *XHSNoteTrackingMutation) AddedUserRefreshCount() (r int, exists bool) {
+	v := m.adduser_refresh_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserRefreshCount resets all changes to the "user_refresh_count" field.
+func (m *XHSNoteTrackingMutation) ResetUserRefreshCount() {
+	m.user_refresh_count = nil
+	m.adduser_refresh_count = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *XHSNoteTrackingMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *XHSNoteTrackingMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *XHSNoteTrackingMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *XHSNoteTrackingMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *XHSNoteTrackingMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *XHSNoteTrackingMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the XHSNoteTrackingMutation builder.
+func (m *XHSNoteTrackingMutation) Where(ps ...predicate.XHSNoteTracking) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the XHSNoteTrackingMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *XHSNoteTrackingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.XHSNoteTracking, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *XHSNoteTrackingMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *XHSNoteTrackingMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (XHSNoteTracking).
+func (m *XHSNoteTrackingMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *XHSNoteTrackingMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.task_id != nil {
+		fields = append(fields, xhsnotetracking.FieldTaskID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, xhsnotetracking.FieldUserID)
+	}
+	if m.note_url != nil {
+		fields = append(fields, xhsnotetracking.FieldNoteURL)
+	}
+	if m.canonical_url != nil {
+		fields = append(fields, xhsnotetracking.FieldCanonicalURL)
+	}
+	if m.work_id != nil {
+		fields = append(fields, xhsnotetracking.FieldWorkID)
+	}
+	if m.account_user_id != nil {
+		fields = append(fields, xhsnotetracking.FieldAccountUserID)
+	}
+	if m.account_id != nil {
+		fields = append(fields, xhsnotetracking.FieldAccountID)
+	}
+	if m.title != nil {
+		fields = append(fields, xhsnotetracking.FieldTitle)
+	}
+	if m.body != nil {
+		fields = append(fields, xhsnotetracking.FieldBody)
+	}
+	if m.cover_url != nil {
+		fields = append(fields, xhsnotetracking.FieldCoverURL)
+	}
+	if m.work_type != nil {
+		fields = append(fields, xhsnotetracking.FieldWorkType)
+	}
+	if m.published_at != nil {
+		fields = append(fields, xhsnotetracking.FieldPublishedAt)
+	}
+	if m.user_refresh_count != nil {
+		fields = append(fields, xhsnotetracking.FieldUserRefreshCount)
+	}
+	if m.created_at != nil {
+		fields = append(fields, xhsnotetracking.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, xhsnotetracking.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *XHSNoteTrackingMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case xhsnotetracking.FieldTaskID:
+		return m.TaskID()
+	case xhsnotetracking.FieldUserID:
+		return m.UserID()
+	case xhsnotetracking.FieldNoteURL:
+		return m.NoteURL()
+	case xhsnotetracking.FieldCanonicalURL:
+		return m.CanonicalURL()
+	case xhsnotetracking.FieldWorkID:
+		return m.WorkID()
+	case xhsnotetracking.FieldAccountUserID:
+		return m.AccountUserID()
+	case xhsnotetracking.FieldAccountID:
+		return m.AccountID()
+	case xhsnotetracking.FieldTitle:
+		return m.Title()
+	case xhsnotetracking.FieldBody:
+		return m.Body()
+	case xhsnotetracking.FieldCoverURL:
+		return m.CoverURL()
+	case xhsnotetracking.FieldWorkType:
+		return m.WorkType()
+	case xhsnotetracking.FieldPublishedAt:
+		return m.PublishedAt()
+	case xhsnotetracking.FieldUserRefreshCount:
+		return m.UserRefreshCount()
+	case xhsnotetracking.FieldCreatedAt:
+		return m.CreatedAt()
+	case xhsnotetracking.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *XHSNoteTrackingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case xhsnotetracking.FieldTaskID:
+		return m.OldTaskID(ctx)
+	case xhsnotetracking.FieldUserID:
+		return m.OldUserID(ctx)
+	case xhsnotetracking.FieldNoteURL:
+		return m.OldNoteURL(ctx)
+	case xhsnotetracking.FieldCanonicalURL:
+		return m.OldCanonicalURL(ctx)
+	case xhsnotetracking.FieldWorkID:
+		return m.OldWorkID(ctx)
+	case xhsnotetracking.FieldAccountUserID:
+		return m.OldAccountUserID(ctx)
+	case xhsnotetracking.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case xhsnotetracking.FieldTitle:
+		return m.OldTitle(ctx)
+	case xhsnotetracking.FieldBody:
+		return m.OldBody(ctx)
+	case xhsnotetracking.FieldCoverURL:
+		return m.OldCoverURL(ctx)
+	case xhsnotetracking.FieldWorkType:
+		return m.OldWorkType(ctx)
+	case xhsnotetracking.FieldPublishedAt:
+		return m.OldPublishedAt(ctx)
+	case xhsnotetracking.FieldUserRefreshCount:
+		return m.OldUserRefreshCount(ctx)
+	case xhsnotetracking.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case xhsnotetracking.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown XHSNoteTracking field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *XHSNoteTrackingMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case xhsnotetracking.FieldTaskID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaskID(v)
+		return nil
+	case xhsnotetracking.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case xhsnotetracking.FieldNoteURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNoteURL(v)
+		return nil
+	case xhsnotetracking.FieldCanonicalURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCanonicalURL(v)
+		return nil
+	case xhsnotetracking.FieldWorkID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkID(v)
+		return nil
+	case xhsnotetracking.FieldAccountUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountUserID(v)
+		return nil
+	case xhsnotetracking.FieldAccountID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case xhsnotetracking.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case xhsnotetracking.FieldBody:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBody(v)
+		return nil
+	case xhsnotetracking.FieldCoverURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCoverURL(v)
+		return nil
+	case xhsnotetracking.FieldWorkType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkType(v)
+		return nil
+	case xhsnotetracking.FieldPublishedAt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublishedAt(v)
+		return nil
+	case xhsnotetracking.FieldUserRefreshCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserRefreshCount(v)
+		return nil
+	case xhsnotetracking.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case xhsnotetracking.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown XHSNoteTracking field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *XHSNoteTrackingMutation) AddedFields() []string {
+	var fields []string
+	if m.adduser_refresh_count != nil {
+		fields = append(fields, xhsnotetracking.FieldUserRefreshCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *XHSNoteTrackingMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case xhsnotetracking.FieldUserRefreshCount:
+		return m.AddedUserRefreshCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *XHSNoteTrackingMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case xhsnotetracking.FieldUserRefreshCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserRefreshCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown XHSNoteTracking numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *XHSNoteTrackingMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *XHSNoteTrackingMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *XHSNoteTrackingMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown XHSNoteTracking nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *XHSNoteTrackingMutation) ResetField(name string) error {
+	switch name {
+	case xhsnotetracking.FieldTaskID:
+		m.ResetTaskID()
+		return nil
+	case xhsnotetracking.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case xhsnotetracking.FieldNoteURL:
+		m.ResetNoteURL()
+		return nil
+	case xhsnotetracking.FieldCanonicalURL:
+		m.ResetCanonicalURL()
+		return nil
+	case xhsnotetracking.FieldWorkID:
+		m.ResetWorkID()
+		return nil
+	case xhsnotetracking.FieldAccountUserID:
+		m.ResetAccountUserID()
+		return nil
+	case xhsnotetracking.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case xhsnotetracking.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case xhsnotetracking.FieldBody:
+		m.ResetBody()
+		return nil
+	case xhsnotetracking.FieldCoverURL:
+		m.ResetCoverURL()
+		return nil
+	case xhsnotetracking.FieldWorkType:
+		m.ResetWorkType()
+		return nil
+	case xhsnotetracking.FieldPublishedAt:
+		m.ResetPublishedAt()
+		return nil
+	case xhsnotetracking.FieldUserRefreshCount:
+		m.ResetUserRefreshCount()
+		return nil
+	case xhsnotetracking.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case xhsnotetracking.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown XHSNoteTracking field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *XHSNoteTrackingMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *XHSNoteTrackingMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *XHSNoteTrackingMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *XHSNoteTrackingMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *XHSNoteTrackingMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *XHSNoteTrackingMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *XHSNoteTrackingMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown XHSNoteTracking unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *XHSNoteTrackingMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown XHSNoteTracking edge %s", name)
 }

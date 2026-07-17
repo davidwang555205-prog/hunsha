@@ -5,9 +5,10 @@
  * - 列表（名称/协议/模型/状态/统计：调用次数/成功率/平均耗时）
  * - 创建/编辑（弹窗：名称/协议/API Base/API Key/模型 ID/支持尺寸/默认质量/启用/默认/排序）
  * - 删除（默认线路不可删）
+ * - Redfox 小红书数据服务 Key（独立于生图线路，管理员可在此更新）
  */
 import { useEffect, useState } from "react";
-import { listChannels, createChannel, updateChannel, deleteChannel } from "../../api/admin";
+import { listChannels, createChannel, updateChannel, deleteChannel, listSettings, updateSetting } from "../../api/admin";
 import { isUnauthorizedError } from "../../types/api";
 import type { Channel } from "../../types/api";
 import { PageHeader } from "../../components/layout/PageHeader";
@@ -58,16 +59,51 @@ export function AdminChannelsPage() {
   const [draft, setDraft] = useState<ChannelDraft>(emptyDraft);
   const [busy, setBusy] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [redfoxKey, setRedfoxKey] = useState("");
+  const [redfoxConfigured, setRedfoxConfigured] = useState(false);
+  const [redfoxMaskedKey, setRedfoxMaskedKey] = useState("");
+  const [savingRedfox, setSavingRedfox] = useState(false);
 
   const fetchChannels = async () => {
     setIsLoading(true);
     try {
       const payload = await listChannels();
       setChannels(payload.channels);
+      try {
+        const settings = await listSettings();
+        const redfox = settings.settings.find((setting) => setting.key === "redfox_api");
+        setRedfoxConfigured(redfox?.value.configured === true);
+        setRedfoxMaskedKey(typeof redfox?.value.maskedKey === "string" ? redfox.value.maskedKey : "");
+      } catch {
+        // Redfox 状态读取失败不影响已有模型线路的管理。
+        setRedfoxConfigured(false);
+        setRedfoxMaskedKey("");
+      }
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "加载失败。");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveRedfox = async () => {
+    const apiKey = redfoxKey.trim();
+    if (!apiKey) {
+      setMessage("请填写 Redfox API Key。");
+      return;
+    }
+    setSavingRedfox(true);
+    setMessage("");
+    try {
+      const response = await updateSetting("redfox_api", { value: { apiKey } });
+      setRedfoxConfigured(response.setting.value.configured === true);
+      setRedfoxMaskedKey(typeof response.setting.value.maskedKey === "string" ? response.setting.value.maskedKey : "");
+      setRedfoxKey("");
+      setMessage("Redfox 数据服务 Key 已更新，下一次采集立即生效。");
+    } catch (err) {
+      if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "Redfox Key 保存失败。");
+    } finally {
+      setSavingRedfox(false);
     }
   };
 
@@ -222,6 +258,31 @@ export function AdminChannelsPage() {
           </Field>
         </div>
       </Modal>
+
+      <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-text">Redfox 小红书数据服务</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              用于生图历史中的笔记、账号及相似账号数据采集。{redfoxConfigured ? `当前已配置（${redfoxMaskedKey || "已隐藏"}）。` : "当前未配置。"}
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <Input
+              className="sm:w-80"
+              type="password"
+              autoComplete="new-password"
+              value={redfoxKey}
+              onChange={(e) => setRedfoxKey(e.target.value)}
+              placeholder={redfoxConfigured ? "输入新 Key 以替换" : "ak_..."}
+            />
+            <Button variant="primary" size="sm" onClick={handleSaveRedfox} loading={savingRedfox}>
+              {redfoxConfigured ? "更换 Key" : "保存 Key"}
+            </Button>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-text-subtle">Key 仅保存在服务端并加密存储；列表只展示脱敏状态，不会回显原文。</p>
+      </section>
 
       <section className="rounded-lg border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto brand-scrollbar">

@@ -99,10 +99,11 @@ type User struct {
 	Team          *Team             `json:"team,omitempty"`
 	HasPassword   bool              `json:"has_password"`
 	// bridal 业务字段（ent users 表 bridal 扩展，team.Login 返回的 User 自带）
-	Username        string `json:"username"`
-	DisplayName     string `json:"displayName"`
-	DailyImageLimit int    `json:"dailyImageLimit"`
-	Credits         int    `json:"credits"`
+	Username           string      `json:"username"`
+	DisplayName        string      `json:"displayName"`
+	DailyImageLimit    int         `json:"dailyImageLimit"`
+	Credits            int         `json:"credits"`
+	VisibleCategoryIDs []uuid.UUID `json:"visibleCategoryIds"`
 }
 
 type SubscriptionResp struct {
@@ -129,6 +130,7 @@ func (u *User) From(src *db.User) *User {
 	u.DisplayName = src.DisplayName
 	u.DailyImageLimit = src.DailyImageLimit
 	u.Credits = src.Credits
+	u.VisibleCategoryIDs = src.VisibleCategoryIds
 	u.Identities = cvt.Iter(src.Edges.Identities, func(_ int, i *db.UserIdentity) *UserIdentity {
 		return cvt.From(i, &UserIdentity{})
 	})

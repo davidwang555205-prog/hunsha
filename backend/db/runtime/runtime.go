@@ -65,7 +65,10 @@ import (
 	"bridal/backend/db/user"
 	"bridal/backend/db/useridentity"
 	"bridal/backend/db/virtualmachine"
+	"bridal/backend/db/xhsnotesnapshot"
+	"bridal/backend/db/xhsnotetracking"
 	"bridal/backend/ent/schema"
+	"bridal/backend/ent/types"
 	"time"
 
 	"github.com/google/uuid"
@@ -1626,11 +1629,11 @@ func init() {
 	// user.DefaultCredits holds the default value on creation for the credits field.
 	user.DefaultCredits = userDescCredits.Default.(int)
 	// userDescCreatedAt is the schema descriptor for created_at field.
-	userDescCreatedAt := userFields[15].Descriptor()
+	userDescCreatedAt := userFields[16].Descriptor()
 	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
 	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 	// userDescUpdatedAt is the schema descriptor for updated_at field.
-	userDescUpdatedAt := userFields[16].Descriptor()
+	userDescUpdatedAt := userFields[17].Descriptor()
 	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1677,6 +1680,160 @@ func init() {
 	virtualmachineDescUpdatedAt := virtualmachineFields[24].Descriptor()
 	// virtualmachine.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	virtualmachine.DefaultUpdatedAt = virtualmachineDescUpdatedAt.Default.(func() time.Time)
+	xhsnotesnapshotFields := schema.XHSNoteSnapshot{}.Fields()
+	_ = xhsnotesnapshotFields
+	// xhsnotesnapshotDescStatus is the schema descriptor for status field.
+	xhsnotesnapshotDescStatus := xhsnotesnapshotFields[4].Descriptor()
+	// xhsnotesnapshot.DefaultStatus holds the default value on creation for the status field.
+	xhsnotesnapshot.DefaultStatus = xhsnotesnapshotDescStatus.Default.(string)
+	// xhsnotesnapshotDescError is the schema descriptor for error field.
+	xhsnotesnapshotDescError := xhsnotesnapshotFields[5].Descriptor()
+	// xhsnotesnapshot.DefaultError holds the default value on creation for the error field.
+	xhsnotesnapshot.DefaultError = xhsnotesnapshotDescError.Default.(string)
+	// xhsnotesnapshotDescCapturedAt is the schema descriptor for captured_at field.
+	xhsnotesnapshotDescCapturedAt := xhsnotesnapshotFields[6].Descriptor()
+	// xhsnotesnapshot.DefaultCapturedAt holds the default value on creation for the captured_at field.
+	xhsnotesnapshot.DefaultCapturedAt = xhsnotesnapshotDescCapturedAt.Default.(func() time.Time)
+	// xhsnotesnapshotDescWorkUpdatedAt is the schema descriptor for work_updated_at field.
+	xhsnotesnapshotDescWorkUpdatedAt := xhsnotesnapshotFields[7].Descriptor()
+	// xhsnotesnapshot.DefaultWorkUpdatedAt holds the default value on creation for the work_updated_at field.
+	xhsnotesnapshot.DefaultWorkUpdatedAt = xhsnotesnapshotDescWorkUpdatedAt.Default.(string)
+	// xhsnotesnapshotDescViews is the schema descriptor for views field.
+	xhsnotesnapshotDescViews := xhsnotesnapshotFields[8].Descriptor()
+	// xhsnotesnapshot.DefaultViews holds the default value on creation for the views field.
+	xhsnotesnapshot.DefaultViews = xhsnotesnapshotDescViews.Default.(int)
+	// xhsnotesnapshotDescLikes is the schema descriptor for likes field.
+	xhsnotesnapshotDescLikes := xhsnotesnapshotFields[9].Descriptor()
+	// xhsnotesnapshot.DefaultLikes holds the default value on creation for the likes field.
+	xhsnotesnapshot.DefaultLikes = xhsnotesnapshotDescLikes.Default.(int)
+	// xhsnotesnapshotDescCollects is the schema descriptor for collects field.
+	xhsnotesnapshotDescCollects := xhsnotesnapshotFields[10].Descriptor()
+	// xhsnotesnapshot.DefaultCollects holds the default value on creation for the collects field.
+	xhsnotesnapshot.DefaultCollects = xhsnotesnapshotDescCollects.Default.(int)
+	// xhsnotesnapshotDescComments is the schema descriptor for comments field.
+	xhsnotesnapshotDescComments := xhsnotesnapshotFields[11].Descriptor()
+	// xhsnotesnapshot.DefaultComments holds the default value on creation for the comments field.
+	xhsnotesnapshot.DefaultComments = xhsnotesnapshotDescComments.Default.(int)
+	// xhsnotesnapshotDescShares is the schema descriptor for shares field.
+	xhsnotesnapshotDescShares := xhsnotesnapshotFields[12].Descriptor()
+	// xhsnotesnapshot.DefaultShares holds the default value on creation for the shares field.
+	xhsnotesnapshot.DefaultShares = xhsnotesnapshotDescShares.Default.(int)
+	// xhsnotesnapshotDescAccountName is the schema descriptor for account_name field.
+	xhsnotesnapshotDescAccountName := xhsnotesnapshotFields[13].Descriptor()
+	// xhsnotesnapshot.DefaultAccountName holds the default value on creation for the account_name field.
+	xhsnotesnapshot.DefaultAccountName = xhsnotesnapshotDescAccountName.Default.(string)
+	// xhsnotesnapshotDescAccountAvatar is the schema descriptor for account_avatar field.
+	xhsnotesnapshotDescAccountAvatar := xhsnotesnapshotFields[14].Descriptor()
+	// xhsnotesnapshot.DefaultAccountAvatar holds the default value on creation for the account_avatar field.
+	xhsnotesnapshot.DefaultAccountAvatar = xhsnotesnapshotDescAccountAvatar.Default.(string)
+	// xhsnotesnapshotDescAccountDisplayID is the schema descriptor for account_display_id field.
+	xhsnotesnapshotDescAccountDisplayID := xhsnotesnapshotFields[15].Descriptor()
+	// xhsnotesnapshot.DefaultAccountDisplayID holds the default value on creation for the account_display_id field.
+	xhsnotesnapshot.DefaultAccountDisplayID = xhsnotesnapshotDescAccountDisplayID.Default.(string)
+	// xhsnotesnapshotDescAccountUserID is the schema descriptor for account_user_id field.
+	xhsnotesnapshotDescAccountUserID := xhsnotesnapshotFields[16].Descriptor()
+	// xhsnotesnapshot.DefaultAccountUserID holds the default value on creation for the account_user_id field.
+	xhsnotesnapshot.DefaultAccountUserID = xhsnotesnapshotDescAccountUserID.Default.(string)
+	// xhsnotesnapshotDescAccountDescription is the schema descriptor for account_description field.
+	xhsnotesnapshotDescAccountDescription := xhsnotesnapshotFields[17].Descriptor()
+	// xhsnotesnapshot.DefaultAccountDescription holds the default value on creation for the account_description field.
+	xhsnotesnapshot.DefaultAccountDescription = xhsnotesnapshotDescAccountDescription.Default.(string)
+	// xhsnotesnapshotDescAccountFans is the schema descriptor for account_fans field.
+	xhsnotesnapshotDescAccountFans := xhsnotesnapshotFields[18].Descriptor()
+	// xhsnotesnapshot.DefaultAccountFans holds the default value on creation for the account_fans field.
+	xhsnotesnapshot.DefaultAccountFans = xhsnotesnapshotDescAccountFans.Default.(int)
+	// xhsnotesnapshotDescAccountTotalWorks is the schema descriptor for account_total_works field.
+	xhsnotesnapshotDescAccountTotalWorks := xhsnotesnapshotFields[19].Descriptor()
+	// xhsnotesnapshot.DefaultAccountTotalWorks holds the default value on creation for the account_total_works field.
+	xhsnotesnapshot.DefaultAccountTotalWorks = xhsnotesnapshotDescAccountTotalWorks.Default.(int)
+	// xhsnotesnapshotDescAccountLikes is the schema descriptor for account_likes field.
+	xhsnotesnapshotDescAccountLikes := xhsnotesnapshotFields[20].Descriptor()
+	// xhsnotesnapshot.DefaultAccountLikes holds the default value on creation for the account_likes field.
+	xhsnotesnapshot.DefaultAccountLikes = xhsnotesnapshotDescAccountLikes.Default.(int)
+	// xhsnotesnapshotDescAccountCollects is the schema descriptor for account_collects field.
+	xhsnotesnapshotDescAccountCollects := xhsnotesnapshotFields[21].Descriptor()
+	// xhsnotesnapshot.DefaultAccountCollects holds the default value on creation for the account_collects field.
+	xhsnotesnapshot.DefaultAccountCollects = xhsnotesnapshotDescAccountCollects.Default.(int)
+	// xhsnotesnapshotDescAccountFollows is the schema descriptor for account_follows field.
+	xhsnotesnapshotDescAccountFollows := xhsnotesnapshotFields[22].Descriptor()
+	// xhsnotesnapshot.DefaultAccountFollows holds the default value on creation for the account_follows field.
+	xhsnotesnapshot.DefaultAccountFollows = xhsnotesnapshotDescAccountFollows.Default.(int)
+	// xhsnotesnapshotDescAccountUpdatedAt is the schema descriptor for account_updated_at field.
+	xhsnotesnapshotDescAccountUpdatedAt := xhsnotesnapshotFields[23].Descriptor()
+	// xhsnotesnapshot.DefaultAccountUpdatedAt holds the default value on creation for the account_updated_at field.
+	xhsnotesnapshot.DefaultAccountUpdatedAt = xhsnotesnapshotDescAccountUpdatedAt.Default.(string)
+	// xhsnotesnapshotDescSimilarAccounts is the schema descriptor for similar_accounts field.
+	xhsnotesnapshotDescSimilarAccounts := xhsnotesnapshotFields[24].Descriptor()
+	// xhsnotesnapshot.DefaultSimilarAccounts holds the default value on creation for the similar_accounts field.
+	xhsnotesnapshot.DefaultSimilarAccounts = xhsnotesnapshotDescSimilarAccounts.Default.([]types.XHSSimilarAccount)
+	// xhsnotesnapshotDescSimilarSummary is the schema descriptor for similar_summary field.
+	xhsnotesnapshotDescSimilarSummary := xhsnotesnapshotFields[25].Descriptor()
+	// xhsnotesnapshot.DefaultSimilarSummary holds the default value on creation for the similar_summary field.
+	xhsnotesnapshot.DefaultSimilarSummary = xhsnotesnapshotDescSimilarSummary.Default.(string)
+	// xhsnotesnapshotDescCreatedAt is the schema descriptor for created_at field.
+	xhsnotesnapshotDescCreatedAt := xhsnotesnapshotFields[26].Descriptor()
+	// xhsnotesnapshot.DefaultCreatedAt holds the default value on creation for the created_at field.
+	xhsnotesnapshot.DefaultCreatedAt = xhsnotesnapshotDescCreatedAt.Default.(func() time.Time)
+	// xhsnotesnapshotDescID is the schema descriptor for id field.
+	xhsnotesnapshotDescID := xhsnotesnapshotFields[0].Descriptor()
+	// xhsnotesnapshot.DefaultID holds the default value on creation for the id field.
+	xhsnotesnapshot.DefaultID = xhsnotesnapshotDescID.Default.(func() uuid.UUID)
+	xhsnotetrackingFields := schema.XHSNoteTracking{}.Fields()
+	_ = xhsnotetrackingFields
+	// xhsnotetrackingDescCanonicalURL is the schema descriptor for canonical_url field.
+	xhsnotetrackingDescCanonicalURL := xhsnotetrackingFields[4].Descriptor()
+	// xhsnotetracking.DefaultCanonicalURL holds the default value on creation for the canonical_url field.
+	xhsnotetracking.DefaultCanonicalURL = xhsnotetrackingDescCanonicalURL.Default.(string)
+	// xhsnotetrackingDescWorkID is the schema descriptor for work_id field.
+	xhsnotetrackingDescWorkID := xhsnotetrackingFields[5].Descriptor()
+	// xhsnotetracking.DefaultWorkID holds the default value on creation for the work_id field.
+	xhsnotetracking.DefaultWorkID = xhsnotetrackingDescWorkID.Default.(string)
+	// xhsnotetrackingDescAccountUserID is the schema descriptor for account_user_id field.
+	xhsnotetrackingDescAccountUserID := xhsnotetrackingFields[6].Descriptor()
+	// xhsnotetracking.DefaultAccountUserID holds the default value on creation for the account_user_id field.
+	xhsnotetracking.DefaultAccountUserID = xhsnotetrackingDescAccountUserID.Default.(string)
+	// xhsnotetrackingDescAccountID is the schema descriptor for account_id field.
+	xhsnotetrackingDescAccountID := xhsnotetrackingFields[7].Descriptor()
+	// xhsnotetracking.DefaultAccountID holds the default value on creation for the account_id field.
+	xhsnotetracking.DefaultAccountID = xhsnotetrackingDescAccountID.Default.(string)
+	// xhsnotetrackingDescTitle is the schema descriptor for title field.
+	xhsnotetrackingDescTitle := xhsnotetrackingFields[8].Descriptor()
+	// xhsnotetracking.DefaultTitle holds the default value on creation for the title field.
+	xhsnotetracking.DefaultTitle = xhsnotetrackingDescTitle.Default.(string)
+	// xhsnotetrackingDescBody is the schema descriptor for body field.
+	xhsnotetrackingDescBody := xhsnotetrackingFields[9].Descriptor()
+	// xhsnotetracking.DefaultBody holds the default value on creation for the body field.
+	xhsnotetracking.DefaultBody = xhsnotetrackingDescBody.Default.(string)
+	// xhsnotetrackingDescCoverURL is the schema descriptor for cover_url field.
+	xhsnotetrackingDescCoverURL := xhsnotetrackingFields[10].Descriptor()
+	// xhsnotetracking.DefaultCoverURL holds the default value on creation for the cover_url field.
+	xhsnotetracking.DefaultCoverURL = xhsnotetrackingDescCoverURL.Default.(string)
+	// xhsnotetrackingDescWorkType is the schema descriptor for work_type field.
+	xhsnotetrackingDescWorkType := xhsnotetrackingFields[11].Descriptor()
+	// xhsnotetracking.DefaultWorkType holds the default value on creation for the work_type field.
+	xhsnotetracking.DefaultWorkType = xhsnotetrackingDescWorkType.Default.(string)
+	// xhsnotetrackingDescPublishedAt is the schema descriptor for published_at field.
+	xhsnotetrackingDescPublishedAt := xhsnotetrackingFields[12].Descriptor()
+	// xhsnotetracking.DefaultPublishedAt holds the default value on creation for the published_at field.
+	xhsnotetracking.DefaultPublishedAt = xhsnotetrackingDescPublishedAt.Default.(string)
+	// xhsnotetrackingDescUserRefreshCount is the schema descriptor for user_refresh_count field.
+	xhsnotetrackingDescUserRefreshCount := xhsnotetrackingFields[13].Descriptor()
+	// xhsnotetracking.DefaultUserRefreshCount holds the default value on creation for the user_refresh_count field.
+	xhsnotetracking.DefaultUserRefreshCount = xhsnotetrackingDescUserRefreshCount.Default.(int)
+	// xhsnotetrackingDescCreatedAt is the schema descriptor for created_at field.
+	xhsnotetrackingDescCreatedAt := xhsnotetrackingFields[14].Descriptor()
+	// xhsnotetracking.DefaultCreatedAt holds the default value on creation for the created_at field.
+	xhsnotetracking.DefaultCreatedAt = xhsnotetrackingDescCreatedAt.Default.(func() time.Time)
+	// xhsnotetrackingDescUpdatedAt is the schema descriptor for updated_at field.
+	xhsnotetrackingDescUpdatedAt := xhsnotetrackingFields[15].Descriptor()
+	// xhsnotetracking.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	xhsnotetracking.DefaultUpdatedAt = xhsnotetrackingDescUpdatedAt.Default.(func() time.Time)
+	// xhsnotetracking.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	xhsnotetracking.UpdateDefaultUpdatedAt = xhsnotetrackingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// xhsnotetrackingDescID is the schema descriptor for id field.
+	xhsnotetrackingDescID := xhsnotetrackingFields[0].Descriptor()
+	// xhsnotetracking.DefaultID holds the default value on creation for the id field.
+	xhsnotetracking.DefaultID = xhsnotetrackingDescID.Default.(func() uuid.UUID)
 }
 
 const (

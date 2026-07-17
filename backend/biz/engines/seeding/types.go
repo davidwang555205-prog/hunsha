@@ -164,20 +164,26 @@ type FashionSeedingContent struct {
 
 // Assets 素材集合，对应 assets.json（TS 导出）。配置化阶段从 DB 覆盖。
 type Assets struct {
-	BridalVariationBank              CopyVariationBank              `json:"bridalVariationBank"`
-	DressVariationBank               CopyVariationBank              `json:"dressVariationBank"`
-	XiaohongshuTopicOverrides        map[string]CopyVariationBank   `json:"xiaohongshuTopicOverrides"`
-	TopicCopyKits                    map[string]TopicCopyKit        `json:"topicCopyKits"`
-	XiaohongshuBridalCopyDrafts      map[string][]XhsCopyDraft     `json:"xiaohongshuBridalCopyDrafts"`
-	TitleStarters                    []string                       `json:"titleStarters"`
-	TitleAngles                      []string                       `json:"titleAngles"`
-	TitleClosers                     []string                       `json:"titleClosers"`
-	BridalVisualRecipes              VisualRecipes                  `json:"bridalVisualRecipes"`
-	DressVisualRecipes               VisualRecipes                  `json:"dressVisualRecipes"`
-	EnglishVisualAlignmentByTopic    map[string]string              `json:"englishVisualAlignmentByTopic"`
-	PersonImageTypes                 []string                       `json:"personImageTypes"`
-	BridalMainSceneByTopic           map[string]string              `json:"bridalMainSceneByTopic"`
-	DressMainSceneByTopic            map[string]string              `json:"dressMainSceneByTopic"`
+	BridalVariationBank           CopyVariationBank            `json:"bridalVariationBank"`
+	DressVariationBank            CopyVariationBank            `json:"dressVariationBank"`
+	XiaohongshuTopicOverrides     map[string]CopyVariationBank `json:"xiaohongshuTopicOverrides"`
+	TopicCopyKits                 map[string]TopicCopyKit      `json:"topicCopyKits"`
+	XiaohongshuBridalCopyDrafts   map[string][]XhsCopyDraft    `json:"xiaohongshuBridalCopyDrafts"`
+	TitleStarters                 []string                     `json:"titleStarters"`
+	TitleAngles                   []string                     `json:"titleAngles"`
+	TitleClosers                  []string                     `json:"titleClosers"`
+	BridalVisualRecipes           VisualRecipes                `json:"bridalVisualRecipes"`
+	DressVisualRecipes            VisualRecipes                `json:"dressVisualRecipes"`
+	EnglishVisualAlignmentByTopic map[string]string            `json:"englishVisualAlignmentByTopic"`
+	PersonImageTypes              []string                     `json:"personImageTypes"`
+	BridalMainSceneByTopic        map[string]string            `json:"bridalMainSceneByTopic"`
+	DressMainSceneByTopic         map[string]string            `json:"dressMainSceneByTopic"`
+	// BridalTopics / DressTopics 是内容引擎的主题单一事实源；数组顺序即工作台展示顺序。
+	BridalTopics []string `json:"bridalTopics"`
+	DressTopics  []string `json:"dressTopics"`
+	// Visible*Topics 仅兼容已保存的旧白名单配置，新配置请使用对应的 *Topics 字段。
+	VisibleBridalTopics              []string                     `json:"visibleBridalTopics"`
+	VisibleDressTopics               []string                     `json:"visibleDressTopics"`
 	XiaohongshuBridalContentProfiles map[string]XhsContentProfile `json:"xiaohongshuBridalContentProfiles"`
 	BridalScenesByImageType          map[string][]string          `json:"bridalScenesByImageType"`
 	DressScenesByImageType           map[string][]string          `json:"dressScenesByImageType"`

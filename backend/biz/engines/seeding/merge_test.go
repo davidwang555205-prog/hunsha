@@ -1,6 +1,9 @@
 package seeding
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 // TestMergeAssets_NilConfig nil/无 seeding config 回退默认（永不阻塞）。
 func TestMergeAssets_NilConfig(t *testing.T) {
@@ -86,5 +89,51 @@ func TestMergeAssets_TitleStartersOverride(t *testing.T) {
 	def := DefaultAssets()
 	if len(merged.TitleAngles) != len(def.TitleAngles) {
 		t.Fatal("titleAngles should remain default")
+	}
+}
+
+func TestConfiguredTopicOptions_JsonControlsCustomTopicOrderAndDailyTopic(t *testing.T) {
+	config := map[string]any{
+		"seeding": map[string]any{
+			"bridalTopics": []any{"主推轻婚礼", "森系外景试纱"},
+		},
+	}
+	assets := MergeAssets(nil, config)
+	topics := GetConfiguredTopicOptions(ProductCategoryBridal, assets)
+	if len(topics) != 2 || topics[0] != "主推轻婚礼" || topics[1] != "森系外景试纱" {
+		t.Fatalf("configured topics should preserve custom order: %v", topics)
+	}
+
+	input := FashionSeedingInput{
+		ProductCategory: ProductCategoryBridal,
+		Date:            time.Date(2026, 1, 1, 0, 0, 0, 0, ChinaFixedZone()),
+	}
+	safeTopic, _, _, daily := computeScalarFields(input, assets)
+	if safeTopic != daily.Topic || !contains(topics, safeTopic) {
+		t.Fatalf("daily topic should come from JSON: safe=%q daily=%q topics=%v", safeTopic, daily.Topic, topics)
+	}
+	content := GenerateFashionSeedingContent(input, assets)
+	if content.Topic != safeTopic || len(content.Titles) == 0 || len(content.Images) == 0 {
+		t.Fatalf("custom topic should generate generic content: %#v", content)
+	}
+}
+
+func TestValidateTopicVisibilityConfig(t *testing.T) {
+	valid := map[string]any{
+		"seeding": map[string]any{
+			"bridalTopics": []any{"新主题", "主题改名后"},
+		},
+	}
+	if err := ValidateTopicVisibilityConfig(valid); err != nil {
+		t.Fatalf("valid whitelist should pass: %v", err)
+	}
+
+	invalid := map[string]any{
+		"seeding": map[string]any{
+			"bridalTopics": []any{"重复主题", "重复主题"},
+		},
+	}
+	if err := ValidateTopicVisibilityConfig(invalid); err == nil {
+		t.Fatal("duplicate topic should be rejected")
 	}
 }

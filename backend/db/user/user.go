@@ -41,6 +41,8 @@ const (
 	FieldDailyImageLimit = "daily_image_limit"
 	// FieldCredits holds the string denoting the credits field in the database.
 	FieldCredits = "credits"
+	// FieldVisibleCategoryIds holds the string denoting the visible_category_ids field in the database.
+	FieldVisibleCategoryIds = "visible_category_ids"
 	// FieldPasswordSalt holds the string denoting the password_salt field in the database.
 	FieldPasswordSalt = "password_salt"
 	// FieldPasswordHash holds the string denoting the password_hash field in the database.
@@ -252,6 +254,7 @@ var Columns = []string{
 	FieldDisplayName,
 	FieldDailyImageLimit,
 	FieldCredits,
+	FieldVisibleCategoryIds,
 	FieldPasswordSalt,
 	FieldPasswordHash,
 	FieldCreatedAt,

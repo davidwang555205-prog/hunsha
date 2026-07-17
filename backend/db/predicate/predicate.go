@@ -188,3 +188,9 @@ type UserIdentity func(*sql.Selector)
 
 // VirtualMachine is the predicate function for virtualmachine builders.
 type VirtualMachine func(*sql.Selector)
+
+// XHSNoteSnapshot is the predicate function for xhsnotesnapshot builders.
+type XHSNoteSnapshot func(*sql.Selector)
+
+// XHSNoteTracking is the predicate function for xhsnotetracking builders.
+type XHSNoteTracking func(*sql.Selector)

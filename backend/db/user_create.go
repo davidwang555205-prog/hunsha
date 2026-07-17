@@ -195,6 +195,12 @@ func (_c *UserCreate) SetNillableCredits(v *int) *UserCreate {
 	return _c
 }
 
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (_c *UserCreate) SetVisibleCategoryIds(v []uuid.UUID) *UserCreate {
+	_c.mutation.SetVisibleCategoryIds(v)
+	return _c
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (_c *UserCreate) SetPasswordSalt(v string) *UserCreate {
 	_c.mutation.SetPasswordSalt(v)
@@ -761,6 +767,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Credits(); ok {
 		_spec.SetField(user.FieldCredits, field.TypeInt, value)
 		_node.Credits = value
+	}
+	if value, ok := _c.mutation.VisibleCategoryIds(); ok {
+		_spec.SetField(user.FieldVisibleCategoryIds, field.TypeJSON, value)
+		_node.VisibleCategoryIds = value
 	}
 	if value, ok := _c.mutation.PasswordSalt(); ok {
 		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
@@ -1391,6 +1401,24 @@ func (u *UserUpsert) AddCredits(v int) *UserUpsert {
 	return u
 }
 
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (u *UserUpsert) SetVisibleCategoryIds(v []uuid.UUID) *UserUpsert {
+	u.Set(user.FieldVisibleCategoryIds, v)
+	return u
+}
+
+// UpdateVisibleCategoryIds sets the "visible_category_ids" field to the value that was provided on create.
+func (u *UserUpsert) UpdateVisibleCategoryIds() *UserUpsert {
+	u.SetExcluded(user.FieldVisibleCategoryIds)
+	return u
+}
+
+// ClearVisibleCategoryIds clears the value of the "visible_category_ids" field.
+func (u *UserUpsert) ClearVisibleCategoryIds() *UserUpsert {
+	u.SetNull(user.FieldVisibleCategoryIds)
+	return u
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (u *UserUpsert) SetPasswordSalt(v string) *UserUpsert {
 	u.Set(user.FieldPasswordSalt, v)
@@ -1741,6 +1769,27 @@ func (u *UserUpsertOne) AddCredits(v int) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateCredits() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateCredits()
+	})
+}
+
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (u *UserUpsertOne) SetVisibleCategoryIds(v []uuid.UUID) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetVisibleCategoryIds(v)
+	})
+}
+
+// UpdateVisibleCategoryIds sets the "visible_category_ids" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateVisibleCategoryIds() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateVisibleCategoryIds()
+	})
+}
+
+// ClearVisibleCategoryIds clears the value of the "visible_category_ids" field.
+func (u *UserUpsertOne) ClearVisibleCategoryIds() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearVisibleCategoryIds()
 	})
 }
 
@@ -2271,6 +2320,27 @@ func (u *UserUpsertBulk) AddCredits(v int) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateCredits() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateCredits()
+	})
+}
+
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (u *UserUpsertBulk) SetVisibleCategoryIds(v []uuid.UUID) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetVisibleCategoryIds(v)
+	})
+}
+
+// UpdateVisibleCategoryIds sets the "visible_category_ids" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateVisibleCategoryIds() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateVisibleCategoryIds()
+	})
+}
+
+// ClearVisibleCategoryIds clears the value of the "visible_category_ids" field.
+func (u *UserUpsertBulk) ClearVisibleCategoryIds() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearVisibleCategoryIds()
 	})
 }
 

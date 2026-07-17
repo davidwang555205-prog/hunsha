@@ -897,6 +897,16 @@ func CreditsLTE(v int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldCredits, v))
 }
 
+// VisibleCategoryIdsIsNil applies the IsNil predicate on the "visible_category_ids" field.
+func VisibleCategoryIdsIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldVisibleCategoryIds))
+}
+
+// VisibleCategoryIdsNotNil applies the NotNil predicate on the "visible_category_ids" field.
+func VisibleCategoryIdsNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldVisibleCategoryIds))
+}
+
 // PasswordSaltEQ applies the EQ predicate on the "password_salt" field.
 func PasswordSaltEQ(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldPasswordSalt, v))

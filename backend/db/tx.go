@@ -136,6 +136,10 @@ type Tx struct {
 	UserIdentity *UserIdentityClient
 	// VirtualMachine is the client for interacting with the VirtualMachine builders.
 	VirtualMachine *VirtualMachineClient
+	// XHSNoteSnapshot is the client for interacting with the XHSNoteSnapshot builders.
+	XHSNoteSnapshot *XHSNoteSnapshotClient
+	// XHSNoteTracking is the client for interacting with the XHSNoteTracking builders.
+	XHSNoteTracking *XHSNoteTrackingClient
 
 	// lazily loaded.
 	client     *Client
@@ -328,6 +332,8 @@ func (tx *Tx) init() {
 	tx.User = NewUserClient(tx.config)
 	tx.UserIdentity = NewUserIdentityClient(tx.config)
 	tx.VirtualMachine = NewVirtualMachineClient(tx.config)
+	tx.XHSNoteSnapshot = NewXHSNoteSnapshotClient(tx.config)
+	tx.XHSNoteTracking = NewXHSNoteTrackingClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

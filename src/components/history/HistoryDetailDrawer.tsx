@@ -18,7 +18,7 @@ import { formatDate } from "../../lib/format";
 import { downloadImage } from "../../lib/download";
 import { copyText } from "../../lib/clipboard";
 import { firstTitle, splitTitles } from "../../lib/titles";
-import { FeedbackModal } from "./FeedbackModal";
+import { XHSNotePanel } from "./XHSNotePanel";
 import type { HistoryRecord } from "../../types/api";
 
 type HistoryDetailDrawerProps = {
@@ -26,15 +26,12 @@ type HistoryDetailDrawerProps = {
   onClose: () => void;
   /** 管理员视角：展示给大模型的提示词（用户侧不展示） */
   isAdmin?: boolean;
-  /** 反馈提交成功回调，回传更新后的 task（父组件更新 detail + 列表） */
-  onFeedbackSubmitted?: (task: HistoryRecord) => void;
 };
 
-export function HistoryDetailDrawer({ record, onClose, isAdmin, onFeedbackSubmitted }: HistoryDetailDrawerProps) {
+export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailDrawerProps) {
   // 图片预览索引（-1 关闭）；生成图、参考图各一组
   const [genPreview, setGenPreview] = useState(-1);
   const [refPreview, setRefPreview] = useState(-1);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   // 当前已复制的提示词下标（仅做"已复制"短暂反馈）
   const [copiedPrompt, setCopiedPrompt] = useState<number | null>(null);
 
@@ -186,44 +183,10 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin, onFeedbackSubmit
               </div>
             )}
 
-            {/* 小红书发布反馈 */}
+            {/* 小红书发布数据：链接首采 + 可追溯刷新快照，指标不允许人工填写。 */}
             <div className="mt-5 rounded-md border border-border bg-bg/50 p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text">发布反馈</h3>
-                {record.feedback ? (
-                  <Button variant="link" size="sm" onClick={() => setFeedbackOpen(true)}>编辑</Button>
-                ) : (
-                  <Button variant="secondary" size="sm" onClick={() => setFeedbackOpen(true)}>填写发布反馈</Button>
-                )}
-              </div>
-              {record.feedback ? (
-                <div className="space-y-2 text-sm">
-                  <a href={record.feedback.noteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                    小红书笔记链接 ↗
-                  </a>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {[
-                      { label: "阅读", value: record.feedback.views },
-                      { label: "点赞", value: record.feedback.likes },
-                      { label: "收藏", value: record.feedback.collects },
-                      { label: "评论", value: record.feedback.comments },
-                      { label: "转发", value: record.feedback.shares }
-                    ].map((m) => (
-                      <div key={m.label} className="rounded-md bg-surface px-3 py-2 ring-1 ring-border/70">
-                        <div className="text-xs text-text-muted">{m.label}</div>
-                        <div className="text-base font-semibold text-text">{m.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {record.feedback.views > 0 && (
-                    <p className="text-xs text-text-muted">
-                      互动率 {(((record.feedback.likes + record.feedback.collects + record.feedback.comments + record.feedback.shares) / record.feedback.views) * 100).toFixed(1)}%
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-text-muted">发布小红书后，回填笔记链接和数据指标，便于复盘发布效果。</p>
-              )}
+              <h3 className="mb-3 text-sm font-semibold text-text">小红书发布数据</h3>
+              <XHSNotePanel taskId={record.id} isAdmin={!!isAdmin} initialURL={record.feedback?.noteUrl} />
             </div>
 
             {/* 给大模型的提示词（仅管理员，复盘用）。老任务未存 prompts，给空态提示避免困惑。 */}
@@ -287,17 +250,6 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin, onFeedbackSubmit
             onClose={() => setRefPreview(-1)}
             onIndexChange={setRefPreview}
             onDownload={(i) => void downloadImage((record.referenceImages ?? [])[i])}
-          />
-          {/* 发布反馈弹窗 */}
-          <FeedbackModal
-            open={feedbackOpen}
-            onClose={() => setFeedbackOpen(false)}
-            taskId={record.id}
-            initial={record.feedback}
-            onSubmitted={(task) => {
-              onFeedbackSubmitted?.(task);
-              setFeedbackOpen(false);
-            }}
           />
         </motion.div>
       )}

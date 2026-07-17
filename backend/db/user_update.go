@@ -33,6 +33,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 )
@@ -278,6 +279,24 @@ func (_u *UserUpdate) SetNillableCredits(v *int) *UserUpdate {
 // AddCredits adds value to the "credits" field.
 func (_u *UserUpdate) AddCredits(v int) *UserUpdate {
 	_u.mutation.AddCredits(v)
+	return _u
+}
+
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (_u *UserUpdate) SetVisibleCategoryIds(v []uuid.UUID) *UserUpdate {
+	_u.mutation.SetVisibleCategoryIds(v)
+	return _u
+}
+
+// AppendVisibleCategoryIds appends value to the "visible_category_ids" field.
+func (_u *UserUpdate) AppendVisibleCategoryIds(v []uuid.UUID) *UserUpdate {
+	_u.mutation.AppendVisibleCategoryIds(v)
+	return _u
+}
+
+// ClearVisibleCategoryIds clears the value of the "visible_category_ids" field.
+func (_u *UserUpdate) ClearVisibleCategoryIds() *UserUpdate {
+	_u.mutation.ClearVisibleCategoryIds()
 	return _u
 }
 
@@ -1242,6 +1261,17 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedCredits(); ok {
 		_spec.AddField(user.FieldCredits, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.VisibleCategoryIds(); ok {
+		_spec.SetField(user.FieldVisibleCategoryIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedVisibleCategoryIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldVisibleCategoryIds, value)
+		})
+	}
+	if _u.mutation.VisibleCategoryIdsCleared() {
+		_spec.ClearField(user.FieldVisibleCategoryIds, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.PasswordSalt(); ok {
 		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)
@@ -2503,6 +2533,24 @@ func (_u *UserUpdateOne) AddCredits(v int) *UserUpdateOne {
 	return _u
 }
 
+// SetVisibleCategoryIds sets the "visible_category_ids" field.
+func (_u *UserUpdateOne) SetVisibleCategoryIds(v []uuid.UUID) *UserUpdateOne {
+	_u.mutation.SetVisibleCategoryIds(v)
+	return _u
+}
+
+// AppendVisibleCategoryIds appends value to the "visible_category_ids" field.
+func (_u *UserUpdateOne) AppendVisibleCategoryIds(v []uuid.UUID) *UserUpdateOne {
+	_u.mutation.AppendVisibleCategoryIds(v)
+	return _u
+}
+
+// ClearVisibleCategoryIds clears the value of the "visible_category_ids" field.
+func (_u *UserUpdateOne) ClearVisibleCategoryIds() *UserUpdateOne {
+	_u.mutation.ClearVisibleCategoryIds()
+	return _u
+}
+
 // SetPasswordSalt sets the "password_salt" field.
 func (_u *UserUpdateOne) SetPasswordSalt(v string) *UserUpdateOne {
 	_u.mutation.SetPasswordSalt(v)
@@ -3494,6 +3542,17 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedCredits(); ok {
 		_spec.AddField(user.FieldCredits, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.VisibleCategoryIds(); ok {
+		_spec.SetField(user.FieldVisibleCategoryIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedVisibleCategoryIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldVisibleCategoryIds, value)
+		})
+	}
+	if _u.mutation.VisibleCategoryIdsCleared() {
+		_spec.ClearField(user.FieldVisibleCategoryIds, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.PasswordSalt(); ok {
 		_spec.SetField(user.FieldPasswordSalt, field.TypeString, value)

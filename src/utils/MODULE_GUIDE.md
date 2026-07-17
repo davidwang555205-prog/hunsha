@@ -4,7 +4,7 @@
 
 ## 关键文件
 
-- `fashionSeeding.ts` - 前端保留的轻量部分（类型 + 主题列表 + `getDailyFashionSeedingSelection` 确定性选题）。UI 下拉/默认 topic 用。
+- `fashionSeeding.ts` - 前端保留的轻量类型。主题列表与每日选题由后端内容引擎 JSON 返回，前端不再维护主题枚举。
 - ~~`generateFashionSeedingContent.ts`~~ - 算法主体（3135 行）已移 `backup/nodejs/`（历史备份）。
 
 ## 机制（阶段5 后）
@@ -16,15 +16,14 @@
 
 ## 核心类型（fashionSeeding.ts）
 
-- `FashionSeedingTopic` / `FashionSeedingDailySlot` - 主题/篇次
+- `FashionSeedingTopic` / `FashionSeedingDailySlot` - 主题（运行时字符串）/篇次
 - `FashionSeedingContent` / `FashionSeedingImagePlan` - API 响应类型
-- `bridalFashionTopicOptions` / `dressFashionTopicOptions` / `fashionSeedingDailySlotOptions` - 下拉选项
-- `getFashionSeedingTopicOptions` / `getDailyFashionSeedingSelection` - 选题函数
+- `fashionSeedingDailySlotOptions` - 篇次下拉选项；主题下拉由 `GET /api/engines/:key/topic-options` 返回
 
 ## 核心约束
 
 - ⚠️ 内容引擎是核心竞争力。改算法改 Go 侧 `backend/biz/engines/seeding/`，重跑黄金样本验证（见 .claude/knowledge/05-content-engine.md「Go 迁移」章节）。
-- 前端 `fashionSeeding.ts` 只含轻量类型/选题，不含算法。算法在 Go。
+- 前端 `fashionSeeding.ts` 只含轻量类型，不含主题枚举或算法。算法和主题配置在 Go。
 
 ## 相关
 

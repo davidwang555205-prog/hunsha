@@ -20,11 +20,12 @@ import (
 // Handler 内容类目 HTTP 处理器。
 //
 // 路由契约：
-//   GET    /api/categories            公开列表（登录用户，仅启用）
-//   GET    /api/admin/categories      管理列表（admin，含禁用）
-//   POST   /api/admin/categories      创建类目（admin）
-//   PATCH  /api/admin/categories/:id  更新类目（admin）
-//   DELETE /api/admin/categories/:id  删除类目（admin）
+//
+//	GET    /api/categories            公开列表（登录用户，仅启用）
+//	GET    /api/admin/categories      管理列表（admin，含禁用）
+//	POST   /api/admin/categories      创建类目（admin）
+//	PATCH  /api/admin/categories/:id  更新类目（admin）
+//	DELETE /api/admin/categories/:id  删除类目（admin）
 type Handler struct {
 	usecase *Usecase
 	store   *imagestore.Store
@@ -53,7 +54,11 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 }
 
 func (h *Handler) listPublic(c echo.Context) error {
-	out, err := h.usecase.ListPublic(c.Request().Context())
+	user := middleware.GetUser(c)
+	if user == nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "登录已失效。"})
+	}
+	out, err := h.usecase.ListPublic(c.Request().Context(), user.ID)
 	if err != nil {
 		h.logger.ErrorContext(c.Request().Context(), "list public categories failed", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "获取类目列表失败。"})

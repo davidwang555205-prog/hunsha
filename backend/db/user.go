@@ -46,6 +46,8 @@ type User struct {
 	DailyImageLimit int `json:"daily_image_limit,omitempty"`
 	// Credits holds the value of the "credits" field.
 	Credits int `json:"credits,omitempty"`
+	// VisibleCategoryIds holds the value of the "visible_category_ids" field.
+	VisibleCategoryIds []uuid.UUID `json:"visible_category_ids,omitempty"`
 	// PasswordSalt holds the value of the "password_salt" field.
 	PasswordSalt string `json:"password_salt,omitempty"`
 	// PasswordHash holds the value of the "password_hash" field.
@@ -303,7 +305,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldDefaultConfigs:
+		case user.FieldDefaultConfigs, user.FieldVisibleCategoryIds:
 			values[i] = new([]byte)
 		case user.FieldIsBlocked:
 			values[i] = new(sql.NullBool)
@@ -415,6 +417,14 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field credits", values[i])
 			} else if value.Valid {
 				_m.Credits = int(value.Int64)
+			}
+		case user.FieldVisibleCategoryIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field visible_category_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.VisibleCategoryIds); err != nil {
+					return fmt.Errorf("unmarshal field visible_category_ids: %w", err)
+				}
 			}
 		case user.FieldPasswordSalt:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -619,6 +629,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("credits=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Credits))
+	builder.WriteString(", ")
+	builder.WriteString("visible_category_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VisibleCategoryIds))
 	builder.WriteString(", ")
 	builder.WriteString("password_salt=")
 	builder.WriteString(_m.PasswordSalt)

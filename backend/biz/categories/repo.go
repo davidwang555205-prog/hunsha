@@ -10,6 +10,7 @@ import (
 
 	"bridal/backend/db"
 	"bridal/backend/db/category"
+	"bridal/backend/db/user"
 )
 
 // Repo 内容类目仓储，操作 ent categories 表。
@@ -75,6 +76,33 @@ func (r *Repo) ListEnabled(ctx context.Context) ([]CategoryRecord, error) {
 		Where(category.IsEnabledEQ(true)).
 		Order(db.Asc(category.FieldSortOrder), db.Asc(category.FieldCreatedAt)).
 		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CategoryRecord, 0, len(cs))
+	for _, c := range cs {
+		out = append(out, toRecord(c))
+	}
+	return out, nil
+}
+
+// ListEnabledForUser 返回用户可见的启用类目。visible_category_ids 为空表示未设限，
+// 以保证存量用户和新建用户默认仍可看到全部类目。
+func (r *Repo) ListEnabledForUser(ctx context.Context, userID uuid.UUID) ([]CategoryRecord, error) {
+	usr, err := r.db.User.Query().
+		Where(user.IDEQ(userID)).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query := r.db.Category.Query().
+		Where(category.IsEnabledEQ(true)).
+		Order(db.Asc(category.FieldSortOrder), db.Asc(category.FieldCreatedAt))
+	if len(usr.VisibleCategoryIds) > 0 {
+		query = query.Where(category.IDIn(usr.VisibleCategoryIds...))
+	}
+	cs, err := query.All(ctx)
 	if err != nil {
 		return nil, err
 	}

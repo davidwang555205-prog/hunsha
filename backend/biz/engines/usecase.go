@@ -102,6 +102,9 @@ func (u *Usecase) Create(ctx context.Context, req CreateReq) (*EngineResp, error
 	if req.Name == "" {
 		return nil, fmt.Errorf("引擎名称不能为空")
 	}
+	if err := seeding.ValidateTopicVisibilityConfig(req.Config); err != nil {
+		return nil, err
+	}
 	enabled := true
 	if req.IsEnabled != nil {
 		enabled = *req.IsEnabled
@@ -137,6 +140,11 @@ type UpdateReq struct {
 
 // Update 更新引擎。
 func (u *Usecase) Update(ctx context.Context, id uuid.UUID, req UpdateReq) (*EngineResp, error) {
+	if req.Config != nil {
+		if err := seeding.ValidateTopicVisibilityConfig(*req.Config); err != nil {
+			return nil, err
+		}
+	}
 	rec, err := u.repo.Update(ctx, id, UpdateInput{
 		Key:         req.Key,
 		Name:        req.Name,
@@ -191,11 +199,23 @@ func (u *Usecase) Generate(ctx context.Context, key string, input seeding.Fashio
 		config = rec.Config
 	}
 	assets := seeding.MergeAssets(nil, config)
+	if input.Topic != "" && !containsTopic(seeding.GetConfiguredTopicOptions(input.ProductCategory, assets), input.Topic) {
+		return nil, fmt.Errorf("主题 %q 不在当前内容引擎主题列表中", input.Topic)
+	}
 	if input.Date.IsZero() {
 		input.Date = time.Now().In(seeding.ChinaFixedZone())
 	}
 	content := seeding.GenerateFashionSeedingContent(input, assets)
 	return &content, nil
+}
+
+func containsTopic(topics []string, topic string) bool {
+	for _, candidate := range topics {
+		if candidate == topic {
+			return true
+		}
+	}
+	return false
 }
 
 // DefaultAssets 返回代码默认素材（供编辑弹窗显示当前生效值，与 engine.config.seeding 合并）。
@@ -224,4 +244,17 @@ func (u *Usecase) PromptOptions(ctx context.Context, key string) (*prompt.Assets
 		config = rec.Config
 	}
 	return prompt.MergeAssets(prompt.ParseAssetsFromConfig(config)), nil
+}
+
+// TopicOptions 返回当前引擎 JSON 配置的工作台主题列表。
+func (u *Usecase) TopicOptions(ctx context.Context, key, productCategory string) ([]string, error) {
+	rec, err := u.repo.GetByKey(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	var config map[string]any
+	if rec != nil && rec.IsEnabled {
+		config = rec.Config
+	}
+	return seeding.GetConfiguredTopicOptions(productCategory, seeding.MergeAssets(nil, config)), nil
 }

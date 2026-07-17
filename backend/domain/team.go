@@ -274,8 +274,8 @@ type TeamLogoutResp struct {
 
 // AddTeamUserReq 创建团队成员请求
 type AddTeamUserReq struct {
-	Emails          []string  `json:"emails" validate:"required"`    // 邮箱列表
-	GroupID         uuid.UUID `json:"group_id" validate:"omitempty"` // 团队组ID
+	Emails          []string  `json:"emails" validate:"required"`           // 邮箱列表
+	GroupID         uuid.UUID `json:"group_id" validate:"omitempty"`        // 团队组ID
 	DailyImageLimit int       `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：批量成员每日生图额度（0 用默认）
 }
 
@@ -368,11 +368,12 @@ type ChangePasswordResp struct {
 
 // UpdateTeamUserReq 更新团队用户信息请求
 type UpdateTeamUserReq struct {
-	UserID          uuid.UUID `param:"user_id" validate:"required" json:"-" swaggerignore:"true"`
-	Name            *string   `json:"name" validate:"omitempty"`
-	IsBlocked       *bool     `json:"is_blocked" validate:"omitempty"`
-	DailyImageLimit *int      `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：每日生图额度
-	Credits         *int      `json:"credits" validate:"omitempty"`         // bridal 扩展：积分余额
+	UserID             uuid.UUID    `param:"user_id" validate:"required" json:"-" swaggerignore:"true"`
+	Name               *string      `json:"name" validate:"omitempty"`
+	IsBlocked          *bool        `json:"is_blocked" validate:"omitempty"`
+	DailyImageLimit    *int         `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：每日生图额度
+	Credits            *int         `json:"credits" validate:"omitempty"`         // bridal 扩展：积分余额
+	VisibleCategoryIDs *[]uuid.UUID `json:"visibleCategoryIds"`                   // 空数组=全部，非空=仅这些类目
 }
 
 // UpdateTeamUserResp 更新团队用户信息响应

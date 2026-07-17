@@ -2085,6 +2085,7 @@ var (
 		{Name: "display_name", Type: field.TypeString, Nullable: true},
 		{Name: "daily_image_limit", Type: field.TypeInt, Default: 20},
 		{Name: "credits", Type: field.TypeInt, Default: 0},
+		{Name: "visible_category_ids", Type: field.TypeJSON, Nullable: true},
 		{Name: "password_salt", Type: field.TypeString, Nullable: true},
 		{Name: "password_hash", Type: field.TypeString, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -2184,6 +2185,86 @@ var (
 			},
 		},
 	}
+	// GenerationTaskXhsSnapshotsColumns holds the columns for the "generation_task_xhs_snapshots" table.
+	GenerationTaskXhsSnapshotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tracking_id", Type: field.TypeUUID},
+		{Name: "sequence", Type: field.TypeInt},
+		{Name: "trigger", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "success"},
+		{Name: "error", Type: field.TypeString, Default: ""},
+		{Name: "captured_at", Type: field.TypeTime},
+		{Name: "work_updated_at", Type: field.TypeString, Default: ""},
+		{Name: "views", Type: field.TypeInt, Default: 0},
+		{Name: "likes", Type: field.TypeInt, Default: 0},
+		{Name: "collects", Type: field.TypeInt, Default: 0},
+		{Name: "comments", Type: field.TypeInt, Default: 0},
+		{Name: "shares", Type: field.TypeInt, Default: 0},
+		{Name: "account_name", Type: field.TypeString, Default: ""},
+		{Name: "account_avatar", Type: field.TypeString, Default: ""},
+		{Name: "account_display_id", Type: field.TypeString, Default: ""},
+		{Name: "account_user_id", Type: field.TypeString, Default: ""},
+		{Name: "account_description", Type: field.TypeString, Default: ""},
+		{Name: "account_fans", Type: field.TypeInt, Default: 0},
+		{Name: "account_total_works", Type: field.TypeInt, Default: 0},
+		{Name: "account_likes", Type: field.TypeInt, Default: 0},
+		{Name: "account_collects", Type: field.TypeInt, Default: 0},
+		{Name: "account_follows", Type: field.TypeInt, Default: 0},
+		{Name: "account_updated_at", Type: field.TypeString, Default: ""},
+		{Name: "similar_accounts", Type: field.TypeJSON},
+		{Name: "similar_summary", Type: field.TypeString, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// GenerationTaskXhsSnapshotsTable holds the schema information for the "generation_task_xhs_snapshots" table.
+	GenerationTaskXhsSnapshotsTable = &schema.Table{
+		Name:       "generation_task_xhs_snapshots",
+		Columns:    GenerationTaskXhsSnapshotsColumns,
+		PrimaryKey: []*schema.Column{GenerationTaskXhsSnapshotsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "xhsnotesnapshot_tracking_id_sequence",
+				Unique:  true,
+				Columns: []*schema.Column{GenerationTaskXhsSnapshotsColumns[1], GenerationTaskXhsSnapshotsColumns[2]},
+			},
+			{
+				Name:    "xhsnotesnapshot_tracking_id_captured_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationTaskXhsSnapshotsColumns[1], GenerationTaskXhsSnapshotsColumns[6]},
+			},
+		},
+	}
+	// GenerationTaskXhsNotesColumns holds the columns for the "generation_task_xhs_notes" table.
+	GenerationTaskXhsNotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "task_id", Type: field.TypeUUID, Unique: true},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "note_url", Type: field.TypeString},
+		{Name: "canonical_url", Type: field.TypeString, Default: ""},
+		{Name: "work_id", Type: field.TypeString, Default: ""},
+		{Name: "account_user_id", Type: field.TypeString, Default: ""},
+		{Name: "account_id", Type: field.TypeString, Default: ""},
+		{Name: "title", Type: field.TypeString, Default: ""},
+		{Name: "body", Type: field.TypeString, Default: ""},
+		{Name: "cover_url", Type: field.TypeString, Default: ""},
+		{Name: "work_type", Type: field.TypeString, Default: ""},
+		{Name: "published_at", Type: field.TypeString, Default: ""},
+		{Name: "user_refresh_count", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// GenerationTaskXhsNotesTable holds the schema information for the "generation_task_xhs_notes" table.
+	GenerationTaskXhsNotesTable = &schema.Table{
+		Name:       "generation_task_xhs_notes",
+		Columns:    GenerationTaskXhsNotesColumns,
+		PrimaryKey: []*schema.Column{GenerationTaskXhsNotesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "xhsnotetracking_user_id_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationTaskXhsNotesColumns[2], GenerationTaskXhsNotesColumns[15]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AgentPluginsTable,
@@ -2247,6 +2328,8 @@ var (
 		UsersTable,
 		UserIdentitiesTable,
 		VirtualmachinesTable,
+		GenerationTaskXhsSnapshotsTable,
+		GenerationTaskXhsNotesTable,
 	}
 )
 
@@ -2514,5 +2597,11 @@ func init() {
 	VirtualmachinesTable.ForeignKeys[3].RefTable = UsersTable
 	VirtualmachinesTable.Annotation = &entsql.Annotation{
 		Table: "virtualmachines",
+	}
+	GenerationTaskXhsSnapshotsTable.Annotation = &entsql.Annotation{
+		Table: "generation_task_xhs_snapshots",
+	}
+	GenerationTaskXhsNotesTable.Annotation = &entsql.Annotation{
+		Table: "generation_task_xhs_notes",
 	}
 }

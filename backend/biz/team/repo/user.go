@@ -292,6 +292,9 @@ func (r *TeamGroupUserRepo) UpdateUser(ctx context.Context, userID uuid.UUID, re
 	if req.Credits != nil {
 		update = update.SetCredits(*req.Credits)
 	}
+	if req.VisibleCategoryIDs != nil {
+		update = update.SetVisibleCategoryIds(*req.VisibleCategoryIDs)
+	}
 	return update.Save(ctx)
 }
 

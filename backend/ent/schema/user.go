@@ -48,12 +48,14 @@ func (User) Fields() []ent.Field {
 		field.Bool("is_blocked").Default(false),
 		field.JSON("default_configs", map[consts.DefaultConfigType]uuid.UUID{}).Optional(),
 		// bridal 专属字段
-		field.String("username").Unique().Optional(),                       // 登录账号名（小写），bridal 认证用
-		field.String("display_name").Optional(),                            // 展示名
-		field.Int("daily_image_limit").Default(20).Range(0, 1000),          // 每日生图额度，admin 不受限
-		field.Int("credits").Default(0),                                     // 积分余额（V2 credits）
-		field.String("password_salt").Optional(),                           // scrypt salt hex（bridal 认证）
-		field.String("password_hash").Optional(),                           // scrypt hash hex（bridal 认证）
+		field.String("username").Unique().Optional(),              // 登录账号名（小写），bridal 认证用
+		field.String("display_name").Optional(),                   // 展示名
+		field.Int("daily_image_limit").Default(20).Range(0, 1000), // 每日生图额度，admin 不受限
+		field.Int("credits").Default(0),                           // 积分余额（V2 credits）
+		// 空数组表示可见全部启用类目；非空时仅展示列出的类目。
+		field.JSON("visible_category_ids", []uuid.UUID{}).Optional(),
+		field.String("password_salt").Optional(), // scrypt salt hex（bridal 认证）
+		field.String("password_hash").Optional(), // scrypt hash hex（bridal 认证）
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

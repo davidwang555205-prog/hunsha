@@ -15,6 +15,7 @@ func ProvideGeneration(i *do.Injector) {
 	do.Provide(i, NewRepo)
 	do.Provide(i, imagestore.NewStore)
 	do.Provide(i, NewUsecase)
+	do.Provide(i, NewXHSUsecase)
 	do.Provide(i, NewHandler)
 }
 

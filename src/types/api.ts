@@ -26,6 +26,8 @@ export type ApiUser = {
   displayName: string;
   dailyImageLimit: number;
   credits: number;
+  /** 空数组表示可见全部启用类目；非空时仅能看到所列类目。 */
+  visibleCategoryIds: string[];
   team?: Team | null;
 };
 
@@ -97,6 +99,75 @@ export type SubmitFeedbackRequest = {
   collects: number;
   comments: number;
   shares: number;
+};
+
+/** Redfox 相似账号快照；对应 generation_task_xhs_snapshots.similar_accounts。 */
+export type XHSSimilarAccount = {
+  rank: number;
+  tier: "same_level" | "high_level";
+  accountId: string;
+  nickname: string;
+  avatar: string;
+  url: string;
+  fans: number;
+  level: string;
+  collected: number;
+  liked: number;
+  totalWork: number;
+  noteCountSeven: number;
+  interactiveCountSeven: number;
+  interactiveCountThirty: number;
+};
+
+/** Redfox 账号基础数据；每个笔记刷新快照均保留一份，供趋势复盘。 */
+export type XHSAccountSnapshot = {
+  name: string;
+  avatar: string;
+  displayId: string;
+  userId: string;
+  description: string;
+  fans: number;
+  totalWorks: number;
+  likes: number;
+  collects: number;
+  follows: number;
+  updatedAt: string;
+};
+
+export type XHSNoteSnapshot = {
+  id: string;
+  sequence: number;
+  trigger: "initial" | "user_refresh" | "admin_refresh";
+  status: "success" | "failed";
+  error?: string;
+  capturedAt: string;
+  workUpdatedAt: string;
+  views: number;
+  likes: number;
+  collects: number;
+  comments: number;
+  shares: number;
+  account: XHSAccountSnapshot;
+  similarAccounts: XHSSimilarAccount[];
+  similarSummary: string;
+};
+
+/** 一条生图历史关联的小红书笔记，以及所有可追溯的数据快照。 */
+export type XHSNoteTracking = {
+  id: string;
+  taskId: string;
+  noteUrl: string;
+  canonicalUrl: string;
+  workId: string;
+  title: string;
+  body: string;
+  coverUrl: string;
+  workType: string;
+  publishedAt: string;
+  userRefreshCount: number;
+  /** 管理员无额度限制，因此该字段缺省。 */
+  userRefreshesRemaining?: number;
+  snapshots: XHSNoteSnapshot[];
 };
 
 /** 历史列表响应（handler.go:83）{ history: SanitizedTask[] } */
@@ -218,6 +289,7 @@ export type UpdateUserRequest = {
   is_blocked?: boolean;
   dailyImageLimit?: number;
   credits?: number;
+  visibleCategoryIds?: string[];
 };
 
 /** 更新响应 = Resp.data */
@@ -486,6 +558,9 @@ export type TopicOverride = {
 /** 默认素材（编辑弹窗与 config.seeding 合并显示；只声明结构化编辑的组，其他组宽松） */
 export type DefaultAssets = {
   xiaohongshuTopicOverrides?: Record<string, TopicOverride>;
+  /** 内容引擎主题来源；数组顺序决定工作台展示顺序。 */
+  bridalTopics?: string[];
+  dressTopics?: string[];
   titleStarters?: string[];
   titleAngles?: string[];
   titleClosers?: string[];
@@ -532,3 +607,6 @@ export type PromptAssets = {
 
 /** GET /api/engines/:key/prompt-options 响应 */
 export type PromptOptionsResponse = { assets: PromptAssets };
+
+/** GET /api/engines/:key/topic-options 响应 */
+export type TopicOptionsResponse = { topics: string[] };

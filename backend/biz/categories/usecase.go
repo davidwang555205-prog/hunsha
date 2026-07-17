@@ -70,8 +70,8 @@ func (u *Usecase) ListAdmin(ctx context.Context) ([]CategoryResp, error) {
 }
 
 // ListPublic 公开列表（仅启用）。
-func (u *Usecase) ListPublic(ctx context.Context) ([]CategoryResp, error) {
-	recs, err := u.repo.ListEnabled(ctx)
+func (u *Usecase) ListPublic(ctx context.Context, userID uuid.UUID) ([]CategoryResp, error) {
+	recs, err := u.repo.ListEnabledForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

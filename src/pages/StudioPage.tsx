@@ -9,15 +9,15 @@
  * 换一版：随机选「当前账号+类目+主题+篇次」下未用过的变体（localStorage 去重），
  * 用尽后提示并重新开始。核心内容引擎不动。
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   fashionSeedingDailySlotOptions,
-  getFashionSeedingTopicOptions,
   type FashionSeedingContent,
   type FashionSeedingDailySlot,
   type FashionSeedingTopic
 } from "../utils/fashionSeeding";
 import { generateContent } from "../api/admin";
+import { getEngineTopicOptions } from "../api/engines";
 import { copyText as copyToClipboard } from "../lib/clipboard";
 import { downloadImages } from "../lib/download";
 import { fileToDataUrl } from "../lib/file";
@@ -167,15 +167,48 @@ export function StudioPage() {
     });
   }, [addNotification, gen.error, gen.task?.id]);
 
-  const contentTopicOptions = useMemo(() => getFashionSeedingTopicOptions(params.productCategory), [params.productCategory]);
+  const [engineTopicOptions, setEngineTopicOptions] = useState<FashionSeedingTopic[]>([]);
+  const [loadedTopicOptionsKey, setLoadedTopicOptionsKey] = useState("");
+  const engineTopicOptionsKey = `${currentCategory?.engine ?? ""}:${params.productCategory}`;
+  const contentTopicOptions = loadedTopicOptionsKey === engineTopicOptionsKey ? engineTopicOptions : [];
   const [contentPreview, setContentPreview] = useState<FashionSeedingContent>(emptyContent);
+
+  // 主题列表完全由内容引擎 config.seeding 的 bridalTopics / dressTopics 决定。
+  useEffect(() => {
+    const engineKey = currentCategory?.engine;
+    if (!engineKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoadedTopicOptionsKey(engineTopicOptionsKey);
+      setEngineTopicOptions([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadedTopicOptionsKey("");
+    getEngineTopicOptions(engineKey, params.productCategory)
+      .then(({ topics }) => {
+        if (cancelled) return;
+        const nextOptions = topics.filter((topic) => topic.trim()) as FashionSeedingTopic[];
+        setEngineTopicOptions(nextOptions);
+        setContentTopic((current) => nextOptions.includes(current) ? current : (nextOptions[0] ?? ""));
+        setContentNonce(0);
+        setLoadedTopicOptionsKey(engineTopicOptionsKey);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setEngineTopicOptions([]);
+        setContentPreview(emptyContent);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentCategory?.engine, engineTopicOptionsKey, params.productCategory]);
 
   // 任务②阶段5：contentPreview 从后端 API 获取（POST /api/engines/:key/generate），
   // 替代本地 generateFashionSeedingContent。后端 byte-for-byte 等价 + config 覆盖素材。
   // currentCategory.engine 软关联 content_engines.key；无 engine 则空内容。
   useEffect(() => {
     const engineKey = currentCategory?.engine;
-    if (!engineKey) {
+    if (!engineKey || loadedTopicOptionsKey !== engineTopicOptionsKey) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setContentPreview(emptyContent);
       return;
@@ -198,7 +231,7 @@ export function StudioPage() {
     return () => {
       cancelled = true;
     };
-  }, [contentNonce, contentTopic, dailySlot, imageCount, params, currentCategory?.engine]);
+  }, [contentNonce, contentTopic, dailySlot, imageCount, params, currentCategory?.engine, engineTopicOptionsKey, loadedTopicOptionsKey]);
 
   const copyText = async (text: string, message: string) => {
     await copyToClipboard(text);
@@ -235,6 +268,10 @@ export function StudioPage() {
   // 组装异步任务请求
   const buildTaskRequest = async (): Promise<CreateTaskRequest | null> => {
     if (!user) return null;
+    if (loadedTopicOptionsKey !== engineTopicOptionsKey || contentPreview.images.length === 0) {
+      setContentMessage("内容主题加载中，请稍后再生成。");
+      return null;
+    }
     // 产品图 4~6 张必传校验（前端拦，后端兜底再校验）
     if (productFiles.length < 4) {
       setContentMessage(`请上传至少 4 张婚纱产品图（当前 ${productFiles.length} 张）。`);
@@ -376,15 +413,16 @@ export function StudioPage() {
             <select
               className={inputClass}
               value={contentTopic}
+              disabled={contentTopicOptions.length === 0}
               onChange={(event) => {
                 setContentTopic(event.target.value as FashionSeedingTopic);
                 setContentMessage("");
                 setContentNonce(0);
               }}
             >
-              {contentTopicOptions.map((option) => (
+              {contentTopicOptions.length > 0 ? contentTopicOptions.map((option) => (
                 <option key={option} value={option}>{option}</option>
-              ))}
+              )) : <option value="">主题加载中...</option>}
             </select>
           </label>
           <label className="block space-y-1.5">
@@ -435,7 +473,7 @@ export function StudioPage() {
         </div>
         <StarBorder
           type="button"
-          disabled={gen.isActive || gen.isSubmitting || productFiles.length < 4}
+          disabled={gen.isActive || gen.isSubmitting || productFiles.length < 4 || contentTopicOptions.length === 0 || loadedTopicOptionsKey !== engineTopicOptionsKey || contentPreview.images.length === 0}
           onClick={handleGenerate}
           className="w-full"
         >

@@ -15,22 +15,18 @@ import { formatDate } from "../../lib/format";
 import { copyText as copyToClipboard } from "../../lib/clipboard";
 import { downloadImage, downloadImages } from "../../lib/download";
 import { firstTitle } from "../../lib/titles";
-import { FeedbackModal } from "./FeedbackModal";
 import type { HistoryRecord } from "../../types/api";
 
 type HistoryCardProps = {
   record: HistoryRecord;
   onOpenDetail: (record: HistoryRecord) => void;
   onMessage: (message: string) => void;
-  /** 反馈提交成功回调（父组件刷新列表，让"未反馈"徽标更新为"已反馈"） */
-  onFeedbackSubmitted?: () => void;
 };
 
 const MENU_WIDTH = 168; // w-40(160px) + 容错，用于右对齐定位
 
-export function HistoryCard({ record, onOpenDetail, onMessage, onFeedbackSubmitted }: HistoryCardProps) {
+export function HistoryCard({ record, onOpenDetail, onMessage }: HistoryCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -108,7 +104,6 @@ export function HistoryCard({ record, onOpenDetail, onMessage, onFeedbackSubmitt
               <Badge variant="danger">失败</Badge>
             )}
             <Badge variant="primary">{record.topic === "生成设置" ? "生成设置" : "内容"}</Badge>
-            {record.feedback ? <Badge variant="success">已反馈</Badge> : <Badge>未反馈</Badge>}
           </div>
           <h3 className="text-base font-semibold">{firstTitle(record.title)}</h3>
           <p className="line-clamp-3 text-sm leading-6 text-text-muted">{record.body || record.error || "无内容"}</p>
@@ -131,8 +126,8 @@ export function HistoryCard({ record, onOpenDetail, onMessage, onFeedbackSubmitt
           >
             操作 ▾
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setFeedbackOpen(true)}>
-            {record.feedback ? "编辑反馈" : "填写发布反馈"}
+          <Button variant="secondary" size="sm" onClick={() => onOpenDetail(record)}>
+            小红书数据
           </Button>
           {menuOpen &&
             createPortal(
@@ -183,18 +178,6 @@ export function HistoryCard({ record, onOpenDetail, onMessage, onFeedbackSubmitt
             )}
         </div>
       </div>
-
-      {/* 发布反馈弹窗（复用详情抽屉同款，列表直接填写，不必进详情） */}
-      <FeedbackModal
-        open={feedbackOpen}
-        onClose={() => setFeedbackOpen(false)}
-        taskId={record.id}
-        initial={record.feedback}
-        onSubmitted={() => {
-          onFeedbackSubmitted?.();
-          setFeedbackOpen(false);
-        }}
-      />
     </SpotlightCard>
   );
 }

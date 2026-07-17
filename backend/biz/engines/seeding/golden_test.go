@@ -13,8 +13,8 @@ const goldenFixedDateISO = "2026-07-10T10:00:00+08:00"
 
 // goldenSample 对应 backend/biz/engines/testdata/golden-samples.json 结构
 type goldenSample struct {
-	ID     string `json:"id"`
-	Input  struct {
+	ID    string `json:"id"`
+	Input struct {
 		ProductCategory string  `json:"productCategory"`
 		DailySlot       int     `json:"dailySlot"`
 		ContentNonce    int     `json:"contentNonce"`
@@ -98,7 +98,7 @@ func TestGoldenSamples_ScalarFields(t *testing.T) {
 			input.ImageCount = *s.Input.ImageCount
 		}
 
-		safeTopic, variantIndex, variantCount, daily := computeScalarFields(input)
+		safeTopic, variantIndex, variantCount, daily := computeScalarFields(input, nil)
 
 		check := func(name, got, want string) {
 			if got != want {
@@ -171,8 +171,8 @@ func TestGoldenSamples_CopyFields(t *testing.T) {
 		if s.Input.Topic != nil {
 			input.Topic = *s.Input.Topic
 		}
-		safeTopic, variantIndex, _, _ := computeScalarFields(input)
-		draft := buildCopyFromKit(assets, safeTopic, variantIndex)
+		safeTopic, variantIndex, _, _ := computeScalarFields(input, nil)
+		draft := buildCopyFromKit(assets, input.ProductCategory, safeTopic, variantIndex)
 
 		if !sliceEq(draft.Titles, s.Output.Titles) {
 			mismatches = append(mismatches, "["+s.ID+"] titles: got="+joinStr(draft.Titles, "|")+" want="+joinStr(s.Output.Titles, "|"))

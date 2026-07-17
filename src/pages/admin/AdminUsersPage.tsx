@@ -11,9 +11,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { listMembers, createUser, updateUser, deleteUser, adjustCredits, resetPassword } from "../../api/admin";
+import { listMembers, listAllCategories, createUser, updateUser, deleteUser, adjustCredits, resetPassword } from "../../api/admin";
 import { isUnauthorizedError } from "../../types/api";
-import type { TeamMemberInfo, TeamUserPassword } from "../../types/api";
+import type { Category, TeamMemberInfo, TeamUserPassword } from "../../types/api";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
@@ -29,6 +29,7 @@ export function AdminUsersPage() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [members, setMembers] = useState<TeamMemberInfo[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -47,7 +48,8 @@ export function AdminUsersPage() {
   // 编辑表单（仅 name/dailyImageLimit；停用启用走列表行开关，积分走独立弹窗）
   const [ed, setEd] = useState({
     name: "",
-    dailyImageLimit: "20"
+    dailyImageLimit: "20",
+    visibleCategoryIds: [] as string[]
   });
 
   // 创建后初始密码（结构化展示 + 复制，仅显示一次）
@@ -79,13 +81,23 @@ export function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
+  useEffect(() => {
+    void listAllCategories()
+      .then((payload) => setCategories(payload.categories))
+      .catch((err: unknown) => {
+        if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "加载类目失败。");
+      });
+  }, []);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const openEdit = (m: TeamMemberInfo) => {
+    void listAllCategories().then((payload) => setCategories(payload.categories)).catch(() => undefined);
     setEditing(m);
     setEd({
       name: m.user.displayName || m.user.name || "",
-      dailyImageLimit: String(m.user.dailyImageLimit ?? 0)
+      dailyImageLimit: String(m.user.dailyImageLimit ?? 0),
+      visibleCategoryIds: m.user.visibleCategoryIds ?? []
     });
     setResetResult(null);
     setMessage("");
@@ -126,7 +138,8 @@ export function AdminUsersPage() {
     try {
       const payload = await updateUser(editing.user.id, {
         name: ed.name || undefined,
-        dailyImageLimit: ed.dailyImageLimit !== "" ? Math.max(0, Math.floor(Number(ed.dailyImageLimit))) : undefined
+        dailyImageLimit: ed.dailyImageLimit !== "" ? Math.max(0, Math.floor(Number(ed.dailyImageLimit))) : undefined,
+        visibleCategoryIds: ed.visibleCategoryIds
       });
       setEditing(null);
       setMessage(`已更新 ${payload.user.username || payload.user.email} 的信息。`);
@@ -223,6 +236,15 @@ export function AdminUsersPage() {
         : m.role === "admin"
           ? "组管理员"
           : "成员";
+
+  const toggleVisibleCategory = (categoryId: string) => {
+    setEd((current) => ({
+      ...current,
+      visibleCategoryIds: current.visibleCategoryIds.includes(categoryId)
+        ? current.visibleCategoryIds.filter((id) => id !== categoryId)
+        : [...current.visibleCategoryIds, categoryId]
+    }));
+  };
 
   return (
     <>
@@ -399,6 +421,31 @@ export function AdminUsersPage() {
               <Field label="显示名"><Input value={ed.name} onChange={(e) => setEd({ ...ed, name: e.target.value })} /></Field>
               <Field label="每日限制"><Input type="number" value={ed.dailyImageLimit} onChange={(e) => setEd({ ...ed, dailyImageLimit: e.target.value })} /></Field>
             </div>
+            <Field label="可见类目">
+              <div className="rounded-md border border-border bg-bg/50 p-3">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
+                  <input
+                    type="checkbox"
+                    checked={ed.visibleCategoryIds.length === 0}
+                    onChange={() => setEd((current) => ({ ...current, visibleCategoryIds: [] }))}
+                  />
+                  全部启用类目
+                </label>
+                <p className="mt-1 text-xs text-text-muted">勾选任意类目后将按所选范围展示；未勾选任何类目时默认全部可见。</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {categories.map((category) => {
+                    const checked = ed.visibleCategoryIds.includes(category.id);
+                    return (
+                      <label key={category.id} className="flex cursor-pointer items-center gap-2 text-sm text-text">
+                        <input type="checkbox" checked={checked} onChange={() => toggleVisibleCategory(category.id)} />
+                        <span>{category.icon} {category.name}{!category.isEnabled ? "（已停用）" : ""}</span>
+                      </label>
+                    );
+                  })}
+                  {categories.length === 0 && <span className="text-xs text-text-muted">暂无可配置类目。</span>}
+                </div>
+              </div>
+            </Field>
             <div className="mt-4 flex items-center justify-between rounded-md border border-border bg-bg/50 p-3">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-text">重置密码</p>

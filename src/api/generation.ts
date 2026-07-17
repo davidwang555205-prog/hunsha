@@ -23,7 +23,8 @@ import type {
   HistoryResponse,
   SubmitFeedbackRequest,
   TaskDetailResponse,
-  TaskListResponse
+  TaskListResponse,
+  XHSNoteTracking
 } from "../types/api";
 
 /** 提交异步生图任务（立即返回 taskId，不阻塞） */
@@ -63,6 +64,29 @@ export function submitFeedback(taskId: string, req: SubmitFeedbackRequest) {
   return apiRequest<{ task: HistoryRecord }>(
     `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/feedback`,
     { method: "POST", body: JSON.stringify(req) }
+  );
+}
+
+/** 首次关联已发布的小红书笔记，并立即从 Redfox 采集笔记、账号和相似账号快照。 */
+export function importXHSNote(taskId: string, noteUrl: string) {
+  return apiRequest<{ note: XHSNoteTracking }>(
+    `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note`,
+    { method: "POST", body: JSON.stringify({ noteUrl }), timeoutMs: 45_000 }
+  );
+}
+
+/** 刷新已关联笔记；普通用户最多 7 次，管理员不受总次数限制。 */
+export function refreshXHSNote(taskId: string) {
+  return apiRequest<{ note: XHSNoteTracking }>(
+    `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note/refresh`,
+    { method: "POST", timeoutMs: 45_000 }
+  );
+}
+
+/** 获取已关联笔记及其完整快照序列。 */
+export function getXHSNote(taskId: string) {
+  return apiRequest<{ note: XHSNoteTracking }>(
+    `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note`
   );
 }
 

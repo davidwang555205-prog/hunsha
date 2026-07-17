@@ -10,9 +10,9 @@ import (
 var assetsJSON []byte
 
 var (
-	assetsOnce     sync.Once
-	loadedAssets   *Assets
-	assetsLoadErr  error
+	assetsOnce    sync.Once
+	loadedAssets  *Assets
+	assetsLoadErr error
 )
 
 // loadAssets 加载内嵌 assets.json（默认素材）。配置化阶段用 MergeAssets 覆盖。
@@ -65,6 +65,17 @@ func MergeAssets(defaultAssets *Assets, config map[string]any) *Assets {
 		return defaultAssets
 	}
 	deepMerge(defaultAny, seedingMap)
+	// 兼容已保存的旧白名单：旧字段没有新主题数组时，迁移为新的主题来源。
+	if _, hasNew := seedingMap["bridalTopics"]; !hasNew {
+		if legacy, ok := seedingMap["visibleBridalTopics"]; ok {
+			defaultAny["bridalTopics"] = legacy
+		}
+	}
+	if _, hasNew := seedingMap["dressTopics"]; !hasNew {
+		if legacy, ok := seedingMap["visibleDressTopics"]; ok {
+			defaultAny["dressTopics"] = legacy
+		}
+	}
 	mergedBytes, err := json.Marshal(defaultAny)
 	if err != nil {
 		return defaultAssets

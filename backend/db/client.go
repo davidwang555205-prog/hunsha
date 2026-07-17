@@ -72,6 +72,8 @@ import (
 	"bridal/backend/db/user"
 	"bridal/backend/db/useridentity"
 	"bridal/backend/db/virtualmachine"
+	"bridal/backend/db/xhsnotesnapshot"
+	"bridal/backend/db/xhsnotetracking"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -209,6 +211,10 @@ type Client struct {
 	UserIdentity *UserIdentityClient
 	// VirtualMachine is the client for interacting with the VirtualMachine builders.
 	VirtualMachine *VirtualMachineClient
+	// XHSNoteSnapshot is the client for interacting with the XHSNoteSnapshot builders.
+	XHSNoteSnapshot *XHSNoteSnapshotClient
+	// XHSNoteTracking is the client for interacting with the XHSNoteTracking builders.
+	XHSNoteTracking *XHSNoteTrackingClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -281,6 +287,8 @@ func (c *Client) init() {
 	c.User = NewUserClient(c.config)
 	c.UserIdentity = NewUserIdentityClient(c.config)
 	c.VirtualMachine = NewVirtualMachineClient(c.config)
+	c.XHSNoteSnapshot = NewXHSNoteSnapshotClient(c.config)
+	c.XHSNoteTracking = NewXHSNoteTrackingClient(c.config)
 }
 
 type (
@@ -434,6 +442,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		User:                      NewUserClient(cfg),
 		UserIdentity:              NewUserIdentityClient(cfg),
 		VirtualMachine:            NewVirtualMachineClient(cfg),
+		XHSNoteSnapshot:           NewXHSNoteSnapshotClient(cfg),
+		XHSNoteTracking:           NewXHSNoteTrackingClient(cfg),
 	}, nil
 }
 
@@ -514,6 +524,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		User:                      NewUserClient(cfg),
 		UserIdentity:              NewUserIdentityClient(cfg),
 		VirtualMachine:            NewVirtualMachineClient(cfg),
+		XHSNoteSnapshot:           NewXHSNoteSnapshotClient(cfg),
+		XHSNoteTracking:           NewXHSNoteTrackingClient(cfg),
 	}, nil
 }
 
@@ -556,7 +568,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive, c.TeamGroup,
 		c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream, c.TeamGroupMember,
 		c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember, c.TeamModel,
-		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine,
+		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine, c.XHSNoteSnapshot,
+		c.XHSNoteTracking,
 	} {
 		n.Use(hooks...)
 	}
@@ -579,7 +592,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive, c.TeamGroup,
 		c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream, c.TeamGroupMember,
 		c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember, c.TeamModel,
-		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine,
+		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine, c.XHSNoteSnapshot,
+		c.XHSNoteTracking,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -710,6 +724,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserIdentity.mutate(ctx, m)
 	case *VirtualMachineMutation:
 		return c.VirtualMachine.mutate(ctx, m)
+	case *XHSNoteSnapshotMutation:
+		return c.XHSNoteSnapshot.mutate(ctx, m)
+	case *XHSNoteTrackingMutation:
+		return c.XHSNoteTracking.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("db: unknown mutation type %T", m)
 	}
@@ -11684,6 +11702,272 @@ func (c *VirtualMachineClient) mutate(ctx context.Context, m *VirtualMachineMuta
 	}
 }
 
+// XHSNoteSnapshotClient is a client for the XHSNoteSnapshot schema.
+type XHSNoteSnapshotClient struct {
+	config
+}
+
+// NewXHSNoteSnapshotClient returns a client for the XHSNoteSnapshot from the given config.
+func NewXHSNoteSnapshotClient(c config) *XHSNoteSnapshotClient {
+	return &XHSNoteSnapshotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `xhsnotesnapshot.Hooks(f(g(h())))`.
+func (c *XHSNoteSnapshotClient) Use(hooks ...Hook) {
+	c.hooks.XHSNoteSnapshot = append(c.hooks.XHSNoteSnapshot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `xhsnotesnapshot.Intercept(f(g(h())))`.
+func (c *XHSNoteSnapshotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.XHSNoteSnapshot = append(c.inters.XHSNoteSnapshot, interceptors...)
+}
+
+// Create returns a builder for creating a XHSNoteSnapshot entity.
+func (c *XHSNoteSnapshotClient) Create() *XHSNoteSnapshotCreate {
+	mutation := newXHSNoteSnapshotMutation(c.config, OpCreate)
+	return &XHSNoteSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of XHSNoteSnapshot entities.
+func (c *XHSNoteSnapshotClient) CreateBulk(builders ...*XHSNoteSnapshotCreate) *XHSNoteSnapshotCreateBulk {
+	return &XHSNoteSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *XHSNoteSnapshotClient) MapCreateBulk(slice any, setFunc func(*XHSNoteSnapshotCreate, int)) *XHSNoteSnapshotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &XHSNoteSnapshotCreateBulk{err: fmt.Errorf("calling to XHSNoteSnapshotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*XHSNoteSnapshotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &XHSNoteSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for XHSNoteSnapshot.
+func (c *XHSNoteSnapshotClient) Update() *XHSNoteSnapshotUpdate {
+	mutation := newXHSNoteSnapshotMutation(c.config, OpUpdate)
+	return &XHSNoteSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *XHSNoteSnapshotClient) UpdateOne(_m *XHSNoteSnapshot) *XHSNoteSnapshotUpdateOne {
+	mutation := newXHSNoteSnapshotMutation(c.config, OpUpdateOne, withXHSNoteSnapshot(_m))
+	return &XHSNoteSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *XHSNoteSnapshotClient) UpdateOneID(id uuid.UUID) *XHSNoteSnapshotUpdateOne {
+	mutation := newXHSNoteSnapshotMutation(c.config, OpUpdateOne, withXHSNoteSnapshotID(id))
+	return &XHSNoteSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for XHSNoteSnapshot.
+func (c *XHSNoteSnapshotClient) Delete() *XHSNoteSnapshotDelete {
+	mutation := newXHSNoteSnapshotMutation(c.config, OpDelete)
+	return &XHSNoteSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *XHSNoteSnapshotClient) DeleteOne(_m *XHSNoteSnapshot) *XHSNoteSnapshotDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *XHSNoteSnapshotClient) DeleteOneID(id uuid.UUID) *XHSNoteSnapshotDeleteOne {
+	builder := c.Delete().Where(xhsnotesnapshot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &XHSNoteSnapshotDeleteOne{builder}
+}
+
+// Query returns a query builder for XHSNoteSnapshot.
+func (c *XHSNoteSnapshotClient) Query() *XHSNoteSnapshotQuery {
+	return &XHSNoteSnapshotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeXHSNoteSnapshot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a XHSNoteSnapshot entity by its id.
+func (c *XHSNoteSnapshotClient) Get(ctx context.Context, id uuid.UUID) (*XHSNoteSnapshot, error) {
+	return c.Query().Where(xhsnotesnapshot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *XHSNoteSnapshotClient) GetX(ctx context.Context, id uuid.UUID) *XHSNoteSnapshot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *XHSNoteSnapshotClient) Hooks() []Hook {
+	return c.hooks.XHSNoteSnapshot
+}
+
+// Interceptors returns the client interceptors.
+func (c *XHSNoteSnapshotClient) Interceptors() []Interceptor {
+	return c.inters.XHSNoteSnapshot
+}
+
+func (c *XHSNoteSnapshotClient) mutate(ctx context.Context, m *XHSNoteSnapshotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&XHSNoteSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&XHSNoteSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&XHSNoteSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&XHSNoteSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown XHSNoteSnapshot mutation op: %q", m.Op())
+	}
+}
+
+// XHSNoteTrackingClient is a client for the XHSNoteTracking schema.
+type XHSNoteTrackingClient struct {
+	config
+}
+
+// NewXHSNoteTrackingClient returns a client for the XHSNoteTracking from the given config.
+func NewXHSNoteTrackingClient(c config) *XHSNoteTrackingClient {
+	return &XHSNoteTrackingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `xhsnotetracking.Hooks(f(g(h())))`.
+func (c *XHSNoteTrackingClient) Use(hooks ...Hook) {
+	c.hooks.XHSNoteTracking = append(c.hooks.XHSNoteTracking, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `xhsnotetracking.Intercept(f(g(h())))`.
+func (c *XHSNoteTrackingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.XHSNoteTracking = append(c.inters.XHSNoteTracking, interceptors...)
+}
+
+// Create returns a builder for creating a XHSNoteTracking entity.
+func (c *XHSNoteTrackingClient) Create() *XHSNoteTrackingCreate {
+	mutation := newXHSNoteTrackingMutation(c.config, OpCreate)
+	return &XHSNoteTrackingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of XHSNoteTracking entities.
+func (c *XHSNoteTrackingClient) CreateBulk(builders ...*XHSNoteTrackingCreate) *XHSNoteTrackingCreateBulk {
+	return &XHSNoteTrackingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *XHSNoteTrackingClient) MapCreateBulk(slice any, setFunc func(*XHSNoteTrackingCreate, int)) *XHSNoteTrackingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &XHSNoteTrackingCreateBulk{err: fmt.Errorf("calling to XHSNoteTrackingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*XHSNoteTrackingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &XHSNoteTrackingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for XHSNoteTracking.
+func (c *XHSNoteTrackingClient) Update() *XHSNoteTrackingUpdate {
+	mutation := newXHSNoteTrackingMutation(c.config, OpUpdate)
+	return &XHSNoteTrackingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *XHSNoteTrackingClient) UpdateOne(_m *XHSNoteTracking) *XHSNoteTrackingUpdateOne {
+	mutation := newXHSNoteTrackingMutation(c.config, OpUpdateOne, withXHSNoteTracking(_m))
+	return &XHSNoteTrackingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *XHSNoteTrackingClient) UpdateOneID(id uuid.UUID) *XHSNoteTrackingUpdateOne {
+	mutation := newXHSNoteTrackingMutation(c.config, OpUpdateOne, withXHSNoteTrackingID(id))
+	return &XHSNoteTrackingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for XHSNoteTracking.
+func (c *XHSNoteTrackingClient) Delete() *XHSNoteTrackingDelete {
+	mutation := newXHSNoteTrackingMutation(c.config, OpDelete)
+	return &XHSNoteTrackingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *XHSNoteTrackingClient) DeleteOne(_m *XHSNoteTracking) *XHSNoteTrackingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *XHSNoteTrackingClient) DeleteOneID(id uuid.UUID) *XHSNoteTrackingDeleteOne {
+	builder := c.Delete().Where(xhsnotetracking.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &XHSNoteTrackingDeleteOne{builder}
+}
+
+// Query returns a query builder for XHSNoteTracking.
+func (c *XHSNoteTrackingClient) Query() *XHSNoteTrackingQuery {
+	return &XHSNoteTrackingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeXHSNoteTracking},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a XHSNoteTracking entity by its id.
+func (c *XHSNoteTrackingClient) Get(ctx context.Context, id uuid.UUID) (*XHSNoteTracking, error) {
+	return c.Query().Where(xhsnotetracking.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *XHSNoteTrackingClient) GetX(ctx context.Context, id uuid.UUID) *XHSNoteTracking {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *XHSNoteTrackingClient) Hooks() []Hook {
+	return c.hooks.XHSNoteTracking
+}
+
+// Interceptors returns the client interceptors.
+func (c *XHSNoteTrackingClient) Interceptors() []Interceptor {
+	return c.inters.XHSNoteTracking
+}
+
+func (c *XHSNoteTrackingClient) mutate(ctx context.Context, m *XHSNoteTrackingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&XHSNoteTrackingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&XHSNoteTrackingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&XHSNoteTrackingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&XHSNoteTrackingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown XHSNoteTracking mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
@@ -11698,7 +11982,7 @@ type (
 		TaskUsageStat, TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup,
 		TeamGroupHost, TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember,
 		TeamGroupModel, TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig,
-		User, UserIdentity, VirtualMachine []ent.Hook
+		User, UserIdentity, VirtualMachine, XHSNoteSnapshot, XHSNoteTracking []ent.Hook
 	}
 	inters struct {
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
@@ -11712,7 +11996,8 @@ type (
 		TaskUsageStat, TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup,
 		TeamGroupHost, TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember,
 		TeamGroupModel, TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig,
-		User, UserIdentity, VirtualMachine []ent.Interceptor
+		User, UserIdentity, VirtualMachine, XHSNoteSnapshot,
+		XHSNoteTracking []ent.Interceptor
 	}
 )
 

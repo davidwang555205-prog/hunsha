@@ -6,17 +6,18 @@ import "strings"
 
 // TitleContext 标题生成上下文（TS :1493-1505）
 type TitleContext struct {
-	Topic       string
-	BaseTitle   string
-	AudienceCue string
-	FocusCue    string
-	ConcernCue  string
-	ProofCue    string
-	SceneCue    string
-	MaterialCue string
-	Starter     string
-	Angle       string
-	Closer      string
+	ProductCategory string
+	Topic           string
+	BaseTitle       string
+	AudienceCue     string
+	FocusCue        string
+	ConcernCue      string
+	ProofCue        string
+	SceneCue        string
+	MaterialCue     string
+	Starter         string
+	Angle           string
+	Closer          string
 }
 
 // uniqueItems TS :2087-2089。去重保序，每项先 toPhrase 再过滤空。
@@ -66,9 +67,9 @@ func getDraftSourcePhrases(assets *Assets, topic string) []string {
 }
 
 // buildCopyVariationBank TS :2117-2135
-func buildCopyVariationBank(assets *Assets, topic string, kit TopicCopyKit) CopyVariationBank {
+func buildCopyVariationBank(assets *Assets, productCategory, topic string, kit TopicCopyKit) CopyVariationBank {
 	var categoryBank CopyVariationBank
-	if IsBridalFashionTopic(topic) {
+	if productCategory == ProductCategoryBridal {
 		categoryBank = assets.BridalVariationBank
 	} else {
 		categoryBank = assets.DressVariationBank
@@ -105,9 +106,9 @@ func buildVariantTags(kit TopicCopyKit, bank CopyVariationBank, axes VariantAxes
 }
 
 // buildVisualRecipe TS :2172-2180
-func buildVisualRecipe(assets *Assets, topic string, axes VariantAxes) VisualRecipe {
+func buildVisualRecipe(assets *Assets, productCategory string, axes VariantAxes) VisualRecipe {
 	var recipes VisualRecipes
-	if IsBridalFashionTopic(topic) {
+	if productCategory == ProductCategoryBridal {
 		recipes = assets.BridalVisualRecipes
 	} else {
 		recipes = assets.DressVisualRecipes
@@ -135,7 +136,7 @@ func buildNarrativeTemplateContext(ctx CopyAlignmentContext) NarrativeTemplateCo
 }
 
 // getNarrativeType TS :2196-2203
-func getNarrativeType(topic string) string {
+func getNarrativeType(productCategory, topic string) string {
 	switch topic {
 	case "手机对镜自拍试纱":
 		return "phone"
@@ -148,15 +149,15 @@ func getNarrativeType(topic string) string {
 	case "婚纱店发布":
 		return "store"
 	}
-	if IsBridalFashionTopic(topic) {
+	if productCategory == ProductCategoryBridal {
 		return "bridal"
 	}
 	return "dress"
 }
 
 // buildNarrativeBody TS :2205-2221
-func buildNarrativeBody(ctx CopyAlignmentContext, axes VariantAxes) string {
-	narrativeType := getNarrativeType(ctx.Topic)
+func buildNarrativeBody(productCategory string, ctx CopyAlignmentContext, axes VariantAxes) string {
+	narrativeType := getNarrativeType(productCategory, ctx.Topic)
 	nc := buildNarrativeTemplateContext(ctx)
 	openingTemplates := narrativePoolGet(characterMoodOpenings, narrativeType)
 	environmentTemplates := narrativePoolGet(environmentDetails, narrativeType)
@@ -191,7 +192,7 @@ func buildHumanPromptContext(topic, audience, focus, concern, proof, scene, mate
 }
 
 // buildXiaohongshuDraftCopy TS :2251-2311
-func buildXiaohongshuDraftCopy(assets *Assets, topic string, kit TopicCopyKit, bank CopyVariationBank, axes VariantAxes) TopicCopyDraft {
+func buildXiaohongshuDraftCopy(assets *Assets, productCategory, topic string, kit TopicCopyKit, bank CopyVariationBank, axes VariantAxes) TopicCopyDraft {
 	draft := pickT(assets.XiaohongshuBridalCopyDrafts[topic], axes.Primary)
 	audience := readableCue(pick(bank.Audiences, axes.Audience))
 	focus := readableCue(pick(bank.Focuses, axes.Focus))
@@ -202,7 +203,7 @@ func buildXiaohongshuDraftCopy(assets *Assets, topic string, kit TopicCopyKit, b
 	service := softenAction(pick(bank.Services, axes.Service))
 	takeaway := readableCue(pick(bank.Takeaways, axes.Takeaway))
 	tone := readableCue(pick(bank.Tones, axes.Tone))
-	visualRecipe := buildVisualRecipe(assets, topic, axes)
+	visualRecipe := buildVisualRecipe(assets, productCategory, axes)
 	titleAudience := titleCue(audience, 10)
 	shortFocus := titleCue(focus, 10)
 	shortConcern := titleCue(concern, 10)
@@ -216,19 +217,20 @@ func buildXiaohongshuDraftCopy(assets *Assets, topic string, kit TopicCopyKit, b
 	promptContext := buildHumanPromptContext(topic, audience, focus, concern, proof, scene, material, service, takeaway, tone, visualRecipe)
 	return TopicCopyDraft{
 		Titles: buildNaturalTitles(TitleContext{
-			Topic:       topic,
-			BaseTitle:   baseTitle,
-			AudienceCue: titleAudience,
-			FocusCue:    shortFocus,
-			ConcernCue:  shortConcern,
-			ProofCue:    titleProof,
-			SceneCue:    titleScene,
-			MaterialCue: titleMaterial,
-			Starter:     titleStarter,
-			Angle:       titleAngle,
-			Closer:      titleCloser,
+			ProductCategory: productCategory,
+			Topic:           topic,
+			BaseTitle:       baseTitle,
+			AudienceCue:     titleAudience,
+			FocusCue:        shortFocus,
+			ConcernCue:      shortConcern,
+			ProofCue:        titleProof,
+			SceneCue:        titleScene,
+			MaterialCue:     titleMaterial,
+			Starter:         titleStarter,
+			Angle:           titleAngle,
+			Closer:          titleCloser,
 		}),
-		Body:          buildNarrativeBody(promptContext, axes),
+		Body:          buildNarrativeBody(productCategory, promptContext, axes),
 		Tags:          buildVariantTags(kit, bank, axes),
 		Note:          "这一版主打" + tone + "，用" + proof + "和" + material + "回应" + audience + "最在意的" + concern + "。",
 		PromptContext: promptContext,
@@ -284,7 +286,7 @@ func buildNaturalTitles(ctx TitleContext) []string {
 			cleanTitle(audienceCue + "看" + materialCue + "，少说都好看"),
 		}
 	}
-	if IsBridalFashionTopic(topic) {
+	if ctx.ProductCategory == ProductCategoryBridal {
 		return []string{
 			cleanTitle(orDefault(baseTitle, starter) + "，试纱时先看" + focusCue),
 			cleanTitle(sceneCue + "这张别删，" + proofCue + "很有用"),
@@ -299,12 +301,12 @@ func buildNaturalTitles(ctx TitleContext) []string {
 }
 
 // buildCopyFromKit TS :2313-2373。文案生成入口。
-func buildCopyFromKit(assets *Assets, topic string, variantIndex int) TopicCopyDraft {
+func buildCopyFromKit(assets *Assets, productCategory, topic string, variantIndex int) TopicCopyDraft {
 	kit := assets.TopicCopyKits[topic]
-	bank := buildCopyVariationBank(assets, topic, kit)
+	bank := buildCopyVariationBank(assets, productCategory, topic, kit)
 	axes := GetVariantAxes(variantIndex)
-	if IsXiaohongshuBridalTopic(topic) {
-		return buildXiaohongshuDraftCopy(assets, topic, kit, bank, axes)
+	if productCategory == ProductCategoryBridal && IsXiaohongshuBridalTopic(topic) {
+		return buildXiaohongshuDraftCopy(assets, productCategory, topic, kit, bank, axes)
 	}
 	audience := readableCue(pick(bank.Audiences, axes.Audience))
 	focus := readableCue(pick(bank.Focuses, axes.Focus))
@@ -315,7 +317,7 @@ func buildCopyFromKit(assets *Assets, topic string, variantIndex int) TopicCopyD
 	service := softenAction(pick(bank.Services, axes.Service))
 	takeaway := readableCue(pick(bank.Takeaways, axes.Takeaway))
 	tone := readableCue(pick(bank.Tones, axes.Tone))
-	visualRecipe := buildVisualRecipe(assets, topic, axes)
+	visualRecipe := buildVisualRecipe(assets, productCategory, axes)
 	shortAudience := titleCue(audience, 10)
 	shortFocus := titleCue(focus, 10)
 	shortConcern := titleCue(concern, 10)
@@ -328,18 +330,19 @@ func buildCopyFromKit(assets *Assets, topic string, variantIndex int) TopicCopyD
 	promptContext := buildHumanPromptContext(topic, audience, focus, concern, proof, scene, material, service, takeaway, tone, visualRecipe)
 	return TopicCopyDraft{
 		Titles: buildNaturalTitles(TitleContext{
-			Topic:       topic,
-			AudienceCue: shortAudience,
-			FocusCue:    shortFocus,
-			ConcernCue:  shortConcern,
-			ProofCue:    shortProof,
-			SceneCue:    shortScene,
-			MaterialCue: shortMaterial,
-			Starter:     titleStarter,
-			Angle:       titleAngle,
-			Closer:      titleCloser,
+			ProductCategory: productCategory,
+			Topic:           topic,
+			AudienceCue:     shortAudience,
+			FocusCue:        shortFocus,
+			ConcernCue:      shortConcern,
+			ProofCue:        shortProof,
+			SceneCue:        shortScene,
+			MaterialCue:     shortMaterial,
+			Starter:         titleStarter,
+			Angle:           titleAngle,
+			Closer:          titleCloser,
 		}),
-		Body:          buildNarrativeBody(promptContext, axes),
+		Body:          buildNarrativeBody(productCategory, promptContext, axes),
 		Tags:          buildVariantTags(kit, bank, axes),
 		Note:          "本版面向" + audience + "，核心是" + focus + "，用" + proof + "和" + material + "回应" + concern + "；同主题共有 " + intToStr(TopicVariantCount) + " 组组合文案。",
 		PromptContext: promptContext,

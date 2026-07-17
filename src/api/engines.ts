@@ -5,9 +5,16 @@
  * 供前台 UI 选项与 admin 编辑弹窗显示生效值。后端 content_engines.config.imagePrompt 为单一事实源。
  */
 import { apiRequest } from "./client";
-import type { PromptOptionsResponse } from "../types/api";
+import type { ProductCategory } from "../types";
+import type { PromptOptionsResponse, TopicOptionsResponse } from "../types/api";
 
 /** GET /api/engines/:key/prompt-options -- 当前生效的 imagePrompt 素材（登录可读） */
 export function getPromptOptions(engineKey = "bridal") {
   return apiRequest<PromptOptionsResponse>(`/api/engines/${engineKey}/prompt-options`);
+}
+
+/** GET /api/engines/:key/topic-options -- 当前引擎允许在工作台选择的主题 */
+export function getEngineTopicOptions(engineKey: string, productCategory: ProductCategory) {
+  const query = new URLSearchParams({ productCategory });
+  return apiRequest<TopicOptionsResponse>(`/api/engines/${encodeURIComponent(engineKey)}/topic-options?${query}`);
 }

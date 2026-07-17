@@ -129,6 +129,10 @@ type Bridal struct {
 	// WalaImageReferenceLimit 单次生图传 WalaAPI 参考图张数上限（场景图 + 连续性参考图 + 产品图按优先级截断）。
 	// Node 时代硬编码 4，Go 放开为可配置默认 8（实测后调整）。<=0 时默认 8。
 	WalaImageReferenceLimit int `mapstructure:"wala_image_reference_limit"`
+	// RedfoxAPIBaseURL 红狐 Hub API 基址。
+	RedfoxAPIBaseURL string `mapstructure:"redfox_api_base_url"`
+	// RedfoxTimeoutMs 单次笔记/账号/相似账号查询超时毫秒。
+	RedfoxTimeoutMs int `mapstructure:"redfox_timeout_ms"`
 }
 
 type ReviewAgent struct {
@@ -469,6 +473,8 @@ func Init(dir string) (*Config, error) {
 	v.SetDefault("bridal.wala_image_quality", "medium")
 	v.SetDefault("bridal.wala_image_timeout_ms", 180000)
 	v.SetDefault("bridal.wala_image_retry_attempts", 3)
+	v.SetDefault("bridal.redfox_api_base_url", "https://redfox.hk")
+	v.SetDefault("bridal.redfox_timeout_ms", 15000)
 
 	v.SetConfigType("yaml")
 	v.AddConfigPath(dir)

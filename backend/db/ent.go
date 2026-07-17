@@ -64,6 +64,8 @@ import (
 	"bridal/backend/db/user"
 	"bridal/backend/db/useridentity"
 	"bridal/backend/db/virtualmachine"
+	"bridal/backend/db/xhsnotesnapshot"
+	"bridal/backend/db/xhsnotetracking"
 	"context"
 	"errors"
 	"fmt"
@@ -194,6 +196,8 @@ func checkColumn(t, c string) error {
 			user.Table:                      user.ValidColumn,
 			useridentity.Table:              useridentity.ValidColumn,
 			virtualmachine.Table:            virtualmachine.ValidColumn,
+			xhsnotesnapshot.Table:           xhsnotesnapshot.ValidColumn,
+			xhsnotetracking.Table:           xhsnotetracking.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

@@ -14,6 +14,7 @@ import (
 	"github.com/samber/do"
 
 	"bridal/backend/biz/generation/imagestore"
+	"bridal/backend/biz/generation/redfox"
 	"bridal/backend/biz/generation/wala"
 	"bridal/backend/middleware"
 )
@@ -21,13 +22,15 @@ import (
 // Handler 生图 HTTP 处理器。
 //
 // 路由契约（与 Node 对齐，前端零改语义，路径用 bridal 新契约 /api/v1/generation）：
-//   POST /api/v1/generation            生图（需 Bearer 鉴权）
-//   GET  /api/v1/generation/history    历史（需 Bearer 鉴权）
-//   GET  /api/v1/generation/images/:filename  图片代理（无鉴权，UUID 不可猜）
+//
+//	POST /api/v1/generation            生图（需 Bearer 鉴权）
+//	GET  /api/v1/generation/history    历史（需 Bearer 鉴权）
+//	GET  /api/v1/generation/images/:filename  图片代理（无鉴权，UUID 不可猜）
 //
 // 响应体采用 Node 的扁平结构（无 code/message/data 包装），错误用 { error: "..." }。
 type Handler struct {
 	usecase *Usecase
+	xhs     *XHSUsecase
 	store   *imagestore.Store
 	logger  *slog.Logger
 }
@@ -36,6 +39,7 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	w := do.MustInvoke[*web.Web](i)
 	h := &Handler{
 		usecase: do.MustInvoke[*Usecase](i),
+		xhs:     do.MustInvoke[*XHSUsecase](i),
 		store:   do.MustInvoke[*imagestore.Store](i),
 		logger:  do.MustInvoke[*slog.Logger](i).With("module", "generation.handler"),
 	}
@@ -47,7 +51,11 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	gen.GET("/tasks", web.BaseHandler(h.ListTasks))
 	gen.GET("/tasks/:id", web.BaseHandler(h.GetTask))
 	gen.POST("/tasks/:id/cancel", web.BaseHandler(h.CancelTask))
-	gen.POST("/tasks/:id/feedback", web.BindHandler(h.SubmitFeedback))
+	// 手工指标录入已取消；历史 feedback 数据只读保留，新增数据必须经 Redfox 采集。
+	gen.POST("/tasks/:id/feedback", web.BaseHandler(h.LegacyFeedbackDisabled))
+	gen.POST("/tasks/:id/xhs-note", web.BindHandler(h.ImportXHSNote))
+	gen.POST("/tasks/:id/xhs-note/refresh", web.BaseHandler(h.RefreshXHSNote))
+	gen.GET("/tasks/:id/xhs-note", web.BaseHandler(h.GetXHSNote))
 	gen.GET("/stats", web.BaseHandler(h.Stats))
 	gen.GET("/stats/trend", web.BaseHandler(h.StatsTrend))
 
@@ -290,9 +298,67 @@ func (h *Handler) SubmitFeedback(c *web.Context, req SubmitFeedbackReq) error {
 	return c.JSON(http.StatusOK, map[string]any{"task": h.usecase.SanitizeHistory(*rec)})
 }
 
+func (h *Handler) LegacyFeedbackDisabled(c *web.Context) error {
+	return sendGenError(c, http.StatusGone, "已取消手工填写指标，请使用小红书笔记链接自动采集数据。")
+}
+
+// ImportXHSNote links one published Xiaohongshu note to a generation task and
+// immediately records its first Redfox data snapshot.
+func (h *Handler) ImportXHSNote(c *web.Context, req XHSNoteImportReq) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	taskID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+	}
+	note, err := h.xhs.Import(c.Request().Context(), user, taskID, req)
+	if err != nil {
+		return handleGenError(c, err)
+	}
+	return c.JSON(http.StatusOK, map[string]any{"note": note})
+}
+
+func (h *Handler) RefreshXHSNote(c *web.Context) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	taskID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+	}
+	note, err := h.xhs.Refresh(c.Request().Context(), user, taskID)
+	if err != nil {
+		return handleGenError(c, err)
+	}
+	return c.JSON(http.StatusOK, map[string]any{"note": note})
+}
+
+func (h *Handler) GetXHSNote(c *web.Context) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	taskID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+	}
+	note, err := h.xhs.Get(c.Request().Context(), user, taskID)
+	if err != nil {
+		return handleGenError(c, err)
+	}
+	return c.JSON(http.StatusOK, map[string]any{"note": note})
+}
+
 // handleGenError 把 wala.Error / 普通错误转成 Node 风格响应。
 // wala 上游 401/403（key 失效/鉴权错）映射为 502，避免触发前端全局登出。
 func handleGenError(c echo.Context, err error) error {
+	var redfoxErr *redfox.Error
+	if errors.As(err, &redfoxErr) {
+		return sendGenError(c, redfoxErr.StatusCode, redfoxErr.Message)
+	}
 	var walaErr *wala.Error
 	if errors.As(err, &walaErr) {
 		status := walaErr.StatusCode

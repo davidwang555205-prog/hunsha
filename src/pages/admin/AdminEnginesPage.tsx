@@ -5,7 +5,7 @@
  * - 列表（名称/标识/简介/排序/状态）
  * - 创建/编辑（弹窗：基础信息 + 内容引擎素材 JSON + 生图提示词 JSON）
  *
- * config.seeding 存内容引擎素材，运行时 seeding.MergeAssets 深度合并代码默认（map 递归、slice 整体覆盖）。
+ * config.seeding 存内容引擎主题和内容素材，运行时 seeding.MergeAssets 深度合并代码默认（map 递归、slice 整体覆盖）。
  * config.imagePrompt 存生图提示词素材，运行时 prompt.MergeAssets 字段级整体替换默认。
  * 两个 JSON 进弹窗即预填当前生效值（默认 + 覆盖合并），保存全量写回 { seeding, imagePrompt }。
  */
@@ -280,7 +280,7 @@ export function AdminEnginesPage() {
         {/* 内容引擎素材（config.seeding，深度合并） */}
         {activeTab === "seeding" && (
           <div className="space-y-3">
-            <Field label="内容引擎素材（config.seeding，深度合并：覆盖项与代码默认递归合并，未配字段保留默认）">
+            <Field label="内容引擎素材（config.seeding，主题与内容；bridalTopics / dressTopics 决定工作台主题）">
               <JsonEditorField
                 value={seedingJson}
                 onChange={setSeedingJson}
@@ -384,13 +384,19 @@ function JsonEditorField({
 // 给大模型的说明：内容引擎素材（config.seeding，深度合并语义）
 const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。用户会给你当前 config.seeding 的 JSON，要你修改或新增字段。这个 JSON 是内容引擎的素材银行（标题池/变体银行/主题覆盖/场景映射等），运行时与代码默认素材「深度合并」后用于确定性生成文案（非 LLM）。以下字段结构是此 JSON 的权威定义，字段名固定不可改（改了后端解析失败）。与具体场景无关，后续会扩展更多场景，新增场景即新增 map 的 key。
 
+## 职责边界（先判断用户要改什么）
+- 本 JSON 负责用户在工作台看到的主题、主题顺序、标题/正文/标签、主题场景和配图蓝图。
+- 生图提示词 JSON 只负责把图片类型、场景、模特、关键词档案等参数翻译成英文 prompt；不要在生图提示词 JSON 中维护主题。
+- 新增主题、主题改名或主题删除时，必须改本 JSON 的 bridalTopics / dressTopics；只改某个素材 map 的 key 不会让主题出现在工作台。
+- 为主题新增配图蓝图时，imageType、scenePreference、keywordProfileId 必须与生图提示词 JSON 中的 key 一致；缺失时会走后端默认值，不能假设会自动新增英文 prompt。
+
 ## 合并语义（最重要，决定你怎么改）
 - 对象（map）：递归合并--你给出的 key 会并入默认，同 key 的值再递归合并。改某主题的某素材组，只给该 key 即可，其余保留默认。
 - 数组（[]string）：整体替换--配了某个数组就整个换掉默认数组，不是追加。要加一条必须把完整新数组给全。
 - 标量（string）：整体覆盖。
 - 不改的字段省略（省略 = 用默认）。
 
-## 顶层字段结构（共 17 个，字段名固定）
+## 顶层字段结构（共 19 个，字段名固定）
 - bridalVariationBank / dressVariationBank：婚纱/裙装品类默认变体银行（CopyVariationBank）
 - xiaohongshuTopicOverrides：主题覆盖（map[主题名]CopyVariationBank），主题名以用户 JSON 里的实际 key 为准
 - topicCopyKits：主题素材包（map[主题名]TopicCopyKit）
@@ -400,6 +406,7 @@ const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。�
 - englishVisualAlignmentByTopic：主题英文对齐（map[string]string）
 - personImageTypes：人物图片类型（[]string）
 - bridalMainSceneByTopic / dressMainSceneByTopic：主题主场景映射（map[string]string）
+- bridalTopics / dressTopics：对应品类的主题列表（[]string），是工作台主题唯一来源；数组顺序即展示顺序，可新增、改名、删除主题。
 - xiaohongshuBridalContentProfiles：内容档案（map[主题名]XhsContentProfile）
 - bridalScenesByImageType / dressScenesByImageType：场景按图片类型映射（map[图片类型][]string）
 
@@ -413,7 +420,15 @@ const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。�
 
 ## 关键规则
 - 字段名与嵌套结构必须与上面定义完全一致，改字段名或结构会导致后端解析失败。
-- map 的 key（主题名/图片类型等）是业务标识，值是素材内容；新增 key 即新增场景，参考用户 JSON 里已有 key 的命名风格，不要改动已有 key 的含义。
+- 主题由 bridalTopics / dressTopics 定义，不再受前后端枚举限制。新增、改名、删除主题时，先改对应数组，再同步修改 topicCopyKits、xiaohongshuTopicOverrides、*MainSceneByTopic、englishVisualAlignmentByTopic 等以主题名为 key 的内容素材。
+- 主题数组不能写空，主题名不能有首尾空格或重复项。主题没有专属素材时仍会使用品类默认变体银行和通用配图模板。
+- 非主题的图片类型/场景 map 可按既有结构补充 key，但必须同时补齐其引用关系。
+
+## 主题操作清单
+- 新增主题：在 bridalTopics 或 dressTopics 追加主题名；至少补 topicCopyKits 的标题、开场、观察、场景、收尾和标签，建议同步补 *MainSceneByTopic。
+- 主题改名：替换主题数组中的旧名，并同步替换所有以旧名为 key 的素材 map key；不要只改 map key 或只改数组。
+- 删除主题：从主题数组删除；遗留的同名素材 key 不会被工作台或生成流程使用，可保留以便回滚。
+- 只改内容：主题数组不动，只修改对应主题 key 下的素材 value。
 
 ## 输出要求
 - 只输出完整的 config.seeding JSON 对象（或用户要改的字段片段），必须合法 JSON。
@@ -423,6 +438,11 @@ const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。�
 
 // 给大模型的说明：生图提示词素材（config.imagePrompt，字段级整体替换语义）
 const IMAGE_PROMPT_HELP = `你是「生图提示词素材 JSON」编辑助手。用户会给你当前 config.imagePrompt 的 JSON，要你修改或新增字段。这个 JSON 是生图 prompt 的素材源（场景/模特/季节/光线的英文 prompt 行、关键词档案、负面约束等），运行时与代码默认「字段级整体替换」后拼进生图 prompt。以下字段结构是此 JSON 的权威定义，字段名固定不可改（改了后端解析失败）。与具体场景无关，后续会扩展更多场景，新增场景即新增 map 的 key。
+
+## 职责边界（先判断用户要改什么）
+- 本 JSON 只负责最终英文生图 prompt：把内容引擎输出的图片类型、场景、模特、季节、光线和关键词档案映射为英文描述与负面约束。
+- 用户在工作台看到的主题、主题顺序、标题正文标签属于内容引擎素材 JSON；这里绝不新增、改名或删除主题。
+- 内容引擎为主题新增 imageType、scenePreference 或 keywordProfileId 时，才在本 JSON 增加同名 key 的英文映射。两个 JSON 的关联只通过这些参数值，不通过主题名称。
 
 ## 合并语义（最重要，决定你怎么改）
 - 字段级整体替换：每个顶层字段独立判断。你给了某个字段（非空），就整个替换该字段的代码默认值；省略或空则用默认。
@@ -455,6 +475,7 @@ const IMAGE_PROMPT_HELP = `你是「生图提示词素材 JSON」编辑助手。
 ## 关键规则
 - 字段名与嵌套结构必须与上面定义完全一致，改字段名或结构会导致后端解析失败。
 - map 的 key 是业务标识，value 是素材内容；新增 key 即新增场景，参考用户 JSON 里已有 key 的命名风格，不要改动已有 key 的含义。
+- 此 JSON 不负责内容主题。不要在这里改名、新增或删除主题；主题和内容请改 config.seeding 的 bridalTopics / dressTopics 及对应素材 map。
 
 ## 输出要求
 - 只输出完整的 config.imagePrompt JSON 对象（或用户要改的字段片段），必须合法 JSON。
