@@ -32,6 +32,7 @@ type fakeRepo struct {
 	subTasks       map[string]string
 	completedCount int
 	cancelled      bool
+	categoryEngine *CategoryEngine
 }
 
 func newFakeRepo() *fakeRepo { return &fakeRepo{subTasks: map[string]string{}} }
@@ -75,6 +76,9 @@ func (r *fakeRepo) UpdateTaskFeedback(context.Context, uuid.UUID, types.TaskFeed
 	return nil
 }
 func (r *fakeRepo) CleanupExpired(context.Context, time.Time) (int, int, error) { return 0, 0, nil }
+func (r *fakeRepo) GetCategoryEngine(context.Context, uuid.UUID) (*CategoryEngine, error) {
+	return r.categoryEngine, nil
+}
 
 type fakeStore struct{}
 

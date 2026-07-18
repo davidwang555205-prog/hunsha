@@ -78,82 +78,95 @@ export function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-8 text-text">
-      <GlassCard className="w-full max-w-md p-8">
-        <div className="mb-7 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient p-1 shadow-md">
-            <img src={logo} alt="Bridal & Dress" className="h-full w-full rounded-md object-cover" />
+    <main className="flex min-h-screen flex-col px-4 py-8 text-text">
+      <div className="flex flex-1 items-center justify-center">
+        <GlassCard className="w-full max-w-md p-8">
+          <div className="mb-7 flex flex-col items-center text-center">
+            <div className="mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient p-1 shadow-md">
+              <img src={logo} alt="Bridal & Dress" className="h-full w-full rounded-md object-cover" />
+            </div>
+            <GradientText duration={6} className="font-display text-sm uppercase tracking-[0.24em]">
+              Bridal &amp; Dress
+            </GradientText>
+            <BlurText as="h1" text="账号登录" stagger={40} className="mt-3 text-h1 font-display text-text" />
+            <p className="mt-2 text-sm text-text-muted">{from ? "登录以继续" : "婚纱礼服内容生成平台"}</p>
           </div>
-          <GradientText duration={6} className="font-display text-sm uppercase tracking-[0.24em]">
-            Bridal &amp; Dress
-          </GradientText>
-          <BlurText as="h1" text="账号登录" stagger={40} className="mt-3 text-h1 font-display text-text" />
-          <p className="mt-2 text-sm text-text-muted">{from ? "登录以继续" : "婚纱礼服内容生成平台"}</p>
-        </div>
 
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleSubmit();
-          }}
-        >
-          <Field label="邮箱">
-            <Input
-              type="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                if (error) {
-                  setError("");
-                  setErrorKind(null);
-                }
-              }}
-              autoComplete="email"
-              placeholder="admin@example.com"
-            />
-          </Field>
-          <Field label="密码">
-            <Input
-              ref={passwordRef}
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                if (error) {
-                  setError("");
-                  setErrorKind(null);
-                }
-              }}
-              autoComplete="current-password"
-              error={errorKind === "credentials"}
-              aria-invalid={errorKind === "credentials"}
-            />
-          </Field>
-
-          {error && (
-            <motion.p
-              initial={{ x: -6 }}
-              animate={{ x: [0, -6, 6, -4, 4, 0] }}
-              transition={{ duration: 0.32 }}
-              className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger ring-1 ring-danger/20"
-              role="alert"
-              aria-live="assertive"
-            >
-              {error}
-            </motion.p>
-          )}
-
-          <MagneticButton
-            type="submit"
-            loading={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-md transition duration-fast ease-out hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
           >
-            {loading && <Spinner size={16} />}
-            {loading ? "登录中..." : "登录"}
-          </MagneticButton>
-        </form>
-      </GlassCard>
+            <Field label="邮箱">
+              <Input
+                type="email"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (error) {
+                    setError("");
+                    setErrorKind(null);
+                  }
+                }}
+                autoComplete="email"
+                placeholder="admin@example.com"
+              />
+            </Field>
+            <Field label="密码">
+              <Input
+                ref={passwordRef}
+                type="password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (error) {
+                    setError("");
+                    setErrorKind(null);
+                  }
+                }}
+                autoComplete="current-password"
+                error={errorKind === "credentials"}
+                aria-invalid={errorKind === "credentials"}
+              />
+            </Field>
+
+            {error && (
+              <motion.p
+                initial={{ x: -6 }}
+                animate={{ x: [0, -6, 6, -4, 4, 0] }}
+                transition={{ duration: 0.32 }}
+                className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger ring-1 ring-danger/20"
+                role="alert"
+                aria-live="assertive"
+              >
+                {error}
+              </motion.p>
+            )}
+
+            <MagneticButton
+              type="submit"
+              loading={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-md transition duration-fast ease-out hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading && <Spinner size={16} />}
+              {loading ? "登录中..." : "登录"}
+            </MagneticButton>
+          </form>
+        </GlassCard>
+      </div>
+
+      <footer className="shrink-0 pt-6 text-center text-xs text-text-muted">
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noreferrer"
+          className="transition hover:text-primary focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          蜀ICP备2026040143号
+        </a>
+      </footer>
     </main>
   );
 }

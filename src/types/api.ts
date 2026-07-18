@@ -137,7 +137,7 @@ export type XHSAccountSnapshot = {
 export type XHSNoteSnapshot = {
   id: string;
   sequence: number;
-  trigger: "initial" | "user_refresh" | "admin_refresh";
+  trigger: "initial" | "user_refresh" | "admin_refresh" | "user_link_edit" | "admin_link_edit";
   status: "success" | "failed";
   error?: string;
   capturedAt: string;
@@ -167,12 +167,76 @@ export type XHSNoteTracking = {
   userRefreshCount: number;
   /** 管理员无额度限制，因此该字段缺省。 */
   userRefreshesRemaining?: number;
+  userLinkEditCount: number;
+  /** 管理员无额度限制，因此该字段缺省。 */
+  userLinkEditsRemaining?: number;
   snapshots: XHSNoteSnapshot[];
 };
 
 /** 历史列表响应（handler.go:83）{ history: SanitizedTask[] } */
 export type HistoryResponse = {
   history: HistoryRecord[];
+};
+
+/** 一次真实上游模型请求携带的参考图快照；仅管理员调用审计可见，不含 Base64 原文。 */
+export type ModelInvocationReference = {
+  kind: string;
+  name: string;
+  mimeType: string;
+  url: string;
+  sha256: string;
+  size: number;
+};
+
+/** 对应 generation.ModelInvocationRecord：一张子图的重试、fallback 均是独立一条。 */
+export type ModelInvocation = {
+  id: string;
+  taskID: string;
+  generationImageID: string;
+  imageNumber: number;
+  userID: string;
+  username: string;
+  userEmail: string;
+  userRole: string;
+  channelID: string;
+  channelName: string;
+  apiBaseURL: string;
+  protocol: string;
+  modelID: string;
+  candidateIndex: number;
+  candidateCount: number;
+  attemptNumber: number;
+  attemptBudget: number;
+  status: "processing" | "success" | "failed";
+  prompt: string;
+  promptHash: string;
+  referenceImages: ModelInvocationReference[];
+  size: string;
+  quality: string;
+  httpStatus: number;
+  latencyMs: number;
+  responseImageCount: number;
+  error: string;
+  requestedAt: string;
+  completedAt?: string | null;
+};
+
+export type ModelInvocationQuery = {
+  page?: number;
+  pageSize?: number;
+  taskId?: string;
+  userId?: string;
+  channelId?: string;
+  status?: "processing" | "success" | "failed";
+  startTime?: string;
+  endTime?: string;
+};
+
+export type ModelInvocationListResponse = {
+  invocations: ModelInvocation[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 /** 生图统计（GET /api/v1/generation/stats，对应后端 generation.StatsResp） */

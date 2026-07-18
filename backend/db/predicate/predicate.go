@@ -51,6 +51,9 @@ type CreditTransaction func(*sql.Selector)
 // GenerationImage is the predicate function for generationimage builders.
 type GenerationImage func(*sql.Selector)
 
+// GenerationModelInvocation is the predicate function for generationmodelinvocation builders.
+type GenerationModelInvocation func(*sql.Selector)
+
 // GenerationTask is the predicate function for generationtask builders.
 type GenerationTask func(*sql.Selector)
 

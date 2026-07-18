@@ -50,10 +50,13 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	gen.GET("/history", web.BaseHandler(h.History))
 	gen.GET("/tasks", web.BaseHandler(h.ListTasks))
 	gen.GET("/tasks/:id", web.BaseHandler(h.GetTask))
+	gen.GET("/tasks/:id/invocations", web.BaseHandler(h.ListTaskModelInvocations))
+	gen.GET("/invocations", web.BaseHandler(h.ListModelInvocations))
 	gen.POST("/tasks/:id/cancel", web.BaseHandler(h.CancelTask))
 	// 手工指标录入已取消；历史 feedback 数据只读保留，新增数据必须经 Redfox 采集。
 	gen.POST("/tasks/:id/feedback", web.BaseHandler(h.LegacyFeedbackDisabled))
 	gen.POST("/tasks/:id/xhs-note", web.BindHandler(h.ImportXHSNote))
+	gen.PUT("/tasks/:id/xhs-note", web.BindHandler(h.UpdateXHSNote))
 	gen.POST("/tasks/:id/xhs-note/refresh", web.BaseHandler(h.RefreshXHSNote))
 	gen.GET("/tasks/:id/xhs-note", web.BaseHandler(h.GetXHSNote))
 	gen.GET("/stats", web.BaseHandler(h.Stats))
@@ -228,6 +231,93 @@ func (h *Handler) ListTasks(c *web.Context) error {
 	})
 }
 
+// ListTaskModelInvocations GET /api/v1/generation/tasks/:id/invocations。
+// 真实模型请求含完整提示词和参考图指纹，仅管理员可读。
+func (h *Handler) ListTaskModelInvocations(c *web.Context) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	if !user.HasUnlimitedImageGeneration() {
+		return sendGenError(c, http.StatusForbidden, "仅管理员可查看模型调用审计。")
+	}
+	taskID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+	}
+	return h.respondModelInvocations(c, ModelInvocationQuery{TaskID: taskID, Page: 1, PageSize: 100, Ascending: true})
+}
+
+// ListModelInvocations GET /api/v1/generation/invocations?page&pageSize&taskId&userId&channelId&status&startTime&endTime。
+// 管理后台的横向排障入口，默认按实际请求开始时间倒序。
+func (h *Handler) ListModelInvocations(c *web.Context) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	if !user.HasUnlimitedImageGeneration() {
+		return sendGenError(c, http.StatusForbidden, "仅管理员可查看模型调用审计。")
+	}
+	filter := ModelInvocationQuery{Status: strings.TrimSpace(c.QueryParam("status"))}
+	filter.Page, _ = strconv.Atoi(c.QueryParam("page"))
+	filter.PageSize, _ = strconv.Atoi(c.QueryParam("pageSize"))
+	if s := c.QueryParam("taskId"); s != "" {
+		if id, err := uuid.Parse(s); err != nil {
+			return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+		} else {
+			filter.TaskID = id
+		}
+	}
+	if s := c.QueryParam("userId"); s != "" {
+		if id, err := uuid.Parse(s); err != nil {
+			return sendGenError(c, http.StatusBadRequest, "用户 ID 格式不正确。")
+		} else {
+			filter.UserID = id
+		}
+	}
+	if s := c.QueryParam("channelId"); s != "" {
+		if id, err := uuid.Parse(s); err != nil {
+			return sendGenError(c, http.StatusBadRequest, "线路 ID 格式不正确。")
+		} else {
+			filter.ChannelID = id
+		}
+	}
+	if s := c.QueryParam("startTime"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			filter.StartTime = &t
+		}
+	}
+	if s := c.QueryParam("endTime"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			filter.EndTime = &t
+		}
+	}
+	return h.respondModelInvocations(c, filter)
+}
+
+func (h *Handler) respondModelInvocations(c *web.Context, filter ModelInvocationQuery) error {
+	rows, total, err := h.usecase.ListModelInvocations(c.Request().Context(), filter)
+	if err != nil {
+		h.logger.ErrorContext(c.Request().Context(), "list model invocations failed", "error", err)
+		return sendGenError(c, http.StatusInternalServerError, "获取模型调用审计失败。")
+	}
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 20
+	}
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"invocations": rows,
+		"total":       total,
+		"page":        filter.Page,
+		"pageSize":    filter.PageSize,
+	})
+}
+
 // Stats GET /api/v1/generation/stats 生图统计（admin 概览页用）。
 // isAdmin=true 返回全平台统计，否则仅当前用户。
 func (h *Handler) Stats(c *web.Context) error {
@@ -314,6 +404,23 @@ func (h *Handler) ImportXHSNote(c *web.Context, req XHSNoteImportReq) error {
 		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
 	}
 	note, err := h.xhs.Import(c.Request().Context(), user, taskID, req)
+	if err != nil {
+		return handleGenError(c, err)
+	}
+	return c.JSON(http.StatusOK, map[string]any{"note": note})
+}
+
+// UpdateXHSNote replaces a linked note and immediately re-collects its data.
+func (h *Handler) UpdateXHSNote(c *web.Context, req XHSNoteImportReq) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	taskID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+	}
+	note, err := h.xhs.UpdateLink(c.Request().Context(), user, taskID, req)
 	if err != nil {
 		return handleGenError(c, err)
 	}

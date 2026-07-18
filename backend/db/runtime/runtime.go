@@ -19,6 +19,7 @@ import (
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
 	"bridal/backend/db/gitbottask"
@@ -494,6 +495,108 @@ func init() {
 	generationimageDescCreatedAt := generationimageFields[13].Descriptor()
 	// generationimage.DefaultCreatedAt holds the default value on creation for the created_at field.
 	generationimage.DefaultCreatedAt = generationimageDescCreatedAt.Default.(func() time.Time)
+	generationmodelinvocationFields := schema.GenerationModelInvocation{}.Fields()
+	_ = generationmodelinvocationFields
+	// generationmodelinvocationDescGenerationImageID is the schema descriptor for generation_image_id field.
+	generationmodelinvocationDescGenerationImageID := generationmodelinvocationFields[2].Descriptor()
+	// generationmodelinvocation.DefaultGenerationImageID holds the default value on creation for the generation_image_id field.
+	generationmodelinvocation.DefaultGenerationImageID = generationmodelinvocationDescGenerationImageID.Default.(string)
+	// generationmodelinvocationDescImageNumber is the schema descriptor for image_number field.
+	generationmodelinvocationDescImageNumber := generationmodelinvocationFields[3].Descriptor()
+	// generationmodelinvocation.DefaultImageNumber holds the default value on creation for the image_number field.
+	generationmodelinvocation.DefaultImageNumber = generationmodelinvocationDescImageNumber.Default.(int)
+	// generationmodelinvocationDescUsername is the schema descriptor for username field.
+	generationmodelinvocationDescUsername := generationmodelinvocationFields[5].Descriptor()
+	// generationmodelinvocation.DefaultUsername holds the default value on creation for the username field.
+	generationmodelinvocation.DefaultUsername = generationmodelinvocationDescUsername.Default.(string)
+	// generationmodelinvocationDescUserEmail is the schema descriptor for user_email field.
+	generationmodelinvocationDescUserEmail := generationmodelinvocationFields[6].Descriptor()
+	// generationmodelinvocation.DefaultUserEmail holds the default value on creation for the user_email field.
+	generationmodelinvocation.DefaultUserEmail = generationmodelinvocationDescUserEmail.Default.(string)
+	// generationmodelinvocationDescUserRole is the schema descriptor for user_role field.
+	generationmodelinvocationDescUserRole := generationmodelinvocationFields[7].Descriptor()
+	// generationmodelinvocation.DefaultUserRole holds the default value on creation for the user_role field.
+	generationmodelinvocation.DefaultUserRole = generationmodelinvocationDescUserRole.Default.(string)
+	// generationmodelinvocationDescChannelName is the schema descriptor for channel_name field.
+	generationmodelinvocationDescChannelName := generationmodelinvocationFields[9].Descriptor()
+	// generationmodelinvocation.DefaultChannelName holds the default value on creation for the channel_name field.
+	generationmodelinvocation.DefaultChannelName = generationmodelinvocationDescChannelName.Default.(string)
+	// generationmodelinvocationDescAPIBaseURL is the schema descriptor for api_base_url field.
+	generationmodelinvocationDescAPIBaseURL := generationmodelinvocationFields[10].Descriptor()
+	// generationmodelinvocation.DefaultAPIBaseURL holds the default value on creation for the api_base_url field.
+	generationmodelinvocation.DefaultAPIBaseURL = generationmodelinvocationDescAPIBaseURL.Default.(string)
+	// generationmodelinvocationDescProtocol is the schema descriptor for protocol field.
+	generationmodelinvocationDescProtocol := generationmodelinvocationFields[11].Descriptor()
+	// generationmodelinvocation.DefaultProtocol holds the default value on creation for the protocol field.
+	generationmodelinvocation.DefaultProtocol = generationmodelinvocationDescProtocol.Default.(string)
+	// generationmodelinvocationDescModelID is the schema descriptor for model_id field.
+	generationmodelinvocationDescModelID := generationmodelinvocationFields[12].Descriptor()
+	// generationmodelinvocation.DefaultModelID holds the default value on creation for the model_id field.
+	generationmodelinvocation.DefaultModelID = generationmodelinvocationDescModelID.Default.(string)
+	// generationmodelinvocationDescCandidateIndex is the schema descriptor for candidate_index field.
+	generationmodelinvocationDescCandidateIndex := generationmodelinvocationFields[13].Descriptor()
+	// generationmodelinvocation.DefaultCandidateIndex holds the default value on creation for the candidate_index field.
+	generationmodelinvocation.DefaultCandidateIndex = generationmodelinvocationDescCandidateIndex.Default.(int)
+	// generationmodelinvocationDescCandidateCount is the schema descriptor for candidate_count field.
+	generationmodelinvocationDescCandidateCount := generationmodelinvocationFields[14].Descriptor()
+	// generationmodelinvocation.DefaultCandidateCount holds the default value on creation for the candidate_count field.
+	generationmodelinvocation.DefaultCandidateCount = generationmodelinvocationDescCandidateCount.Default.(int)
+	// generationmodelinvocationDescAttemptNumber is the schema descriptor for attempt_number field.
+	generationmodelinvocationDescAttemptNumber := generationmodelinvocationFields[15].Descriptor()
+	// generationmodelinvocation.DefaultAttemptNumber holds the default value on creation for the attempt_number field.
+	generationmodelinvocation.DefaultAttemptNumber = generationmodelinvocationDescAttemptNumber.Default.(int)
+	// generationmodelinvocationDescAttemptBudget is the schema descriptor for attempt_budget field.
+	generationmodelinvocationDescAttemptBudget := generationmodelinvocationFields[16].Descriptor()
+	// generationmodelinvocation.DefaultAttemptBudget holds the default value on creation for the attempt_budget field.
+	generationmodelinvocation.DefaultAttemptBudget = generationmodelinvocationDescAttemptBudget.Default.(int)
+	// generationmodelinvocationDescStatus is the schema descriptor for status field.
+	generationmodelinvocationDescStatus := generationmodelinvocationFields[17].Descriptor()
+	// generationmodelinvocation.DefaultStatus holds the default value on creation for the status field.
+	generationmodelinvocation.DefaultStatus = generationmodelinvocationDescStatus.Default.(string)
+	// generationmodelinvocationDescPrompt is the schema descriptor for prompt field.
+	generationmodelinvocationDescPrompt := generationmodelinvocationFields[18].Descriptor()
+	// generationmodelinvocation.DefaultPrompt holds the default value on creation for the prompt field.
+	generationmodelinvocation.DefaultPrompt = generationmodelinvocationDescPrompt.Default.(string)
+	// generationmodelinvocationDescPromptHash is the schema descriptor for prompt_hash field.
+	generationmodelinvocationDescPromptHash := generationmodelinvocationFields[19].Descriptor()
+	// generationmodelinvocation.DefaultPromptHash holds the default value on creation for the prompt_hash field.
+	generationmodelinvocation.DefaultPromptHash = generationmodelinvocationDescPromptHash.Default.(string)
+	// generationmodelinvocationDescReferenceImages is the schema descriptor for reference_images field.
+	generationmodelinvocationDescReferenceImages := generationmodelinvocationFields[20].Descriptor()
+	// generationmodelinvocation.DefaultReferenceImages holds the default value on creation for the reference_images field.
+	generationmodelinvocation.DefaultReferenceImages = generationmodelinvocationDescReferenceImages.Default.([]types.ModelInvocationReference)
+	// generationmodelinvocationDescSize is the schema descriptor for size field.
+	generationmodelinvocationDescSize := generationmodelinvocationFields[21].Descriptor()
+	// generationmodelinvocation.DefaultSize holds the default value on creation for the size field.
+	generationmodelinvocation.DefaultSize = generationmodelinvocationDescSize.Default.(string)
+	// generationmodelinvocationDescQuality is the schema descriptor for quality field.
+	generationmodelinvocationDescQuality := generationmodelinvocationFields[22].Descriptor()
+	// generationmodelinvocation.DefaultQuality holds the default value on creation for the quality field.
+	generationmodelinvocation.DefaultQuality = generationmodelinvocationDescQuality.Default.(string)
+	// generationmodelinvocationDescHTTPStatus is the schema descriptor for http_status field.
+	generationmodelinvocationDescHTTPStatus := generationmodelinvocationFields[23].Descriptor()
+	// generationmodelinvocation.DefaultHTTPStatus holds the default value on creation for the http_status field.
+	generationmodelinvocation.DefaultHTTPStatus = generationmodelinvocationDescHTTPStatus.Default.(int)
+	// generationmodelinvocationDescLatencyMs is the schema descriptor for latency_ms field.
+	generationmodelinvocationDescLatencyMs := generationmodelinvocationFields[24].Descriptor()
+	// generationmodelinvocation.DefaultLatencyMs holds the default value on creation for the latency_ms field.
+	generationmodelinvocation.DefaultLatencyMs = generationmodelinvocationDescLatencyMs.Default.(int)
+	// generationmodelinvocationDescResponseImageCount is the schema descriptor for response_image_count field.
+	generationmodelinvocationDescResponseImageCount := generationmodelinvocationFields[25].Descriptor()
+	// generationmodelinvocation.DefaultResponseImageCount holds the default value on creation for the response_image_count field.
+	generationmodelinvocation.DefaultResponseImageCount = generationmodelinvocationDescResponseImageCount.Default.(int)
+	// generationmodelinvocationDescError is the schema descriptor for error field.
+	generationmodelinvocationDescError := generationmodelinvocationFields[26].Descriptor()
+	// generationmodelinvocation.DefaultError holds the default value on creation for the error field.
+	generationmodelinvocation.DefaultError = generationmodelinvocationDescError.Default.(string)
+	// generationmodelinvocationDescRequestedAt is the schema descriptor for requested_at field.
+	generationmodelinvocationDescRequestedAt := generationmodelinvocationFields[27].Descriptor()
+	// generationmodelinvocation.DefaultRequestedAt holds the default value on creation for the requested_at field.
+	generationmodelinvocation.DefaultRequestedAt = generationmodelinvocationDescRequestedAt.Default.(func() time.Time)
+	// generationmodelinvocationDescID is the schema descriptor for id field.
+	generationmodelinvocationDescID := generationmodelinvocationFields[0].Descriptor()
+	// generationmodelinvocation.DefaultID holds the default value on creation for the id field.
+	generationmodelinvocation.DefaultID = generationmodelinvocationDescID.Default.(func() uuid.UUID)
 	generationtaskFields := schema.GenerationTask{}.Fields()
 	_ = generationtaskFields
 	// generationtaskDescUsername is the schema descriptor for username field.
@@ -1820,12 +1923,16 @@ func init() {
 	xhsnotetrackingDescUserRefreshCount := xhsnotetrackingFields[13].Descriptor()
 	// xhsnotetracking.DefaultUserRefreshCount holds the default value on creation for the user_refresh_count field.
 	xhsnotetracking.DefaultUserRefreshCount = xhsnotetrackingDescUserRefreshCount.Default.(int)
+	// xhsnotetrackingDescUserLinkEditCount is the schema descriptor for user_link_edit_count field.
+	xhsnotetrackingDescUserLinkEditCount := xhsnotetrackingFields[14].Descriptor()
+	// xhsnotetracking.DefaultUserLinkEditCount holds the default value on creation for the user_link_edit_count field.
+	xhsnotetracking.DefaultUserLinkEditCount = xhsnotetrackingDescUserLinkEditCount.Default.(int)
 	// xhsnotetrackingDescCreatedAt is the schema descriptor for created_at field.
-	xhsnotetrackingDescCreatedAt := xhsnotetrackingFields[14].Descriptor()
+	xhsnotetrackingDescCreatedAt := xhsnotetrackingFields[15].Descriptor()
 	// xhsnotetracking.DefaultCreatedAt holds the default value on creation for the created_at field.
 	xhsnotetracking.DefaultCreatedAt = xhsnotetrackingDescCreatedAt.Default.(func() time.Time)
 	// xhsnotetrackingDescUpdatedAt is the schema descriptor for updated_at field.
-	xhsnotetrackingDescUpdatedAt := xhsnotetrackingFields[15].Descriptor()
+	xhsnotetrackingDescUpdatedAt := xhsnotetrackingFields[16].Descriptor()
 	// xhsnotetracking.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	xhsnotetracking.DefaultUpdatedAt = xhsnotetrackingDescUpdatedAt.Default.(func() time.Time)
 	// xhsnotetracking.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

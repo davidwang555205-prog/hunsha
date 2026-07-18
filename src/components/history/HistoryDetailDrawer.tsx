@@ -19,6 +19,7 @@ import { downloadImage } from "../../lib/download";
 import { copyText } from "../../lib/clipboard";
 import { firstTitle, splitTitles } from "../../lib/titles";
 import { XHSNotePanel } from "./XHSNotePanel";
+import { ModelInvocationTimeline } from "./ModelInvocationTimeline";
 import type { HistoryRecord } from "../../types/api";
 
 type HistoryDetailDrawerProps = {
@@ -231,6 +232,8 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
                 )}
               </div>
             )}
+
+            {isAdmin && <ModelInvocationTimeline taskId={record.id} />}
           </motion.section>
 
           {/* 生成图放大预览 */}

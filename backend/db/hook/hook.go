@@ -188,6 +188,18 @@ func (f GenerationImageFunc) Mutate(ctx context.Context, m db.Mutation) (db.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.GenerationImageMutation", m)
 }
 
+// The GenerationModelInvocationFunc type is an adapter to allow the use of ordinary
+// function as GenerationModelInvocation mutator.
+type GenerationModelInvocationFunc func(context.Context, *db.GenerationModelInvocationMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GenerationModelInvocationFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.GenerationModelInvocationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.GenerationModelInvocationMutation", m)
+}
+
 // The GenerationTaskFunc type is an adapter to allow the use of ordinary
 // function as GenerationTask mutator.
 type GenerationTaskFunc func(context.Context, *db.GenerationTaskMutation) (db.Value, error)

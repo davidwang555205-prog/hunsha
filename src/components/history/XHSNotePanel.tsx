@@ -3,7 +3,7 @@ import { TrendLineChart } from "../charts/TrendLineChart";
 import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
-import { getXHSNote, importXHSNote, refreshXHSNote } from "../../api/generation";
+import { getXHSNote, importXHSNote, refreshXHSNote, updateXHSNote } from "../../api/generation";
 import type { XHSNoteSnapshot, XHSNoteTracking } from "../../types/api";
 
 type XHSNotePanelProps = {
@@ -30,6 +30,7 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
   const [noteURL, setNoteURL] = useState(initialURL);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editingLink, setEditingLink] = useState(false);
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -66,12 +67,6 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
       setError("请填写小红书笔记链接。");
       return;
     }
-    try {
-      new URL(value);
-    } catch {
-      setError("笔记链接格式不正确。");
-      return;
-    }
     setSubmitting(true);
     setError("");
     try {
@@ -80,6 +75,26 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
       setNoteURL(result.note.noteUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : "采集失败。");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const updateLink = async () => {
+    const value = noteURL.trim();
+    if (!value) {
+      setError("请填写小红书笔记链接。");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const result = await updateXHSNote(taskId, value);
+      setNote(result.note);
+      setNoteURL(result.note.noteUrl);
+      setEditingLink(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "修改失败。");
     } finally {
       setSubmitting(false);
     }
@@ -103,9 +118,9 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
   if (!note) {
     return (
       <div className="space-y-3">
-        <Field label="小红书笔记链接" hint="提交后立即采集笔记、账号基础数据和相似账号；不再需要手填指标。" error={error || undefined}>
+        <Field label="小红书笔记链接" hint="可直接粘贴整段小红书分享文案，系统会自动识别链接并采集数据。" error={error || undefined}>
           <Input
-            type="url"
+            type="text"
             placeholder="https://www.xiaohongshu.com/explore/..."
             value={noteURL}
             onChange={(event) => setNoteURL(event.target.value)}
@@ -122,16 +137,26 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <a href={note.canonicalUrl || note.noteUrl} target="_blank" rel="noreferrer" className="block truncate text-sm text-primary hover:underline">
-            小红书笔记链接 ↗
-          </a>
-          <p className="mt-1 text-xs text-text-muted">
-            {isAdmin ? "管理员可不限次数刷新" : `已刷新 ${note.userRefreshCount}/7 次，剩余 ${note.userRefreshesRemaining ?? 0} 次`}
-          </p>
+          {editingLink ? (
+            <div className="flex min-w-[280px] flex-wrap items-center gap-2">
+              <Input type="text" value={noteURL} onChange={(event) => setNoteURL(event.target.value)} disabled={submitting} />
+              <Button size="sm" onClick={updateLink} loading={submitting}>保存并采集</Button>
+              <Button size="sm" variant="ghost" disabled={submitting} onClick={() => { setNoteURL(note.noteUrl); setEditingLink(false); setError(""); }}>取消</Button>
+            </div>
+          ) : (
+            <>
+              <a href={note.canonicalUrl || note.noteUrl} target="_blank" rel="noreferrer" className="block break-all text-sm text-primary hover:underline">
+                {note.noteUrl} ↗
+              </a>
+              <p className="mt-1 text-xs text-text-muted">
+                {isAdmin
+                  ? "管理员可不限次数修改链接、刷新数据"
+                  : `链接已修改 ${note.userLinkEditCount}/3 次，剩余 ${note.userLinkEditsRemaining ?? 0} 次；已刷新 ${note.userRefreshCount}/7 次`}
+              </p>
+            </>
+          )}
         </div>
-        <Button size="sm" variant="secondary" onClick={refresh} loading={submitting}>
-          刷新数据{!isAdmin && note.userRefreshesRemaining !== undefined ? `（剩余 ${note.userRefreshesRemaining} 次）` : ""}
-        </Button>
+        {!editingLink && <div className="flex shrink-0 gap-2"><Button size="sm" variant="secondary" onClick={() => { setNoteURL(note.noteUrl); setEditingLink(true); setError(""); }} disabled={submitting}>修改链接</Button><Button size="sm" variant="secondary" onClick={refresh} loading={submitting}>刷新数据{!isAdmin && note.userRefreshesRemaining !== undefined ? `（剩余 ${note.userRefreshesRemaining} 次）` : ""}</Button></div>}
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
 
@@ -210,7 +235,7 @@ function SnapshotHistory({ snapshots }: { snapshots: XHSNoteSnapshot[] }) {
           <thead className="bg-bg text-text-muted"><tr><th className="px-3 py-2 font-medium">采集时间</th><th className="px-3 py-2 font-medium">触发</th><th className="px-3 py-2 font-medium">阅读变化</th><th className="px-3 py-2 font-medium">点赞变化</th><th className="px-3 py-2 font-medium">收藏变化</th><th className="px-3 py-2 font-medium">粉丝变化</th><th className="px-3 py-2 font-medium">总获赞变化</th></tr></thead>
           <tbody>{snapshots.map((snapshot, index) => {
             const previous = snapshots[index - 1];
-            const trigger = snapshot.trigger === "initial" ? "首次采集" : snapshot.trigger === "admin_refresh" ? "管理员刷新" : "用户刷新";
+            const trigger = snapshot.trigger === "initial" ? "首次采集" : snapshot.trigger === "admin_refresh" ? "管理员刷新" : snapshot.trigger === "user_refresh" ? "用户刷新" : snapshot.trigger === "admin_link_edit" ? "管理员修改链接" : "用户修改链接";
             return <tr key={snapshot.id} className="border-t border-border/70"><td className="px-3 py-2 text-text-muted">{snapshotTime(snapshot.capturedAt)}</td><td className="px-3 py-2 text-text">{trigger}</td><td className="px-3 py-2 text-text">{change(snapshot.views, previous?.views)}</td><td className="px-3 py-2 text-text">{change(snapshot.likes, previous?.likes)}</td><td className="px-3 py-2 text-text">{change(snapshot.collects, previous?.collects)}</td><td className="px-3 py-2 text-text">{change(snapshot.account.fans, previous?.account.fans)}</td><td className="px-3 py-2 text-text">{change(snapshot.account.likes, previous?.account.likes)}</td></tr>;
           })}</tbody>
         </table>

@@ -40,6 +40,8 @@ const (
 	FieldPublishedAt = "published_at"
 	// FieldUserRefreshCount holds the string denoting the user_refresh_count field in the database.
 	FieldUserRefreshCount = "user_refresh_count"
+	// FieldUserLinkEditCount holds the string denoting the user_link_edit_count field in the database.
+	FieldUserLinkEditCount = "user_link_edit_count"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -64,6 +66,7 @@ var Columns = []string{
 	FieldWorkType,
 	FieldPublishedAt,
 	FieldUserRefreshCount,
+	FieldUserLinkEditCount,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -99,6 +102,8 @@ var (
 	DefaultPublishedAt string
 	// DefaultUserRefreshCount holds the default value on creation for the "user_refresh_count" field.
 	DefaultUserRefreshCount int
+	// DefaultUserLinkEditCount holds the default value on creation for the "user_link_edit_count" field.
+	DefaultUserLinkEditCount int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -180,6 +185,11 @@ func ByPublishedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUserRefreshCount orders the results by the user_refresh_count field.
 func ByUserRefreshCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserRefreshCount, opts...).ToFunc()
+}
+
+// ByUserLinkEditCount orders the results by the user_link_edit_count field.
+func ByUserLinkEditCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserLinkEditCount, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

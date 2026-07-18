@@ -523,6 +523,66 @@ var (
 			},
 		},
 	}
+	// GenerationModelInvocationsColumns holds the columns for the "generation_model_invocations" table.
+	GenerationModelInvocationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "task_id", Type: field.TypeUUID},
+		{Name: "generation_image_id", Type: field.TypeString, Default: ""},
+		{Name: "image_number", Type: field.TypeInt, Default: 0},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "username", Type: field.TypeString, Default: ""},
+		{Name: "user_email", Type: field.TypeString, Default: ""},
+		{Name: "user_role", Type: field.TypeString, Default: ""},
+		{Name: "channel_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "channel_name", Type: field.TypeString, Default: ""},
+		{Name: "api_base_url", Type: field.TypeString, Default: ""},
+		{Name: "protocol", Type: field.TypeString, Default: ""},
+		{Name: "model_id", Type: field.TypeString, Default: ""},
+		{Name: "candidate_index", Type: field.TypeInt, Default: 0},
+		{Name: "candidate_count", Type: field.TypeInt, Default: 0},
+		{Name: "attempt_number", Type: field.TypeInt, Default: 0},
+		{Name: "attempt_budget", Type: field.TypeInt, Default: 0},
+		{Name: "status", Type: field.TypeString, Default: "processing"},
+		{Name: "prompt", Type: field.TypeString, Default: ""},
+		{Name: "prompt_hash", Type: field.TypeString, Default: ""},
+		{Name: "reference_images", Type: field.TypeJSON},
+		{Name: "size", Type: field.TypeString, Default: ""},
+		{Name: "quality", Type: field.TypeString, Default: ""},
+		{Name: "http_status", Type: field.TypeInt, Default: 0},
+		{Name: "latency_ms", Type: field.TypeInt, Default: 0},
+		{Name: "response_image_count", Type: field.TypeInt, Default: 0},
+		{Name: "error", Type: field.TypeString, Default: ""},
+		{Name: "requested_at", Type: field.TypeTime},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
+	}
+	// GenerationModelInvocationsTable holds the schema information for the "generation_model_invocations" table.
+	GenerationModelInvocationsTable = &schema.Table{
+		Name:       "generation_model_invocations",
+		Columns:    GenerationModelInvocationsColumns,
+		PrimaryKey: []*schema.Column{GenerationModelInvocationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "generationmodelinvocation_task_id_image_number_requested_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationModelInvocationsColumns[1], GenerationModelInvocationsColumns[3], GenerationModelInvocationsColumns[27]},
+			},
+			{
+				Name:    "generationmodelinvocation_user_id_requested_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationModelInvocationsColumns[4], GenerationModelInvocationsColumns[27]},
+			},
+			{
+				Name:    "generationmodelinvocation_channel_id_requested_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationModelInvocationsColumns[8], GenerationModelInvocationsColumns[27]},
+			},
+			{
+				Name:    "generationmodelinvocation_status_requested_at",
+				Unique:  false,
+				Columns: []*schema.Column{GenerationModelInvocationsColumns[17], GenerationModelInvocationsColumns[27]},
+			},
+		},
+	}
 	// GenerationTasksColumns holds the columns for the "generation_tasks" table.
 	GenerationTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2249,6 +2309,7 @@ var (
 		{Name: "work_type", Type: field.TypeString, Default: ""},
 		{Name: "published_at", Type: field.TypeString, Default: ""},
 		{Name: "user_refresh_count", Type: field.TypeInt, Default: 0},
+		{Name: "user_link_edit_count", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -2261,7 +2322,7 @@ var (
 			{
 				Name:    "xhsnotetracking_user_id_updated_at",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationTaskXhsNotesColumns[2], GenerationTaskXhsNotesColumns[15]},
+				Columns: []*schema.Column{GenerationTaskXhsNotesColumns[2], GenerationTaskXhsNotesColumns[16]},
 			},
 		},
 	}
@@ -2282,6 +2343,7 @@ var (
 		ContentEnginesTable,
 		CreditTransactionsTable,
 		GenerationImagesTable,
+		GenerationModelInvocationsTable,
 		GenerationTasksTable,
 		GitBotsTable,
 		GitBotTasksTable,
@@ -2387,6 +2449,9 @@ func init() {
 	GenerationImagesTable.ForeignKeys[0].RefTable = GenerationTasksTable
 	GenerationImagesTable.Annotation = &entsql.Annotation{
 		Table: "generation_images",
+	}
+	GenerationModelInvocationsTable.Annotation = &entsql.Annotation{
+		Table: "generation_model_invocations",
 	}
 	GenerationTasksTable.Annotation = &entsql.Annotation{
 		Table: "generation_tasks",

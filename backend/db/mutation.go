@@ -19,6 +19,7 @@ import (
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
 	"bridal/backend/db/gitbottask"
@@ -104,6 +105,7 @@ const (
 	TypeContentEngine             = "ContentEngine"
 	TypeCreditTransaction         = "CreditTransaction"
 	TypeGenerationImage           = "GenerationImage"
+	TypeGenerationModelInvocation = "GenerationModelInvocation"
 	TypeGenerationTask            = "GenerationTask"
 	TypeGitBot                    = "GitBot"
 	TypeGitBotTask                = "GitBotTask"
@@ -14175,6 +14177,2120 @@ func (m *GenerationImageMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown GenerationImage edge %s", name)
+}
+
+// GenerationModelInvocationMutation represents an operation that mutates the GenerationModelInvocation nodes in the graph.
+type GenerationModelInvocationMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	task_id                 *uuid.UUID
+	generation_image_id     *string
+	image_number            *int
+	addimage_number         *int
+	user_id                 *uuid.UUID
+	username                *string
+	user_email              *string
+	user_role               *string
+	channel_id              *uuid.UUID
+	channel_name            *string
+	api_base_url            *string
+	protocol                *string
+	model_id                *string
+	candidate_index         *int
+	addcandidate_index      *int
+	candidate_count         *int
+	addcandidate_count      *int
+	attempt_number          *int
+	addattempt_number       *int
+	attempt_budget          *int
+	addattempt_budget       *int
+	status                  *string
+	prompt                  *string
+	prompt_hash             *string
+	reference_images        *[]types.ModelInvocationReference
+	appendreference_images  []types.ModelInvocationReference
+	size                    *string
+	quality                 *string
+	http_status             *int
+	addhttp_status          *int
+	latency_ms              *int
+	addlatency_ms           *int
+	response_image_count    *int
+	addresponse_image_count *int
+	error                   *string
+	requested_at            *time.Time
+	completed_at            *time.Time
+	clearedFields           map[string]struct{}
+	done                    bool
+	oldValue                func(context.Context) (*GenerationModelInvocation, error)
+	predicates              []predicate.GenerationModelInvocation
+}
+
+var _ ent.Mutation = (*GenerationModelInvocationMutation)(nil)
+
+// generationmodelinvocationOption allows management of the mutation configuration using functional options.
+type generationmodelinvocationOption func(*GenerationModelInvocationMutation)
+
+// newGenerationModelInvocationMutation creates new mutation for the GenerationModelInvocation entity.
+func newGenerationModelInvocationMutation(c config, op Op, opts ...generationmodelinvocationOption) *GenerationModelInvocationMutation {
+	m := &GenerationModelInvocationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGenerationModelInvocation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGenerationModelInvocationID sets the ID field of the mutation.
+func withGenerationModelInvocationID(id uuid.UUID) generationmodelinvocationOption {
+	return func(m *GenerationModelInvocationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GenerationModelInvocation
+		)
+		m.oldValue = func(ctx context.Context) (*GenerationModelInvocation, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GenerationModelInvocation.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGenerationModelInvocation sets the old GenerationModelInvocation of the mutation.
+func withGenerationModelInvocation(node *GenerationModelInvocation) generationmodelinvocationOption {
+	return func(m *GenerationModelInvocationMutation) {
+		m.oldValue = func(context.Context) (*GenerationModelInvocation, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GenerationModelInvocationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GenerationModelInvocationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("db: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GenerationModelInvocation entities.
+func (m *GenerationModelInvocationMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GenerationModelInvocationMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GenerationModelInvocationMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GenerationModelInvocation.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTaskID sets the "task_id" field.
+func (m *GenerationModelInvocationMutation) SetTaskID(u uuid.UUID) {
+	m.task_id = &u
+}
+
+// TaskID returns the value of the "task_id" field in the mutation.
+func (m *GenerationModelInvocationMutation) TaskID() (r uuid.UUID, exists bool) {
+	v := m.task_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaskID returns the old "task_id" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldTaskID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaskID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaskID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaskID: %w", err)
+	}
+	return oldValue.TaskID, nil
+}
+
+// ResetTaskID resets all changes to the "task_id" field.
+func (m *GenerationModelInvocationMutation) ResetTaskID() {
+	m.task_id = nil
+}
+
+// SetGenerationImageID sets the "generation_image_id" field.
+func (m *GenerationModelInvocationMutation) SetGenerationImageID(s string) {
+	m.generation_image_id = &s
+}
+
+// GenerationImageID returns the value of the "generation_image_id" field in the mutation.
+func (m *GenerationModelInvocationMutation) GenerationImageID() (r string, exists bool) {
+	v := m.generation_image_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGenerationImageID returns the old "generation_image_id" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldGenerationImageID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGenerationImageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGenerationImageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGenerationImageID: %w", err)
+	}
+	return oldValue.GenerationImageID, nil
+}
+
+// ResetGenerationImageID resets all changes to the "generation_image_id" field.
+func (m *GenerationModelInvocationMutation) ResetGenerationImageID() {
+	m.generation_image_id = nil
+}
+
+// SetImageNumber sets the "image_number" field.
+func (m *GenerationModelInvocationMutation) SetImageNumber(i int) {
+	m.image_number = &i
+	m.addimage_number = nil
+}
+
+// ImageNumber returns the value of the "image_number" field in the mutation.
+func (m *GenerationModelInvocationMutation) ImageNumber() (r int, exists bool) {
+	v := m.image_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageNumber returns the old "image_number" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldImageNumber(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageNumber: %w", err)
+	}
+	return oldValue.ImageNumber, nil
+}
+
+// AddImageNumber adds i to the "image_number" field.
+func (m *GenerationModelInvocationMutation) AddImageNumber(i int) {
+	if m.addimage_number != nil {
+		*m.addimage_number += i
+	} else {
+		m.addimage_number = &i
+	}
+}
+
+// AddedImageNumber returns the value that was added to the "image_number" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedImageNumber() (r int, exists bool) {
+	v := m.addimage_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetImageNumber resets all changes to the "image_number" field.
+func (m *GenerationModelInvocationMutation) ResetImageNumber() {
+	m.image_number = nil
+	m.addimage_number = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *GenerationModelInvocationMutation) SetUserID(u uuid.UUID) {
+	m.user_id = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *GenerationModelInvocationMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *GenerationModelInvocationMutation) ResetUserID() {
+	m.user_id = nil
+}
+
+// SetUsername sets the "username" field.
+func (m *GenerationModelInvocationMutation) SetUsername(s string) {
+	m.username = &s
+}
+
+// Username returns the value of the "username" field in the mutation.
+func (m *GenerationModelInvocationMutation) Username() (r string, exists bool) {
+	v := m.username
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsername returns the old "username" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldUsername(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsername requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
+	}
+	return oldValue.Username, nil
+}
+
+// ResetUsername resets all changes to the "username" field.
+func (m *GenerationModelInvocationMutation) ResetUsername() {
+	m.username = nil
+}
+
+// SetUserEmail sets the "user_email" field.
+func (m *GenerationModelInvocationMutation) SetUserEmail(s string) {
+	m.user_email = &s
+}
+
+// UserEmail returns the value of the "user_email" field in the mutation.
+func (m *GenerationModelInvocationMutation) UserEmail() (r string, exists bool) {
+	v := m.user_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserEmail returns the old "user_email" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldUserEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserEmail: %w", err)
+	}
+	return oldValue.UserEmail, nil
+}
+
+// ResetUserEmail resets all changes to the "user_email" field.
+func (m *GenerationModelInvocationMutation) ResetUserEmail() {
+	m.user_email = nil
+}
+
+// SetUserRole sets the "user_role" field.
+func (m *GenerationModelInvocationMutation) SetUserRole(s string) {
+	m.user_role = &s
+}
+
+// UserRole returns the value of the "user_role" field in the mutation.
+func (m *GenerationModelInvocationMutation) UserRole() (r string, exists bool) {
+	v := m.user_role
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserRole returns the old "user_role" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldUserRole(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserRole is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserRole requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserRole: %w", err)
+	}
+	return oldValue.UserRole, nil
+}
+
+// ResetUserRole resets all changes to the "user_role" field.
+func (m *GenerationModelInvocationMutation) ResetUserRole() {
+	m.user_role = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *GenerationModelInvocationMutation) SetChannelID(u uuid.UUID) {
+	m.channel_id = &u
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *GenerationModelInvocationMutation) ChannelID() (r uuid.UUID, exists bool) {
+	v := m.channel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldChannelID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ClearChannelID clears the value of the "channel_id" field.
+func (m *GenerationModelInvocationMutation) ClearChannelID() {
+	m.channel_id = nil
+	m.clearedFields[generationmodelinvocation.FieldChannelID] = struct{}{}
+}
+
+// ChannelIDCleared returns if the "channel_id" field was cleared in this mutation.
+func (m *GenerationModelInvocationMutation) ChannelIDCleared() bool {
+	_, ok := m.clearedFields[generationmodelinvocation.FieldChannelID]
+	return ok
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *GenerationModelInvocationMutation) ResetChannelID() {
+	m.channel_id = nil
+	delete(m.clearedFields, generationmodelinvocation.FieldChannelID)
+}
+
+// SetChannelName sets the "channel_name" field.
+func (m *GenerationModelInvocationMutation) SetChannelName(s string) {
+	m.channel_name = &s
+}
+
+// ChannelName returns the value of the "channel_name" field in the mutation.
+func (m *GenerationModelInvocationMutation) ChannelName() (r string, exists bool) {
+	v := m.channel_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelName returns the old "channel_name" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldChannelName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelName: %w", err)
+	}
+	return oldValue.ChannelName, nil
+}
+
+// ResetChannelName resets all changes to the "channel_name" field.
+func (m *GenerationModelInvocationMutation) ResetChannelName() {
+	m.channel_name = nil
+}
+
+// SetAPIBaseURL sets the "api_base_url" field.
+func (m *GenerationModelInvocationMutation) SetAPIBaseURL(s string) {
+	m.api_base_url = &s
+}
+
+// APIBaseURL returns the value of the "api_base_url" field in the mutation.
+func (m *GenerationModelInvocationMutation) APIBaseURL() (r string, exists bool) {
+	v := m.api_base_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIBaseURL returns the old "api_base_url" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldAPIBaseURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIBaseURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIBaseURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIBaseURL: %w", err)
+	}
+	return oldValue.APIBaseURL, nil
+}
+
+// ResetAPIBaseURL resets all changes to the "api_base_url" field.
+func (m *GenerationModelInvocationMutation) ResetAPIBaseURL() {
+	m.api_base_url = nil
+}
+
+// SetProtocol sets the "protocol" field.
+func (m *GenerationModelInvocationMutation) SetProtocol(s string) {
+	m.protocol = &s
+}
+
+// Protocol returns the value of the "protocol" field in the mutation.
+func (m *GenerationModelInvocationMutation) Protocol() (r string, exists bool) {
+	v := m.protocol
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProtocol returns the old "protocol" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldProtocol(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProtocol is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProtocol requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProtocol: %w", err)
+	}
+	return oldValue.Protocol, nil
+}
+
+// ResetProtocol resets all changes to the "protocol" field.
+func (m *GenerationModelInvocationMutation) ResetProtocol() {
+	m.protocol = nil
+}
+
+// SetModelID sets the "model_id" field.
+func (m *GenerationModelInvocationMutation) SetModelID(s string) {
+	m.model_id = &s
+}
+
+// ModelID returns the value of the "model_id" field in the mutation.
+func (m *GenerationModelInvocationMutation) ModelID() (r string, exists bool) {
+	v := m.model_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelID returns the old "model_id" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldModelID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelID: %w", err)
+	}
+	return oldValue.ModelID, nil
+}
+
+// ResetModelID resets all changes to the "model_id" field.
+func (m *GenerationModelInvocationMutation) ResetModelID() {
+	m.model_id = nil
+}
+
+// SetCandidateIndex sets the "candidate_index" field.
+func (m *GenerationModelInvocationMutation) SetCandidateIndex(i int) {
+	m.candidate_index = &i
+	m.addcandidate_index = nil
+}
+
+// CandidateIndex returns the value of the "candidate_index" field in the mutation.
+func (m *GenerationModelInvocationMutation) CandidateIndex() (r int, exists bool) {
+	v := m.candidate_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCandidateIndex returns the old "candidate_index" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldCandidateIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCandidateIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCandidateIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCandidateIndex: %w", err)
+	}
+	return oldValue.CandidateIndex, nil
+}
+
+// AddCandidateIndex adds i to the "candidate_index" field.
+func (m *GenerationModelInvocationMutation) AddCandidateIndex(i int) {
+	if m.addcandidate_index != nil {
+		*m.addcandidate_index += i
+	} else {
+		m.addcandidate_index = &i
+	}
+}
+
+// AddedCandidateIndex returns the value that was added to the "candidate_index" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedCandidateIndex() (r int, exists bool) {
+	v := m.addcandidate_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCandidateIndex resets all changes to the "candidate_index" field.
+func (m *GenerationModelInvocationMutation) ResetCandidateIndex() {
+	m.candidate_index = nil
+	m.addcandidate_index = nil
+}
+
+// SetCandidateCount sets the "candidate_count" field.
+func (m *GenerationModelInvocationMutation) SetCandidateCount(i int) {
+	m.candidate_count = &i
+	m.addcandidate_count = nil
+}
+
+// CandidateCount returns the value of the "candidate_count" field in the mutation.
+func (m *GenerationModelInvocationMutation) CandidateCount() (r int, exists bool) {
+	v := m.candidate_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCandidateCount returns the old "candidate_count" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldCandidateCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCandidateCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCandidateCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCandidateCount: %w", err)
+	}
+	return oldValue.CandidateCount, nil
+}
+
+// AddCandidateCount adds i to the "candidate_count" field.
+func (m *GenerationModelInvocationMutation) AddCandidateCount(i int) {
+	if m.addcandidate_count != nil {
+		*m.addcandidate_count += i
+	} else {
+		m.addcandidate_count = &i
+	}
+}
+
+// AddedCandidateCount returns the value that was added to the "candidate_count" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedCandidateCount() (r int, exists bool) {
+	v := m.addcandidate_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCandidateCount resets all changes to the "candidate_count" field.
+func (m *GenerationModelInvocationMutation) ResetCandidateCount() {
+	m.candidate_count = nil
+	m.addcandidate_count = nil
+}
+
+// SetAttemptNumber sets the "attempt_number" field.
+func (m *GenerationModelInvocationMutation) SetAttemptNumber(i int) {
+	m.attempt_number = &i
+	m.addattempt_number = nil
+}
+
+// AttemptNumber returns the value of the "attempt_number" field in the mutation.
+func (m *GenerationModelInvocationMutation) AttemptNumber() (r int, exists bool) {
+	v := m.attempt_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttemptNumber returns the old "attempt_number" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldAttemptNumber(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttemptNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttemptNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttemptNumber: %w", err)
+	}
+	return oldValue.AttemptNumber, nil
+}
+
+// AddAttemptNumber adds i to the "attempt_number" field.
+func (m *GenerationModelInvocationMutation) AddAttemptNumber(i int) {
+	if m.addattempt_number != nil {
+		*m.addattempt_number += i
+	} else {
+		m.addattempt_number = &i
+	}
+}
+
+// AddedAttemptNumber returns the value that was added to the "attempt_number" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedAttemptNumber() (r int, exists bool) {
+	v := m.addattempt_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttemptNumber resets all changes to the "attempt_number" field.
+func (m *GenerationModelInvocationMutation) ResetAttemptNumber() {
+	m.attempt_number = nil
+	m.addattempt_number = nil
+}
+
+// SetAttemptBudget sets the "attempt_budget" field.
+func (m *GenerationModelInvocationMutation) SetAttemptBudget(i int) {
+	m.attempt_budget = &i
+	m.addattempt_budget = nil
+}
+
+// AttemptBudget returns the value of the "attempt_budget" field in the mutation.
+func (m *GenerationModelInvocationMutation) AttemptBudget() (r int, exists bool) {
+	v := m.attempt_budget
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttemptBudget returns the old "attempt_budget" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldAttemptBudget(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttemptBudget is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttemptBudget requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttemptBudget: %w", err)
+	}
+	return oldValue.AttemptBudget, nil
+}
+
+// AddAttemptBudget adds i to the "attempt_budget" field.
+func (m *GenerationModelInvocationMutation) AddAttemptBudget(i int) {
+	if m.addattempt_budget != nil {
+		*m.addattempt_budget += i
+	} else {
+		m.addattempt_budget = &i
+	}
+}
+
+// AddedAttemptBudget returns the value that was added to the "attempt_budget" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedAttemptBudget() (r int, exists bool) {
+	v := m.addattempt_budget
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttemptBudget resets all changes to the "attempt_budget" field.
+func (m *GenerationModelInvocationMutation) ResetAttemptBudget() {
+	m.attempt_budget = nil
+	m.addattempt_budget = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *GenerationModelInvocationMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *GenerationModelInvocationMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *GenerationModelInvocationMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetPrompt sets the "prompt" field.
+func (m *GenerationModelInvocationMutation) SetPrompt(s string) {
+	m.prompt = &s
+}
+
+// Prompt returns the value of the "prompt" field in the mutation.
+func (m *GenerationModelInvocationMutation) Prompt() (r string, exists bool) {
+	v := m.prompt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrompt returns the old "prompt" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldPrompt(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrompt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrompt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrompt: %w", err)
+	}
+	return oldValue.Prompt, nil
+}
+
+// ResetPrompt resets all changes to the "prompt" field.
+func (m *GenerationModelInvocationMutation) ResetPrompt() {
+	m.prompt = nil
+}
+
+// SetPromptHash sets the "prompt_hash" field.
+func (m *GenerationModelInvocationMutation) SetPromptHash(s string) {
+	m.prompt_hash = &s
+}
+
+// PromptHash returns the value of the "prompt_hash" field in the mutation.
+func (m *GenerationModelInvocationMutation) PromptHash() (r string, exists bool) {
+	v := m.prompt_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPromptHash returns the old "prompt_hash" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldPromptHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPromptHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPromptHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPromptHash: %w", err)
+	}
+	return oldValue.PromptHash, nil
+}
+
+// ResetPromptHash resets all changes to the "prompt_hash" field.
+func (m *GenerationModelInvocationMutation) ResetPromptHash() {
+	m.prompt_hash = nil
+}
+
+// SetReferenceImages sets the "reference_images" field.
+func (m *GenerationModelInvocationMutation) SetReferenceImages(tir []types.ModelInvocationReference) {
+	m.reference_images = &tir
+	m.appendreference_images = nil
+}
+
+// ReferenceImages returns the value of the "reference_images" field in the mutation.
+func (m *GenerationModelInvocationMutation) ReferenceImages() (r []types.ModelInvocationReference, exists bool) {
+	v := m.reference_images
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferenceImages returns the old "reference_images" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldReferenceImages(ctx context.Context) (v []types.ModelInvocationReference, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferenceImages is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferenceImages requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferenceImages: %w", err)
+	}
+	return oldValue.ReferenceImages, nil
+}
+
+// AppendReferenceImages adds tir to the "reference_images" field.
+func (m *GenerationModelInvocationMutation) AppendReferenceImages(tir []types.ModelInvocationReference) {
+	m.appendreference_images = append(m.appendreference_images, tir...)
+}
+
+// AppendedReferenceImages returns the list of values that were appended to the "reference_images" field in this mutation.
+func (m *GenerationModelInvocationMutation) AppendedReferenceImages() ([]types.ModelInvocationReference, bool) {
+	if len(m.appendreference_images) == 0 {
+		return nil, false
+	}
+	return m.appendreference_images, true
+}
+
+// ResetReferenceImages resets all changes to the "reference_images" field.
+func (m *GenerationModelInvocationMutation) ResetReferenceImages() {
+	m.reference_images = nil
+	m.appendreference_images = nil
+}
+
+// SetSize sets the "size" field.
+func (m *GenerationModelInvocationMutation) SetSize(s string) {
+	m.size = &s
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *GenerationModelInvocationMutation) Size() (r string, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldSize(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *GenerationModelInvocationMutation) ResetSize() {
+	m.size = nil
+}
+
+// SetQuality sets the "quality" field.
+func (m *GenerationModelInvocationMutation) SetQuality(s string) {
+	m.quality = &s
+}
+
+// Quality returns the value of the "quality" field in the mutation.
+func (m *GenerationModelInvocationMutation) Quality() (r string, exists bool) {
+	v := m.quality
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuality returns the old "quality" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldQuality(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuality is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuality requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuality: %w", err)
+	}
+	return oldValue.Quality, nil
+}
+
+// ResetQuality resets all changes to the "quality" field.
+func (m *GenerationModelInvocationMutation) ResetQuality() {
+	m.quality = nil
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (m *GenerationModelInvocationMutation) SetHTTPStatus(i int) {
+	m.http_status = &i
+	m.addhttp_status = nil
+}
+
+// HTTPStatus returns the value of the "http_status" field in the mutation.
+func (m *GenerationModelInvocationMutation) HTTPStatus() (r int, exists bool) {
+	v := m.http_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHTTPStatus returns the old "http_status" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldHTTPStatus(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHTTPStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHTTPStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHTTPStatus: %w", err)
+	}
+	return oldValue.HTTPStatus, nil
+}
+
+// AddHTTPStatus adds i to the "http_status" field.
+func (m *GenerationModelInvocationMutation) AddHTTPStatus(i int) {
+	if m.addhttp_status != nil {
+		*m.addhttp_status += i
+	} else {
+		m.addhttp_status = &i
+	}
+}
+
+// AddedHTTPStatus returns the value that was added to the "http_status" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedHTTPStatus() (r int, exists bool) {
+	v := m.addhttp_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHTTPStatus resets all changes to the "http_status" field.
+func (m *GenerationModelInvocationMutation) ResetHTTPStatus() {
+	m.http_status = nil
+	m.addhttp_status = nil
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (m *GenerationModelInvocationMutation) SetLatencyMs(i int) {
+	m.latency_ms = &i
+	m.addlatency_ms = nil
+}
+
+// LatencyMs returns the value of the "latency_ms" field in the mutation.
+func (m *GenerationModelInvocationMutation) LatencyMs() (r int, exists bool) {
+	v := m.latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLatencyMs returns the old "latency_ms" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldLatencyMs(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLatencyMs: %w", err)
+	}
+	return oldValue.LatencyMs, nil
+}
+
+// AddLatencyMs adds i to the "latency_ms" field.
+func (m *GenerationModelInvocationMutation) AddLatencyMs(i int) {
+	if m.addlatency_ms != nil {
+		*m.addlatency_ms += i
+	} else {
+		m.addlatency_ms = &i
+	}
+}
+
+// AddedLatencyMs returns the value that was added to the "latency_ms" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedLatencyMs() (r int, exists bool) {
+	v := m.addlatency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLatencyMs resets all changes to the "latency_ms" field.
+func (m *GenerationModelInvocationMutation) ResetLatencyMs() {
+	m.latency_ms = nil
+	m.addlatency_ms = nil
+}
+
+// SetResponseImageCount sets the "response_image_count" field.
+func (m *GenerationModelInvocationMutation) SetResponseImageCount(i int) {
+	m.response_image_count = &i
+	m.addresponse_image_count = nil
+}
+
+// ResponseImageCount returns the value of the "response_image_count" field in the mutation.
+func (m *GenerationModelInvocationMutation) ResponseImageCount() (r int, exists bool) {
+	v := m.response_image_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResponseImageCount returns the old "response_image_count" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldResponseImageCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResponseImageCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResponseImageCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResponseImageCount: %w", err)
+	}
+	return oldValue.ResponseImageCount, nil
+}
+
+// AddResponseImageCount adds i to the "response_image_count" field.
+func (m *GenerationModelInvocationMutation) AddResponseImageCount(i int) {
+	if m.addresponse_image_count != nil {
+		*m.addresponse_image_count += i
+	} else {
+		m.addresponse_image_count = &i
+	}
+}
+
+// AddedResponseImageCount returns the value that was added to the "response_image_count" field in this mutation.
+func (m *GenerationModelInvocationMutation) AddedResponseImageCount() (r int, exists bool) {
+	v := m.addresponse_image_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetResponseImageCount resets all changes to the "response_image_count" field.
+func (m *GenerationModelInvocationMutation) ResetResponseImageCount() {
+	m.response_image_count = nil
+	m.addresponse_image_count = nil
+}
+
+// SetError sets the "error" field.
+func (m *GenerationModelInvocationMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *GenerationModelInvocationMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *GenerationModelInvocationMutation) ResetError() {
+	m.error = nil
+}
+
+// SetRequestedAt sets the "requested_at" field.
+func (m *GenerationModelInvocationMutation) SetRequestedAt(t time.Time) {
+	m.requested_at = &t
+}
+
+// RequestedAt returns the value of the "requested_at" field in the mutation.
+func (m *GenerationModelInvocationMutation) RequestedAt() (r time.Time, exists bool) {
+	v := m.requested_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestedAt returns the old "requested_at" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldRequestedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestedAt: %w", err)
+	}
+	return oldValue.RequestedAt, nil
+}
+
+// ResetRequestedAt resets all changes to the "requested_at" field.
+func (m *GenerationModelInvocationMutation) ResetRequestedAt() {
+	m.requested_at = nil
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (m *GenerationModelInvocationMutation) SetCompletedAt(t time.Time) {
+	m.completed_at = &t
+}
+
+// CompletedAt returns the value of the "completed_at" field in the mutation.
+func (m *GenerationModelInvocationMutation) CompletedAt() (r time.Time, exists bool) {
+	v := m.completed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompletedAt returns the old "completed_at" field's value of the GenerationModelInvocation entity.
+// If the GenerationModelInvocation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationModelInvocationMutation) OldCompletedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompletedAt: %w", err)
+	}
+	return oldValue.CompletedAt, nil
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (m *GenerationModelInvocationMutation) ClearCompletedAt() {
+	m.completed_at = nil
+	m.clearedFields[generationmodelinvocation.FieldCompletedAt] = struct{}{}
+}
+
+// CompletedAtCleared returns if the "completed_at" field was cleared in this mutation.
+func (m *GenerationModelInvocationMutation) CompletedAtCleared() bool {
+	_, ok := m.clearedFields[generationmodelinvocation.FieldCompletedAt]
+	return ok
+}
+
+// ResetCompletedAt resets all changes to the "completed_at" field.
+func (m *GenerationModelInvocationMutation) ResetCompletedAt() {
+	m.completed_at = nil
+	delete(m.clearedFields, generationmodelinvocation.FieldCompletedAt)
+}
+
+// Where appends a list predicates to the GenerationModelInvocationMutation builder.
+func (m *GenerationModelInvocationMutation) Where(ps ...predicate.GenerationModelInvocation) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GenerationModelInvocationMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GenerationModelInvocationMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GenerationModelInvocation, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GenerationModelInvocationMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GenerationModelInvocationMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GenerationModelInvocation).
+func (m *GenerationModelInvocationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GenerationModelInvocationMutation) Fields() []string {
+	fields := make([]string, 0, 28)
+	if m.task_id != nil {
+		fields = append(fields, generationmodelinvocation.FieldTaskID)
+	}
+	if m.generation_image_id != nil {
+		fields = append(fields, generationmodelinvocation.FieldGenerationImageID)
+	}
+	if m.image_number != nil {
+		fields = append(fields, generationmodelinvocation.FieldImageNumber)
+	}
+	if m.user_id != nil {
+		fields = append(fields, generationmodelinvocation.FieldUserID)
+	}
+	if m.username != nil {
+		fields = append(fields, generationmodelinvocation.FieldUsername)
+	}
+	if m.user_email != nil {
+		fields = append(fields, generationmodelinvocation.FieldUserEmail)
+	}
+	if m.user_role != nil {
+		fields = append(fields, generationmodelinvocation.FieldUserRole)
+	}
+	if m.channel_id != nil {
+		fields = append(fields, generationmodelinvocation.FieldChannelID)
+	}
+	if m.channel_name != nil {
+		fields = append(fields, generationmodelinvocation.FieldChannelName)
+	}
+	if m.api_base_url != nil {
+		fields = append(fields, generationmodelinvocation.FieldAPIBaseURL)
+	}
+	if m.protocol != nil {
+		fields = append(fields, generationmodelinvocation.FieldProtocol)
+	}
+	if m.model_id != nil {
+		fields = append(fields, generationmodelinvocation.FieldModelID)
+	}
+	if m.candidate_index != nil {
+		fields = append(fields, generationmodelinvocation.FieldCandidateIndex)
+	}
+	if m.candidate_count != nil {
+		fields = append(fields, generationmodelinvocation.FieldCandidateCount)
+	}
+	if m.attempt_number != nil {
+		fields = append(fields, generationmodelinvocation.FieldAttemptNumber)
+	}
+	if m.attempt_budget != nil {
+		fields = append(fields, generationmodelinvocation.FieldAttemptBudget)
+	}
+	if m.status != nil {
+		fields = append(fields, generationmodelinvocation.FieldStatus)
+	}
+	if m.prompt != nil {
+		fields = append(fields, generationmodelinvocation.FieldPrompt)
+	}
+	if m.prompt_hash != nil {
+		fields = append(fields, generationmodelinvocation.FieldPromptHash)
+	}
+	if m.reference_images != nil {
+		fields = append(fields, generationmodelinvocation.FieldReferenceImages)
+	}
+	if m.size != nil {
+		fields = append(fields, generationmodelinvocation.FieldSize)
+	}
+	if m.quality != nil {
+		fields = append(fields, generationmodelinvocation.FieldQuality)
+	}
+	if m.http_status != nil {
+		fields = append(fields, generationmodelinvocation.FieldHTTPStatus)
+	}
+	if m.latency_ms != nil {
+		fields = append(fields, generationmodelinvocation.FieldLatencyMs)
+	}
+	if m.response_image_count != nil {
+		fields = append(fields, generationmodelinvocation.FieldResponseImageCount)
+	}
+	if m.error != nil {
+		fields = append(fields, generationmodelinvocation.FieldError)
+	}
+	if m.requested_at != nil {
+		fields = append(fields, generationmodelinvocation.FieldRequestedAt)
+	}
+	if m.completed_at != nil {
+		fields = append(fields, generationmodelinvocation.FieldCompletedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GenerationModelInvocationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case generationmodelinvocation.FieldTaskID:
+		return m.TaskID()
+	case generationmodelinvocation.FieldGenerationImageID:
+		return m.GenerationImageID()
+	case generationmodelinvocation.FieldImageNumber:
+		return m.ImageNumber()
+	case generationmodelinvocation.FieldUserID:
+		return m.UserID()
+	case generationmodelinvocation.FieldUsername:
+		return m.Username()
+	case generationmodelinvocation.FieldUserEmail:
+		return m.UserEmail()
+	case generationmodelinvocation.FieldUserRole:
+		return m.UserRole()
+	case generationmodelinvocation.FieldChannelID:
+		return m.ChannelID()
+	case generationmodelinvocation.FieldChannelName:
+		return m.ChannelName()
+	case generationmodelinvocation.FieldAPIBaseURL:
+		return m.APIBaseURL()
+	case generationmodelinvocation.FieldProtocol:
+		return m.Protocol()
+	case generationmodelinvocation.FieldModelID:
+		return m.ModelID()
+	case generationmodelinvocation.FieldCandidateIndex:
+		return m.CandidateIndex()
+	case generationmodelinvocation.FieldCandidateCount:
+		return m.CandidateCount()
+	case generationmodelinvocation.FieldAttemptNumber:
+		return m.AttemptNumber()
+	case generationmodelinvocation.FieldAttemptBudget:
+		return m.AttemptBudget()
+	case generationmodelinvocation.FieldStatus:
+		return m.Status()
+	case generationmodelinvocation.FieldPrompt:
+		return m.Prompt()
+	case generationmodelinvocation.FieldPromptHash:
+		return m.PromptHash()
+	case generationmodelinvocation.FieldReferenceImages:
+		return m.ReferenceImages()
+	case generationmodelinvocation.FieldSize:
+		return m.Size()
+	case generationmodelinvocation.FieldQuality:
+		return m.Quality()
+	case generationmodelinvocation.FieldHTTPStatus:
+		return m.HTTPStatus()
+	case generationmodelinvocation.FieldLatencyMs:
+		return m.LatencyMs()
+	case generationmodelinvocation.FieldResponseImageCount:
+		return m.ResponseImageCount()
+	case generationmodelinvocation.FieldError:
+		return m.Error()
+	case generationmodelinvocation.FieldRequestedAt:
+		return m.RequestedAt()
+	case generationmodelinvocation.FieldCompletedAt:
+		return m.CompletedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GenerationModelInvocationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case generationmodelinvocation.FieldTaskID:
+		return m.OldTaskID(ctx)
+	case generationmodelinvocation.FieldGenerationImageID:
+		return m.OldGenerationImageID(ctx)
+	case generationmodelinvocation.FieldImageNumber:
+		return m.OldImageNumber(ctx)
+	case generationmodelinvocation.FieldUserID:
+		return m.OldUserID(ctx)
+	case generationmodelinvocation.FieldUsername:
+		return m.OldUsername(ctx)
+	case generationmodelinvocation.FieldUserEmail:
+		return m.OldUserEmail(ctx)
+	case generationmodelinvocation.FieldUserRole:
+		return m.OldUserRole(ctx)
+	case generationmodelinvocation.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case generationmodelinvocation.FieldChannelName:
+		return m.OldChannelName(ctx)
+	case generationmodelinvocation.FieldAPIBaseURL:
+		return m.OldAPIBaseURL(ctx)
+	case generationmodelinvocation.FieldProtocol:
+		return m.OldProtocol(ctx)
+	case generationmodelinvocation.FieldModelID:
+		return m.OldModelID(ctx)
+	case generationmodelinvocation.FieldCandidateIndex:
+		return m.OldCandidateIndex(ctx)
+	case generationmodelinvocation.FieldCandidateCount:
+		return m.OldCandidateCount(ctx)
+	case generationmodelinvocation.FieldAttemptNumber:
+		return m.OldAttemptNumber(ctx)
+	case generationmodelinvocation.FieldAttemptBudget:
+		return m.OldAttemptBudget(ctx)
+	case generationmodelinvocation.FieldStatus:
+		return m.OldStatus(ctx)
+	case generationmodelinvocation.FieldPrompt:
+		return m.OldPrompt(ctx)
+	case generationmodelinvocation.FieldPromptHash:
+		return m.OldPromptHash(ctx)
+	case generationmodelinvocation.FieldReferenceImages:
+		return m.OldReferenceImages(ctx)
+	case generationmodelinvocation.FieldSize:
+		return m.OldSize(ctx)
+	case generationmodelinvocation.FieldQuality:
+		return m.OldQuality(ctx)
+	case generationmodelinvocation.FieldHTTPStatus:
+		return m.OldHTTPStatus(ctx)
+	case generationmodelinvocation.FieldLatencyMs:
+		return m.OldLatencyMs(ctx)
+	case generationmodelinvocation.FieldResponseImageCount:
+		return m.OldResponseImageCount(ctx)
+	case generationmodelinvocation.FieldError:
+		return m.OldError(ctx)
+	case generationmodelinvocation.FieldRequestedAt:
+		return m.OldRequestedAt(ctx)
+	case generationmodelinvocation.FieldCompletedAt:
+		return m.OldCompletedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown GenerationModelInvocation field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GenerationModelInvocationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case generationmodelinvocation.FieldTaskID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaskID(v)
+		return nil
+	case generationmodelinvocation.FieldGenerationImageID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGenerationImageID(v)
+		return nil
+	case generationmodelinvocation.FieldImageNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageNumber(v)
+		return nil
+	case generationmodelinvocation.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case generationmodelinvocation.FieldUsername:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsername(v)
+		return nil
+	case generationmodelinvocation.FieldUserEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserEmail(v)
+		return nil
+	case generationmodelinvocation.FieldUserRole:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserRole(v)
+		return nil
+	case generationmodelinvocation.FieldChannelID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case generationmodelinvocation.FieldChannelName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelName(v)
+		return nil
+	case generationmodelinvocation.FieldAPIBaseURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIBaseURL(v)
+		return nil
+	case generationmodelinvocation.FieldProtocol:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProtocol(v)
+		return nil
+	case generationmodelinvocation.FieldModelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelID(v)
+		return nil
+	case generationmodelinvocation.FieldCandidateIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCandidateIndex(v)
+		return nil
+	case generationmodelinvocation.FieldCandidateCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCandidateCount(v)
+		return nil
+	case generationmodelinvocation.FieldAttemptNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttemptNumber(v)
+		return nil
+	case generationmodelinvocation.FieldAttemptBudget:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttemptBudget(v)
+		return nil
+	case generationmodelinvocation.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case generationmodelinvocation.FieldPrompt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrompt(v)
+		return nil
+	case generationmodelinvocation.FieldPromptHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPromptHash(v)
+		return nil
+	case generationmodelinvocation.FieldReferenceImages:
+		v, ok := value.([]types.ModelInvocationReference)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferenceImages(v)
+		return nil
+	case generationmodelinvocation.FieldSize:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case generationmodelinvocation.FieldQuality:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuality(v)
+		return nil
+	case generationmodelinvocation.FieldHTTPStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHTTPStatus(v)
+		return nil
+	case generationmodelinvocation.FieldLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLatencyMs(v)
+		return nil
+	case generationmodelinvocation.FieldResponseImageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResponseImageCount(v)
+		return nil
+	case generationmodelinvocation.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case generationmodelinvocation.FieldRequestedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestedAt(v)
+		return nil
+	case generationmodelinvocation.FieldCompletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompletedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GenerationModelInvocation field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GenerationModelInvocationMutation) AddedFields() []string {
+	var fields []string
+	if m.addimage_number != nil {
+		fields = append(fields, generationmodelinvocation.FieldImageNumber)
+	}
+	if m.addcandidate_index != nil {
+		fields = append(fields, generationmodelinvocation.FieldCandidateIndex)
+	}
+	if m.addcandidate_count != nil {
+		fields = append(fields, generationmodelinvocation.FieldCandidateCount)
+	}
+	if m.addattempt_number != nil {
+		fields = append(fields, generationmodelinvocation.FieldAttemptNumber)
+	}
+	if m.addattempt_budget != nil {
+		fields = append(fields, generationmodelinvocation.FieldAttemptBudget)
+	}
+	if m.addhttp_status != nil {
+		fields = append(fields, generationmodelinvocation.FieldHTTPStatus)
+	}
+	if m.addlatency_ms != nil {
+		fields = append(fields, generationmodelinvocation.FieldLatencyMs)
+	}
+	if m.addresponse_image_count != nil {
+		fields = append(fields, generationmodelinvocation.FieldResponseImageCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GenerationModelInvocationMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case generationmodelinvocation.FieldImageNumber:
+		return m.AddedImageNumber()
+	case generationmodelinvocation.FieldCandidateIndex:
+		return m.AddedCandidateIndex()
+	case generationmodelinvocation.FieldCandidateCount:
+		return m.AddedCandidateCount()
+	case generationmodelinvocation.FieldAttemptNumber:
+		return m.AddedAttemptNumber()
+	case generationmodelinvocation.FieldAttemptBudget:
+		return m.AddedAttemptBudget()
+	case generationmodelinvocation.FieldHTTPStatus:
+		return m.AddedHTTPStatus()
+	case generationmodelinvocation.FieldLatencyMs:
+		return m.AddedLatencyMs()
+	case generationmodelinvocation.FieldResponseImageCount:
+		return m.AddedResponseImageCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GenerationModelInvocationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case generationmodelinvocation.FieldImageNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddImageNumber(v)
+		return nil
+	case generationmodelinvocation.FieldCandidateIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCandidateIndex(v)
+		return nil
+	case generationmodelinvocation.FieldCandidateCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCandidateCount(v)
+		return nil
+	case generationmodelinvocation.FieldAttemptNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttemptNumber(v)
+		return nil
+	case generationmodelinvocation.FieldAttemptBudget:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttemptBudget(v)
+		return nil
+	case generationmodelinvocation.FieldHTTPStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHTTPStatus(v)
+		return nil
+	case generationmodelinvocation.FieldLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLatencyMs(v)
+		return nil
+	case generationmodelinvocation.FieldResponseImageCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddResponseImageCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GenerationModelInvocation numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GenerationModelInvocationMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(generationmodelinvocation.FieldChannelID) {
+		fields = append(fields, generationmodelinvocation.FieldChannelID)
+	}
+	if m.FieldCleared(generationmodelinvocation.FieldCompletedAt) {
+		fields = append(fields, generationmodelinvocation.FieldCompletedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GenerationModelInvocationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GenerationModelInvocationMutation) ClearField(name string) error {
+	switch name {
+	case generationmodelinvocation.FieldChannelID:
+		m.ClearChannelID()
+		return nil
+	case generationmodelinvocation.FieldCompletedAt:
+		m.ClearCompletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown GenerationModelInvocation nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GenerationModelInvocationMutation) ResetField(name string) error {
+	switch name {
+	case generationmodelinvocation.FieldTaskID:
+		m.ResetTaskID()
+		return nil
+	case generationmodelinvocation.FieldGenerationImageID:
+		m.ResetGenerationImageID()
+		return nil
+	case generationmodelinvocation.FieldImageNumber:
+		m.ResetImageNumber()
+		return nil
+	case generationmodelinvocation.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case generationmodelinvocation.FieldUsername:
+		m.ResetUsername()
+		return nil
+	case generationmodelinvocation.FieldUserEmail:
+		m.ResetUserEmail()
+		return nil
+	case generationmodelinvocation.FieldUserRole:
+		m.ResetUserRole()
+		return nil
+	case generationmodelinvocation.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case generationmodelinvocation.FieldChannelName:
+		m.ResetChannelName()
+		return nil
+	case generationmodelinvocation.FieldAPIBaseURL:
+		m.ResetAPIBaseURL()
+		return nil
+	case generationmodelinvocation.FieldProtocol:
+		m.ResetProtocol()
+		return nil
+	case generationmodelinvocation.FieldModelID:
+		m.ResetModelID()
+		return nil
+	case generationmodelinvocation.FieldCandidateIndex:
+		m.ResetCandidateIndex()
+		return nil
+	case generationmodelinvocation.FieldCandidateCount:
+		m.ResetCandidateCount()
+		return nil
+	case generationmodelinvocation.FieldAttemptNumber:
+		m.ResetAttemptNumber()
+		return nil
+	case generationmodelinvocation.FieldAttemptBudget:
+		m.ResetAttemptBudget()
+		return nil
+	case generationmodelinvocation.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case generationmodelinvocation.FieldPrompt:
+		m.ResetPrompt()
+		return nil
+	case generationmodelinvocation.FieldPromptHash:
+		m.ResetPromptHash()
+		return nil
+	case generationmodelinvocation.FieldReferenceImages:
+		m.ResetReferenceImages()
+		return nil
+	case generationmodelinvocation.FieldSize:
+		m.ResetSize()
+		return nil
+	case generationmodelinvocation.FieldQuality:
+		m.ResetQuality()
+		return nil
+	case generationmodelinvocation.FieldHTTPStatus:
+		m.ResetHTTPStatus()
+		return nil
+	case generationmodelinvocation.FieldLatencyMs:
+		m.ResetLatencyMs()
+		return nil
+	case generationmodelinvocation.FieldResponseImageCount:
+		m.ResetResponseImageCount()
+		return nil
+	case generationmodelinvocation.FieldError:
+		m.ResetError()
+		return nil
+	case generationmodelinvocation.FieldRequestedAt:
+		m.ResetRequestedAt()
+		return nil
+	case generationmodelinvocation.FieldCompletedAt:
+		m.ResetCompletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown GenerationModelInvocation field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GenerationModelInvocationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GenerationModelInvocationMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GenerationModelInvocationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GenerationModelInvocationMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GenerationModelInvocationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GenerationModelInvocationMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GenerationModelInvocationMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown GenerationModelInvocation unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GenerationModelInvocationMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown GenerationModelInvocation edge %s", name)
 }
 
 // GenerationTaskMutation represents an operation that mutates the GenerationTask nodes in the graph.
@@ -67684,29 +69800,31 @@ func (m *XHSNoteSnapshotMutation) ResetEdge(name string) error {
 // XHSNoteTrackingMutation represents an operation that mutates the XHSNoteTracking nodes in the graph.
 type XHSNoteTrackingMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *uuid.UUID
-	task_id               *uuid.UUID
-	user_id               *uuid.UUID
-	note_url              *string
-	canonical_url         *string
-	work_id               *string
-	account_user_id       *string
-	account_id            *string
-	title                 *string
-	body                  *string
-	cover_url             *string
-	work_type             *string
-	published_at          *string
-	user_refresh_count    *int
-	adduser_refresh_count *int
-	created_at            *time.Time
-	updated_at            *time.Time
-	clearedFields         map[string]struct{}
-	done                  bool
-	oldValue              func(context.Context) (*XHSNoteTracking, error)
-	predicates            []predicate.XHSNoteTracking
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	task_id                 *uuid.UUID
+	user_id                 *uuid.UUID
+	note_url                *string
+	canonical_url           *string
+	work_id                 *string
+	account_user_id         *string
+	account_id              *string
+	title                   *string
+	body                    *string
+	cover_url               *string
+	work_type               *string
+	published_at            *string
+	user_refresh_count      *int
+	adduser_refresh_count   *int
+	user_link_edit_count    *int
+	adduser_link_edit_count *int
+	created_at              *time.Time
+	updated_at              *time.Time
+	clearedFields           map[string]struct{}
+	done                    bool
+	oldValue                func(context.Context) (*XHSNoteTracking, error)
+	predicates              []predicate.XHSNoteTracking
 }
 
 var _ ent.Mutation = (*XHSNoteTrackingMutation)(nil)
@@ -68301,6 +70419,62 @@ func (m *XHSNoteTrackingMutation) ResetUserRefreshCount() {
 	m.adduser_refresh_count = nil
 }
 
+// SetUserLinkEditCount sets the "user_link_edit_count" field.
+func (m *XHSNoteTrackingMutation) SetUserLinkEditCount(i int) {
+	m.user_link_edit_count = &i
+	m.adduser_link_edit_count = nil
+}
+
+// UserLinkEditCount returns the value of the "user_link_edit_count" field in the mutation.
+func (m *XHSNoteTrackingMutation) UserLinkEditCount() (r int, exists bool) {
+	v := m.user_link_edit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserLinkEditCount returns the old "user_link_edit_count" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldUserLinkEditCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserLinkEditCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserLinkEditCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserLinkEditCount: %w", err)
+	}
+	return oldValue.UserLinkEditCount, nil
+}
+
+// AddUserLinkEditCount adds i to the "user_link_edit_count" field.
+func (m *XHSNoteTrackingMutation) AddUserLinkEditCount(i int) {
+	if m.adduser_link_edit_count != nil {
+		*m.adduser_link_edit_count += i
+	} else {
+		m.adduser_link_edit_count = &i
+	}
+}
+
+// AddedUserLinkEditCount returns the value that was added to the "user_link_edit_count" field in this mutation.
+func (m *XHSNoteTrackingMutation) AddedUserLinkEditCount() (r int, exists bool) {
+	v := m.adduser_link_edit_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserLinkEditCount resets all changes to the "user_link_edit_count" field.
+func (m *XHSNoteTrackingMutation) ResetUserLinkEditCount() {
+	m.user_link_edit_count = nil
+	m.adduser_link_edit_count = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *XHSNoteTrackingMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -68407,7 +70581,7 @@ func (m *XHSNoteTrackingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *XHSNoteTrackingMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.task_id != nil {
 		fields = append(fields, xhsnotetracking.FieldTaskID)
 	}
@@ -68446,6 +70620,9 @@ func (m *XHSNoteTrackingMutation) Fields() []string {
 	}
 	if m.user_refresh_count != nil {
 		fields = append(fields, xhsnotetracking.FieldUserRefreshCount)
+	}
+	if m.user_link_edit_count != nil {
+		fields = append(fields, xhsnotetracking.FieldUserLinkEditCount)
 	}
 	if m.created_at != nil {
 		fields = append(fields, xhsnotetracking.FieldCreatedAt)
@@ -68487,6 +70664,8 @@ func (m *XHSNoteTrackingMutation) Field(name string) (ent.Value, bool) {
 		return m.PublishedAt()
 	case xhsnotetracking.FieldUserRefreshCount:
 		return m.UserRefreshCount()
+	case xhsnotetracking.FieldUserLinkEditCount:
+		return m.UserLinkEditCount()
 	case xhsnotetracking.FieldCreatedAt:
 		return m.CreatedAt()
 	case xhsnotetracking.FieldUpdatedAt:
@@ -68526,6 +70705,8 @@ func (m *XHSNoteTrackingMutation) OldField(ctx context.Context, name string) (en
 		return m.OldPublishedAt(ctx)
 	case xhsnotetracking.FieldUserRefreshCount:
 		return m.OldUserRefreshCount(ctx)
+	case xhsnotetracking.FieldUserLinkEditCount:
+		return m.OldUserLinkEditCount(ctx)
 	case xhsnotetracking.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case xhsnotetracking.FieldUpdatedAt:
@@ -68630,6 +70811,13 @@ func (m *XHSNoteTrackingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUserRefreshCount(v)
 		return nil
+	case xhsnotetracking.FieldUserLinkEditCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserLinkEditCount(v)
+		return nil
 	case xhsnotetracking.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -68655,6 +70843,9 @@ func (m *XHSNoteTrackingMutation) AddedFields() []string {
 	if m.adduser_refresh_count != nil {
 		fields = append(fields, xhsnotetracking.FieldUserRefreshCount)
 	}
+	if m.adduser_link_edit_count != nil {
+		fields = append(fields, xhsnotetracking.FieldUserLinkEditCount)
+	}
 	return fields
 }
 
@@ -68665,6 +70856,8 @@ func (m *XHSNoteTrackingMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case xhsnotetracking.FieldUserRefreshCount:
 		return m.AddedUserRefreshCount()
+	case xhsnotetracking.FieldUserLinkEditCount:
+		return m.AddedUserLinkEditCount()
 	}
 	return nil, false
 }
@@ -68680,6 +70873,13 @@ func (m *XHSNoteTrackingMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddUserRefreshCount(v)
+		return nil
+	case xhsnotetracking.FieldUserLinkEditCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserLinkEditCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown XHSNoteTracking numeric field %s", name)
@@ -68746,6 +70946,9 @@ func (m *XHSNoteTrackingMutation) ResetField(name string) error {
 		return nil
 	case xhsnotetracking.FieldUserRefreshCount:
 		m.ResetUserRefreshCount()
+		return nil
+	case xhsnotetracking.FieldUserLinkEditCount:
+		m.ResetUserLinkEditCount()
 		return nil
 	case xhsnotetracking.FieldCreatedAt:
 		m.ResetCreatedAt()

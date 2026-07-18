@@ -182,6 +182,20 @@ func (_c *XHSNoteTrackingCreate) SetNillableUserRefreshCount(v *int) *XHSNoteTra
 	return _c
 }
 
+// SetUserLinkEditCount sets the "user_link_edit_count" field.
+func (_c *XHSNoteTrackingCreate) SetUserLinkEditCount(v int) *XHSNoteTrackingCreate {
+	_c.mutation.SetUserLinkEditCount(v)
+	return _c
+}
+
+// SetNillableUserLinkEditCount sets the "user_link_edit_count" field if the given value is not nil.
+func (_c *XHSNoteTrackingCreate) SetNillableUserLinkEditCount(v *int) *XHSNoteTrackingCreate {
+	if v != nil {
+		_c.SetUserLinkEditCount(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *XHSNoteTrackingCreate) SetCreatedAt(v time.Time) *XHSNoteTrackingCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -299,6 +313,10 @@ func (_c *XHSNoteTrackingCreate) defaults() {
 		v := xhsnotetracking.DefaultUserRefreshCount
 		_c.mutation.SetUserRefreshCount(v)
 	}
+	if _, ok := _c.mutation.UserLinkEditCount(); !ok {
+		v := xhsnotetracking.DefaultUserLinkEditCount
+		_c.mutation.SetUserLinkEditCount(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := xhsnotetracking.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -353,6 +371,9 @@ func (_c *XHSNoteTrackingCreate) check() error {
 	}
 	if _, ok := _c.mutation.UserRefreshCount(); !ok {
 		return &ValidationError{Name: "user_refresh_count", err: errors.New(`db: missing required field "XHSNoteTracking.user_refresh_count"`)}
+	}
+	if _, ok := _c.mutation.UserLinkEditCount(); !ok {
+		return &ValidationError{Name: "user_link_edit_count", err: errors.New(`db: missing required field "XHSNoteTracking.user_link_edit_count"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "XHSNoteTracking.created_at"`)}
@@ -447,6 +468,10 @@ func (_c *XHSNoteTrackingCreate) createSpec() (*XHSNoteTracking, *sqlgraph.Creat
 	if value, ok := _c.mutation.UserRefreshCount(); ok {
 		_spec.SetField(xhsnotetracking.FieldUserRefreshCount, field.TypeInt, value)
 		_node.UserRefreshCount = value
+	}
+	if value, ok := _c.mutation.UserLinkEditCount(); ok {
+		_spec.SetField(xhsnotetracking.FieldUserLinkEditCount, field.TypeInt, value)
+		_node.UserLinkEditCount = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotetracking.FieldCreatedAt, field.TypeTime, value)
@@ -667,6 +692,24 @@ func (u *XHSNoteTrackingUpsert) UpdateUserRefreshCount() *XHSNoteTrackingUpsert 
 // AddUserRefreshCount adds v to the "user_refresh_count" field.
 func (u *XHSNoteTrackingUpsert) AddUserRefreshCount(v int) *XHSNoteTrackingUpsert {
 	u.Add(xhsnotetracking.FieldUserRefreshCount, v)
+	return u
+}
+
+// SetUserLinkEditCount sets the "user_link_edit_count" field.
+func (u *XHSNoteTrackingUpsert) SetUserLinkEditCount(v int) *XHSNoteTrackingUpsert {
+	u.Set(xhsnotetracking.FieldUserLinkEditCount, v)
+	return u
+}
+
+// UpdateUserLinkEditCount sets the "user_link_edit_count" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsert) UpdateUserLinkEditCount() *XHSNoteTrackingUpsert {
+	u.SetExcluded(xhsnotetracking.FieldUserLinkEditCount)
+	return u
+}
+
+// AddUserLinkEditCount adds v to the "user_link_edit_count" field.
+func (u *XHSNoteTrackingUpsert) AddUserLinkEditCount(v int) *XHSNoteTrackingUpsert {
+	u.Add(xhsnotetracking.FieldUserLinkEditCount, v)
 	return u
 }
 
@@ -928,6 +971,27 @@ func (u *XHSNoteTrackingUpsertOne) AddUserRefreshCount(v int) *XHSNoteTrackingUp
 func (u *XHSNoteTrackingUpsertOne) UpdateUserRefreshCount() *XHSNoteTrackingUpsertOne {
 	return u.Update(func(s *XHSNoteTrackingUpsert) {
 		s.UpdateUserRefreshCount()
+	})
+}
+
+// SetUserLinkEditCount sets the "user_link_edit_count" field.
+func (u *XHSNoteTrackingUpsertOne) SetUserLinkEditCount(v int) *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.SetUserLinkEditCount(v)
+	})
+}
+
+// AddUserLinkEditCount adds v to the "user_link_edit_count" field.
+func (u *XHSNoteTrackingUpsertOne) AddUserLinkEditCount(v int) *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.AddUserLinkEditCount(v)
+	})
+}
+
+// UpdateUserLinkEditCount sets the "user_link_edit_count" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsertOne) UpdateUserLinkEditCount() *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.UpdateUserLinkEditCount()
 	})
 }
 
@@ -1360,6 +1424,27 @@ func (u *XHSNoteTrackingUpsertBulk) AddUserRefreshCount(v int) *XHSNoteTrackingU
 func (u *XHSNoteTrackingUpsertBulk) UpdateUserRefreshCount() *XHSNoteTrackingUpsertBulk {
 	return u.Update(func(s *XHSNoteTrackingUpsert) {
 		s.UpdateUserRefreshCount()
+	})
+}
+
+// SetUserLinkEditCount sets the "user_link_edit_count" field.
+func (u *XHSNoteTrackingUpsertBulk) SetUserLinkEditCount(v int) *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.SetUserLinkEditCount(v)
+	})
+}
+
+// AddUserLinkEditCount adds v to the "user_link_edit_count" field.
+func (u *XHSNoteTrackingUpsertBulk) AddUserLinkEditCount(v int) *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.AddUserLinkEditCount(v)
+	})
+}
+
+// UpdateUserLinkEditCount sets the "user_link_edit_count" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsertBulk) UpdateUserLinkEditCount() *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.UpdateUserLinkEditCount()
 	})
 }
 

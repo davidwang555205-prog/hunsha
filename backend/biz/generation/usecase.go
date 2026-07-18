@@ -492,6 +492,21 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		return nil, wala.NewError(400, "缺少生图参数。")
 	}
 
+	// categoryId 是内容生成和生图共同的引擎路由键。存量客户端未传时兼容默认 bridal；
+	// 新工作台必须按已选类目的 engine 读取 imagePrompt，不能硬编码默认引擎。
+	var categoryID uuid.UUID
+	if req.CategoryID != "" {
+		id, err := uuid.Parse(req.CategoryID)
+		if err != nil {
+			return nil, wala.NewError(400, "类目 ID 格式不正确。")
+		}
+		categoryID = id
+	}
+	engineKey, err := u.resolveImagePromptEngine(ctx, categoryID)
+	if err != nil {
+		return nil, wala.NewError(400, err.Error())
+	}
+
 	// 2. 校验 title/body/tags
 	title := strings.TrimSpace(req.Title)
 	textBody := strings.TrimSpace(req.Body)
@@ -598,9 +613,11 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		normalized[i] = p
 	}
 
-	// 6. 生成 promptPlans
-	// 拉取内容引擎 imagePrompt 素材配置（content_engines.config.imagePrompt），失败/无配置降级代码默认。
-	imageAssets := u.loadImagePromptAssets(ctx)
+	// 6. 生成 promptPlans。imagePrompt 与内容生成使用同一个 category.engine。
+	imageAssets, err := u.loadImagePromptAssets(ctx, engineKey)
+	if err != nil {
+		return nil, wala.NewError(400, err.Error())
+	}
 	plans := make([]promptPlan, len(normalized))
 	for i, p := range normalized {
 		sctx := prompt.SeriesContext{
@@ -644,12 +661,7 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		model = "gpt-image-2"
 	}
 	// 8. 解析 categoryId/channelId
-	var categoryID, channelID uuid.UUID
-	if req.CategoryID != "" {
-		if id, err := uuid.Parse(req.CategoryID); err == nil {
-			categoryID = id
-		}
-	}
+	var channelID uuid.UUID
 	if req.ChannelID != "" {
 		if id, err := uuid.Parse(req.ChannelID); err == nil {
 			channelID = id
@@ -701,6 +713,8 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 			u.logger.WarnContext(ctx, "save scene reference image failed", "error", err)
 		} else {
 			thumbURL, _ := u.store.PutThumbnail(ctx, filename, sceneFile.Data)
+			sceneFile.SourceURL = proxyURL
+			sceneFile.ReferenceKind = "scene"
 			refImages = append(refImages, ImageRecord{
 				ID:          fmt.Sprintf("%s-ref-scene", recordID),
 				Name:        sceneFile.Name,
@@ -720,6 +734,8 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 			continue
 		}
 		thumbURL, _ := u.store.PutThumbnail(ctx, filename, f.Data)
+		productFiles[i].SourceURL = proxyURL
+		productFiles[i].ReferenceKind = "product"
 		refImages = append(refImages, ImageRecord{
 			ID:          fmt.Sprintf("%s-ref-product-%d", recordID, i+1),
 			Name:        f.Name,

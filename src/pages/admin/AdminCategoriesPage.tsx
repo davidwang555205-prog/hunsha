@@ -5,8 +5,8 @@
  * - 列表（名称/图标/简介/引擎/排序/状态）-- 管理列表含禁用类目
  * - 创建/编辑（弹窗：名称/简介/图标/内容引擎/排序/启用）
  *
- * 注意：engine 默认 bridal（婚纱礼服内容引擎）。内容引擎选项暂硬编码，
- * WS-7 内容引擎配置化后改为从 /api/engines 拉取。
+ * 注意：engine 默认 bridal（婚纱礼服内容引擎）；编辑器从 /api/admin/engines
+ * 动态拉取可选内容引擎。
  */
 import { useEffect, useState } from "react";
 import { listAllCategories, createCategory, updateCategory, deleteCategory, listEngines, uploadCategoryCover } from "../../api/admin";

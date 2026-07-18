@@ -41,6 +41,9 @@ const AdminCreditsPage = lazy(() =>
 const AdminEnginesPage = lazy(() =>
   import("./pages/admin/AdminEnginesPage").then((m) => ({ default: m.AdminEnginesPage }))
 );
+const AdminModelInvocationsPage = lazy(() =>
+  import("./pages/admin/AdminModelInvocationsPage").then((m) => ({ default: m.AdminModelInvocationsPage }))
+);
 
 function PageFallback() {
   return (
@@ -89,6 +92,7 @@ export default function App() {
         <Route path="/admin" element={<AdminShell><AdminPage /></AdminShell>} />
         <Route path="/admin/users" element={<AdminShell><AdminUsersPage /></AdminShell>} />
         <Route path="/admin/history" element={<AdminShell><HistoryPage adminMode /></AdminShell>} />
+        <Route path="/admin/model-invocations" element={<AdminShell><AdminModelInvocationsPage /></AdminShell>} />
         <Route path="/admin/channels" element={<AdminShell><AdminChannelsPage /></AdminShell>} />
         <Route path="/admin/categories" element={<AdminShell><AdminCategoriesPage /></AdminShell>} />
         <Route path="/admin/credits" element={<AdminShell><AdminCreditsPage /></AdminShell>} />

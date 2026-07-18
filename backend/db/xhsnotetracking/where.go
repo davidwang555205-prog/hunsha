@@ -120,6 +120,11 @@ func UserRefreshCount(v int) predicate.XHSNoteTracking {
 	return predicate.XHSNoteTracking(sql.FieldEQ(FieldUserRefreshCount, v))
 }
 
+// UserLinkEditCount applies equality check predicate on the "user_link_edit_count" field. It's identical to UserLinkEditCountEQ.
+func UserLinkEditCount(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldEQ(FieldUserLinkEditCount, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.XHSNoteTracking {
 	return predicate.XHSNoteTracking(sql.FieldEQ(FieldCreatedAt, v))
@@ -898,6 +903,46 @@ func UserRefreshCountLT(v int) predicate.XHSNoteTracking {
 // UserRefreshCountLTE applies the LTE predicate on the "user_refresh_count" field.
 func UserRefreshCountLTE(v int) predicate.XHSNoteTracking {
 	return predicate.XHSNoteTracking(sql.FieldLTE(FieldUserRefreshCount, v))
+}
+
+// UserLinkEditCountEQ applies the EQ predicate on the "user_link_edit_count" field.
+func UserLinkEditCountEQ(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldEQ(FieldUserLinkEditCount, v))
+}
+
+// UserLinkEditCountNEQ applies the NEQ predicate on the "user_link_edit_count" field.
+func UserLinkEditCountNEQ(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNEQ(FieldUserLinkEditCount, v))
+}
+
+// UserLinkEditCountIn applies the In predicate on the "user_link_edit_count" field.
+func UserLinkEditCountIn(vs ...int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldIn(FieldUserLinkEditCount, vs...))
+}
+
+// UserLinkEditCountNotIn applies the NotIn predicate on the "user_link_edit_count" field.
+func UserLinkEditCountNotIn(vs ...int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNotIn(FieldUserLinkEditCount, vs...))
+}
+
+// UserLinkEditCountGT applies the GT predicate on the "user_link_edit_count" field.
+func UserLinkEditCountGT(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldGT(FieldUserLinkEditCount, v))
+}
+
+// UserLinkEditCountGTE applies the GTE predicate on the "user_link_edit_count" field.
+func UserLinkEditCountGTE(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldGTE(FieldUserLinkEditCount, v))
+}
+
+// UserLinkEditCountLT applies the LT predicate on the "user_link_edit_count" field.
+func UserLinkEditCountLT(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldLT(FieldUserLinkEditCount, v))
+}
+
+// UserLinkEditCountLTE applies the LTE predicate on the "user_link_edit_count" field.
+func UserLinkEditCountLTE(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldLTE(FieldUserLinkEditCount, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

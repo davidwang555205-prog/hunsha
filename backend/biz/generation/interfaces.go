@@ -29,6 +29,22 @@ type taskRepo interface {
 	ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin bool, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID uuid.UUID) ([]TaskRecord, int, error)
 	UpdateTaskFeedback(ctx context.Context, taskID uuid.UUID, fb types.TaskFeedback) error
 	CleanupExpired(ctx context.Context, cutoff time.Time) (nTask, nImage int, err error)
+	GetCategoryEngine(ctx context.Context, categoryID uuid.UUID) (*CategoryEngine, error)
+}
+
+// modelInvocationRepo 为调用审计提供可选能力。保持其与 taskRepo 分离，让既有 worker
+// 单测无需耦合数据库审计；生产 Repo 同时实现两者。
+type modelInvocationRepo interface {
+	CreateModelInvocation(ctx context.Context, rec ModelInvocationRecord) error
+	FinishModelInvocation(ctx context.Context, id uuid.UUID, status string, httpStatus, latencyMs, responseImageCount int, message string, completedAt time.Time) error
+	ListModelInvocations(ctx context.Context, filter ModelInvocationQuery) ([]ModelInvocationRecord, int, error)
+}
+
+// CategoryEngine 是生图阶段所需的类目路由信息。类目配置 content_engines.key，
+// 由 generation Repo 直接读取，避免 generation 与 categories 业务包形成循环依赖。
+type CategoryEngine struct {
+	Engine    string
+	IsEnabled bool
 }
 
 // taskStore 抽象图片存储（*imagestore.Store 实现）。

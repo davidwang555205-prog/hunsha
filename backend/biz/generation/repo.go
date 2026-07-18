@@ -9,6 +9,7 @@ import (
 	"github.com/samber/do"
 
 	"bridal/backend/db"
+	"bridal/backend/db/category"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/ent/types"
@@ -18,6 +19,17 @@ import (
 type Repo struct {
 	db     *db.Client
 	logger *slog.Logger
+}
+
+// GetCategoryEngine 返回生图请求所属类目的内容引擎路由。
+func (r *Repo) GetCategoryEngine(ctx context.Context, categoryID uuid.UUID) (*CategoryEngine, error) {
+	c, err := r.db.Category.Query().
+		Where(category.IDEQ(categoryID)).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &CategoryEngine{Engine: c.Engine, IsEnabled: c.IsEnabled}, nil
 }
 
 func NewRepo(i *do.Injector) (*Repo, error) {

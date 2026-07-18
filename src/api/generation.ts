@@ -21,6 +21,8 @@ import type {
   HistoryQuery,
   HistoryRecord,
   HistoryResponse,
+  ModelInvocationListResponse,
+  ModelInvocationQuery,
   SubmitFeedbackRequest,
   TaskDetailResponse,
   TaskListResponse,
@@ -75,6 +77,14 @@ export function importXHSNote(taskId: string, noteUrl: string) {
   );
 }
 
+/** 修改已关联的笔记链接并立即重新采集；普通用户每条记录最多修改 3 次。 */
+export function updateXHSNote(taskId: string, noteUrl: string) {
+  return apiRequest<{ note: XHSNoteTracking }>(
+    `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note`,
+    { method: "PUT", body: JSON.stringify({ noteUrl }), timeoutMs: 45_000 }
+  );
+}
+
 /** 刷新已关联笔记；普通用户最多 7 次，管理员不受总次数限制。 */
 export function refreshXHSNote(taskId: string) {
   return apiRequest<{ note: XHSNoteTracking }>(
@@ -108,6 +118,28 @@ export function listHistoryPaged(query: HistoryQuery = {}) {
 /** 兼容：历史列表（旧100条，部分组件仍用） */
 export function listHistory() {
   return apiRequest<HistoryResponse>("/api/v1/generation/history");
+}
+
+/** 管理员模型调用审计列表：一条记录对应一次真实上游 HTTP 请求。 */
+export function listModelInvocations(query: ModelInvocationQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.page) params.set("page", String(query.page));
+  if (query.pageSize) params.set("pageSize", String(query.pageSize));
+  if (query.taskId) params.set("taskId", query.taskId);
+  if (query.userId) params.set("userId", query.userId);
+  if (query.channelId) params.set("channelId", query.channelId);
+  if (query.status) params.set("status", query.status);
+  if (query.startTime) params.set("startTime", query.startTime);
+  if (query.endTime) params.set("endTime", query.endTime);
+  const qs = params.toString();
+  return apiRequest<ModelInvocationListResponse>(`/api/v1/generation/invocations${qs ? `?${qs}` : ""}`);
+}
+
+/** 管理员在任务详情中查看该任务的完整模型调用时间线。 */
+export function listTaskModelInvocations(taskId: string) {
+  return apiRequest<ModelInvocationListResponse>(
+    `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/invocations`
+  );
 }
 
 /** 生图统计（admin 概览页用，GET /api/v1/generation/stats） */

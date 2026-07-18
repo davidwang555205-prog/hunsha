@@ -22,6 +22,7 @@ import (
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/gitbot"
 	"bridal/backend/db/gitbottask"
@@ -534,6 +535,33 @@ func (f TraverseGenerationImage) Traverse(ctx context.Context, q db.Query) error
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *db.GenerationImageQuery", q)
+}
+
+// The GenerationModelInvocationFunc type is an adapter to allow the use of ordinary function as a Querier.
+type GenerationModelInvocationFunc func(context.Context, *db.GenerationModelInvocationQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f GenerationModelInvocationFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.GenerationModelInvocationQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.GenerationModelInvocationQuery", q)
+}
+
+// The TraverseGenerationModelInvocation type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseGenerationModelInvocation func(context.Context, *db.GenerationModelInvocationQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseGenerationModelInvocation) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseGenerationModelInvocation) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.GenerationModelInvocationQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.GenerationModelInvocationQuery", q)
 }
 
 // The GenerationTaskFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1865,6 +1893,8 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.CreditTransactionQuery, predicate.CreditTransaction, credittransaction.OrderOption]{typ: db.TypeCreditTransaction, tq: q}, nil
 	case *db.GenerationImageQuery:
 		return &query[*db.GenerationImageQuery, predicate.GenerationImage, generationimage.OrderOption]{typ: db.TypeGenerationImage, tq: q}, nil
+	case *db.GenerationModelInvocationQuery:
+		return &query[*db.GenerationModelInvocationQuery, predicate.GenerationModelInvocation, generationmodelinvocation.OrderOption]{typ: db.TypeGenerationModelInvocation, tq: q}, nil
 	case *db.GenerationTaskQuery:
 		return &query[*db.GenerationTaskQuery, predicate.GenerationTask, generationtask.OrderOption]{typ: db.TypeGenerationTask, tq: q}, nil
 	case *db.GitBotQuery:

@@ -13,6 +13,7 @@ import { listMembers } from "../api/admin";
 import { PageHeader } from "../components/layout/PageHeader";
 import { HistoryCard } from "../components/history/HistoryCard";
 import { HistoryDetailDrawer } from "../components/history/HistoryDetailDrawer";
+import { XHSNotePanel } from "../components/history/XHSNotePanel";
 import { Button } from "../components/ui/Button";
 import { Segmented } from "../components/ui/Segmented";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -74,6 +75,7 @@ function dateToISO(date: string, endOfDay: boolean): string | undefined {
 export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {}) {
   const { query, records, total, totalPages, isLoading, error, setPage, setFilter, setPageSize, refresh } = useHistoryPaged();
   const [detail, setDetail] = useState<HistoryRecord | null>(null);
+  const [xhsRecord, setXhsRecord] = useState<HistoryRecord | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [members, setMembers] = useState<TeamMemberInfo[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -279,7 +281,7 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
       ) : hasRecords ? (
         <div className="flex flex-col gap-4">
           {records.map((record) => (
-            <HistoryCard key={record.id} record={record} onOpenDetail={setDetail} onMessage={setMessage} />
+            <HistoryCard key={record.id} record={record} onOpenDetail={setDetail} onOpenXHS={setXhsRecord} onMessage={setMessage} />
           ))}
         </div>
       ) : (
@@ -328,6 +330,9 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
         onClose={() => setDetail(null)}
         isAdmin={adminMode}
       />
+      <Modal open={!!xhsRecord} onClose={() => setXhsRecord(null)} title="小红书发布数据" size="xl">
+        {xhsRecord && <XHSNotePanel key={xhsRecord.id} taskId={xhsRecord.id} isAdmin={adminMode} initialURL={xhsRecord.feedback?.noteUrl} />}
+      </Modal>
     </>
   );
 }

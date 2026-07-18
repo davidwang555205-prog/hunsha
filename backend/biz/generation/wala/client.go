@@ -78,11 +78,28 @@ func NewClient(cfg Config) *Client {
 
 // FileInput 参考图输入，对应 Node FileInput（前端 dataUrl）。
 type FileInput struct {
-	Name string
-	Type string // mime
-	Size int64
-	Data []byte // 原始字节（已从 dataUrl 解码）
+	Name          string
+	Type          string // mime
+	Size          int64
+	Data          []byte // 原始字节（已从 dataUrl 解码）
+	SourceURL     string // 仅供审计展示的受控对象 URL，绝不参与上游请求
+	ReferenceKind string // scene | product | continuity_scene | continuity_identity
 }
+
+// AttemptEvent 描述一次真实发往上游模型的 HTTP 请求。
+// 调用方可据此写审计记录；响应体只在内存中传递，调用方不得持久化其中的 Base64 图片数据。
+type AttemptEvent struct {
+	Attempt     int
+	StartedAt   time.Time
+	CompletedAt time.Time
+	Status      int
+	BodyText    string
+	Err         error
+	Finished    bool
+}
+
+// AttemptObserver 在每次真实 HTTP 调用开始、结束时各调用一次。
+type AttemptObserver func(AttemptEvent)
 
 // GeneratedImage WalaAPI 返回的单张图，对应 Node extractGeneratedImages 输出。
 type GeneratedImage struct {
@@ -433,12 +450,42 @@ func (c *Client) BuildOverloadMessage(message string) string {
 // 成功（2xx）或不可重试时立即返回；可重试失败按指数退避重试。
 // 对应 Node callWalaApiWithRetries。返回 bodyText 供调用方解析。
 func (c *Client) CallWithRetries(ctx context.Context, req Request) (status int, bodyText string, err error) {
+	return c.CallWithAttempts(ctx, req, c.retryAttempts)
+}
+
+// CallWithAttempts 使用指定尝试次数调用生图接口。多线路 fallback 会把总重试预算
+// 分给各候选线路，避免每条线路各自耗尽重试后才切换，导致一次失败长时间占住任务。
+func (c *Client) CallWithAttempts(ctx context.Context, req Request, attempts int) (status int, bodyText string, err error) {
+	return c.CallWithAttemptsObserved(ctx, req, attempts, nil)
+}
+
+// CallWithAttemptsObserved 与 CallWithAttempts 相同，但会为每一次实际 HTTP 请求回调 observer。
+// 重试等待本身不会产生事件，避免把排队/退避误记为上游模型调用。
+func (c *Client) CallWithAttemptsObserved(ctx context.Context, req Request, attempts int, observer AttemptObserver) (status int, bodyText string, err error) {
+	if attempts <= 0 {
+		attempts = c.retryAttempts
+	}
 	var lastErr error
-	for attempt := 1; attempt <= c.retryAttempts; attempt++ {
+	for attempt := 1; attempt <= attempts; attempt++ {
+		startedAt := time.Now()
+		if observer != nil {
+			observer(AttemptEvent{Attempt: attempt, StartedAt: startedAt})
+		}
 		status, bodyText, err = c.Call(ctx, req)
+		if observer != nil {
+			observer(AttemptEvent{
+				Attempt:     attempt,
+				StartedAt:   startedAt,
+				CompletedAt: time.Now(),
+				Status:      status,
+				BodyText:    bodyText,
+				Err:         err,
+				Finished:    true,
+			})
+		}
 		// 无 error：HTTP 响应已拿到
 		if err == nil {
-			if status < 400 || attempt >= c.retryAttempts {
+			if status < 400 || attempt >= attempts {
 				return status, bodyText, nil
 			}
 			// 非 2xx：判断是否可重试
@@ -449,10 +496,10 @@ func (c *Client) CallWithRetries(ctx context.Context, req Request) (status int, 
 			// 网络层错误（含超时 504）
 			walaErr, ok := err.(*Error)
 			if ok {
-				if !IsRetryable(walaErr.StatusCode, walaErr.Message) || attempt >= c.retryAttempts {
+				if !IsRetryable(walaErr.StatusCode, walaErr.Message) || attempt >= attempts {
 					return 0, "", err
 				}
-			} else if attempt >= c.retryAttempts {
+			} else if attempt >= attempts {
 				return 0, "", err
 			}
 			lastErr = err

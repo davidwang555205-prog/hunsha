@@ -20,12 +20,13 @@ import type { HistoryRecord } from "../../types/api";
 type HistoryCardProps = {
   record: HistoryRecord;
   onOpenDetail: (record: HistoryRecord) => void;
+  onOpenXHS?: (record: HistoryRecord) => void;
   onMessage: (message: string) => void;
 };
 
 const MENU_WIDTH = 168; // w-40(160px) + 容错，用于右对齐定位
 
-export function HistoryCard({ record, onOpenDetail, onMessage }: HistoryCardProps) {
+export function HistoryCard({ record, onOpenDetail, onOpenXHS, onMessage }: HistoryCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -126,7 +127,7 @@ export function HistoryCard({ record, onOpenDetail, onMessage }: HistoryCardProp
           >
             操作 ▾
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => onOpenDetail(record)}>
+          <Button variant="secondary" size="sm" onClick={() => (onOpenXHS ?? onOpenDetail)(record)}>
             小红书数据
           </Button>
           {menuOpen &&

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +24,12 @@ import (
 	"bridal/backend/ent/types"
 )
 
-const maxUserXHSRefreshes = 7
+const (
+	maxUserXHSRefreshes = 7
+	maxUserXHSLinkEdits = 3
+)
+
+var xhsURLPattern = regexp.MustCompile(`(?i)https?://[^\s<>"']+`)
 
 // XHSUsecase owns note tracking separately from the legacy feedback JSON field.
 // Snapshot rows are append-only so numerical deltas always have a real baseline.
@@ -67,6 +73,8 @@ type XHSNoteResponse struct {
 	PublishedAt            string                `json:"publishedAt"`
 	UserRefreshCount       int                   `json:"userRefreshCount"`
 	UserRefreshesRemaining *int                  `json:"userRefreshesRemaining,omitempty"`
+	UserLinkEditCount      int                   `json:"userLinkEditCount"`
+	UserLinkEditsRemaining *int                  `json:"userLinkEditsRemaining,omitempty"`
 	Snapshots              []XHSNoteSnapshotResp `json:"snapshots"`
 }
 
@@ -198,6 +206,68 @@ func (u *XHSUsecase) Refresh(ctx context.Context, user *domain.User, taskID uuid
 	return u.Get(ctx, user, taskID)
 }
 
+// UpdateLink replaces a tracking link, immediately collects the new note, and
+// appends a snapshot so previously collected data remains traceable.
+func (u *XHSUsecase) UpdateLink(ctx context.Context, user *domain.User, taskID uuid.UUID, req XHSNoteImportReq) (*XHSNoteResponse, error) {
+	noteURL, err := normalizeXHSURL(req.NoteURL)
+	if err != nil {
+		return nil, redfoxURLInputError(err)
+	}
+	if _, err := u.authorizeTask(ctx, user, taskID); err != nil {
+		return nil, err
+	}
+	lock := u.taskLock(taskID)
+	lock.Lock()
+	defer lock.Unlock()
+	tracking, err := u.db.XHSNoteTracking.Query().Where(xhsnotetracking.TaskIDEQ(taskID)).Only(ctx)
+	if db.IsNotFound(err) {
+		return nil, redfoxURLInputError(fmt.Errorf("请先填写小红书笔记链接"))
+	}
+	if err != nil {
+		return nil, err
+	}
+	if noteURL == tracking.NoteURL {
+		return nil, redfoxURLInputError(fmt.Errorf("小红书笔记链接未变化"))
+	}
+	isAdmin := user.HasUnlimitedImageGeneration()
+	if !isAdmin && tracking.UserLinkEditCount >= maxUserXHSLinkEdits {
+		return nil, redfoxURLInputError(fmt.Errorf("本笔记链接已用完 %d 次修改机会", maxUserXHSLinkEdits))
+	}
+	work, account, similar, warn, err := u.collect(ctx, noteURL, "")
+	if err != nil {
+		return nil, err
+	}
+	sequence, err := u.db.XHSNoteSnapshot.Query().Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID)).Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	trigger := "user_link_edit"
+	if isAdmin {
+		trigger = "admin_link_edit"
+	}
+	if _, err := u.createSnapshot(ctx, tracking, sequence+1, trigger, work, account, similar, warn); err != nil {
+		return nil, err
+	}
+	update := u.db.XHSNoteTracking.UpdateOneID(tracking.ID).
+		SetNoteURL(noteURL).
+		SetCanonicalURL(firstNonEmpty(work.WorkURL, noteURL)).
+		SetWorkID(work.WorkID).
+		SetAccountUserID(firstNonEmpty(account.UserID, work.AccountUserID)).
+		SetAccountID(account.AccountID).
+		SetTitle(work.WorkTitle).
+		SetBody(work.WorkDesc).
+		SetCoverURL(work.CoverURL).
+		SetWorkType(work.WorkType).
+		SetPublishedAt(work.WorkPublishTime)
+	if !isAdmin {
+		update = update.AddUserLinkEditCount(1)
+	}
+	if err := update.Exec(ctx); err != nil {
+		return nil, err
+	}
+	return u.Get(ctx, user, taskID)
+}
+
 func (u *XHSUsecase) Get(ctx context.Context, user *domain.User, taskID uuid.UUID) (*XHSNoteResponse, error) {
 	if _, err := u.authorizeTask(ctx, user, taskID); err != nil {
 		return nil, err
@@ -217,22 +287,25 @@ func (u *XHSUsecase) Get(ctx context.Context, user *domain.User, taskID uuid.UUI
 		return nil, err
 	}
 	resp := &XHSNoteResponse{
-		ID:               tracking.ID.String(),
-		TaskID:           tracking.TaskID.String(),
-		NoteURL:          tracking.NoteURL,
-		CanonicalURL:     tracking.CanonicalURL,
-		WorkID:           tracking.WorkID,
-		Title:            tracking.Title,
-		Body:             tracking.Body,
-		CoverURL:         tracking.CoverURL,
-		WorkType:         tracking.WorkType,
-		PublishedAt:      tracking.PublishedAt,
-		UserRefreshCount: tracking.UserRefreshCount,
-		Snapshots:        make([]XHSNoteSnapshotResp, 0, len(snapshots)),
+		ID:                tracking.ID.String(),
+		TaskID:            tracking.TaskID.String(),
+		NoteURL:           tracking.NoteURL,
+		CanonicalURL:      tracking.CanonicalURL,
+		WorkID:            tracking.WorkID,
+		Title:             tracking.Title,
+		Body:              tracking.Body,
+		CoverURL:          tracking.CoverURL,
+		WorkType:          tracking.WorkType,
+		PublishedAt:       tracking.PublishedAt,
+		UserRefreshCount:  tracking.UserRefreshCount,
+		UserLinkEditCount: tracking.UserLinkEditCount,
+		Snapshots:         make([]XHSNoteSnapshotResp, 0, len(snapshots)),
 	}
 	if !user.HasUnlimitedImageGeneration() {
 		remaining := max(0, maxUserXHSRefreshes-tracking.UserRefreshCount)
 		resp.UserRefreshesRemaining = &remaining
+		linkEditsRemaining := max(0, maxUserXHSLinkEdits-tracking.UserLinkEditCount)
+		resp.UserLinkEditsRemaining = &linkEditsRemaining
 	}
 	for _, snapshot := range snapshots {
 		resp.Snapshots = append(resp.Snapshots, snapshotResponse(snapshot))
@@ -368,9 +441,13 @@ func similarAccount(item redfox.SimilarAccount, rank int, tier string) types.XHS
 }
 
 func normalizeXHSURL(raw string) (string, error) {
-	parsed, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
-		return "", fmt.Errorf("请填写有效的小红书 HTTPS 笔记链接")
+	candidate := strings.TrimRight(strings.TrimSpace(xhsURLPattern.FindString(raw)), ".,;!?，。；！？、)]}）】》〉」』\"'")
+	if candidate == "" {
+		return "", fmt.Errorf("请粘贴包含小红书笔记链接的分享内容")
+	}
+	parsed, err := url.Parse(candidate)
+	if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Host == "" {
+		return "", fmt.Errorf("请填写有效的小红书笔记链接")
 	}
 	host := strings.ToLower(parsed.Hostname())
 	switch host {

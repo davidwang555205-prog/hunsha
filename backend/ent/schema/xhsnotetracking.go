@@ -34,6 +34,7 @@ func (XHSNoteTracking) Fields() []ent.Field {
 		field.String("work_type").Default(""),
 		field.String("published_at").Default(""),
 		field.Int("user_refresh_count").Default(0),
+		field.Int("user_link_edit_count").Default(0),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

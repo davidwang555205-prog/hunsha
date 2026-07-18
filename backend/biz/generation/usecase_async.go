@@ -2,7 +2,11 @@ package generation
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +15,7 @@ import (
 	"bridal/backend/biz/channels"
 	"bridal/backend/biz/generation/wala"
 	"bridal/backend/domain"
+	"bridal/backend/ent/types"
 )
 
 // AsyncTaskResp 异步任务详情响应，对应前端 GenerationTask。
@@ -107,6 +112,15 @@ func (u *Usecase) ListTasks(ctx context.Context, userID uuid.UUID, isAdmin bool,
 	return u.repo.ListTasksPaged(ctx, userID, isAdmin, page, pageSize, status, startTime, endTime, uuid.Nil, uuid.Nil)
 }
 
+// ListModelInvocations 返回管理员模型调用审计记录。该能力随迁移上线；旧测试 repo 不实现时明确报错。
+func (u *Usecase) ListModelInvocations(ctx context.Context, filter ModelInvocationQuery) ([]ModelInvocationRecord, int, error) {
+	repo, ok := u.repo.(modelInvocationRepo)
+	if !ok {
+		return nil, 0, fmt.Errorf("模型调用审计仓储不可用")
+	}
+	return repo.ListModelInvocations(ctx, filter)
+}
+
 // CancelTask 取消任务（handler 调）：置 cancelled，worker 循环检测后停止。
 func (u *Usecase) CancelTask(ctx context.Context, taskID uuid.UUID, userID uuid.UUID, isAdmin bool) error {
 	rec, err := u.repo.GetTask(ctx, taskID)
@@ -128,8 +142,14 @@ func (u *Usecase) CancelTask(ctx context.Context, taskID uuid.UUID, userID uuid.
 // walaCaller 抽象 wala 调用（CallWithRetries + BuildOverloadMessage），便于测试 callWithFallback 的线路切换逻辑。
 // *wala.Client 实现此接口。
 type walaCaller interface {
-	CallWithRetries(ctx context.Context, req wala.Request) (status int, bodyText string, err error)
+	CallWithAttempts(ctx context.Context, req wala.Request, attempts int) (status int, bodyText string, err error)
 	BuildOverloadMessage(message string) string
+}
+
+// observedWalaCaller 由真实 wala.Client 实现。保留 walaCaller 的基础接口，避免既有
+// worker 测试 fake 耦合审计实现；生产环境则精确记录每一次 HTTP 尝试。
+type observedWalaCaller interface {
+	CallWithAttemptsObserved(ctx context.Context, req wala.Request, attempts int, observer wala.AttemptObserver) (status int, bodyText string, err error)
 }
 
 // channelClient 优先级 fallback 候选链的一个节点。
@@ -138,6 +158,9 @@ type channelClient struct {
 	client         walaCaller
 	id             uuid.UUID
 	name           string
+	apiBaseURL     string
+	protocol       string
+	modelID        string
 	trackStats     bool
 	maxConcurrency int // 用户级并发度（=该线路 max_concurrency），控制该用户跨任务同时生成的图片数
 }
@@ -239,6 +262,9 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 			}),
 			id:             ch.ID,
 			name:           ch.Name,
+			apiBaseURL:     ch.APIBaseURL,
+			protocol:       ch.Protocol,
+			modelID:        ch.ModelID,
 			trackStats:     true,
 			maxConcurrency: chMC,
 		})
@@ -261,10 +287,21 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 
 	// 无任何候选：回退 .env 默认 client
 	if len(candidates) == 0 {
+		apiBaseURL := u.cfg.Bridal.WalaAPIBaseURL
+		if apiBaseURL == "" {
+			apiBaseURL = "https://walaapi.net/v1"
+		}
+		modelID := u.cfg.Bridal.WalaImageModel
+		if modelID == "" {
+			modelID = "gpt-image-2"
+		}
 		candidates = append(candidates, channelClient{
 			client:         u.wala,
 			id:             uuid.Nil,
 			name:           "默认",
+			apiBaseURL:     apiBaseURL,
+			protocol:       "openai",
+			modelID:        modelID,
 			trackStats:     false,
 			maxConcurrency: 1, // .env 默认 client 无线路配置，默认逐张串行
 		})
@@ -272,25 +309,60 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 	return candidates
 }
 
-// callWithFallback 按候选线路链顺序调 wala，可重试失败切下一线路，全部失败才报错。
-// 不可重试错误（如 400 参数错误）直接返回不切线路。每个尝试线路 IncStats（.env 默认 client 除外）。
-// 返回最终状态码/响应体/所用线路/错误。
+// callWithFallback 是无任务上下文调用入口，主要供测试使用。
 func (u *Usecase) callWithFallback(ctx context.Context, candidates []channelClient, req wala.Request) (status int, bodyText string, used channelClient, err error) {
+	return u.callWithFallbackLogged(ctx, u.logger, candidates, req, nil)
+}
+
+// callWithFallbackLogged 按候选线路链顺序调用。重试预算由整个候选链共享：
+// 每个非末尾线路只拿一次机会，最后线路拿剩余预算；因此可重试失败会尽早切换，
+// 但整个任务仍保留 WalaImageRetryAttempts 次恢复机会。
+// 不可重试错误（如普通 400 参数错误）直接返回，不切线路。每个线路尝试均记统计和结构化日志。
+func (u *Usecase) callWithFallbackLogged(ctx context.Context, logger *slog.Logger, candidates []channelClient, req wala.Request, meta *invocationMeta) (status int, bodyText string, used channelClient, err error) {
 	var lastErr error
 	var lastStatus int
 	var lastBody string
 	var lastUsed channelClient
+	attemptBudget := u.retryBudget(len(candidates))
+	remainingAttempts := attemptBudget
 
 	for i := range candidates {
 		c := candidates[i]
+		attempts := 1
+		if i == len(candidates)-1 {
+			attempts = remainingAttempts
+		}
+		remainingAttempts -= attempts
+		if logger != nil {
+			logger.InfoContext(ctx, "image upstream attempt started",
+				"channel", c.name,
+				"channel_index", i+1,
+				"channel_count", len(candidates),
+				"attempt_budget", attempts,
+			)
+		}
 		start := time.Now()
-		status, bodyText, err = c.client.CallWithRetries(ctx, req)
+		observer := u.modelInvocationObserver(logger, c, i+1, len(candidates), attempts, req, meta)
+		if observed, ok := c.client.(observedWalaCaller); ok {
+			status, bodyText, err = observed.CallWithAttemptsObserved(ctx, req, attempts, observer)
+		} else {
+			status, bodyText, err = c.client.CallWithAttempts(ctx, req, attempts)
+		}
 		latency := int(time.Since(start).Milliseconds())
 
 		// 成功（2xx）：记该线路成功统计，返回
 		if err == nil && status < 400 {
 			if c.trackStats && u.channels != nil {
 				u.channels.IncStats(ctx, c.id, true, latency)
+			}
+			if logger != nil {
+				logger.InfoContext(ctx, "image upstream attempt succeeded",
+					"channel", c.name,
+					"channel_index", i+1,
+					"attempt_budget", attempts,
+					"status", status,
+					"latency_ms", latency,
+				)
 			}
 			return status, bodyText, c, nil
 		}
@@ -306,6 +378,17 @@ func (u *Usecase) callWithFallback(ctx context.Context, candidates []channelClie
 		}
 		if c.trackStats && u.channels != nil {
 			u.channels.IncStats(ctx, c.id, false, latency)
+		}
+		if logger != nil {
+			logger.WarnContext(ctx, "image upstream attempt failed",
+				"channel", c.name,
+				"channel_index", i+1,
+				"attempt_budget", attempts,
+				"status", status,
+				"latency_ms", latency,
+				"fallbackable", fallbackable,
+				"error", compactUpstreamError(status, bodyText, err),
+			)
 		}
 		lastErr = err
 		lastStatus = status
@@ -330,7 +413,118 @@ func (u *Usecase) callWithFallback(ctx context.Context, candidates []channelClie
 	} else if lastBody != "" {
 		finalMsg = lastBody
 	}
-	return lastStatus, lastBody, lastUsed, wala.NewError(503, lastUsed.client.BuildOverloadMessage(finalMsg))
+	if logger != nil {
+		logger.ErrorContext(ctx, "image upstream candidates exhausted",
+			"channel_count", len(candidates),
+			"last_channel", lastUsed.name,
+			"last_status", lastStatus,
+			"error", compactUpstreamError(lastStatus, lastBody, lastErr),
+		)
+	}
+	message := fmt.Sprintf("生图候选线路均不可用，已按总尝试预算 %d 次仍未成功。最后线路 %s", attemptBudget, lastUsed.name)
+	if finalMsg != "" {
+		message += "：" + finalMsg
+	}
+	return lastStatus, lastBody, lastUsed, wala.NewError(503, message)
+}
+
+// invocationMeta 补齐请求本身无法表达的任务、用户和子图上下文。
+type invocationMeta struct {
+	taskID            uuid.UUID
+	generationImageID string
+	imageNumber       int
+	user              *domain.User
+}
+
+// modelInvocationObserver 把一次模型调用拆成“请求已发出”和“请求已结束”两次持久化。
+// 审计写入故障仅记录告警，绝不阻塞或改变用户的生图结果。
+func (u *Usecase) modelInvocationObserver(logger *slog.Logger, channel channelClient, candidateIndex, candidateCount, attemptBudget int, req wala.Request, meta *invocationMeta) wala.AttemptObserver {
+	repo, ok := u.repo.(modelInvocationRepo)
+	if !ok || meta == nil || meta.user == nil {
+		return nil
+	}
+	ids := map[int]uuid.UUID{}
+	return func(event wala.AttemptEvent) {
+		auditCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if !event.Finished {
+			id := uuid.New()
+			ids[event.Attempt] = id
+			hash := sha256.Sum256([]byte(req.Prompt))
+			rec := ModelInvocationRecord{
+				ID: id, TaskID: meta.taskID, GenerationImageID: meta.generationImageID, ImageNumber: meta.imageNumber,
+				UserID: meta.user.ID, Username: meta.user.Username, UserEmail: meta.user.Email, UserRole: string(meta.user.Role),
+				ChannelID: channel.id, ChannelName: channel.name, APIBaseURL: channel.apiBaseURL, Protocol: channel.protocol, ModelID: channel.modelID,
+				CandidateIndex: candidateIndex, CandidateCount: candidateCount, AttemptNumber: event.Attempt, AttemptBudget: attemptBudget,
+				Status: "processing", Prompt: req.Prompt, PromptHash: hex.EncodeToString(hash[:]), ReferenceImages: modelInvocationReferences(req.Files),
+				Size: req.Size, Quality: req.Quality, RequestedAt: event.StartedAt,
+			}
+			if err := repo.CreateModelInvocation(auditCtx, rec); err != nil && logger != nil {
+				logger.WarnContext(auditCtx, "create model invocation audit failed", "error", err, "channel", channel.name, "attempt", event.Attempt)
+			}
+			return
+		}
+		id, exists := ids[event.Attempt]
+		if !exists {
+			return
+		}
+		status := "success"
+		message := ""
+		responseCount := 0
+		if event.Err != nil || event.Status >= 400 {
+			status = "failed"
+			message = compactUpstreamError(event.Status, event.BodyText, event.Err)
+		} else {
+			responseCount = len(wala.ExtractGeneratedImages(wala.ParseJSONBody(event.BodyText)))
+		}
+		latency := int(event.CompletedAt.Sub(event.StartedAt).Milliseconds())
+		if err := repo.FinishModelInvocation(auditCtx, id, status, event.Status, latency, responseCount, message, event.CompletedAt); err != nil && logger != nil {
+			logger.WarnContext(auditCtx, "finish model invocation audit failed", "error", err, "channel", channel.name, "attempt", event.Attempt)
+		}
+	}
+}
+
+func modelInvocationReferences(files []wala.FileInput) []types.ModelInvocationReference {
+	refs := make([]types.ModelInvocationReference, 0, len(files))
+	for _, f := range files {
+		hash := sha256.Sum256(f.Data)
+		kind := f.ReferenceKind
+		if kind == "" {
+			kind = "reference"
+		}
+		refs = append(refs, types.ModelInvocationReference{
+			Kind: kind, Name: f.Name, MimeType: f.Type, URL: f.SourceURL, SHA256: hex.EncodeToString(hash[:]), Size: f.Size,
+		})
+	}
+	return refs
+}
+
+// retryBudget 返回整个候选链的总尝试次数。预算至少覆盖每个候选线路一次。
+func (u *Usecase) retryBudget(candidateCount int) int {
+	budget := 3
+	if u.cfg != nil && u.cfg.Bridal.WalaImageRetryAttempts > 0 {
+		budget = u.cfg.Bridal.WalaImageRetryAttempts
+	}
+	if budget < candidateCount {
+		return candidateCount
+	}
+	return budget
+}
+
+// compactUpstreamError 控制日志字段大小，避免上游返回的大 body 污染 journal。
+func compactUpstreamError(status int, bodyText string, err error) string {
+	message := bodyText
+	if err != nil {
+		message = err.Error()
+	}
+	message = strings.TrimSpace(message)
+	if len(message) > 500 {
+		message = message[:500] + "…"
+	}
+	if message == "" && status > 0 {
+		return fmt.Sprintf("HTTP %d", status)
+	}
+	return message
 }
 
 // generateOneResult 单张生成结果。
@@ -420,12 +614,13 @@ func (u *Usecase) generateOne(
 	// 调 wala（用户级并发信号量 max_concurrency 跨任务共享 + 全局 WalaAPI 并发兜底 + 线路优先级 fallback）
 	userSem.acquire()
 	u.sem <- struct{}{}
-	status, bodyText, _, err := u.callWithFallback(ctx, candidates, wala.Request{
+	imageLogger := u.logger.With("task", taskID, "image_number", promptIndex+1)
+	status, bodyText, _, err := u.callWithFallbackLogged(ctx, imageLogger, candidates, wala.Request{
 		Prompt:  pl.prompt,
 		Files:   requestFiles,
 		Size:    size,
 		Quality: quality,
-	})
+	}, &invocationMeta{taskID: taskID, generationImageID: imageID, imageNumber: promptIndex + 1, user: user})
 	<-u.sem
 	userSem.release()
 	latency := int(time.Since(imgStart).Milliseconds())
@@ -508,7 +703,11 @@ func (u *Usecase) runTask(
 
 	// 构建优先级 fallback 候选线路链（用户指定线路优先，其余按 sort_order 降级）
 	candidates := u.buildCandidates(ctx, channelID)
-	logger.InfoContext(ctx, "task candidates built", "count", len(candidates), "first", candidates[0].name)
+	candidateNames := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		candidateNames = append(candidateNames, candidate.name)
+	}
+	logger.InfoContext(ctx, "task candidates built", "count", len(candidates), "candidates", candidateNames, "first", candidates[0].name)
 
 	// 用户级并发信号量：容量 = 主线路 max_concurrency，跨任务控制该用户同时生成的图片数（1=跨任务逐张串行）
 	userSem := u.getUserSem(user.ID, candidates[0].maxConcurrency)
@@ -566,6 +765,8 @@ func (u *Usecase) runTask(
 					breakIndex = i
 					break
 				}
+				ref.SourceURL = r.image.URL
+				ref.ReferenceKind = "continuity_scene"
 				sceneRef = &ref
 			}
 			// 人物参考图：第一个含人物张建立（复用 sceneRef 避免重复下载）
@@ -584,6 +785,8 @@ func (u *Usecase) runTask(
 						breakIndex = i
 						break
 					}
+					ref.SourceURL = r.image.URL
+					ref.ReferenceKind = "continuity_identity"
 					identityRef = &ref
 				}
 			}

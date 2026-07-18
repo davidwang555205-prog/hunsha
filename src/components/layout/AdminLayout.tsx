@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
   { to: "/admin", label: "概览", icon: <GridIcon size={18} />, end: true },
   { to: "/admin/users", label: "用户管理", icon: <UsersIcon size={18} /> },
   { to: "/admin/history", label: "生图历史", icon: <HistoryIcon size={18} /> },
+  { to: "/admin/model-invocations", label: "调用审计", icon: <CpuIcon size={18} /> },
   { to: "/admin/channels", label: "模型线路", icon: <CpuIcon size={18} /> },
   { to: "/admin/categories", label: "类目管理", icon: <TagIcon size={18} /> },
   { to: "/admin/credits", label: "积分记录", icon: <CoinIcon size={18} /> },
