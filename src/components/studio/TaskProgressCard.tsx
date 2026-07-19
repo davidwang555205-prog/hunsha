@@ -1,11 +1,10 @@
 /**
  * TaskProgressCard -- 异步生图任务状态条（苹果风格）
  *
- * 顶部简洁状态条：任务标题 + 状态徽章 + 进度文字 + 进度条 + 取消/重试/新任务。
- * 子图占位网格由 ImageGenerationGrid 在结果区承接。
+ * 顶部简洁状态条：任务标题 + 状态徽章 + 取消/重试/新任务。
+ * 具体进度完全交给右侧 ImageGenerationGrid 的逐张卡片呈现。
  * 进行中可取消；失败可重试；完成展示结果。
  */
-import { ProgressBar } from "../ui/ProgressBar";
 import { Button } from "../ui/Button";
 import { FeedbackAlert } from "../ui/FeedbackAlert";
 import { describeGenerationFailure, type GenerationFeedback } from "../../lib/generationFeedback";
@@ -14,7 +13,6 @@ import type { GenerationTask } from "../../types/api";
 type TaskProgressCardProps = {
   task: GenerationTask | null;
   stage: string;
-  progress: number;
   completedCount: number;
   totalCount: number;
   isSubmitting: boolean;
@@ -36,7 +34,6 @@ const statusLabel: Record<string, string> = {
 export function TaskProgressCard({
   task,
   stage,
-  progress,
   completedCount,
   totalCount,
   isSubmitting,
@@ -50,6 +47,8 @@ export function TaskProgressCard({
   const isActive = stage === "queued" || stage === "processing";
   const estimatedMin = task?.estimatedSeconds ? Math.ceil(task.estimatedSeconds / 60) : null;
   const failure = task?.error ? describeGenerationFailure(task.error) : error;
+  const processingCount = task?.subTaskStatus.filter((item) => item.status === "processing").length ?? 0;
+  const pendingCount = task?.subTaskStatus.filter((item) => item.status === "pending").length ?? 0;
 
   return (
     <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
@@ -57,13 +56,15 @@ export function TaskProgressCard({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base font-semibold text-text">{task?.title || "生图任务"}</h3>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${isActive ? "bg-primary/10 text-primary" : stage === "completed" ? "bg-success/10 text-success" : stage === "failed" ? "bg-danger/10 text-danger" : "bg-bg text-text-muted"}`}>
-              {statusLabel[stage] || stage}
-            </span>
+            {stage !== "completed" && !isActive && (
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${stage === "completed" ? "bg-success/10 text-success" : stage === "failed" ? "bg-danger/10 text-danger" : "bg-bg text-text-muted"}`}>
+                {statusLabel[stage] || stage}
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-text-muted">
             {isActive
-              ? <>生成中 · <span className="font-medium text-text">第 {Math.min(completedCount + 1, totalCount)}/{totalCount} 张</span>{estimatedMin ? ` · 预计还需 ${Math.max(1, Math.ceil((estimatedMin * (totalCount - completedCount)) / Math.max(1, totalCount)))} 分钟` : ""}</>
+              ? <><span className="font-medium text-text">已完成 {completedCount}/{totalCount} 张</span>{processingCount > 0 ? ` · 正在生成 ${processingCount} 张` : ""}{pendingCount > 0 ? ` · 排队 ${pendingCount} 张` : ""}{estimatedMin ? ` · 预计还需 ${Math.max(1, Math.ceil((estimatedMin * (totalCount - completedCount)) / Math.max(1, totalCount)))} 分钟` : ""}</>
               : stage === "completed"
                 ? `共生成 ${completedCount} 张图`
                 : stage === "failed"
@@ -90,13 +91,6 @@ export function TaskProgressCard({
           )}
         </div>
       </div>
-
-      {/* 进度条 */}
-      {isActive && (
-        <div className="mb-4">
-          <ProgressBar value={progress} active />
-        </div>
-      )}
 
       {/* 错误详情 */}
       {failure && <FeedbackAlert feedback={failure} className="mt-3" />}

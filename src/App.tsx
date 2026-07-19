@@ -16,7 +16,7 @@
  *   /admin/credits         积分记录
  */
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LoginPage } from "./pages/LoginPage";
 import { AppShell } from "./components/layout/AppShell";
 import { AdminLayout } from "./components/layout/AdminLayout";
@@ -54,9 +54,11 @@ function PageFallback() {
 }
 
 function LazyPage({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const isStudioWorkspace = location.pathname === "/studio";
   return (
     <Suspense fallback={<PageFallback />}>
-      <FadeIn direction="up" duration={240} className="flex flex-col gap-8">{children}</FadeIn>
+      <FadeIn direction="up" duration={240} className={isStudioWorkspace ? "h-full" : "flex flex-col gap-8"}>{children}</FadeIn>
     </Suspense>
   );
 }

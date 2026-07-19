@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"bridal/backend/biz/engines"
 	"bridal/backend/biz/generation/prompt"
 )
 
@@ -47,5 +48,9 @@ func (u *Usecase) loadImagePromptAssets(ctx context.Context, engineKey string) (
 	if rec == nil || !rec.IsEnabled {
 		return nil, fmt.Errorf("内容引擎 %q 不可用", engineKey)
 	}
-	return prompt.ParseAssetsFromConfig(rec.Config), nil
+	runtimeConfig, _, err := engines.ResolveRuntimeConfig(rec.Config)
+	if err != nil {
+		return nil, err
+	}
+	return prompt.ParseAssetsFromConfig(runtimeConfig), nil
 }

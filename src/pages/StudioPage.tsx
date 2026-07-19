@@ -10,14 +10,9 @@
  * 用尽后提示并重新开始。核心内容引擎不动。
  */
 import { useEffect, useRef, useState } from "react";
-import {
-  fashionSeedingDailySlotOptions,
-  type FashionSeedingContent,
-  type FashionSeedingDailySlot,
-  type FashionSeedingTopic
-} from "../utils/fashionSeeding";
+import { type FashionSeedingContent, type FashionSeedingDailySlot, type FashionSeedingTopic } from "../utils/fashionSeeding";
 import { generateContent } from "../api/admin";
-import { getEngineTopicOptions } from "../api/engines";
+import { getEngineCapabilities, getEngineTopicOptions } from "../api/engines";
 import { copyText as copyToClipboard } from "../lib/clipboard";
 import { downloadImages } from "../lib/download";
 import { fileToDataUrl } from "../lib/file";
@@ -36,8 +31,7 @@ import {
   initialContentTopic,
   initialParams,
   inputClass,
-  labelClass,
-  panelClass
+  labelClass
 } from "../studio/constants";
 import { ReferenceImageUploader } from "../components/ReferenceImageUploader";
 import { TaskProgressCard } from "../components/studio/TaskProgressCard";
@@ -47,7 +41,7 @@ import { Button } from "../components/ui/Button";
 import { FeedbackAlert } from "../components/ui/FeedbackAlert";
 import { Modal } from "../components/ui/Modal";
 import { StarBorder } from "../components/motion";
-import { PageHeader } from "../components/layout/PageHeader";
+import { GenerationLoadingState } from "../components/studio/GenerationLoadingState";
 
 const lastTaskStorageKey = "bridal-content-studio-last-task";
 const viewedTasksKey = "bridal-content-studio-viewed-tasks";
@@ -82,33 +76,15 @@ export function StudioPage() {
   const size = imageSize;
   const quality = defaultImageQuality;
   const [contentTopic, setContentTopic] = useState<FashionSeedingTopic>(initialContentTopic);
-  const [dailySlot, setDailySlot] = useState<FashionSeedingDailySlot>(1);
+  // 篇次暂不开放选择，固定为第一篇；保留字段以兼容内容引擎请求契约。
+  const dailySlot: FashionSeedingDailySlot = 1;
   const [contentNonce, setContentNonce] = useState(0);
   const [imageCount, setImageCount] = useState<3 | 5>(3);
   const [contentMessage, setContentMessage] = useState("");
   const [sceneFile, setSceneFile] = useState<File | null>(null);
   const [productFiles, setProductFiles] = useState<File[]>([]);
-
-  // 换一版去重 key：账号 + 类目 + 主题 + 篇次（同内容上下文下不重复）
-  const usedVariantsKey = `bridal-content-studio-used-variants:${user?.id ?? "anon"}:${currentCategory?.id ?? "default"}:${contentTopic}:${dailySlot}`;
-
-  const readUsedVariants = (): number[] => {
-    try {
-      const raw = window.localStorage.getItem(usedVariantsKey);
-      if (raw) return JSON.parse(raw) as number[];
-    } catch {
-      // 损坏数据兜底
-    }
-    return [0];
-  };
-
-  const writeUsedVariants = (list: number[]) => {
-    try {
-      window.localStorage.setItem(usedVariantsKey, JSON.stringify(list));
-    } catch {
-      // 写入失败（隐私模式等）静默降级，不影响换一版
-    }
-  };
+  const [showContentPreview, setShowContentPreview] = useState(false);
+  const [copyEnabled, setCopyEnabled] = useState(true);
 
   // 进入页面：恢复上次任务进度（任务在后端继续，重新进入可拉回状态）
   useEffect(() => {
@@ -173,6 +149,24 @@ export function StudioPage() {
   const contentTopicOptions = loadedTopicOptionsKey === engineTopicOptionsKey ? engineTopicOptions : [];
   const [contentPreview, setContentPreview] = useState<FashionSeedingContent>(emptyContent);
 
+  // 文案能力由当前引擎决定。类目未绑定引擎时保持旧婚纱行为，避免工作台闪烁为空态。
+  useEffect(() => {
+    const engineKey = currentCategory?.engine;
+    if (!engineKey) {
+      setCopyEnabled(true);
+      return;
+    }
+    let cancelled = false;
+    getEngineCapabilities(engineKey)
+      .then(({ copyEnabled: enabled }) => {
+        if (!cancelled) setCopyEnabled(enabled);
+      })
+      .catch(() => {
+        if (!cancelled) setCopyEnabled(true);
+      });
+    return () => { cancelled = true; };
+  }, [currentCategory?.engine]);
+
   // 主题列表完全由内容引擎 config.seeding 的 bridalTopics / dressTopics 决定。
   useEffect(() => {
     const engineKey = currentCategory?.engine;
@@ -187,7 +181,10 @@ export function StudioPage() {
     getEngineTopicOptions(engineKey, params.productCategory)
       .then(({ topics }) => {
         if (cancelled) return;
-        const nextOptions = topics.filter((topic) => topic.trim()) as FashionSeedingTopic[];
+        // 服务端旧配置或异常数据可能把数组序列化为 null；工作台应保持可用的加载空态，
+        // 不能因单个引擎配置导致整页 React 卸载。
+        const nextOptions = (Array.isArray(topics) ? topics : [])
+          .filter((topic): topic is string => typeof topic === "string" && topic.trim() !== "") as FashionSeedingTopic[];
         setEngineTopicOptions(nextOptions);
         setContentTopic((current) => nextOptions.includes(current) ? current : (nextOptions[0] ?? ""));
         setContentNonce(0);
@@ -223,7 +220,10 @@ export function StudioPage() {
       contentNonce
     })
       .then(({ content }) => {
-        if (!cancelled) setContentPreview(content);
+        if (!cancelled) {
+          setContentPreview(content);
+          if (contentNonce > 0) setContentMessage("已切换一套内容与配图方案。");
+        }
       })
       .catch(() => {
         if (!cancelled) setContentPreview(emptyContent);
@@ -236,33 +236,6 @@ export function StudioPage() {
   const copyText = async (text: string, message: string) => {
     await copyToClipboard(text);
     setContentMessage(message);
-  };
-
-  // 换一版：随机选当前账号+类目+主题+篇次下未用过的变体
-  const handleShuffleVariant = () => {
-    setContentMessage("");
-    const total = contentPreview.variantCount;
-    const used = new Set(readUsedVariants());
-    used.add(contentNonce); // 当前正在展示的也算已用，避免换回原样
-    const candidates: number[] = [];
-    for (let i = 0; i < total; i++) {
-      if (!used.has(i)) candidates.push(i);
-    }
-    if (candidates.length === 0) {
-      // 本上下文变体已轮换一轮：清空重来（保留当前）
-      const fresh: number[] = [];
-      for (let i = 0; i < total; i++) {
-        if (i !== contentNonce) fresh.push(i);
-      }
-      const next = fresh[Math.floor(Math.random() * fresh.length)] ?? 0;
-      setContentNonce(next);
-      writeUsedVariants([contentNonce, next]);
-      setContentMessage("本主题变体已轮换一轮，重新开始随机。");
-      return;
-    }
-    const next = candidates[Math.floor(Math.random() * candidates.length)];
-    setContentNonce(next);
-    writeUsedVariants([...readUsedVariants(), next]);
   };
 
   // 组装异步任务请求
@@ -278,6 +251,8 @@ export function StudioPage() {
       return null;
     }
     const sceneLocked = !!sceneFile;
+    const previewTitles = Array.isArray(contentPreview.titles) ? contentPreview.titles : [];
+    const previewTags = Array.isArray(contentPreview.tags) ? contentPreview.tags : [];
     const promptParamsList = contentPreview.images.map((image) => ({
       ...image.params,
       generatedImageName: image.name,
@@ -293,9 +268,9 @@ export function StudioPage() {
     const productReferenceImages = await Promise.all(productFiles.map(toUpload));
     return {
       promptParamsList,
-      title: contentPreview.titles.join("\n"),
+      title: previewTitles.join("\n"),
       body: contentPreview.body,
-      tags: contentPreview.tags,
+      tags: previewTags,
       topic: contentPreview.topic,
       sceneReferenceImage,
       productReferenceImages,
@@ -320,6 +295,13 @@ export function StudioPage() {
     }
   };
 
+  // 文案引擎的“换一套内容”：contentNonce 会让后端重新选择同主题的一套文案与配图蓝图。
+  // 已提交任务后不允许替换，避免展示文案与任务内图片计划脱节。
+  const handleChangeContent = () => {
+    if (!copyEnabled || gen.stage !== "idle") return;
+    setContentNonce((current) => current + 1);
+  };
+
   const handleRetry = async () => {
     gen.reset();
     await handleGenerate();
@@ -341,238 +323,232 @@ export function StudioPage() {
     setShowUnviewedPrompt(false);
   };
 
-  const showResultGrid = gen.stage !== "idle";
   const completedImages = gen.stage === "completed" ? gen.resultImages : [];
+  // 提交请求上传参考图时后端尚未回 taskId：此时也要立刻把右侧切到交付态，
+  // 不能让用户在数秒内误以为点击没有生效。
+  const hasTaskOutput = gen.stage !== "idle" || gen.isSubmitting;
   // 恢复态且本地无 File（重新进入页面，File 已丢失）：只读回显后端存的参考图
   const showReadOnlyReference =
     gen.stage !== "idle" &&
     !sceneFile &&
     productFiles.length === 0 &&
     (gen.task?.referenceImages?.length ?? 0) > 0;
+  const resultBody = gen.task?.body || contentPreview.body;
+  const previewTitles = Array.isArray(contentPreview.titles) ? contentPreview.titles : [];
+  const previewTags = Array.isArray(contentPreview.tags) ? contentPreview.tags : [];
+  const resultTags = Array.isArray(gen.task?.tags) ? gen.task.tags : previewTags;
+  const resultTopic = gen.task?.topic || contentPreview.topic;
+  const contentReady = copyEnabled && (resultBody.trim() !== "" || resultTags.length > 0);
 
   return (
     <>
-      <PageHeader
-        title={currentCategory?.name ?? "内容生成"}
-        subtitle="上传参考图，一键生成小红书图文。参考图与设置、结果与内容分列展示。"
-      />
-
-      {/* 异步任务状态条（进行中/完成时置顶） */}
-      {gen.stage !== "idle" && (
-        <TaskProgressCard
-          task={gen.task}
-          stage={gen.stage}
-          progress={gen.progress}
-          completedCount={gen.completedCount}
-          totalCount={gen.totalCount}
-          isSubmitting={gen.isSubmitting}
-          error={gen.error}
-          onCancel={gen.cancel}
-          onRetry={handleRetry}
-          onDismiss={handleDismiss}
-        />
-      )}
-
-      {/* 行1：参考图 + 生成设置（lg 两列，移动端单列回退） */}
-      <div className="grid gap-6 lg:grid-cols-2 items-start">
-      <section className={panelClass}>
-        <h2 className="mb-2 text-base font-semibold text-text">参考图</h2>
-        {showReadOnlyReference ? (
-          <ReadOnlyReferenceImages images={gen.task?.referenceImages ?? []} />
-        ) : (
-          <>
-            <p className="mb-4 text-sm text-text-muted">上传场景参考图（可选，传了则锁定在该场景生成）与婚纱产品图（4–6 张必传）。</p>
-            <div className="space-y-5">
-              <ReferenceImageUploader
-                files={sceneFile ? [sceneFile] : []}
-                onChange={(files) => setSceneFile(files[0] ?? null)}
-                label="场景参考图"
-                hint="可选，最多 1 张。传了则强制在该场景环境内生成。"
-                maxCount={1}
-              />
-              <ReferenceImageUploader
-                files={productFiles}
-                onChange={setProductFiles}
-                label="婚纱产品图"
-                hint="必传，4–6 张婚纱衣服产品图，生成时复用其款式与细节。"
-                maxCount={6}
-                minCount={4}
-                required
-              />
+      <div className="grid h-full min-h-0 bg-bg lg:grid-cols-[368px_minmax(0,1fr)]">
+        {/* 左栏是完整操作区：中间内容独立滚动，生成按钮永久停在底部。 */}
+        <section className="flex min-h-0 flex-col border-b border-border bg-surface lg:border-b-0 lg:border-r">
+          <div className="brand-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+            <div className="border-b border-border pb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">创作工作台</p>
+              <h1 className="mt-1 text-xl font-semibold text-text">{currentCategory?.name ?? "婚纱"}</h1>
+              <p className="mt-1 text-xs leading-5 text-text-muted">上传参考图并完成设置，结果会实时显示在右侧。</p>
             </div>
-          </>
-        )}
-      </section>
 
-      {/* 生成设置（全宽） */}
-      <section className={panelClass}>
-        <h2 className="mb-3 text-base font-semibold text-text">生成设置</h2>
-        <div className="mb-4 grid gap-3 sm:grid-cols-3">
-          <label className="block space-y-1.5">
-            <span className={labelClass}>内容主题</span>
-            <select
-              className={inputClass}
-              value={contentTopic}
-              disabled={contentTopicOptions.length === 0}
-              onChange={(event) => {
-                setContentTopic(event.target.value as FashionSeedingTopic);
-                setContentMessage("");
-                setContentNonce(0);
-              }}
+            <div className="border-b border-border py-5">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">01 / 素材</p>
+                  <h2 className="mt-1 text-base font-semibold text-text">上传创作参考</h2>
+                </div>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">产品图 4–6 张</span>
+              </div>
+              {showReadOnlyReference ? (
+                <ReadOnlyReferenceImages images={gen.task?.referenceImages ?? []} />
+              ) : (
+                <div className="space-y-5">
+                  <ReferenceImageUploader
+                    files={sceneFile ? [sceneFile] : []}
+                    onChange={(files) => setSceneFile(files[0] ?? null)}
+                    label="场景参考图"
+                    hint="可选。上传后将锁定相同的场景氛围。"
+                    maxCount={1}
+                  />
+                  <ReferenceImageUploader
+                    files={productFiles}
+                    onChange={setProductFiles}
+                    label="婚纱产品图"
+                    hint="前 4 张必传，第 5、6 张可补充细节。"
+                    maxCount={6}
+                    minCount={4}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="py-5">
+              <div className="mb-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">02 / 配置</p>
+                <h2 className="mt-1 text-base font-semibold text-text">设定本次内容</h2>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <label className="block space-y-1.5">
+                  <span className={labelClass}>{copyEnabled ? "内容主题" : "创作主题"}</span>
+                  <select className={inputClass} value={contentTopic} disabled={contentTopicOptions.length === 0} onChange={(event) => { setContentTopic(event.target.value as FashionSeedingTopic); setContentMessage(""); setContentNonce(0); }}>
+                    {contentTopicOptions.length > 0 ? contentTopicOptions.map((option) => <option key={option} value={option}>{option}</option>) : <option value="">主题加载中...</option>}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block space-y-1.5">
+                    <span className={labelClass}>配图数量</span>
+                    <select className={inputClass} value={imageCount} onChange={(event) => { setImageCount(Number(event.target.value) as 3 | 5); setContentMessage(""); }}>
+                      <option value={3}>3 张</option>
+                      <option value={5}>5 张</option>
+                    </select>
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className={labelClass}>图片尺寸</span>
+                    <select className={inputClass} value={imageSize} onChange={(event) => { setImageSize(event.target.value); setContentMessage(""); }}>
+                      {imageSizeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg bg-primary/5 p-3 text-xs leading-5 text-text-muted ring-1 ring-primary/10">
+                本次将生成 {imageCount} 张 {imageSize} 图片，完成后按独立卡片逐张交付。
+              </div>
+              {copyEnabled && gen.stage === "idle" && (
+                <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={handleChangeContent} disabled={contentTopicOptions.length === 0 || contentPreview.images.length === 0}>
+                  换一套内容
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="shrink-0 border-t border-border bg-surface p-4">
+            <StarBorder
+              type="button"
+              disabled={gen.isActive || gen.isSubmitting || productFiles.length < 4 || contentTopicOptions.length === 0 || loadedTopicOptionsKey !== engineTopicOptionsKey || contentPreview.images.length === 0}
+              onClick={handleGenerate}
+              className="w-full"
             >
-              {contentTopicOptions.length > 0 ? contentTopicOptions.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              )) : <option value="">主题加载中...</option>}
-            </select>
-          </label>
-          <label className="block space-y-1.5">
-            <span className={labelClass}>今日篇次</span>
-            <select
-              className={inputClass}
-              value={dailySlot}
-              onChange={(event) => {
-                setDailySlot(Number(event.target.value) as FashionSeedingDailySlot);
-                setContentMessage("");
-                setContentNonce(0);
-              }}
-            >
-              {fashionSeedingDailySlotOptions.map((option) => (
-                <option key={option} value={option}>今日第 {option} 篇</option>
-              ))}
-            </select>
-          </label>
-          <label className="block space-y-1.5">
-            <span className={labelClass}>配图数量</span>
-            <select
-              className={inputClass}
-              value={imageCount}
-              onChange={(event) => {
-                setImageCount(Number(event.target.value) as 3 | 5);
-                setContentMessage("");
-              }}
-            >
-              <option value={3}>3 张</option>
-              <option value={5}>5 张</option>
-            </select>
-          </label>
-          <label className="block space-y-1.5">
-            <span className={labelClass}>图片尺寸</span>
-            <select
-              className={inputClass}
-              value={imageSize}
-              onChange={(event) => {
-                setImageSize(event.target.value);
-                setContentMessage("");
-              }}
-            >
-              {imageSizeOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <StarBorder
-          type="button"
-          disabled={gen.isActive || gen.isSubmitting || productFiles.length < 4 || contentTopicOptions.length === 0 || loadedTopicOptionsKey !== engineTopicOptionsKey || contentPreview.images.length === 0}
-          onClick={handleGenerate}
-          className="w-full"
-        >
-          {gen.isSubmitting ? "提交中..." : `开始生成 ${imageCount} 张图`}
-        </StarBorder>
-        {productFiles.length < 4 && (
-          <p className="mt-2 text-xs text-danger">请上传至少 4 张婚纱产品图后再生成（当前 {productFiles.length} 张）。</p>
-        )}
-        {gen.error && !gen.task && <FeedbackAlert feedback={gen.error} className="mt-3" />}
-        {contentMessage && <p className="mt-3 text-sm text-text-muted">{contentMessage}</p>}
-      </section>
+              {gen.isSubmitting ? "正在建立任务..." : `开始生成 ${imageCount} 张图片`}
+            </StarBorder>
+            {productFiles.length < 4 && <p className="mt-2 text-xs text-danger">还需上传至少 4 张婚纱产品图（当前 {productFiles.length} 张）。</p>}
+            {gen.error && !gen.task && <FeedbackAlert feedback={gen.error} className="mt-3" />}
+            {contentMessage && <p className="mt-2 text-xs leading-5 text-text-muted">{contentMessage}</p>}
+          </div>
+        </section>
+
+        {/* 右侧是占满工作区的交付画布；每张图片和图文内容都以独立卡片交付。 */}
+        <section className="brand-scrollbar min-h-0 overflow-y-auto bg-bg p-4 sm:p-6 xl:p-8">
+          <div className="min-h-full space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Live delivery</p>
+                <h2 className="mt-1 text-xl font-semibold text-text">本次生成结果</h2>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${gen.stage === "completed" ? "bg-success/10 text-success" : gen.isActive || gen.isSubmitting ? "bg-primary/10 text-primary" : "bg-surface text-text-muted ring-1 ring-border"}`}>
+                {gen.stage === "completed" ? "已完成" : gen.isActive || gen.isSubmitting ? "生成进行中" : "等待开始"}
+              </span>
+            </div>
+
+            {gen.stage !== "idle" && (
+              <TaskProgressCard
+                task={gen.task}
+                stage={gen.stage}
+                completedCount={gen.completedCount}
+                totalCount={gen.totalCount}
+                isSubmitting={gen.isSubmitting}
+                error={gen.error}
+                onCancel={gen.cancel}
+                onRetry={handleRetry}
+                onDismiss={handleDismiss}
+              />
+            )}
+
+            <div className="rounded-xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold text-text">视觉图片</h3>
+                  <p className="mt-1 text-xs text-text-muted">图片完成后自动加入下方画廊，可点开预览或单张下载。</p>
+                </div>
+                {completedImages.length > 0 && <Button variant="secondary" size="sm" onClick={() => void downloadImages(completedImages)}>下载全部 {completedImages.length} 张</Button>}
+              </div>
+              {hasTaskOutput ? (
+                <ImageGenerationGrid subTaskStatus={gen.subTaskStatus} totalCount={gen.totalCount || imageCount} altPrefix={previewTitles[0] ?? currentCategory?.name ?? "生成图片"} />
+              ) : (
+                <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface px-6 text-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-xl text-primary">✦</span>
+                  <p className="mt-4 text-sm font-semibold text-text">你的图片将在这里出现</p>
+                  <p className="mt-1 max-w-sm text-xs leading-5 text-text-muted">完成左侧素材与配置后，点击开始生成；我们会保留生成轨迹，并让图片逐张显现。</p>
+                </div>
+              )}
+            </div>
+
+            {copyEnabled && <div className="rounded-lg border border-border bg-bg/50 p-4 sm:p-5">
+              <div className="mb-4">
+                <div>
+                  <h3 className="font-semibold text-text">小红书图文</h3>
+                  <p className="mt-1 text-xs text-text-muted">内容生成后立即呈现，可确认或更换后再开始生图。</p>
+                </div>
+              </div>
+
+              {contentReady ? (
+                <button
+                  type="button"
+                  onClick={() => setShowContentPreview(true)}
+                  className="group block w-full rounded-lg border border-border bg-surface p-4 text-left transition duration-base ease-out hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                  aria-label="查看完整小红书图文"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{resultTopic}</span>
+                    <span className="text-xs text-text-muted">{gen.stage === "completed" ? `已为本次 ${completedImages.length} 张图片配套生成` : "内容已生成，可换一套后再开始生图"}</span>
+                    <span className="ml-auto text-xs font-medium text-primary">点击查看 →</span>
+                  </div>
+                  <p className="mt-4 line-clamp-3 whitespace-pre-line text-sm leading-6 text-text-muted">{resultBody}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {resultTags.slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-primary/5 px-2.5 py-1 text-xs text-text-muted ring-1 ring-border">{tag}</span>)}
+                  </div>
+                </button>
+              ) : (
+                <div className="flex min-h-[190px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface px-6 text-center">
+                  <GenerationLoadingState compact title="正在生成图文内容" description="内容生成后会先在这里呈现，可确认后再开始生图。" />
+                </div>
+              )}
+            </div>}
+          </div>
+        </section>
       </div>
 
-      {/* 行2：生成结果 + 小红书内容（lg 两列，移动端单列回退） */}
-      <div className="grid gap-6 lg:grid-cols-2 items-start">
-      <section className={panelClass}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-text">生成结果</h2>
-          {completedImages.length > 0 && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void downloadImages(completedImages)}
-            >
-              下载全部 {completedImages.length} 张图
-            </Button>
-          )}
-        </div>
-        {showResultGrid ? (
-          <ImageGenerationGrid
-            subTaskStatus={gen.subTaskStatus}
-            totalCount={gen.totalCount || imageCount}
-            altPrefix={contentPreview.titles[0]}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
-            <p className="text-sm text-text-muted">尚未生成</p>
-            <p className="mt-1 text-xs text-text-subtle">点击「开始生成」，结果将在此逐张展示。</p>
-          </div>
-        )}
-      </section>
-
-      {/* 小红书内容（全宽，含内容逻辑模块） */}
-      <section className={panelClass}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-text">小红书内容</h2>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={() => copyText(contentPreview.titles.join("\n"), "已复制标题。")}>
-              复制标题
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => copyText(contentPreview.body, "已复制正文。")}>
+      {/* 文案和图片一样先以卡片交付；文案点击后在独立预览层查看与复制。 */}
+      <Modal
+        open={showContentPreview}
+        onClose={() => setShowContentPreview(false)}
+        title="小红书图文"
+        size="lg"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => copyText(resultBody, "已复制正文。")}>
               复制正文
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => copyText(contentPreview.tags.join(" "), "已复制标签。")}>
+            <Button variant="primary" size="sm" onClick={() => copyText(resultTags.join(" "), "已复制标签。") }>
               复制标签
             </Button>
-            <Button variant="secondary" size="sm" disabled={gen.isActive || gen.isSubmitting} onClick={handleShuffleVariant}>
-              换一版
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <h3 className="text-lg font-semibold text-text">{contentPreview.topic}</h3>
+          </>
+        }
+      >
+        {copyEnabled && <div className="space-y-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{resultTopic}</span>
           </div>
           <div>
-            <h4 className="mb-1.5 text-sm font-medium text-text">标题备选</h4>
-            {contentPreview.titles.map((title) => (
-              <p key={title} className="mb-1 rounded-md bg-bg px-3 py-2 text-sm text-text ring-1 ring-border/70">
-                {title}
-              </p>
-            ))}
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">正文</h4>
+            <p className="whitespace-pre-line rounded-md bg-bg px-4 py-3 text-sm leading-7 text-text ring-1 ring-border/70">{resultBody}</p>
           </div>
-          <div>
-            <h4 className="mb-1.5 text-sm font-medium text-text">正文</h4>
-            <p className="whitespace-pre-line rounded-md bg-bg px-4 py-3 text-sm leading-7 text-text ring-1 ring-border/70">
-              {contentPreview.body}
-            </p>
+          <div className="flex flex-wrap gap-2">
+            {resultTags.map((tag) => <span key={tag} className="rounded-full bg-primary/5 px-3 py-1 text-xs text-text-muted ring-1 ring-border">{tag}</span>)}
           </div>
-          <div>
-            <h4 className="mb-1.5 text-sm font-medium text-text">标签</h4>
-            <div className="flex flex-wrap gap-2">
-              {contentPreview.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-primary/5 px-3 py-1 text-xs text-text-muted ring-1 ring-border">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-          {/* 内容逻辑（V2 重构时漏渲染，note 数据一直有，复制全文也带） */}
-          <div>
-            <h4 className="mb-1.5 text-sm font-medium text-text">内容逻辑</h4>
-            <p className="whitespace-pre-line rounded-md bg-bg px-4 py-3 text-sm leading-7 text-text-muted ring-1 ring-border/70">
-              {contentPreview.note}
-            </p>
-          </div>
-        </div>
-      </section>
-      </div>
+        </div>}
+      </Modal>
 
       {/* 历史未查看成功任务提示弹窗（统一 Modal，Portal 到 body） */}
       <Modal

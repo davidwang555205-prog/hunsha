@@ -2,12 +2,14 @@ package generation
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"bridal/backend/db"
 	"bridal/backend/db/generationmodelinvocation"
+	"bridal/backend/db/generationtask"
 	"bridal/backend/ent/types"
 )
 
@@ -148,6 +150,28 @@ func (r *Repo) ListModelInvocations(ctx context.Context, filter ModelInvocationQ
 	if err != nil {
 		return nil, 0, err
 	}
+	// 000042 上线前后的过渡窗口里，旧线路允许 model_id 为空，导致审计行缺模型。
+	// generation_tasks.model 是任务创建时的模型快照；仅补回空值，不覆盖已有真实请求记录。
+	missingTaskIDs := make([]uuid.UUID, 0)
+	seenTaskIDs := map[uuid.UUID]bool{}
+	for _, row := range rows {
+		if strings.TrimSpace(row.ModelID) == "" && !seenTaskIDs[row.TaskID] {
+			missingTaskIDs = append(missingTaskIDs, row.TaskID)
+			seenTaskIDs[row.TaskID] = true
+		}
+	}
+	taskModels := map[uuid.UUID]string{}
+	if len(missingTaskIDs) > 0 {
+		tasks, queryErr := r.db.GenerationTask.Query().
+			Where(generationtask.IDIn(missingTaskIDs...)).
+			All(ctx)
+		if queryErr != nil {
+			return nil, 0, queryErr
+		}
+		for _, task := range tasks {
+			taskModels[task.ID] = task.Model
+		}
+	}
 	out := make([]ModelInvocationRecord, 0, len(rows))
 	for _, row := range rows {
 		completedAt := row.CompletedAt
@@ -155,10 +179,11 @@ func (r *Repo) ListModelInvocations(ctx context.Context, filter ModelInvocationQ
 		if !completedAt.IsZero() {
 			completed = &completedAt
 		}
+		modelID := modelIDWithTaskFallback(row.ModelID, taskModels[row.TaskID])
 		out = append(out, ModelInvocationRecord{
 			ID: row.ID, TaskID: row.TaskID, GenerationImageID: row.GenerationImageID, ImageNumber: row.ImageNumber,
 			UserID: row.UserID, Username: row.Username, UserEmail: row.UserEmail, UserRole: row.UserRole,
-			ChannelID: row.ChannelID, ChannelName: row.ChannelName, APIBaseURL: row.APIBaseURL, Protocol: row.Protocol, ModelID: row.ModelID,
+			ChannelID: row.ChannelID, ChannelName: row.ChannelName, APIBaseURL: row.APIBaseURL, Protocol: row.Protocol, ModelID: modelID,
 			CandidateIndex: row.CandidateIndex, CandidateCount: row.CandidateCount, AttemptNumber: row.AttemptNumber, AttemptBudget: row.AttemptBudget,
 			Status: row.Status, Prompt: row.Prompt, PromptHash: row.PromptHash, ReferenceImages: row.ReferenceImages,
 			Size: row.Size, Quality: row.Quality, HTTPStatus: row.HTTPStatus, LatencyMs: row.LatencyMs,
@@ -166,4 +191,11 @@ func (r *Repo) ListModelInvocations(ctx context.Context, filter ModelInvocationQ
 		})
 	}
 	return out, total, nil
+}
+
+func modelIDWithTaskFallback(invocationModelID, taskModelID string) string {
+	if modelID := strings.TrimSpace(invocationModelID); modelID != "" {
+		return modelID
+	}
+	return strings.TrimSpace(taskModelID)
 }

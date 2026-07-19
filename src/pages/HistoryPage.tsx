@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useHistoryPaged } from "../hooks/useHistoryPaged";
 import { listHistoryPaged } from "../api/generation";
-import { listMembers } from "../api/admin";
+import { listAllCategories, listMembers } from "../api/admin";
 import { PageHeader } from "../components/layout/PageHeader";
 import { HistoryCard } from "../components/history/HistoryCard";
 import { HistoryDetailDrawer } from "../components/history/HistoryDetailDrawer";
@@ -21,7 +21,8 @@ import { Spinner } from "../components/ui/Spinner";
 import { Pagination } from "../components/ui/Pagination";
 import { inputClass } from "../studio/constants";
 import { Modal } from "../components/ui/Modal";
-import type { HistoryRecord, TeamMemberInfo } from "../types/api";
+import { useCategory } from "../context/CategoryContext";
+import type { Category, HistoryRecord, TeamMemberInfo } from "../types/api";
 
 type RangeKey = "today" | "7d" | "30d" | "all" | "custom";
 
@@ -74,17 +75,29 @@ function dateToISO(date: string, endOfDay: boolean): string | undefined {
 
 export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {}) {
   const { query, records, total, totalPages, isLoading, error, setPage, setFilter, setPageSize, refresh } = useHistoryPaged();
+  const { categories: visibleCategories } = useCategory();
   const [detail, setDetail] = useState<HistoryRecord | null>(null);
   const [xhsRecord, setXhsRecord] = useState<HistoryRecord | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [members, setMembers] = useState<TeamMemberInfo[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [adminCategories, setAdminCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const categoryOptions = adminMode ? adminCategories : visibleCategories;
 
   // adminMode 拉成员列表用于用户筛选下拉
   useEffect(() => {
     if (!adminMode) return;
     void listMembers()
       .then((r) => setMembers(r.members))
+      .catch(() => {});
+  }, [adminMode]);
+
+  // 管理后台需要包含已停用类目，确保旧任务仍可按原类目筛选与识别。
+  useEffect(() => {
+    if (!adminMode) return;
+    void listAllCategories()
+      .then((r) => setAdminCategories(r.categories))
       .catch(() => {});
   }, [adminMode]);
 
@@ -113,17 +126,19 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
 
   const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const applyFilter = (nextRange: RangeKey, status: string, q: string, cStart?: string, cEnd?: string, userId?: string) => {
+  const applyFilter = (nextRange: RangeKey, status: string, q: string, cStart?: string, cEnd?: string, userId?: string, categoryId?: string) => {
     const dates =
       nextRange === "custom"
         ? { startTime: dateToISO(cStart ?? customStart, false), endTime: dateToISO(cEnd ?? customEnd, true) }
         : rangeToDates(nextRange);
     const uid = userId !== undefined ? userId : selectedUserId;
+    const cid = categoryId !== undefined ? categoryId : selectedCategoryId;
     setFilter({
       ...dates,
       status: (status || undefined) as "success" | "failed" | undefined,
       q: q || undefined,
-      userId: uid || undefined
+      userId: uid || undefined,
+      categoryId: cid || undefined
     });
   };
 
@@ -132,6 +147,12 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
     setSelectedUserId(userId);
     const currentStatus = (query.status || "") as "" | "success" | "failed";
     applyFilter(range, currentStatus, searchInput, undefined, undefined, userId);
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    const currentStatus = (query.status || "") as "" | "success" | "failed";
+    applyFilter(range, currentStatus, searchInput, undefined, undefined, undefined, categoryId);
   };
 
   const handleSearchInput = (value: string) => {
@@ -210,6 +231,20 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
             </div>
           )}
 
+          <div className="relative shrink-0">
+            <select
+              className={`${inputClass} !w-40 appearance-none pr-9`}
+              value={selectedCategoryId}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+            >
+              <option value="">全部类目</option>
+              {categoryOptions.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+            <SelectArrow />
+          </div>
+
           {/* 状态 + 搜索同一组，组内 flex 不换行，确保两者始终在同一行 */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="relative shrink-0">
@@ -281,7 +316,15 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
       ) : hasRecords ? (
         <div className="flex flex-col gap-4">
           {records.map((record) => (
-            <HistoryCard key={record.id} record={record} onOpenDetail={setDetail} onOpenXHS={setXhsRecord} onMessage={setMessage} />
+            <HistoryCard
+              key={record.id}
+              record={record}
+              categoryName={categoryOptions.find((category) => category.id === record.categoryId)?.name}
+              showGenerationMeta={adminMode}
+              onOpenDetail={setDetail}
+              onOpenXHS={setXhsRecord}
+              onMessage={setMessage}
+            />
           ))}
         </div>
       ) : (

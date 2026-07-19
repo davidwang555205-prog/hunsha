@@ -153,7 +153,10 @@ type SanitizedTask struct {
 	Feedback           *types.TaskFeedback `json:"feedback"` // 小红书发布反馈，null=未反馈
 	Error              string              `json:"error"`
 	UploadedImageCount int                 `json:"uploadedImageCount"`
+	CategoryID         *string             `json:"categoryId"`
 	ChannelID          *string             `json:"channelId"`
+	ChannelName        string              `json:"channelName"`
+	DurationMs         int                 `json:"durationMs"`
 }
 
 // dbStatusToHistory DB 任务状态 -> 前端历史状态（completed -> success，对齐 HistoryRecord 契约）。
@@ -208,10 +211,18 @@ func sanitize(rec TaskRecord) SanitizedTask {
 		Feedback:           rec.Feedback,
 		Error:              rec.Error,
 		UploadedImageCount: rec.UploadedImageCount,
+		ChannelName:        rec.ChannelName,
+	}
+	if rec.StartedAt != nil && rec.CompletedAt != nil && rec.CompletedAt.After(*rec.StartedAt) {
+		out.DurationMs = int(rec.CompletedAt.Sub(*rec.StartedAt).Milliseconds())
 	}
 	if rec.ChannelID != uuid.Nil {
 		s := rec.ChannelID.String()
 		out.ChannelID = &s
+	}
+	if rec.CategoryID != uuid.Nil {
+		s := rec.CategoryID.String()
+		out.CategoryID = &s
 	}
 	return out
 }
@@ -506,6 +517,13 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 	if err != nil {
 		return nil, wala.NewError(400, err.Error())
 	}
+	copyEnabled := true
+	if u.engines != nil {
+		copyEnabled, err = u.engines.CopyEnabled(ctx, engineKey)
+		if err != nil {
+			return nil, wala.NewError(400, err.Error())
+		}
+	}
 
 	// 2. 校验 title/body/tags
 	title := strings.TrimSpace(req.Title)
@@ -520,7 +538,7 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 	if len(tags) > 20 {
 		tags = tags[:20]
 	}
-	if title == "" || textBody == "" || len(tags) == 0 {
+	if copyEnabled && (title == "" || textBody == "" || len(tags) == 0) {
 		return nil, wala.NewError(400, "缺少标题、正文或标签。")
 	}
 
@@ -656,12 +674,10 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 	if len(productFiles) > 0 || sceneFile != nil {
 		mode = "image-edit"
 	}
-	model := u.cfg.Bridal.WalaImageModel
-	if model == "" {
-		model = "gpt-image-2"
-	}
+	model := u.defaultImageModelID()
 	// 8. 解析 categoryId/channelId
 	var channelID uuid.UUID
+	var selectedChannel *channels.ChannelRecord
 	if req.ChannelID != "" {
 		if id, err := uuid.Parse(req.ChannelID); err == nil {
 			channelID = id
@@ -673,12 +689,17 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		if err != nil || ch == nil || !ch.IsEnabled {
 			return nil, wala.NewError(400, "所选模型线路不可用。")
 		}
+		selectedChannel = ch
 	}
 	// 前端未指定线路时回退数据库默认线路（admin 后台可配），仍无则留空走 .env 默认 client
 	if channelID == uuid.Nil && u.channels != nil {
 		if ch, err := u.channels.GetDefaultConfig(ctx); err == nil && ch != nil {
 			channelID = ch.ID
+			selectedChannel = ch
 		}
+	}
+	if selectedChannel != nil {
+		model = u.normalizedImageModelID(selectedChannel.ModelID)
 	}
 
 	// 9. 入库 queued + 预写 N 条 pending 子图占位
@@ -773,8 +794,8 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 
 // ListHistory /api/v1/generation/history，支持分页 + 状态/时间筛选。
 // 复用 ListTasksPaged（查 generation_tasks），结果序列化为 SanitizedTask（HistoryRecord 契约）。
-func (u *Usecase) ListHistory(ctx context.Context, user *domain.User, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID uuid.UUID) ([]SanitizedTask, int, error) {
-	recs, total, err := u.repo.ListTasksPaged(ctx, user.ID, user.HasUnlimitedImageGeneration(), page, pageSize, historyStatusToDB(status), startTime, endTime, taskID, filterUserID)
+func (u *Usecase) ListHistory(ctx context.Context, user *domain.User, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID, categoryID uuid.UUID) ([]SanitizedTask, int, error) {
+	recs, total, err := u.repo.ListTasksPaged(ctx, user.ID, user.HasUnlimitedImageGeneration(), page, pageSize, historyStatusToDB(status), startTime, endTime, taskID, filterUserID, categoryID, true)
 	if err != nil {
 		return nil, 0, err
 	}

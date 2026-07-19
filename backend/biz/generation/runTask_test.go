@@ -26,13 +26,14 @@ func successBody() string {
 // --- fakes 实现 taskRepo / taskStore / taskCredits / taskChannels ---
 
 type fakeRepo struct {
-	mu             sync.Mutex
-	started        int
-	done           []string // SetTaskDone 的 status 列表
-	subTasks       map[string]string
-	completedCount int
-	cancelled      bool
-	categoryEngine *CategoryEngine
+	mu              sync.Mutex
+	started         int
+	done            []string // SetTaskDone 的 status 列表
+	subTasks        map[string]string
+	processingOrder []string
+	completedCount  int
+	cancelled       bool
+	categoryEngine  *CategoryEngine
 }
 
 func newFakeRepo() *fakeRepo { return &fakeRepo{subTasks: map[string]string{}} }
@@ -54,6 +55,9 @@ func (r *fakeRepo) SetTaskDone(_ context.Context, _ uuid.UUID, status, _ string)
 func (r *fakeRepo) UpdateSubTaskImage(_ context.Context, imageID, status, _, _, _ string, _ int) error {
 	r.mu.Lock()
 	r.subTasks[imageID] = status
+	if status == "processing" {
+		r.processingOrder = append(r.processingOrder, imageID)
+	}
 	r.mu.Unlock()
 	return nil
 }
@@ -69,7 +73,7 @@ func (r *fakeRepo) CountActiveTasks(context.Context, uuid.UUID) (int, error) { r
 func (r *fakeRepo) CountImagesForDate(context.Context, uuid.UUID, string) (int, error) {
 	return 0, nil
 }
-func (r *fakeRepo) ListTasksPaged(context.Context, uuid.UUID, bool, int, int, string, *time.Time, *time.Time, uuid.UUID, uuid.UUID) ([]TaskRecord, int, error) {
+func (r *fakeRepo) ListTasksPaged(context.Context, uuid.UUID, bool, int, int, string, *time.Time, *time.Time, uuid.UUID, uuid.UUID, uuid.UUID, bool) ([]TaskRecord, int, error) {
 	return nil, 0, nil
 }
 func (r *fakeRepo) UpdateTaskFeedback(context.Context, uuid.UUID, types.TaskFeedback) error {
@@ -237,8 +241,9 @@ func TestRunTask_Serial(t *testing.T) {
 	u := newTestUsecase(repo, creds, chans, caller)
 	user := &domain.User{ID: uuid.New(), Username: "tester"}
 
+	taskID := uuid.New()
 	start := time.Now()
-	u.runTask(uuid.New(), user, threePlans(), nil, productFiles(), "1152x1536", "medium", chID)
+	u.runTask(taskID, user, threePlans(), nil, productFiles(), "1152x1536", "medium", chID)
 	elapsed := time.Since(start)
 
 	if len(repo.done) != 1 || repo.done[0] != "completed" {
@@ -249,6 +254,16 @@ func TestRunTask_Serial(t *testing.T) {
 	}
 	if caller.callCount() != 3 {
 		t.Errorf("wala 应调 3 次，得 %d", caller.callCount())
+	}
+	wantOrder := []string{taskID.String() + "-1", taskID.String() + "-2", taskID.String() + "-3"}
+	if len(repo.processingOrder) != len(wantOrder) {
+		t.Fatalf("应有 %d 次 processing 状态更新，得 %v", len(wantOrder), repo.processingOrder)
+	}
+	for i := range wantOrder {
+		if repo.processingOrder[i] != wantOrder[i] {
+			t.Errorf("并发为 1 时应按图号取得通道槽位，得 %v，想要 %v", repo.processingOrder, wantOrder)
+			break
+		}
 	}
 	// 串行验证：3*150=450ms（并发才 <400ms）
 	if elapsed < 400*time.Millisecond {

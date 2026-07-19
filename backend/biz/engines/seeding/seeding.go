@@ -27,26 +27,6 @@ const (
 	ProductCategoryDress  = "裙装 / 女装"
 )
 
-// XiaohongshuBridalTopic 小红书婚纱主题（src/data/xiaohongshuBridalContentProfiles.ts:4-10,55-62）
-var xiaohongshuBridalTopicOptions = []string{
-	"真实客户试纱",
-	"手机对镜自拍试纱",
-	"试纱陪同视角",
-	"试纱避坑准备",
-	"婚纱品牌发布",
-	"婚纱店发布",
-}
-
-// IsXiaohongshuBridalTopic 小红书婚纱主题判定（TS :198-205）
-func IsXiaohongshuBridalTopic(topic string) bool {
-	for _, t := range xiaohongshuBridalTopicOptions {
-		if t == topic {
-			return true
-		}
-	}
-	return false
-}
-
 func getTopicOptions(productCategory string) []string {
 	assets := DefaultAssets()
 	if productCategory == ProductCategoryBridal {

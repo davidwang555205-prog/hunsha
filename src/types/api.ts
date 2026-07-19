@@ -70,9 +70,15 @@ export type HistoryRecord = {
   images: GeneratedImage[];
   error?: string;
   uploadedImageCount: number;
+  /** 创建任务时所属类目；旧记录无该字段。 */
+  categoryId?: string | null;
   /** 用户上传的参考图（后端存 MinIO 后返回，旧记录可能为空） */
   referenceImages?: GeneratedImage[];
   channelId?: string | null;
+  /** 任务绑定的模型线路名称；管理员历史列表展示。 */
+  channelName?: string;
+  /** 整组任务从开始处理到结束的耗时；旧记录可能为 0。 */
+  durationMs?: number;
   /** 给大模型的提示词（仅管理员侧返回，用户侧为空数组） */
   prompts?: string[];
   /** 小红书发布反馈，null=未反馈 */
@@ -191,18 +197,18 @@ export type ModelInvocationReference = {
 /** 对应 generation.ModelInvocationRecord：一张子图的重试、fallback 均是独立一条。 */
 export type ModelInvocation = {
   id: string;
-  taskID: string;
-  generationImageID: string;
+  taskId: string;
+  generationImageId: string;
   imageNumber: number;
-  userID: string;
+  userId: string;
   username: string;
   userEmail: string;
   userRole: string;
-  channelID: string;
+  channelId: string;
   channelName: string;
-  apiBaseURL: string;
+  apiBaseUrl: string;
   protocol: string;
-  modelID: string;
+  modelId: string;
   candidateIndex: number;
   candidateCount: number;
   attemptNumber: number;
@@ -455,6 +461,7 @@ export type UpdateCategoryRequest = Partial<Omit<CreateCategoryRequest, "id">>;
 /** 异步生图任务子图状态 */
 export type SubTaskStatus = {
   index: number;
+  /** pending=等待通道槽位；processing=已实际发往上游模型。 */
   status: "pending" | "processing" | "success" | "failed" | "cancelled";
   image: GeneratedImage | null;
   error: string | null;
@@ -573,6 +580,8 @@ export type HistoryQuery = {
   taskId?: string;
   /** admin 按用户筛选 */
   userId?: string;
+  /** 按创建任务所属类目筛选 */
+  categoryId?: string;
 };
 
 /** 系统设置（后台可配运行时配置，如 retention_days 数据保留天数） */
@@ -671,6 +680,9 @@ export type PromptAssets = {
 
 /** GET /api/engines/:key/prompt-options 响应 */
 export type PromptOptionsResponse = { assets: PromptAssets };
+
+/** GET /api/engines/:key/capabilities 响应。 */
+export type EngineCapabilitiesResponse = { copyEnabled: boolean };
 
 /** GET /api/engines/:key/topic-options 响应 */
 export type TopicOptionsResponse = { topics: string[] };

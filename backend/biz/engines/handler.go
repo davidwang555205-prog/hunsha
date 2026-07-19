@@ -42,6 +42,7 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 
 	w.Echo().GET("/api/engines", h.listPublic, authM)
 	w.Echo().POST("/api/engines/:key/generate", h.generate, authM)
+	w.Echo().GET("/api/engines/:key/capabilities", h.capabilities, authM)
 	w.Echo().GET("/api/engines/:key/topic-options", h.topicOptions, authM)
 	w.Echo().GET("/api/engines/:key/prompt-options", h.promptOptions, authM)
 	w.Echo().GET("/api/admin/engines", h.listAdmin, authM, adminM)
@@ -50,6 +51,15 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	w.Echo().PATCH("/api/admin/engines/:id", h.update, authM, adminM)
 	w.Echo().DELETE("/api/admin/engines/:id", h.remove, authM, adminM)
 	return h, nil
+}
+
+// capabilities GET /api/engines/:key/capabilities：返回工作台需要的通用引擎能力。
+func (h *Handler) capabilities(c echo.Context) error {
+	copyEnabled, err := h.usecase.CopyEnabled(c.Request().Context(), c.Param("key"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]any{"copyEnabled": copyEnabled})
 }
 
 // topicOptions GET /api/engines/:key/topic-options：返回工作台可选主题。

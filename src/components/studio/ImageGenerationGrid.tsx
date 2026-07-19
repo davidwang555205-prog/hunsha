@@ -2,7 +2,7 @@
  * ImageGenerationGrid -- 生成图占位网格（skeleton 逐张填充）
  *
  * 基于 subTaskStatus 渲染 N 张 3:4 卡。生成中与完成态共用：
- * pending/processing 显示 skeleton（processing 叠加 Spinner），
+ * pending 显示“排队中”，processing 显示“AI 正在生成”（取得通道槽位后），
  * success 显示真实图（点击放大预览 + 悬浮下载按钮），failed/cancelled 显示占位文字。
  * 轮询更新 subTaskStatus 时，逐张从 skeleton 变真实图。
  */
@@ -41,11 +41,11 @@ export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix }: Im
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {items.map((sub) => {
           const url = sub.status === "success" ? sub.image?.url : null;
           return (
-            <div key={sub.index} className="group relative overflow-hidden rounded-md border border-border bg-bg transition duration-base ease-out hover:scale-[1.02] hover:ring-1 hover:ring-primary/40">
+            <div key={sub.index} className="group relative overflow-hidden rounded-lg border border-border bg-bg shadow-sm transition duration-base ease-out hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/40">
               <div className="relative flex aspect-[3/4] items-center justify-center bg-bg">
                 {url ? (
                   <>
@@ -70,10 +70,15 @@ export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix }: Im
                   <span className="text-xs text-text-subtle">已取消</span>
                 ) : (
                   <>
-                    <div className="absolute inset-0 animate-pulse bg-surface" />
-                    <div className="relative flex flex-col items-center gap-1.5 text-text-subtle">
-                      {sub.status === "processing" ? <Spinner size={22} /> : null}
-                      <span className="text-[11px]">{sub.status === "processing" ? "生成中" : "等待中"}</span>
+                    <div className="absolute inset-0 bg-surface/70" />
+                    <div className="relative flex flex-col items-center gap-3 text-text-subtle">
+                      <div className="flex items-center gap-1.5" aria-hidden>
+                        <span className="generation-loading-dot" />
+                        <span className="generation-loading-dot" />
+                        <span className="generation-loading-dot" />
+                      </div>
+                      {sub.status === "processing" ? <Spinner size={18} className="text-primary" /> : null}
+                      <span className="text-[11px]">{sub.status === "processing" ? "AI 正在生成" : "排队中"}</span>
                     </div>
                   </>
                 )}

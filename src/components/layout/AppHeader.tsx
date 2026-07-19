@@ -16,6 +16,7 @@ import { getCreditBalance } from "../../api/credits";
 import { ShieldIcon } from "../icons";
 import { Button } from "../ui/Button";
 import type { CreditTransaction } from "../../types/api";
+import logo from "../../assets/logo.png";
 
 type PopoverKey = "credits" | "notify" | "user" | null;
 
@@ -29,7 +30,6 @@ export function AppHeader() {
 
   const credits = user?.credits ?? 0;
   const displayName = user?.displayName ?? "用户";
-  const initial = displayName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
     logout();
@@ -155,16 +155,16 @@ export function AppHeader() {
             <button
               type="button"
               onClick={() => toggle("user")}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white transition duration-fast ease-out hover:opacity-90"
+              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15 transition duration-fast ease-out hover:ring-primary/40"
               aria-label="用户菜单"
             >
-              {initial}
+              <img src={logo} alt="默认用户头像" className="h-full w-full object-cover" />
             </button>
             {openPopover === "user" && (
               <div className="absolute right-0 top-full z-popover mt-2 w-56 rounded-xl border border-border bg-surface p-4 shadow-lg">
                 <div className="flex items-center gap-3 border-b border-border pb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-                    {initial}
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15">
+                    <img src={logo} alt="默认用户头像" className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-text">{displayName}</p>

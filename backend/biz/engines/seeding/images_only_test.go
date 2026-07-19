@@ -1,0 +1,53 @@
+package seeding
+
+import (
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestImagesOnlyUsesJSONBlueprintsWithoutCopyAlignment(t *testing.T) {
+	assets := &Assets{
+		BridalTopics: []string{"JSON 新主题"},
+		XiaohongshuBridalContentProfiles: map[string]XhsContentProfile{
+			"JSON 新主题": {
+				ImageBlueprints: []XhsImageBlueprint{
+					{Name: "JSON-001｜F01-正面", ImageType: "产品上身图", ScenePreference: "试纱间", ExtraRequirement: "BLUEPRINT FRONT VIEW"},
+					{Name: "JSON-002｜F02-侧面", ImageType: "生活场景图", ScenePreference: "试纱间", ExtraRequirement: "BLUEPRINT SIDE VIEW"},
+					{Name: "JSON-003｜F03-细节", ImageType: "拍摄花絮 / 材质图", ScenePreference: "材质工作台", ExtraRequirement: "BLUEPRINT DETAIL VIEW"},
+				},
+			},
+		},
+		BridalScenesByImageType: map[string][]string{
+			"产品上身图":      {"试纱间"},
+			"生活场景图":      {"试纱间"},
+			"拍摄花絮 / 材质图": {"材质工作台"},
+		},
+	}
+	content := GenerateFashionSeedingImagesOnly(FashionSeedingInput{
+		ProductCategory: ProductCategoryBridal,
+		Topic:           "JSON 新主题",
+		ImageCount:      3,
+		Date:            time.Date(2026, 7, 19, 0, 0, 0, 0, ChinaFixedZone()),
+		BaseParams:      PromptParams{ProductCategory: ProductCategoryBridal},
+	}, assets)
+
+	if len(content.Images) != 3 {
+		t.Fatalf("want 3 JSON blueprints, got %d", len(content.Images))
+	}
+	for index, wantName := range []string{"JSON-001｜F01-正面", "JSON-002｜F02-侧面", "JSON-003｜F03-细节"} {
+		image := content.Images[index]
+		if image.Name != wantName {
+			t.Fatalf("image %d = %q, want %q", index+1, image.Name, wantName)
+		}
+		if !strings.Contains(image.Params.ExtraRequirement, "BLUEPRINT") {
+			t.Fatalf("image %d lost its JSON blueprint requirement: %q", index+1, image.Params.ExtraRequirement)
+		}
+		if strings.Contains(image.Params.ExtraRequirement, "Visual recipe:") {
+			t.Fatalf("image %d inherited copy alignment: %q", index+1, image.Params.ExtraRequirement)
+		}
+	}
+	if len(content.Titles) != 0 || len(content.Tags) != 0 || content.Body != "" || content.Note != "" {
+		t.Fatalf("images-only content must not create copy: %#v", content)
+	}
+}

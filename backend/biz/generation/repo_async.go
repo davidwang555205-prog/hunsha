@@ -9,7 +9,9 @@ import (
 
 	"bridal/backend/db"
 	"bridal/backend/db/generationimage"
+	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
+	"bridal/backend/db/modelchannel"
 	"bridal/backend/ent/types"
 )
 
@@ -156,7 +158,8 @@ func (r *Repo) IncCompletedCount(ctx context.Context, taskID uuid.UUID) error {
 }
 
 // ListTasksPaged 分页查任务（含子图），倒序。isAdmin 查全部。status 空则不过滤。
-func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin bool, page, pageSize int, status string, startTime, endTime *time.Time, taskID uuid.UUID, filterUserID uuid.UUID) ([]TaskRecord, int, error) {
+// finishedOnly 为 true 时只返回已结束任务，避免进行中的任务被误认为历史记录。
+func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin bool, page, pageSize int, status string, startTime, endTime *time.Time, taskID uuid.UUID, filterUserID, categoryID uuid.UUID, finishedOnly bool) ([]TaskRecord, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -172,6 +175,8 @@ func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin boo
 	}
 	if status != "" {
 		q = q.Where(generationtask.StatusEQ(status))
+	} else if finishedOnly {
+		q = q.Where(generationtask.StatusIn("completed", "failed", "cancelled"))
 	}
 	if startTime != nil {
 		q = q.Where(generationtask.CreatedAtGTE(*startTime))
@@ -181,6 +186,9 @@ func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin boo
 	}
 	if taskID != uuid.Nil {
 		q = q.Where(generationtask.IDEQ(taskID))
+	}
+	if categoryID != uuid.Nil {
+		q = q.Where(generationtask.CategoryIDEQ(categoryID))
 	}
 	total, err := q.Count(ctx)
 	if err != nil {
@@ -194,9 +202,41 @@ func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin boo
 	if len(tasks) == 0 {
 		return []TaskRecord{}, total, nil
 	}
+	channelIDs := make([]uuid.UUID, 0, len(tasks))
+	for _, task := range tasks {
+		if task.ChannelID != uuid.Nil {
+			channelIDs = append(channelIDs, task.ChannelID)
+		}
+	}
+	channelNames := map[uuid.UUID]string{}
+	if len(channelIDs) > 0 {
+		channels, err := r.db.ModelChannel.Query().Where(modelchannel.IDIn(channelIDs...)).All(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		for _, channel := range channels {
+			channelNames[channel.ID] = channel.Name
+		}
+	}
 	taskIDs := make([]uuid.UUID, 0, len(tasks))
 	for _, t := range tasks {
 		taskIDs = append(taskIDs, t.ID)
+	}
+	// 审计表保存的是调用当时的线路与模型快照。旧任务没有 channel_id 时，
+	// 用首条调用记录回填展示值，不依赖后来可能被修改的线路配置。
+	auditRows, err := r.db.GenerationModelInvocation.Query().
+		Where(generationmodelinvocation.TaskIDIn(taskIDs...)).
+		Order(db.Asc(generationmodelinvocation.FieldRequestedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	auditRoute := map[uuid.UUID]struct{ channelName, modelID string }{}
+	for _, row := range auditRows {
+		if _, exists := auditRoute[row.TaskID]; exists {
+			continue
+		}
+		auditRoute[row.TaskID] = struct{ channelName, modelID string }{channelName: row.ChannelName, modelID: row.ModelID}
 	}
 	allImages, err := r.db.GenerationImage.Query().
 		Where(generationimage.TaskIDIn(taskIDs...), generationimage.DeletedEQ(false)).
@@ -223,6 +263,15 @@ func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin boo
 	out := make([]TaskRecord, 0, len(tasks))
 	for _, t := range tasks {
 		rec := taskToRecord(t)
+		rec.ChannelName = channelNames[t.ChannelID]
+		if snapshot, ok := auditRoute[t.ID]; ok {
+			if rec.ChannelName == "" {
+				rec.ChannelName = snapshot.channelName
+			}
+			if rec.Model == "" {
+				rec.Model = snapshot.modelID
+			}
+		}
 		rec.Images = imageMap[t.ID]
 		if rec.Images == nil {
 			rec.Images = []ImageRecord{}

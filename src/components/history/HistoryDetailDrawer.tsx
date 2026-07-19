@@ -17,7 +17,6 @@ import { useBodyScrollLock } from "../../lib/useBodyScrollLock";
 import { formatDate } from "../../lib/format";
 import { downloadImage } from "../../lib/download";
 import { copyText } from "../../lib/clipboard";
-import { firstTitle, splitTitles } from "../../lib/titles";
 import { XHSNotePanel } from "./XHSNotePanel";
 import { ModelInvocationTimeline } from "./ModelInvocationTimeline";
 import type { HistoryRecord } from "../../types/api";
@@ -57,6 +56,8 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
 
   if (typeof document === "undefined") return null;
 
+  const hasCopy = Boolean(record?.body.trim() || (record?.tags.length ?? 0) > 0);
+
   return createPortal(
     <AnimatePresence>
       {record && (
@@ -92,20 +93,6 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
               </button>
             </div>
 
-            <h2 className="text-xl font-semibold">{firstTitle(record.title)}</h2>
-            {splitTitles(record.title).length > 1 && (
-              <div className="mt-3">
-                <h4 className="mb-1.5 text-sm font-medium text-text">标题备选</h4>
-                <div className="space-y-1">
-                  {splitTitles(record.title).map((t, i) => (
-                    <p key={i} className="rounded-md bg-bg px-3 py-2 text-sm text-text ring-1 ring-border/70">
-                      {t}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* 生成图：仅成功时渲染，避免失败任务显示破裂图 */}
             {record.status === "success" && record.images.length > 0 && (
               <div className="mt-4">
@@ -114,7 +101,7 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
                   {record.images.map((image, index) => (
                     <figure key={image.id} className="overflow-hidden rounded-md bg-bg ring-1 ring-border">
                       <button type="button" onClick={() => setGenPreview(index)} className="block w-full" aria-label={`预览图 ${index + 1}`}>
-                        <img className="aspect-[3/4] w-full object-cover" src={image.thumbUrl ?? image.url} alt={`${firstTitle(record.title)} ${index + 1}`} />
+                        <img className="aspect-[3/4] w-full object-cover" src={image.thumbUrl ?? image.url} alt={`生成图 ${index + 1}`} />
                       </button>
                       <figcaption className="px-3 py-2 text-xs text-text-muted">{image.name || `图 ${index + 1}`}</figcaption>
                     </figure>
@@ -164,23 +151,28 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
               </div>
             )}
 
-            <div className="mt-5">
-              <h3 className="text-sm font-semibold text-text">正文</h3>
-              <p className="mt-2 whitespace-pre-line rounded-md bg-bg px-4 py-3 text-sm leading-7 text-text ring-1 ring-border/70">
-                {record.body}
-              </p>
-            </div>
-
-            {record.tags.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold text-text">标签</h3>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {record.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-primary-50 px-3 py-1 text-xs text-text-muted ring-1 ring-primary-100">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+            {hasCopy && (
+              <div className="mt-5 space-y-4">
+                {record.body && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-text">正文</h3>
+                    <p className="mt-2 whitespace-pre-line rounded-md bg-bg px-4 py-3 text-sm leading-7 text-text ring-1 ring-border/70">
+                      {record.body}
+                    </p>
+                  </div>
+                )}
+                {record.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-text">标签</h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {record.tags.map((tag) => (
+                        <span key={tag} className="rounded-full bg-primary-50 px-3 py-1 text-xs text-text-muted ring-1 ring-primary-100">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

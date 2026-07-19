@@ -129,8 +129,8 @@ export function AdminModelInvocationsPage() {
               <tbody className="divide-y divide-border/80">
                 {rows.map((row) => (
                   <tr key={row.id} className="cursor-pointer transition hover:bg-bg/70" onClick={() => setDetail(row)}>
-                    <td className="px-4 py-3"><p className="text-text">{formatDate(row.requestedAt)}</p><p className="mt-1 max-w-44 truncate text-xs text-text-muted">{row.username || row.userEmail || row.userID}</p></td>
-                    <td className="px-4 py-3"><p className="max-w-56 truncate font-medium text-text">{row.channelName || "默认线路"}</p><p className="mt-1 max-w-56 truncate text-xs text-text-muted">{row.modelID || "未记录模型"}</p></td>
+                    <td className="px-4 py-3"><p className="text-text">{formatDate(row.requestedAt)}</p><p className="mt-1 max-w-44 truncate text-xs text-text-muted">{row.username || row.userEmail || row.userId}</p></td>
+                    <td className="px-4 py-3"><p className="max-w-56 truncate font-medium text-text">{row.channelName || "默认线路"}</p><p className="mt-1 max-w-56 truncate text-xs text-text-muted">{row.modelId || "未记录模型"}</p></td>
                     <td className="px-4 py-3 text-text-muted">图 {row.imageNumber || "-"}<br /><span className="text-xs">候选 {row.candidateIndex}/{row.candidateCount} · 第 {row.attemptNumber} 次</span></td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs ${resultClass(row)}`}>{resultText(row)}</span><p className="mt-1 text-xs text-text-muted">HTTP {row.httpStatus || "-"}</p></td>
                     <td className="px-4 py-3 font-medium tabular-nums text-text">{latencyText(row.latencyMs)}</td>
@@ -160,10 +160,10 @@ function InvocationDetail({ row }: { row: ModelInvocation }) {
         <p><span className="text-xs text-text-muted">耗时</span><br />{latencyText(row.latencyMs)}</p>
         <p><span className="text-xs text-text-muted">请求时间</span><br />{formatDate(row.requestedAt)}</p>
         <p><span className="text-xs text-text-muted">用户</span><br />{row.username || "-"} {row.userEmail ? `(${row.userEmail})` : ""}</p>
-        <p><span className="text-xs text-text-muted">模型</span><br />{row.channelName || "默认线路"} · {row.modelID || "-"}</p>
+        <p><span className="text-xs text-text-muted">模型</span><br />{row.channelName || "默认线路"} · {row.modelId || "-"}</p>
         <p><span className="text-xs text-text-muted">候选 / 尝试</span><br />{row.candidateIndex}/{row.candidateCount} · {row.attemptNumber}/{row.attemptBudget}</p>
       </div>
-      <p className="break-all rounded-md bg-bg px-3 py-2 text-xs text-text-muted ring-1 ring-border/70">{row.protocol || "-"} · {row.apiBaseURL || "-"}</p>
+      <p className="break-all rounded-md bg-bg px-3 py-2 text-xs text-text-muted ring-1 ring-border/70">{row.protocol || "-"} · {row.apiBaseUrl || "-"}</p>
       {row.error && <pre className="whitespace-pre-wrap rounded-md border border-danger/30 bg-danger/5 p-3 text-xs leading-5 text-danger">{row.error}</pre>}
       <section><h4 className="mb-2 font-medium text-text">传递的提示词</h4><pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-bg p-3 text-xs leading-5 text-text-muted ring-1 ring-border/70">{row.prompt}</pre></section>
       <section><h4 className="mb-2 font-medium text-text">参考图 ({row.referenceImages.length})</h4><div className="flex flex-wrap gap-3">{row.referenceImages.map((ref, index) => <a key={`${ref.sha256}-${index}`} href={ref.url || undefined} target={ref.url ? "_blank" : undefined} rel="noreferrer" className="w-28 overflow-hidden rounded-md bg-bg ring-1 ring-border/70">{ref.url ? <img src={ref.url} alt={ref.name || ref.kind} className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center px-2 text-center text-xs text-text-subtle">未存对象 URL</div>}<p className="truncate px-2 py-1.5 text-xs text-text-muted">{ref.kind || ref.name}</p></a>)}</div></section>

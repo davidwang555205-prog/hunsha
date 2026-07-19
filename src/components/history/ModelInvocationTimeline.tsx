@@ -84,7 +84,7 @@ export function ModelInvocationTimeline({ taskId }: { taskId: string }) {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text">
                       <span>图 {row.imageNumber || "-"}</span>
-                      <span className="truncate">{row.channelName || "默认线路"} · {row.modelID || "未记录模型"}</span>
+                      <span className="truncate">{row.channelName || "默认线路"} · {row.modelId || "未记录模型"}</span>
                     </div>
                     <p className="mt-1 text-xs text-text-muted">{formatDate(row.requestedAt)} · 候选 {row.candidateIndex}/{row.candidateCount} · 尝试 {row.attemptNumber}/{row.attemptBudget}</p>
                   </div>
@@ -97,7 +97,7 @@ export function ModelInvocationTimeline({ taskId }: { taskId: string }) {
                   <div className="grid gap-2 sm:grid-cols-2">
                     <p className="text-text-muted">HTTP：<span className="text-text">{row.httpStatus || "网络错误"}</span></p>
                     <p className="text-text-muted">协议 / 尺寸 / 质量：<span className="text-text">{row.protocol || "-"} / {row.size || "-"} / {row.quality || "-"}</span></p>
-                    <p className="break-all text-text-muted sm:col-span-2">API Base：<span className="text-text">{row.apiBaseURL || "-"}</span></p>
+                    <p className="break-all text-text-muted sm:col-span-2">API Base：<span className="text-text">{row.apiBaseUrl || "-"}</span></p>
                   </div>
                   {row.error && <p className="whitespace-pre-wrap rounded-md border border-danger/25 bg-danger/5 px-3 py-2 leading-5 text-danger">{row.error}</p>}
                   <div className="rounded-md bg-bg p-3 ring-1 ring-border/70">

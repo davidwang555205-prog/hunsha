@@ -19,7 +19,10 @@ GIT_COMMIT=""
 BUILT_AT=""
 
 cleanup_staging() {
-  [[ -n "$STAGING_DIR" ]] && rm -rf "$STAGING_DIR"
+  if [[ -n "$STAGING_DIR" ]]; then
+    rm -rf "$STAGING_DIR"
+  fi
+  return 0
 }
 trap cleanup_staging EXIT
 
@@ -260,3 +263,5 @@ main() {
 }
 
 main "$@"
+# 让云效主机部署任务获得明确的成功退出码；任一发布步骤失败时，set -e 已会提前退出。
+exit 0

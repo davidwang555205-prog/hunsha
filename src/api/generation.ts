@@ -111,6 +111,7 @@ export function listHistoryPaged(query: HistoryQuery = {}) {
   if (query.q) params.set("q", query.q);
   if (query.taskId) params.set("taskId", query.taskId);
   if (query.userId) params.set("userId", query.userId);
+  if (query.categoryId) params.set("categoryId", query.categoryId);
   const qs = params.toString();
   return apiRequest<HistoryPagedResponse>(`/api/v1/generation/history${qs ? `?${qs}` : ""}`);
 }

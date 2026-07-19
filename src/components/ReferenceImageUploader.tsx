@@ -99,46 +99,51 @@ export function ReferenceImageUploader({
       </div>
 
       {files.length < maxCount && (
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface/70 px-4 py-5 text-center transition hover:border-primary hover:bg-surface">
-          <span className="text-sm font-medium text-text">点击上传</span>
-          {hint && <span className="mt-1 text-xs leading-5 text-text-muted">{hint}</span>}
-          <span className="mt-1 text-xs leading-5 text-text-muted">
-            支持 JPG、PNG、WebP 格式，单张不超过 10MB，最多上传 {maxCount} 张。
+        <label className="flex min-h-[92px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-bg/60 px-4 py-3 text-center transition hover:border-primary hover:bg-primary/5">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-surface px-3 py-1.5 text-sm font-medium text-text ring-1 ring-border">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden>
+              <path d="M9 12V3m0 0L5.5 6.5M9 3l3.5 3.5M3 11.5v2A1.5 1.5 0 004.5 15h9a1.5 1.5 0 001.5-1.5v-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            上传图片
+          </span>
+          <span className="mt-2 text-xs leading-5 text-text-muted">
+            {hint ?? "支持 JPG、PNG、WebP 格式，单张不超过 10MB。"}
+          </span>
+          <span className="text-xs leading-5 text-text-subtle">
+            {required && minCount ? `至少 ${minCount} 张，最多 ${maxCount} 张` : `最多 ${maxCount} 张`}
           </span>
           <input
             className="sr-only"
             type="file"
             accept={acceptedReferenceImageTypes.join(",")}
-            multiple={maxCount > 1}
+            multiple={maxCount - files.length > 1}
             onChange={handleSelect}
           />
         </label>
       )}
 
-      {error && <p className="text-xs text-danger">{error}</p>}
-      {notEnough && <p className="text-xs text-danger">至少需要 {minCount} 张，请继续上传。</p>}
-
       {previews.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-4 gap-2">
           {previews.map((preview, index) => (
-            <div key={`${preview.file.name}-${preview.file.lastModified}`} className="overflow-hidden rounded-md bg-surface ring-1 ring-border">
-              <button type="button" onClick={() => setPreviewIndex(index)} className="block w-full" aria-label="放大预览">
+            <div key={`${preview.file.name}-${preview.file.lastModified}`} className="group relative overflow-hidden rounded-md bg-surface ring-1 ring-border">
+              <button type="button" onClick={() => setPreviewIndex(index)} className="block w-full" aria-label={`预览${label} ${index + 1}`}>
                 <img className="aspect-[4/5] w-full object-cover" src={preview.url} alt={preview.file.name} />
               </button>
-              <div className="space-y-2 p-2">
-                <p className="truncate text-xs text-text-muted">{preview.file.name}</p>
-                <button
-                  className="w-full rounded-sm bg-bg px-3 py-2 text-xs font-medium text-text ring-1 ring-border transition hover:bg-primary-50"
-                  type="button"
-                  onClick={() => removeFile(preview.file)}
-                >
-                  删除
-                </button>
-              </div>
+              <button
+                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-text/70 text-sm leading-none text-white opacity-0 transition group-hover:opacity-100 hover:bg-danger"
+                type="button"
+                onClick={() => removeFile(preview.file)}
+                aria-label={`删除${label} ${index + 1}`}
+              >
+                ×
+              </button>
             </div>
           ))}
         </div>
       )}
+
+      {error && <p className="text-xs text-danger">{error}</p>}
+      {notEnough && <p className="text-xs text-danger">至少需要 {minCount} 张，请补齐标有“必传”的卡位。</p>}
 
       <ImageLightbox
         open={previewIndex >= 0}

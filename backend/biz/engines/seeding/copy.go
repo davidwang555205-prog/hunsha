@@ -54,10 +54,10 @@ func ensureBankItems(items, fallback []string, fallbackLabel string) []string {
 
 // getDraftSourcePhrases TS :2098-2102
 func getDraftSourcePhrases(assets *Assets, topic string) []string {
-	if !IsXiaohongshuBridalTopic(topic) {
+	drafts := assets.XiaohongshuBridalCopyDrafts[topic]
+	if len(drafts) == 0 {
 		return nil
 	}
-	drafts := assets.XiaohongshuBridalCopyDrafts[topic]
 	out := []string{}
 	for _, d := range drafts {
 		out = append(out, d.Titles...)
@@ -305,7 +305,7 @@ func buildCopyFromKit(assets *Assets, productCategory, topic string, variantInde
 	kit := assets.TopicCopyKits[topic]
 	bank := buildCopyVariationBank(assets, productCategory, topic, kit)
 	axes := GetVariantAxes(variantIndex)
-	if productCategory == ProductCategoryBridal && IsXiaohongshuBridalTopic(topic) {
+	if productCategory == ProductCategoryBridal && len(assets.XiaohongshuBridalCopyDrafts[topic]) > 0 {
 		return buildXiaohongshuDraftCopy(assets, productCategory, topic, kit, bank, axes)
 	}
 	audience := readableCue(pick(bank.Audiences, axes.Audience))

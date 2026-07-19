@@ -111,3 +111,85 @@ textarea {
     opacity: 1;
   }
 }
+
+/* 工作台生成态：用于右侧交付卡片。比传统 spinner 更能传达“正在形成一张图”。 */
+.generation-loading-state {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 50% 42%, rgb(var(--color-primary-50)) 0, transparent 32%),
+    rgb(var(--color-bg));
+}
+
+.generation-loading-orbit {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  animation: generation-orbit 4.2s linear infinite;
+}
+
+.generation-loading-petal,
+.generation-loading-core {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.generation-loading-petal {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%);
+  box-shadow: 0 8px 16px rgb(var(--color-primary) / 0.14);
+}
+
+.generation-loading-petal-one { left: 2px; top: 22px; opacity: 0.58; }
+.generation-loading-petal-two { right: 2px; top: 22px; opacity: 0.78; }
+.generation-loading-petal-three { left: 22px; bottom: 1px; opacity: 0.42; }
+
+.generation-loading-core {
+  left: 21px;
+  top: 21px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 14px;
+  background: rgb(var(--color-surface));
+  color: rgb(var(--color-primary));
+  box-shadow: var(--shadow-md);
+  animation: generation-core 1.6s ease-in-out infinite;
+}
+
+.generation-loading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--color-primary));
+  animation: generation-dot 1.2s ease-in-out infinite;
+}
+
+.generation-loading-dot:nth-child(2) { animation-delay: 0.14s; }
+.generation-loading-dot:nth-child(3) { animation-delay: 0.28s; }
+
+@keyframes generation-orbit { to { transform: rotate(360deg); } }
+@keyframes generation-core {
+  0%, 100% { transform: scale(0.94); }
+  50% { transform: scale(1.08); }
+}
+@keyframes generation-dot {
+  0%, 100% { transform: translateY(0); opacity: 0.28; }
+  50% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generation-loading-orbit,
+  .generation-loading-core,
+  .generation-loading-dot { animation: none; }
+}

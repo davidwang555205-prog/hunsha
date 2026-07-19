@@ -11,6 +11,7 @@ import { useCategory } from "../context/CategoryContext";
 import { Button } from "../components/ui/Button";
 import { FadeIn } from "../components/motion/FadeIn";
 import { PageHeader } from "../components/layout/PageHeader";
+import { CategoryIcon } from "../components/icons";
 import type { Category } from "../types/api";
 
 export function ToolsHomePage() {
@@ -76,8 +77,8 @@ export function ToolsHomePage() {
                 <div className="flex flex-col p-6">
                   {/* 图标 + 类目名称同一行 */}
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-2xl transition duration-base ease-out group-hover:bg-primary/15">
-                      {c.icon || "👗"}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition duration-base ease-out group-hover:bg-primary/15">
+                      <CategoryIcon categoryName={c.name} engine={c.engine} size={24} />
                     </div>
                     <h3 className="text-lg font-semibold text-text">{c.name}</h3>
                   </div>

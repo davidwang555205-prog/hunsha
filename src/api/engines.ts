@@ -6,7 +6,7 @@
  */
 import { apiRequest } from "./client";
 import type { ProductCategory } from "../types";
-import type { PromptOptionsResponse, TopicOptionsResponse } from "../types/api";
+import type { EngineCapabilitiesResponse, PromptOptionsResponse, TopicOptionsResponse } from "../types/api";
 
 /** GET /api/engines/:key/prompt-options -- 当前生效的 imagePrompt 素材（登录可读） */
 export function getPromptOptions(engineKey = "bridal") {
@@ -17,4 +17,9 @@ export function getPromptOptions(engineKey = "bridal") {
 export function getEngineTopicOptions(engineKey: string, productCategory: ProductCategory) {
   const query = new URLSearchParams({ productCategory });
   return apiRequest<TopicOptionsResponse>(`/api/engines/${encodeURIComponent(engineKey)}/topic-options?${query}`);
+}
+
+/** GET /api/engines/:key/capabilities -- 是否生成文案等通用引擎能力。 */
+export function getEngineCapabilities(engineKey: string) {
+  return apiRequest<EngineCapabilitiesResponse>(`/api/engines/${encodeURIComponent(engineKey)}/capabilities`);
 }

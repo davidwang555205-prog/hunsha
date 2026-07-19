@@ -14,11 +14,12 @@ import { Button } from "../ui/Button";
 import { formatDate } from "../../lib/format";
 import { copyText as copyToClipboard } from "../../lib/clipboard";
 import { downloadImage, downloadImages } from "../../lib/download";
-import { firstTitle } from "../../lib/titles";
 import type { HistoryRecord } from "../../types/api";
 
 type HistoryCardProps = {
   record: HistoryRecord;
+  categoryName?: string;
+  showGenerationMeta?: boolean;
   onOpenDetail: (record: HistoryRecord) => void;
   onOpenXHS?: (record: HistoryRecord) => void;
   onMessage: (message: string) => void;
@@ -26,7 +27,15 @@ type HistoryCardProps = {
 
 const MENU_WIDTH = 168; // w-40(160px) + 容错，用于右对齐定位
 
-export function HistoryCard({ record, onOpenDetail, onOpenXHS, onMessage }: HistoryCardProps) {
+function formatDuration(durationMs?: number) {
+  if (!durationMs || durationMs < 0) return "耗时未记录";
+  if (durationMs < 60_000) return `耗时 ${(durationMs / 1000).toFixed(1)} 秒`;
+  const minutes = Math.floor(durationMs / 60_000);
+  const seconds = Math.round((durationMs % 60_000) / 1000);
+  return `耗时 ${minutes} 分 ${seconds} 秒`;
+}
+
+export function HistoryCard({ record, categoryName, showGenerationMeta = false, onOpenDetail, onOpenXHS, onMessage }: HistoryCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -68,35 +77,45 @@ export function HistoryCard({ record, onOpenDetail, onOpenXHS, onMessage }: Hist
     setMenuOpen((open) => !open);
   };
 
+  const visibleImages = record.images.slice(0, 3);
+  const extraImageCount = Math.max(0, record.images.length - visibleImages.length);
+  const hasCopy = Boolean(record.body.trim() || record.tags.length > 0);
+  const categoryLabel = categoryName ?? (record.categoryId ? "已删除类目" : "未分类");
+
   return (
     <SpotlightCard className="rounded-lg bg-surface p-4 ring-1 ring-border" radius={220}>
-      <div className="grid gap-4 lg:grid-cols-[220px_1fr_auto]">
-        {/* 缩略图区（点击展开详情） */}
+      <div className="grid items-center gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)_auto]">
+        {/* 历史列表始终只展示紧凑图片带；正文和标签留给详情抽屉。 */}
         <button type="button" onClick={() => onOpenDetail(record)} className="text-left">
           {record.status === "success" && record.images.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {record.images.map((image, index) => (
-                <figure key={image.id} className="min-w-0">
+            <div className="grid grid-cols-3 gap-2">
+              {visibleImages.map((image, index) => (
+                <figure key={image.id} className="relative min-w-0 overflow-hidden rounded-lg ring-1 ring-border">
                   <img
-                    className="aspect-[3/4] w-full rounded-lg object-cover ring-1 ring-border"
+                    className="aspect-[3/4] w-full object-cover"
                     src={image.thumbUrl ?? image.url}
-                    alt={`${firstTitle(record.title)} ${index + 1}`}
+                    alt={`历史生成图 ${index + 1}`}
                     loading="lazy"
                   />
-                  <figcaption className="mt-1 truncate text-[11px] text-text-muted">{image.name || `图片 ${index + 1}`}</figcaption>
+                  {index === visibleImages.length - 1 && extraImageCount > 0 && (
+                    <figcaption className="absolute inset-0 flex items-center justify-center bg-text/55 text-sm font-semibold text-white">
+                      +{extraImageCount}
+                    </figcaption>
+                  )}
                 </figure>
               ))}
             </div>
           ) : (
-            <div className="flex aspect-[3/4] items-center justify-center rounded-lg bg-bg text-sm text-text-muted ring-1 ring-border">
+            <div className="flex h-28 items-center justify-center rounded-lg bg-bg text-sm text-text-muted ring-1 ring-border">
               {record.status === "failed" ? "失败" : "无图"}
             </div>
           )}
         </button>
 
-        {/* 元信息区 */}
-        <button type="button" onClick={() => onOpenDetail(record)} className="space-y-2 text-left">
+        {/* 所有任务共用同一元信息区，避免图片任务出现空白文案栏。 */}
+        <button type="button" onClick={() => onOpenDetail(record)} className="min-w-0 space-y-3 text-left">
           <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="primary">{categoryLabel}</Badge>
             <Badge>{formatDate(record.createdAt)}</Badge>
             {record.username && <Badge>{record.username}</Badge>}
             {record.status === "success" ? (
@@ -104,17 +123,16 @@ export function HistoryCard({ record, onOpenDetail, onOpenXHS, onMessage }: Hist
             ) : (
               <Badge variant="danger">失败</Badge>
             )}
-            <Badge variant="primary">{record.topic === "生成设置" ? "生成设置" : "内容"}</Badge>
+            <Badge>{hasCopy ? "图文内容" : "仅生成图片"}</Badge>
           </div>
-          <h3 className="text-base font-semibold">{firstTitle(record.title)}</h3>
-          <p className="line-clamp-3 text-sm leading-6 text-text-muted">{record.body || record.error || "无内容"}</p>
-          <div className="flex flex-wrap gap-2">
-            {record.tags.slice(0, 8).map((tag) => (
-              <span key={tag} className="rounded-full bg-primary-50 px-2.5 py-1 text-xs text-text-muted ring-1 ring-primary-100">
-                {tag}
-              </span>
-            ))}
-          </div>
+          <p className="text-sm text-text-muted">
+            {record.status === "failed" ? record.error || "本次生成失败" : `已生成 ${record.images.length} 张图片`}
+          </p>
+          {showGenerationMeta && (
+            <p className="text-xs text-text-muted">
+              线路：{record.channelName || "未记录线路"} · 模型：{record.model || "未记录模型"} · {formatDuration(record.durationMs)}
+            </p>
+          )}
         </button>
 
         {/* 复制/下载聚合下拉（portal 到 body，避免被 SpotlightCard 层叠上下文遮挡） */}
@@ -137,15 +155,20 @@ export function HistoryCard({ record, onOpenDetail, onOpenXHS, onMessage }: Hist
                 className="fixed z-popover w-40 rounded-md bg-surface p-1 shadow-lg ring-1 ring-border"
                 style={{ top: menuPos.top, left: menuPos.left }}
               >
-                <button type="button" className="block w-full rounded px-3 py-1.5 text-left text-xs text-text hover:bg-bg" onClick={() => void handleCopy(record.title, "标题")}>
-                  复制标题
-                </button>
-                <button type="button" className="block w-full rounded px-3 py-1.5 text-left text-xs text-text hover:bg-bg" onClick={() => void handleCopy(record.body, "正文")}>
-                  复制正文
-                </button>
-                <button type="button" className="block w-full rounded px-3 py-1.5 text-left text-xs text-text hover:bg-bg" onClick={() => void handleCopy(record.tags.join(" "), "标签")}>
-                  复制标签
-                </button>
+                {hasCopy && (
+                  <>
+                    {record.body && (
+                      <button type="button" className="block w-full rounded px-3 py-1.5 text-left text-xs text-text hover:bg-bg" onClick={() => void handleCopy(record.body, "正文")}>
+                        复制正文
+                      </button>
+                    )}
+                    {record.tags.length > 0 && (
+                      <button type="button" className="block w-full rounded px-3 py-1.5 text-left text-xs text-text hover:bg-bg" onClick={() => void handleCopy(record.tags.join(" "), "标签")}>
+                        复制标签
+                      </button>
+                    )}
+                  </>
+                )}
                 {record.status === "success" && record.images.length > 0 && (
                   <>
                     <div className="my-1 border-t border-border" />

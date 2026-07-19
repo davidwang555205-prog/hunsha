@@ -142,3 +142,40 @@ export function HistoryIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** 类目图标：用项目线性图标替代 emoji，便于在不同端保持一致的品牌感。 */
+export function DressIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M7 3.5c.7 1.5 1.7 2.3 3 2.3s2.3-.8 3-2.3l2 2.8-2.2 1.2 3.7 8.8H6.5l3.7-8.8L8 6.3l-2-2.8z" />
+      <path d="M7.4 13.5h5.2" />
+    </Svg>
+  );
+}
+
+export function ShoeIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 12.5c2.1-.2 3.8-1.6 4.9-4.3l2.1 3.2c1.4 1.7 3 2.4 5 2.6v2.1H4v-3.6z" />
+      <path d="M7.7 11.8l1.8.6M6.6 13.3h1.2" />
+    </Svg>
+  );
+}
+
+export function ApparelIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M7.2 4L10 5.5 12.8 4l3.2 2.8-2 2.2-1.6-1V16H7.6V8l-1.6 1-2-2.2L7.2 4z" />
+      <path d="M7.6 12.5h4.8" />
+    </Svg>
+  );
+}
+
+type CategoryIconProps = IconProps & { categoryName?: string; engine?: string };
+
+export function CategoryIcon({ categoryName = "", engine = "", ...props }: CategoryIconProps) {
+  const key = `${categoryName} ${engine}`.toLowerCase();
+  if (key.includes("鞋") || key.includes("shoe")) return <ShoeIcon {...props} />;
+  if (key.includes("婚纱") || key.includes("礼服") || key.includes("bridal")) return <DressIcon {...props} />;
+  return <ApparelIcon {...props} />;
+}

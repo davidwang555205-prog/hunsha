@@ -304,11 +304,11 @@ func ternary(cond bool, a, b string) string {
 }
 
 // getBridalImageDrafts TS :2711-2772
-func getBridalImageDrafts(assets *Assets, topic string) []ImageDraft {
-	if IsXiaohongshuBridalTopic(topic) {
-		profile := assets.XiaohongshuBridalContentProfiles[topic]
-		drafts := make([]ImageDraft, 0, len(profile.ImageBlueprints))
-		for _, bp := range profile.ImageBlueprints {
+func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSeed string) []ImageDraft {
+	if profile, ok := assets.XiaohongshuBridalContentProfiles[topic]; ok && len(profile.ImageBlueprints) > 0 {
+		blueprints := selectBlueprints(profile.ImageBlueprints, assets.BlueprintSelection[topic], imageCount, batchSeed)
+		drafts := make([]ImageDraft, 0, len(blueprints))
+		for _, bp := range blueprints {
 			drafts = append(drafts, ImageDraft{
 				Name:                   bp.Name,
 				Purpose:                bp.Purpose,
@@ -418,9 +418,9 @@ func getDressImageDrafts(assets *Assets, topic string) []ImageDraft {
 }
 
 // getImageDrafts TS :2826-2830
-func getImageDrafts(assets *Assets, productCategory, topic string) []ImageDraft {
+func getImageDrafts(assets *Assets, productCategory, topic string, imageCount int, batchSeed string) []ImageDraft {
 	if productCategory == ProductCategoryBridal {
-		return getBridalImageDrafts(assets, topic)
+		return getBridalImageDrafts(assets, topic, imageCount, batchSeed)
 	}
 	return getDressImageDrafts(assets, topic)
 }
@@ -445,8 +445,18 @@ func buildImagePlan(assets *Assets, baseParams PromptParams, draft ImageDraft, i
 	}
 }
 
-// GenerateFashionSeedingContent 主入口（TS :3065-3112）
+// GenerateFashionSeedingContent 生成带标题、正文和标签的完整内容包。
 func GenerateFashionSeedingContent(input FashionSeedingInput, assets *Assets) FashionSeedingContent {
+	return generateFashionSeedingContent(input, assets, true)
+}
+
+// GenerateFashionSeedingImagesOnly 只生成配图计划。不能把旧文案的视觉配方拼入提示词，
+// 否则会覆盖 JSON 蓝图为每张图定义的视角、动作和场景差异。
+func GenerateFashionSeedingImagesOnly(input FashionSeedingInput, assets *Assets) FashionSeedingContent {
+	return generateFashionSeedingContent(input, assets, false)
+}
+
+func generateFashionSeedingContent(input FashionSeedingInput, assets *Assets, includeCopy bool) FashionSeedingContent {
 	if assets == nil {
 		assets = DefaultAssets()
 	}
@@ -455,8 +465,11 @@ func GenerateFashionSeedingContent(input FashionSeedingInput, assets *Assets) Fa
 		imageCount = 3
 	}
 	safeTopic, variantIndex, variantCount, daily := computeScalarFields(input, assets)
-	copyDraft := buildCopyFromKit(assets, input.ProductCategory, safeTopic, variantIndex)
-	imageDrafts := getImageDrafts(assets, input.ProductCategory, safeTopic)
+	copyDraft := TopicCopyDraft{Titles: []string{}, Tags: []string{}}
+	if includeCopy {
+		copyDraft = buildCopyFromKit(assets, input.ProductCategory, safeTopic, variantIndex)
+	}
+	imageDrafts := getImageDrafts(assets, input.ProductCategory, safeTopic, imageCount, safeTopic+"|"+intToStr(variantIndex)+"|"+intToStr(input.ContentNonce))
 	if len(imageDrafts) > imageCount {
 		imageDrafts = imageDrafts[:imageCount]
 	}
@@ -472,7 +485,7 @@ func GenerateFashionSeedingContent(input FashionSeedingInput, assets *Assets) Fa
 		sceneLeadDraft = imageDrafts[leadPersonIndex]
 	}
 	var promptContext *CopyAlignmentContext
-	if copyDraft.PromptContext.Topic != "" {
+	if includeCopy && copyDraft.PromptContext.Topic != "" {
 		pc := copyDraft.PromptContext
 		promptContext = &pc
 	}

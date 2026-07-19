@@ -109,7 +109,7 @@ func (u *Usecase) GetTask(ctx context.Context, taskID uuid.UUID) (*TaskRecord, e
 
 // ListTasks 分页查任务（handler 调）。startTime/endTime 按 created_at 过滤（nil 不过滤）。
 func (u *Usecase) ListTasks(ctx context.Context, userID uuid.UUID, isAdmin bool, page, pageSize int, status string, startTime, endTime *time.Time) ([]TaskRecord, int, error) {
-	return u.repo.ListTasksPaged(ctx, userID, isAdmin, page, pageSize, status, startTime, endTime, uuid.Nil, uuid.Nil)
+	return u.repo.ListTasksPaged(ctx, userID, isAdmin, page, pageSize, status, startTime, endTime, uuid.Nil, uuid.Nil, uuid.Nil, false)
 }
 
 // ListModelInvocations 返回管理员模型调用审计记录。该能力随迁移上线；旧测试 repo 不实现时明确报错。
@@ -163,6 +163,24 @@ type channelClient struct {
 	modelID        string
 	trackStats     bool
 	maxConcurrency int // 用户级并发度（=该线路 max_concurrency），控制该用户跨任务同时生成的图片数
+}
+
+// defaultImageModelID 返回可审计的默认生图模型。线路模型留空的旧配置也必须在
+// 实际请求和调用记录中落成明确值，不能传播为空字符串。
+func (u *Usecase) defaultImageModelID() string {
+	if u.cfg != nil {
+		if modelID := strings.TrimSpace(u.cfg.Bridal.WalaImageModel); modelID != "" {
+			return modelID
+		}
+	}
+	return "gpt-image-2"
+}
+
+func (u *Usecase) normalizedImageModelID(modelID string) string {
+	if modelID = strings.TrimSpace(modelID); modelID != "" {
+		return modelID
+	}
+	return u.defaultImageModelID()
 }
 
 // userSem 用户级生图并发信号量：同一用户的所有生图任务共享，跨任务控制该用户同时生成的图片数。
@@ -243,6 +261,7 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 		if chQuality == "" {
 			chQuality = u.cfg.Bridal.WalaImageQuality
 		}
+		chModelID := u.normalizedImageModelID(ch.ModelID)
 		// 线路并发度归一化到 [1,10]（防御旧数据 0/负值；上限 10 防压垮中转 API）
 		chMC := ch.MaxConcurrency
 		if chMC < 1 {
@@ -254,7 +273,7 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 			client: u.newClient(wala.Config{
 				APIKey:         ch.APIKey,
 				APIBaseURL:     ch.APIBaseURL,
-				ImageModel:     ch.ModelID,
+				ImageModel:     chModelID,
 				Timeout:        time.Duration(u.cfg.Bridal.WalaImageTimeoutMs) * time.Millisecond,
 				RetryAttempts:  u.cfg.Bridal.WalaImageRetryAttempts,
 				DefaultQuality: chQuality,
@@ -264,7 +283,7 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 			name:           ch.Name,
 			apiBaseURL:     ch.APIBaseURL,
 			protocol:       ch.Protocol,
-			modelID:        ch.ModelID,
+			modelID:        chModelID,
 			trackStats:     true,
 			maxConcurrency: chMC,
 		})
@@ -291,10 +310,7 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 		if apiBaseURL == "" {
 			apiBaseURL = "https://walaapi.net/v1"
 		}
-		modelID := u.cfg.Bridal.WalaImageModel
-		if modelID == "" {
-			modelID = "gpt-image-2"
-		}
+		modelID := u.defaultImageModelID()
 		candidates = append(candidates, channelClient{
 			client:         u.wala,
 			id:             uuid.Nil,
@@ -538,7 +554,7 @@ type generateOneResult struct {
 	cancelled bool
 }
 
-// generateOne 生成单张图全流程：组装参考图 -> 调 wala(带线路 fallback) -> 存图 -> 更新子图 -> 扣积分。
+// generateOne 生成单张图全流程：组装参考图 -> 取得通道槽位 -> 调 wala(带线路 fallback) -> 存图 -> 更新子图 -> 扣积分。
 // sceneRef/identityRef 只读传入（串行段建立，并发段复用）。失败/取消由调用方据 result 决策。
 func (u *Usecase) generateOne(
 	ctx context.Context,
@@ -562,9 +578,6 @@ func (u *Usecase) generateOne(
 		_ = u.repo.UpdateSubTaskImage(ctx, imageID, "cancelled", "", "", "任务已取消。", 0)
 		return generateOneResult{index: promptIndex, cancelled: true, errMsg: "任务已取消。"}
 	}
-
-	imgStart := time.Now()
-	_ = u.repo.UpdateSubTaskImage(ctx, imageID, "processing", "", "", "", 0)
 
 	// 组装本次生图参考图（按 refLimit 截断，优先级：场景图 > 连续性参考图 > 产品图）：
 	// - 传了场景图：[场景图, identityRef?, ...产品图] -- 场景图锁定环境，不用 sceneRef 避免双场景权威
@@ -611,9 +624,21 @@ func (u *Usecase) generateOne(
 		requestFiles = requestFiles[:limit]
 	}
 
-	// 调 wala（用户级并发信号量 max_concurrency 跨任务共享 + 全局 WalaAPI 并发兜底 + 线路优先级 fallback）
+	// 调 wala（用户级并发信号量 max_concurrency 跨任务共享 + 全局 WalaAPI 并发兜底 + 线路优先级 fallback）。
+	// 取得两个槽位之前保持 pending，前端据此展示“排队中”，不能把等待槽位误报为“生成中”。
 	userSem.acquire()
 	u.sem <- struct{}{}
+	defer func() {
+		<-u.sem
+		userSem.release()
+	}()
+	if cancelled, _ := u.repo.IsTaskCancelled(ctx, taskID); cancelled {
+		_ = u.repo.UpdateSubTaskImage(ctx, imageID, "cancelled", "", "", "任务已取消。", 0)
+		return generateOneResult{index: promptIndex, cancelled: true, errMsg: "任务已取消。"}
+	}
+
+	imgStart := time.Now()
+	_ = u.repo.UpdateSubTaskImage(ctx, imageID, "processing", "", "", "", 0)
 	imageLogger := u.logger.With("task", taskID, "image_number", promptIndex+1)
 	status, bodyText, _, err := u.callWithFallbackLogged(ctx, imageLogger, candidates, wala.Request{
 		Prompt:  pl.prompt,
@@ -621,8 +646,6 @@ func (u *Usecase) generateOne(
 		Size:    size,
 		Quality: quality,
 	}, &invocationMeta{taskID: taskID, generationImageID: imageID, imageNumber: promptIndex + 1, user: user})
-	<-u.sem
-	userSem.release()
 	latency := int(time.Since(imgStart).Milliseconds())
 
 	if err != nil {
@@ -793,19 +816,35 @@ func (u *Usecase) runTask(
 		}
 	}
 
-	// 并发段：splitIdx+1..N-1，复用串行段建立的 sceneRef/identityRef 并发生成。
-	// 并发度由 per-user userSem（= 主线路 max_concurrency）跨任务控制：1=逐张串行，N=最多 N 张并发。
-	// 此处无限制 go，每个 generateOne 内 acquire userSem，跨任务共享同一信号量。
+	// 并发段：splitIdx+1..N-1，复用串行段建立的 sceneRef/identityRef。
+	// 按图片编号有序入队，最多启动主线路 max_concurrency 个 worker：
+	// 1=图 2、图 3…严格串行；N=前 N 张并发，任一完成后再取下一张。
+	// generateOne 取得实际通道槽位后才把子图更新为 processing，等待中的图保持 pending。
 	if finalStatus == "completed" && splitIdx+1 < len(plans) {
 		results := make([]generateOneResult, len(plans))
-		var wg sync.WaitGroup
-		for i := splitIdx + 1; i < len(plans); i++ {
-			wg.Add(1)
-			go func(idx int) {
-				defer wg.Done()
-				results[idx] = u.generateOne(ctx, taskID, taskIDStr, user, plans[idx], idx, sceneFile, productFiles, sceneRef, identityRef, candidates, size, quality, userSem)
-			}(i)
+		workerCount := candidates[0].maxConcurrency
+		remaining := len(plans) - (splitIdx + 1)
+		if workerCount > remaining {
+			workerCount = remaining
 		}
+		if workerCount < 1 {
+			workerCount = 1
+		}
+		jobs := make(chan int)
+		var wg sync.WaitGroup
+		for worker := 0; worker < workerCount; worker++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for idx := range jobs {
+					results[idx] = u.generateOne(ctx, taskID, taskIDStr, user, plans[idx], idx, sceneFile, productFiles, sceneRef, identityRef, candidates, size, quality, userSem)
+				}
+			}()
+		}
+		for i := splitIdx + 1; i < len(plans); i++ {
+			jobs <- i
+		}
+		close(jobs)
 		wg.Wait()
 		// 收集失败/取消（任一失败则任务标记 failed，已成功图保留）
 		for i := splitIdx + 1; i < len(plans); i++ {

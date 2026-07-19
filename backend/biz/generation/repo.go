@@ -54,7 +54,8 @@ type ImageRecord struct {
 }
 
 // SubTaskStatusItem 逐张子图状态，对应前端 SubTaskStatus。
-// status: pending|processing|success|failed|cancelled
+// status: pending|processing|success|failed|cancelled。
+// pending 表示等待通道槽位，processing 表示已实际发往上游模型。
 // image: success 时非空（含可访问 url）；pending/processing/failed 时为 nil。
 type SubTaskStatusItem struct {
 	Index     int          `json:"index"`
@@ -86,13 +87,14 @@ type TaskRecord struct {
 	UploadedImageCount int
 	LatencyMs          int
 	// V2 异步任务字段
-	TotalCount       int               // 子图总数
-	CompletedCount   int               // 已完成数（含失败）
-	CategoryID       uuid.UUID         // 类目 id（uuid.Nil 表示未指定）
-	ChannelID        uuid.UUID         // 模型线路 id（uuid.Nil 表示未指定）
-	EstimatedSeconds int               // 预估耗时秒
-	StartedAt        *time.Time        // 开始处理时间
-	CompletedAt      *time.Time        // 完成时间
+	TotalCount       int                 // 子图总数
+	CompletedCount   int                 // 已完成数（含失败）
+	CategoryID       uuid.UUID           // 类目 id（uuid.Nil 表示未指定）
+	ChannelID        uuid.UUID           // 模型线路 id（uuid.Nil 表示未指定）
+	ChannelName      string              // 模型线路名称（历史列表由 channel_id 回填）
+	EstimatedSeconds int                 // 预估耗时秒
+	StartedAt        *time.Time          // 开始处理时间
+	CompletedAt      *time.Time          // 完成时间
 	SubTaskStatus    []SubTaskStatusItem // 逐张状态（GetTask 时组装）
 }
 

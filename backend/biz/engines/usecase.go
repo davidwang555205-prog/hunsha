@@ -102,7 +102,7 @@ func (u *Usecase) Create(ctx context.Context, req CreateReq) (*EngineResp, error
 	if req.Name == "" {
 		return nil, fmt.Errorf("引擎名称不能为空")
 	}
-	if err := seeding.ValidateTopicVisibilityConfig(req.Config); err != nil {
+	if err := validateEngineConfig(req.Config); err != nil {
 		return nil, err
 	}
 	enabled := true
@@ -141,7 +141,7 @@ type UpdateReq struct {
 // Update 更新引擎。
 func (u *Usecase) Update(ctx context.Context, id uuid.UUID, req UpdateReq) (*EngineResp, error) {
 	if req.Config != nil {
-		if err := seeding.ValidateTopicVisibilityConfig(*req.Config); err != nil {
+		if err := validateEngineConfig(*req.Config); err != nil {
 			return nil, err
 		}
 	}
@@ -187,6 +187,18 @@ func (u *Usecase) GetByKey(ctx context.Context, key string) (*EngineResp, error)
 	return &resp, nil
 }
 
+// CopyEnabled 返回引擎是否要求生成标题、正文和标签。存量引擎始终兼容为 true。
+func (u *Usecase) CopyEnabled(ctx context.Context, key string) (bool, error) {
+	rec, err := u.repo.GetByKey(ctx, key)
+	if err != nil {
+		return false, err
+	}
+	if rec == nil || !rec.IsEnabled {
+		return false, fmt.Errorf("内容引擎 %q 不可用", key)
+	}
+	return ResolveCapabilities(rec.Config).CopyEnabled, nil
+}
+
 // Generate 按 key 生成内容（任务②阶段4）。读 engine.config 用 MergeAssets 覆盖默认素材，
 // date 用 +08:00 now（与前端 new Date() 在 +08:00 一致）。引擎不存在/禁用则用代码默认素材。
 func (u *Usecase) Generate(ctx context.Context, key string, input seeding.FashionSeedingInput) (*seeding.FashionSeedingContent, error) {
@@ -198,15 +210,36 @@ func (u *Usecase) Generate(ctx context.Context, key string, input seeding.Fashio
 	if rec != nil && rec.IsEnabled {
 		config = rec.Config
 	}
-	assets := seeding.MergeAssets(nil, config)
+	runtimeConfig, _, err := ResolveRuntimeConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	assets := seeding.MergeAssets(nil, runtimeConfig)
 	if input.Topic != "" && !containsTopic(seeding.GetConfiguredTopicOptions(input.ProductCategory, assets), input.Topic) {
 		return nil, fmt.Errorf("主题 %q 不在当前内容引擎主题列表中", input.Topic)
 	}
 	if input.Date.IsZero() {
 		input.Date = time.Now().In(seeding.ChinaFixedZone())
 	}
-	content := seeding.GenerateFashionSeedingContent(input, assets)
+	copyEnabled := ResolveCapabilities(config).CopyEnabled
+	var content seeding.FashionSeedingContent
+	if copyEnabled {
+		content = seeding.GenerateFashionSeedingContent(input, assets)
+	} else {
+		content = seeding.GenerateFashionSeedingImagesOnly(input, assets)
+	}
 	return &content, nil
+}
+
+func validateEngineConfig(config map[string]any) error {
+	runtimeConfig, _, err := ResolveRuntimeConfig(config)
+	if err != nil {
+		return err
+	}
+	if err := ValidateConfig(config); err != nil {
+		return err
+	}
+	return seeding.ValidateTopicVisibilityConfig(runtimeConfig)
 }
 
 func containsTopic(topics []string, topic string) bool {
@@ -243,7 +276,11 @@ func (u *Usecase) PromptOptions(ctx context.Context, key string) (*prompt.Assets
 	if rec != nil && rec.IsEnabled {
 		config = rec.Config
 	}
-	return prompt.MergeAssets(prompt.ParseAssetsFromConfig(config)), nil
+	runtimeConfig, _, err := ResolveRuntimeConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return prompt.MergeAssets(prompt.ParseAssetsFromConfig(runtimeConfig)), nil
 }
 
 // TopicOptions 返回当前引擎 JSON 配置的工作台主题列表。
@@ -256,5 +293,9 @@ func (u *Usecase) TopicOptions(ctx context.Context, key, productCategory string)
 	if rec != nil && rec.IsEnabled {
 		config = rec.Config
 	}
-	return seeding.GetConfiguredTopicOptions(productCategory, seeding.MergeAssets(nil, config)), nil
+	runtimeConfig, _, err := ResolveRuntimeConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return seeding.GetConfiguredTopicOptions(productCategory, seeding.MergeAssets(nil, runtimeConfig)), nil
 }

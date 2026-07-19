@@ -26,7 +26,7 @@ type taskRepo interface {
 	CancelTask(ctx context.Context, taskID uuid.UUID) error
 	CountActiveTasks(ctx context.Context, userID uuid.UUID) (int, error)
 	CountImagesForDate(ctx context.Context, userID uuid.UUID, shanghaiDate string) (int, error)
-	ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin bool, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID uuid.UUID) ([]TaskRecord, int, error)
+	ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin bool, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID, categoryID uuid.UUID, finishedOnly bool) ([]TaskRecord, int, error)
 	UpdateTaskFeedback(ctx context.Context, taskID uuid.UUID, fb types.TaskFeedback) error
 	CleanupExpired(ctx context.Context, cutoff time.Time) (nTask, nImage int, err error)
 	GetCategoryEngine(ctx context.Context, categoryID uuid.UUID) (*CategoryEngine, error)

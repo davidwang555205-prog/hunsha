@@ -65,6 +65,8 @@ export function AdminEnginesPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("basic");
   const [seedingJson, setSeedingJson] = useState<string>("{}");
   const [imagePromptJson, setImagePromptJson] = useState<string>("{}");
+  const [useV2, setUseV2] = useState(false);
+  const [copyEnabled, setCopyEnabled] = useState(true);
 
   const fetchEngines = async () => {
     setIsLoading(true);
@@ -87,6 +89,17 @@ export function AdminEnginesPage() {
   // - seeding：deepMerge(代码默认, config.seeding) 深度合并生效值
   // - imagePrompt：getPromptOptions 返回的 MergeAssets 合并生效值（config 为空即代码默认 16 项）
   const initFormAssets = async (key: string, config: Record<string, unknown> | undefined) => {
+    const v2 = config?.engineV2 as { capabilities?: { copyEnabled?: boolean }; artifacts?: { visualPlan?: unknown; imagePrompt?: unknown } } | undefined;
+    if (v2?.artifacts?.visualPlan && v2.artifacts.imagePrompt) {
+      setUseV2(true);
+      setCopyEnabled(v2.capabilities?.copyEnabled ?? true);
+      setSeedingJson(JSON.stringify(v2.artifacts.visualPlan, null, 2));
+      setImagePromptJson(JSON.stringify(v2.artifacts.imagePrompt, null, 2));
+      setActiveTab("basic");
+      return;
+    }
+    setUseV2(false);
+    setCopyEnabled(true);
     const [assets, promptAssets] = await Promise.all([
       getDefaultAssets()
         .then((r) => r.assets)
@@ -119,7 +132,11 @@ export function AdminEnginesPage() {
     setShowCreate(true);
     setEditingId(null);
     setDraft(emptyDraft);
-    void initFormAssets("bridal", undefined);
+    setUseV2(true);
+    setCopyEnabled(false);
+    setSeedingJson("{}");
+    setImagePromptJson("{}");
+    setActiveTab("basic");
   };
 
   const closeModal = () => {
@@ -128,6 +145,8 @@ export function AdminEnginesPage() {
     setDraft(emptyDraft);
     setSeedingJson("{}");
     setImagePromptJson("{}");
+    setUseV2(false);
+    setCopyEnabled(true);
   };
 
   const handleSave = async () => {
@@ -147,7 +166,9 @@ export function AdminEnginesPage() {
       setActiveTab("prompt");
       return;
     }
-    const config: Record<string, unknown> = { seeding, imagePrompt };
+    const config: Record<string, unknown> = useV2
+      ? { engineV2: { apiVersion: "content-engine/v2", capabilities: { copyEnabled }, artifacts: { visualPlan: seeding, imagePrompt } } }
+      : { seeding, imagePrompt };
     setBusy(true);
     setMessage("");
     try {
@@ -269,6 +290,24 @@ export function AdminEnginesPage() {
                 <span className="text-sm text-text">{draft.isEnabled ? "启用" : "禁用"}</span>
               </label>
             </Field>
+            <Field label="引擎模式">
+              <label className="flex items-center gap-2 pt-2.5">
+                <input type="checkbox" checked={useV2} onChange={(e) => setUseV2(e.target.checked)} disabled={!!editingId && !useV2} />
+                <span className="text-sm text-text">{useV2 ? "V2 文件包引擎" : "旧版兼容引擎"}</span>
+              </label>
+            </Field>
+            {useV2 && <Field label="内容产出模式">
+              <div className="flex flex-col gap-2 pt-1.5">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="engine-copy-mode" checked={copyEnabled} onChange={() => setCopyEnabled(true)} />
+                  <span className="text-sm text-text">生成图文内容（图片 + 标题、正文、标签）</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="engine-copy-mode" checked={!copyEnabled} onChange={() => setCopyEnabled(false)} />
+                  <span className="text-sm text-text">仅生成图片</span>
+                </label>
+              </div>
+            </Field>}
             <div className="sm:col-span-2">
               <Field label="引擎简介">
                 <Input value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="一句话描述引擎用途" />
@@ -280,7 +319,7 @@ export function AdminEnginesPage() {
         {/* 内容引擎素材（config.seeding，深度合并） */}
         {activeTab === "seeding" && (
           <div className="space-y-3">
-            <Field label="内容引擎素材（config.seeding，主题与内容；bridalTopics / dressTopics 决定工作台主题）">
+            <Field label={useV2 ? "内容引擎素材（V2 visualPlan，主题/文案/图片蓝图）" : "内容引擎素材（config.seeding，主题与内容；bridalTopics / dressTopics 决定工作台主题）"}>
               <JsonEditorField
                 value={seedingJson}
                 onChange={setSeedingJson}
@@ -382,10 +421,10 @@ function JsonEditorField({
 }
 
 // 给大模型的说明：内容引擎素材（config.seeding，深度合并语义）
-const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。用户会给你当前 config.seeding 的 JSON，要你修改或新增字段。这个 JSON 是内容引擎的素材银行（标题池/变体银行/主题覆盖/场景映射等），运行时与代码默认素材「深度合并」后用于确定性生成文案（非 LLM）。以下字段结构是此 JSON 的权威定义，字段名固定不可改（改了后端解析失败）。与具体场景无关，后续会扩展更多场景，新增场景即新增 map 的 key。
+const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。用户会给你当前素材 JSON，要你修改或新增字段。旧引擎中它存于 config.seeding；V2 引擎中它存于 engineV2.artifacts.visualPlan。这个 JSON 是内容引擎的素材银行（标题池/变体银行/主题覆盖/场景映射/图片蓝图等）；V2 以完整文件包运行，旧引擎才与代码默认素材深度合并。以下字段结构是此 JSON 的权威定义，字段名固定不可改（改了后端解析失败）。与具体场景无关，后续会扩展更多场景，新增场景即新增 map 的 key。
 
 ## 职责边界（先判断用户要改什么）
-- 本 JSON 负责用户在工作台看到的主题、主题顺序、标题/正文/标签、主题场景和配图蓝图。
+- 本 JSON 负责用户在工作台看到的主题、主题顺序、标题/正文/标签、主题场景、配图蓝图及蓝图抽样策略。
 - 生图提示词 JSON 只负责把图片类型、场景、模特、关键词档案等参数翻译成英文 prompt；不要在生图提示词 JSON 中维护主题。
 - 新增主题、主题改名或主题删除时，必须改本 JSON 的 bridalTopics / dressTopics；只改某个素材 map 的 key 不会让主题出现在工作台。
 - 为主题新增配图蓝图时，imageType、scenePreference、keywordProfileId 必须与生图提示词 JSON 中的 key 一致；缺失时会走后端默认值，不能假设会自动新增英文 prompt。
@@ -409,6 +448,7 @@ const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。�
 - bridalTopics / dressTopics：对应品类的主题列表（[]string），是工作台主题唯一来源；数组顺序即展示顺序，可新增、改名、删除主题。
 - xiaohongshuBridalContentProfiles：内容档案（map[主题名]XhsContentProfile）
 - bridalScenesByImageType / dressScenesByImageType：场景按图片类型映射（map[图片类型][]string）
+- blueprintSelection：按主题配置图组蓝图选择（map[主题名]BlueprintSelectionRule）；未配置主题默认按固定顺序取图。
 
 ## 嵌套结构
 - CopyVariationBank { audiences, focuses, concerns, proofs, scenes, materials, services, takeaways, tones, tagExtras }  全是 []string
@@ -417,11 +457,13 @@ const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。�
 - XhsCopyDraft { titles, paragraphs, tags []string; note string }
 - XhsContentProfile { topic, intent, sourcePattern string; copyKit TopicCopyKit; imageBlueprints []XhsImageBlueprint }
 - XhsImageBlueprint { name, purpose, description, imageType, scenePreference, keywordProfileId, extraRequirement string }
+- BlueprintSelectionRule { strategy string; requiredNamePrefix string }
 
 ## 关键规则
 - 字段名与嵌套结构必须与上面定义完全一致，改字段名或结构会导致后端解析失败。
 - 主题由 bridalTopics / dressTopics 定义，不再受前后端枚举限制。新增、改名、删除主题时，先改对应数组，再同步修改 topicCopyKits、xiaohongshuTopicOverrides、*MainSceneByTopic、englishVisualAlignmentByTopic 等以主题名为 key 的内容素材。
 - 主题数组不能写空，主题名不能有首尾空格或重复项。主题没有专属素材时仍会使用品类默认变体银行和通用配图模板。
+- blueprintSelection.strategy 仅可为 fixed、familySampling、familySamplingWithRequiredFirst。familySampling 按蓝图 name 中“｜”后的 F01/F02…视角族群去重抽样；familySamplingWithRequiredFirst 还必须提供 requiredNamePrefix，且该前缀能匹配本主题的一条蓝图。
 - 非主题的图片类型/场景 map 可按既有结构补充 key，但必须同时补齐其引用关系。
 
 ## 主题操作清单
@@ -429,6 +471,7 @@ const SEEDING_PROMPT_HELP = `你是「内容引擎素材 JSON」编辑助手。�
 - 主题改名：替换主题数组中的旧名，并同步替换所有以旧名为 key 的素材 map key；不要只改 map key 或只改数组。
 - 删除主题：从主题数组删除；遗留的同名素材 key 不会被工作台或生成流程使用，可保留以便回滚。
 - 只改内容：主题数组不动，只修改对应主题 key 下的素材 value。
+- 为大量蓝图主题启用抽样：在 blueprintSelection 以主题名新增规则；固定首图场景使用 familySamplingWithRequiredFirst，并保留完整 requiredNamePrefix，例如 PMS-001｜F01-。
 
 ## 输出要求
 - 只输出完整的 config.seeding JSON 对象（或用户要改的字段片段），必须合法 JSON。

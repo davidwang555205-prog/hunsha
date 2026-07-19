@@ -8,7 +8,7 @@
  * 消除两套布局壳的重复结构（DRY）。
  */
 import { useState, type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { AppHeader } from "./AppHeader";
 import { ArrowLeftIcon, ChevronLeftIcon } from "../icons";
 import logo from "../../assets/logo.png";
@@ -48,6 +48,8 @@ function Tooltip({ label }: { label: string }) {
 }
 
 export function BaseLayout({ navItems, navTitle, showBackToSite, children }: BaseLayoutProps) {
+  const location = useLocation();
+  const isStudioWorkspace = location.pathname === "/studio";
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_KEY) === SIDEBAR_COLLAPSED;
@@ -124,8 +126,8 @@ export function BaseLayout({ navItems, navTitle, showBackToSite, children }: Bas
 
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
-        <main className="flex-1 px-6 py-6 text-text sm:px-8">
-          <div className="mx-auto max-w-6xl">{children}</div>
+        <main className={isStudioWorkspace ? "min-h-0 flex-1 text-text" : "flex-1 px-6 py-6 text-text sm:px-8"}>
+          <div className={isStudioWorkspace ? "h-[calc(100vh-3.5rem)]" : "mx-auto max-w-6xl"}>{children}</div>
         </main>
       </div>
     </div>

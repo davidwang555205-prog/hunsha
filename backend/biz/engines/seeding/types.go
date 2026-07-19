@@ -102,6 +102,13 @@ type XhsContentProfile struct {
 	ImageBlueprints []XhsImageBlueprint `json:"imageBlueprints"`
 }
 
+// BlueprintSelectionRule 由内容 JSON 声明，平台按通用策略选择图组蓝图。
+// 未配置时保持固定顺序，避免业务类目缺省时被婚纱规则污染。
+type BlueprintSelectionRule struct {
+	Strategy           string `json:"strategy"`
+	RequiredNamePrefix string `json:"requiredNamePrefix"`
+}
+
 // TopicCopyDraft 主题文案草稿输出（TS :91-97）
 type TopicCopyDraft struct {
 	Titles        []string
@@ -182,9 +189,10 @@ type Assets struct {
 	BridalTopics []string `json:"bridalTopics"`
 	DressTopics  []string `json:"dressTopics"`
 	// Visible*Topics 仅兼容已保存的旧白名单配置，新配置请使用对应的 *Topics 字段。
-	VisibleBridalTopics              []string                     `json:"visibleBridalTopics"`
-	VisibleDressTopics               []string                     `json:"visibleDressTopics"`
-	XiaohongshuBridalContentProfiles map[string]XhsContentProfile `json:"xiaohongshuBridalContentProfiles"`
-	BridalScenesByImageType          map[string][]string          `json:"bridalScenesByImageType"`
-	DressScenesByImageType           map[string][]string          `json:"dressScenesByImageType"`
+	VisibleBridalTopics              []string                          `json:"visibleBridalTopics"`
+	VisibleDressTopics               []string                          `json:"visibleDressTopics"`
+	XiaohongshuBridalContentProfiles map[string]XhsContentProfile      `json:"xiaohongshuBridalContentProfiles"`
+	BlueprintSelection               map[string]BlueprintSelectionRule `json:"blueprintSelection"`
+	BridalScenesByImageType          map[string][]string               `json:"bridalScenesByImageType"`
+	DressScenesByImageType           map[string][]string               `json:"dressScenesByImageType"`
 }

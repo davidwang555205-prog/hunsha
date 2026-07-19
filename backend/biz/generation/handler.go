@@ -114,7 +114,13 @@ func (h *Handler) History(c *web.Context) error {
 			filterUserID = id
 		}
 	}
-	recs, total, err := h.usecase.ListHistory(c.Request().Context(), user, page, pageSize, status, startTime, endTime, taskID, filterUserID)
+	var categoryID uuid.UUID
+	if s := c.QueryParam("categoryId"); s != "" {
+		if id, err := uuid.Parse(s); err == nil {
+			categoryID = id
+		}
+	}
+	recs, total, err := h.usecase.ListHistory(c.Request().Context(), user, page, pageSize, status, startTime, endTime, taskID, filterUserID, categoryID)
 	if err != nil {
 		h.logger.ErrorContext(c.Request().Context(), "list history failed", "error", err)
 		return sendGenError(c, http.StatusInternalServerError, "获取历史记录失败。")
