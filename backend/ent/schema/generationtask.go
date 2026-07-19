@@ -53,6 +53,8 @@ func (GenerationTask) Fields() []ent.Field {
 		field.Time("completed_at").Optional(),
 		field.JSON("reference_images", []types.ReferenceImage{}).Optional(),
 		field.JSON("prompts", []string{}).Optional(),                  // 每张图给大模型的英文提示词，管理员复盘用（用户侧不返回）
+		field.String("image_size").Default(""),                         // 生图尺寸（宽高比如 3:4），单张重试时恢复
+		field.String("image_quality").Default(""),                      // 生图质量（low/medium/high/auto），单张重试时恢复
 		field.JSON("feedback", types.TaskFeedback{}).Optional(),        // 小红书发布反馈：笔记链接 + 阅读/点赞/收藏/评论
 		field.Bool("deleted").Default(false),                           // 逻辑删除标记（定时清理过期历史时置 true，MinIO 文件保留）
 		field.Time("deleted_at").Optional(),                            // 逻辑删除时间

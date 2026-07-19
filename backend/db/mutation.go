@@ -16329,6 +16329,8 @@ type GenerationTaskMutation struct {
 	appendreference_images  []types.ReferenceImage
 	prompts                 *[]string
 	appendprompts           []string
+	image_size              *string
+	image_quality           *string
 	feedback                *types.TaskFeedback
 	deleted                 *bool
 	deleted_at              *time.Time
@@ -17463,6 +17465,78 @@ func (m *GenerationTaskMutation) ResetPrompts() {
 	delete(m.clearedFields, generationtask.FieldPrompts)
 }
 
+// SetImageSize sets the "image_size" field.
+func (m *GenerationTaskMutation) SetImageSize(s string) {
+	m.image_size = &s
+}
+
+// ImageSize returns the value of the "image_size" field in the mutation.
+func (m *GenerationTaskMutation) ImageSize() (r string, exists bool) {
+	v := m.image_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageSize returns the old "image_size" field's value of the GenerationTask entity.
+// If the GenerationTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationTaskMutation) OldImageSize(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageSize: %w", err)
+	}
+	return oldValue.ImageSize, nil
+}
+
+// ResetImageSize resets all changes to the "image_size" field.
+func (m *GenerationTaskMutation) ResetImageSize() {
+	m.image_size = nil
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (m *GenerationTaskMutation) SetImageQuality(s string) {
+	m.image_quality = &s
+}
+
+// ImageQuality returns the value of the "image_quality" field in the mutation.
+func (m *GenerationTaskMutation) ImageQuality() (r string, exists bool) {
+	v := m.image_quality
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageQuality returns the old "image_quality" field's value of the GenerationTask entity.
+// If the GenerationTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GenerationTaskMutation) OldImageQuality(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageQuality is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageQuality requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageQuality: %w", err)
+	}
+	return oldValue.ImageQuality, nil
+}
+
+// ResetImageQuality resets all changes to the "image_quality" field.
+func (m *GenerationTaskMutation) ResetImageQuality() {
+	m.image_quality = nil
+}
+
 // SetFeedback sets the "feedback" field.
 func (m *GenerationTaskMutation) SetFeedback(tf types.TaskFeedback) {
 	m.feedback = &tf
@@ -17721,7 +17795,7 @@ func (m *GenerationTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GenerationTaskMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 28)
 	if m.user_id != nil {
 		fields = append(fields, generationtask.FieldUserID)
 	}
@@ -17788,6 +17862,12 @@ func (m *GenerationTaskMutation) Fields() []string {
 	if m.prompts != nil {
 		fields = append(fields, generationtask.FieldPrompts)
 	}
+	if m.image_size != nil {
+		fields = append(fields, generationtask.FieldImageSize)
+	}
+	if m.image_quality != nil {
+		fields = append(fields, generationtask.FieldImageQuality)
+	}
 	if m.feedback != nil {
 		fields = append(fields, generationtask.FieldFeedback)
 	}
@@ -17852,6 +17932,10 @@ func (m *GenerationTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.ReferenceImages()
 	case generationtask.FieldPrompts:
 		return m.Prompts()
+	case generationtask.FieldImageSize:
+		return m.ImageSize()
+	case generationtask.FieldImageQuality:
+		return m.ImageQuality()
 	case generationtask.FieldFeedback:
 		return m.Feedback()
 	case generationtask.FieldDeleted:
@@ -17913,6 +17997,10 @@ func (m *GenerationTaskMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldReferenceImages(ctx)
 	case generationtask.FieldPrompts:
 		return m.OldPrompts(ctx)
+	case generationtask.FieldImageSize:
+		return m.OldImageSize(ctx)
+	case generationtask.FieldImageQuality:
+		return m.OldImageQuality(ctx)
 	case generationtask.FieldFeedback:
 		return m.OldFeedback(ctx)
 	case generationtask.FieldDeleted:
@@ -18083,6 +18171,20 @@ func (m *GenerationTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPrompts(v)
+		return nil
+	case generationtask.FieldImageSize:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageSize(v)
+		return nil
+	case generationtask.FieldImageQuality:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageQuality(v)
 		return nil
 	case generationtask.FieldFeedback:
 		v, ok := value.(types.TaskFeedback)
@@ -18340,6 +18442,12 @@ func (m *GenerationTaskMutation) ResetField(name string) error {
 		return nil
 	case generationtask.FieldPrompts:
 		m.ResetPrompts()
+		return nil
+	case generationtask.FieldImageSize:
+		m.ResetImageSize()
+		return nil
+	case generationtask.FieldImageQuality:
+		m.ResetImageQuality()
 		return nil
 	case generationtask.FieldFeedback:
 		m.ResetFeedback()

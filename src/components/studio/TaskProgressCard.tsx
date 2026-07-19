@@ -20,6 +20,10 @@ type TaskProgressCardProps = {
   onCancel: () => void;
   onRetry?: () => void;
   onDismiss?: () => void;
+  /** 已重试次数（任务级手动重试计数） */
+  retryCount?: number;
+  /** 任务级重试上限，超过则隐藏重试按钮、引导创建新任务 */
+  maxRetry?: number;
 };
 
 const statusLabel: Record<string, string> = {
@@ -40,11 +44,14 @@ export function TaskProgressCard({
   error,
   onCancel,
   onRetry,
-  onDismiss
+  onDismiss,
+  retryCount = 0,
+  maxRetry = 3
 }: TaskProgressCardProps) {
   if (stage === "idle") return null;
 
   const isActive = stage === "queued" || stage === "processing";
+  const retryExhausted = retryCount >= maxRetry;
   const estimatedMin = task?.estimatedSeconds ? Math.ceil(task.estimatedSeconds / 60) : null;
   const failure = task?.error ? describeGenerationFailure(task.error) : error;
   const processingCount = task?.subTaskStatus.filter((item) => item.status === "processing").length ?? 0;
@@ -79,13 +86,13 @@ export function TaskProgressCard({
               取消
             </Button>
           )}
-          {stage === "failed" && onRetry && (
+          {stage === "failed" && onRetry && !retryExhausted && (
             <Button variant="primary" size="sm" onClick={onRetry}>
-              重试
+              重试{retryCount > 0 ? ` ${retryCount}/${maxRetry}` : ""}
             </Button>
           )}
           {(stage === "completed" || stage === "failed" || stage === "cancelled") && onDismiss && (
-            <Button variant="secondary" size="sm" onClick={onDismiss}>
+            <Button variant={retryExhausted ? "primary" : "secondary"} size="sm" onClick={onDismiss}>
               新任务
             </Button>
           )}
@@ -94,6 +101,9 @@ export function TaskProgressCard({
 
       {/* 错误详情 */}
       {failure && <FeedbackAlert feedback={failure} className="mt-3" />}
+      {stage === "failed" && retryExhausted && (
+        <p className="mt-2 text-xs text-danger">已重试 {maxRetry} 次仍未成功，请点击「新任务」重新开始。</p>
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 package generation
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"log/slog"
 	"sync"
 	"testing"
@@ -34,12 +36,13 @@ type fakeRepo struct {
 	completedCount  int
 	cancelled       bool
 	categoryEngine  *CategoryEngine
+	taskRecord      *TaskRecord // GetTask 返回（单张重试测试用）
 }
 
 func newFakeRepo() *fakeRepo { return &fakeRepo{subTasks: map[string]string{}} }
 
 func (r *fakeRepo) CreateTask(context.Context, TaskRecord, []string) error  { return nil }
-func (r *fakeRepo) GetTask(context.Context, uuid.UUID) (*TaskRecord, error) { return nil, nil }
+func (r *fakeRepo) GetTask(context.Context, uuid.UUID) (*TaskRecord, error) { return r.taskRecord, nil }
 func (r *fakeRepo) SetTaskStarted(context.Context, uuid.UUID) error {
 	r.mu.Lock()
 	r.started++
@@ -64,6 +67,12 @@ func (r *fakeRepo) UpdateSubTaskImage(_ context.Context, imageID, status, _, _, 
 func (r *fakeRepo) IncCompletedCount(context.Context, uuid.UUID) error {
 	r.mu.Lock()
 	r.completedCount++
+	r.mu.Unlock()
+	return nil
+}
+func (r *fakeRepo) SetCompletedCount(_ context.Context, _ uuid.UUID, count int) error {
+	r.mu.Lock()
+	r.completedCount = count
 	r.mu.Unlock()
 	return nil
 }
@@ -100,6 +109,10 @@ func (fakeStore) ThumbURL(filename string) string {
 
 func (fakeStore) PutThumbnail(_ context.Context, origFilename string, _ []byte) (string, error) {
 	return "http://fake/" + origFilename + ".thumb.jpg", nil
+}
+
+func (fakeStore) GetImage(_ context.Context, _ string) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader(nil)), nil
 }
 
 type fakeCredits struct {

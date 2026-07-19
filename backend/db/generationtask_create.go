@@ -302,6 +302,34 @@ func (_c *GenerationTaskCreate) SetPrompts(v []string) *GenerationTaskCreate {
 	return _c
 }
 
+// SetImageSize sets the "image_size" field.
+func (_c *GenerationTaskCreate) SetImageSize(v string) *GenerationTaskCreate {
+	_c.mutation.SetImageSize(v)
+	return _c
+}
+
+// SetNillableImageSize sets the "image_size" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableImageSize(v *string) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetImageSize(*v)
+	}
+	return _c
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (_c *GenerationTaskCreate) SetImageQuality(v string) *GenerationTaskCreate {
+	_c.mutation.SetImageQuality(v)
+	return _c
+}
+
+// SetNillableImageQuality sets the "image_quality" field if the given value is not nil.
+func (_c *GenerationTaskCreate) SetNillableImageQuality(v *string) *GenerationTaskCreate {
+	if v != nil {
+		_c.SetImageQuality(*v)
+	}
+	return _c
+}
+
 // SetFeedback sets the "feedback" field.
 func (_c *GenerationTaskCreate) SetFeedback(v types.TaskFeedback) *GenerationTaskCreate {
 	_c.mutation.SetFeedback(v)
@@ -482,6 +510,14 @@ func (_c *GenerationTaskCreate) defaults() {
 		v := generationtask.DefaultEstimatedSeconds
 		_c.mutation.SetEstimatedSeconds(v)
 	}
+	if _, ok := _c.mutation.ImageSize(); !ok {
+		v := generationtask.DefaultImageSize
+		_c.mutation.SetImageSize(v)
+	}
+	if _, ok := _c.mutation.ImageQuality(); !ok {
+		v := generationtask.DefaultImageQuality
+		_c.mutation.SetImageQuality(v)
+	}
 	if _, ok := _c.mutation.Deleted(); !ok {
 		v := generationtask.DefaultDeleted
 		_c.mutation.SetDeleted(v)
@@ -545,6 +581,12 @@ func (_c *GenerationTaskCreate) check() error {
 	}
 	if _, ok := _c.mutation.EstimatedSeconds(); !ok {
 		return &ValidationError{Name: "estimated_seconds", err: errors.New(`db: missing required field "GenerationTask.estimated_seconds"`)}
+	}
+	if _, ok := _c.mutation.ImageSize(); !ok {
+		return &ValidationError{Name: "image_size", err: errors.New(`db: missing required field "GenerationTask.image_size"`)}
+	}
+	if _, ok := _c.mutation.ImageQuality(); !ok {
+		return &ValidationError{Name: "image_quality", err: errors.New(`db: missing required field "GenerationTask.image_quality"`)}
 	}
 	if _, ok := _c.mutation.Deleted(); !ok {
 		return &ValidationError{Name: "deleted", err: errors.New(`db: missing required field "GenerationTask.deleted"`)}
@@ -675,6 +717,14 @@ func (_c *GenerationTaskCreate) createSpec() (*GenerationTask, *sqlgraph.CreateS
 	if value, ok := _c.mutation.Prompts(); ok {
 		_spec.SetField(generationtask.FieldPrompts, field.TypeJSON, value)
 		_node.Prompts = value
+	}
+	if value, ok := _c.mutation.ImageSize(); ok {
+		_spec.SetField(generationtask.FieldImageSize, field.TypeString, value)
+		_node.ImageSize = value
+	}
+	if value, ok := _c.mutation.ImageQuality(); ok {
+		_spec.SetField(generationtask.FieldImageQuality, field.TypeString, value)
+		_node.ImageQuality = value
 	}
 	if value, ok := _c.mutation.Feedback(); ok {
 		_spec.SetField(generationtask.FieldFeedback, field.TypeJSON, value)
@@ -1087,6 +1137,30 @@ func (u *GenerationTaskUpsert) UpdatePrompts() *GenerationTaskUpsert {
 // ClearPrompts clears the value of the "prompts" field.
 func (u *GenerationTaskUpsert) ClearPrompts() *GenerationTaskUpsert {
 	u.SetNull(generationtask.FieldPrompts)
+	return u
+}
+
+// SetImageSize sets the "image_size" field.
+func (u *GenerationTaskUpsert) SetImageSize(v string) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldImageSize, v)
+	return u
+}
+
+// UpdateImageSize sets the "image_size" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateImageSize() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldImageSize)
+	return u
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (u *GenerationTaskUpsert) SetImageQuality(v string) *GenerationTaskUpsert {
+	u.Set(generationtask.FieldImageQuality, v)
+	return u
+}
+
+// UpdateImageQuality sets the "image_quality" field to the value that was provided on create.
+func (u *GenerationTaskUpsert) UpdateImageQuality() *GenerationTaskUpsert {
+	u.SetExcluded(generationtask.FieldImageQuality)
 	return u
 }
 
@@ -1580,6 +1654,34 @@ func (u *GenerationTaskUpsertOne) UpdatePrompts() *GenerationTaskUpsertOne {
 func (u *GenerationTaskUpsertOne) ClearPrompts() *GenerationTaskUpsertOne {
 	return u.Update(func(s *GenerationTaskUpsert) {
 		s.ClearPrompts()
+	})
+}
+
+// SetImageSize sets the "image_size" field.
+func (u *GenerationTaskUpsertOne) SetImageSize(v string) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetImageSize(v)
+	})
+}
+
+// UpdateImageSize sets the "image_size" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateImageSize() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateImageSize()
+	})
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (u *GenerationTaskUpsertOne) SetImageQuality(v string) *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetImageQuality(v)
+	})
+}
+
+// UpdateImageQuality sets the "image_quality" field to the value that was provided on create.
+func (u *GenerationTaskUpsertOne) UpdateImageQuality() *GenerationTaskUpsertOne {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateImageQuality()
 	})
 }
 
@@ -2250,6 +2352,34 @@ func (u *GenerationTaskUpsertBulk) UpdatePrompts() *GenerationTaskUpsertBulk {
 func (u *GenerationTaskUpsertBulk) ClearPrompts() *GenerationTaskUpsertBulk {
 	return u.Update(func(s *GenerationTaskUpsert) {
 		s.ClearPrompts()
+	})
+}
+
+// SetImageSize sets the "image_size" field.
+func (u *GenerationTaskUpsertBulk) SetImageSize(v string) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetImageSize(v)
+	})
+}
+
+// UpdateImageSize sets the "image_size" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateImageSize() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateImageSize()
+	})
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (u *GenerationTaskUpsertBulk) SetImageQuality(v string) *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.SetImageQuality(v)
+	})
+}
+
+// UpdateImageQuality sets the "image_quality" field to the value that was provided on create.
+func (u *GenerationTaskUpsertBulk) UpdateImageQuality() *GenerationTaskUpsertBulk {
+	return u.Update(func(s *GenerationTaskUpsert) {
+		s.UpdateImageQuality()
 	})
 }
 

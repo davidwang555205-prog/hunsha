@@ -2,6 +2,7 @@ package generation
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ type taskRepo interface {
 	SetTaskDone(ctx context.Context, taskID uuid.UUID, status, errMsg string) error
 	UpdateSubTaskImage(ctx context.Context, imageID, status, url, thumbURL, errMsg string, latencyMs int) error
 	IncCompletedCount(ctx context.Context, taskID uuid.UUID) error
+	SetCompletedCount(ctx context.Context, taskID uuid.UUID, count int) error
 	IsTaskCancelled(ctx context.Context, taskID uuid.UUID) (bool, error)
 	CancelTask(ctx context.Context, taskID uuid.UUID) error
 	CountActiveTasks(ctx context.Context, userID uuid.UUID) (int, error)
@@ -51,6 +53,7 @@ type CategoryEngine struct {
 type taskStore interface {
 	PutImage(ctx context.Context, filename string, data []byte, contentType string) (string, error)
 	PutThumbnail(ctx context.Context, origFilename string, data []byte) (string, error)
+	GetImage(ctx context.Context, filename string) (io.ReadCloser, error)
 	PublicURL(filename string) string
 	ThumbURL(filename string) string
 }

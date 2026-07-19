@@ -93,6 +93,8 @@ type TaskRecord struct {
 	ChannelID        uuid.UUID           // 模型线路 id（uuid.Nil 表示未指定）
 	ChannelName      string              // 模型线路名称（历史列表由 channel_id 回填）
 	EstimatedSeconds int                 // 预估耗时秒
+	ImageSize        string              // 生图尺寸（单张重试恢复）
+	ImageQuality     string              // 生图质量（单张重试恢复）
 	StartedAt        *time.Time          // 开始处理时间
 	CompletedAt      *time.Time          // 完成时间
 	SubTaskStatus    []SubTaskStatusItem // 逐张状态（GetTask 时组装）

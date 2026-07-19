@@ -608,6 +608,8 @@ var (
 		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "reference_images", Type: field.TypeJSON, Nullable: true},
 		{Name: "prompts", Type: field.TypeJSON, Nullable: true},
+		{Name: "image_size", Type: field.TypeString, Default: ""},
+		{Name: "image_quality", Type: field.TypeString, Default: ""},
 		{Name: "feedback", Type: field.TypeJSON, Nullable: true},
 		{Name: "deleted", Type: field.TypeBool, Default: false},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
@@ -622,12 +624,12 @@ var (
 			{
 				Name:    "generationtask_user_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationTasksColumns[1], GenerationTasksColumns[26]},
+				Columns: []*schema.Column{GenerationTasksColumns[1], GenerationTasksColumns[28]},
 			},
 			{
 				Name:    "generationtask_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationTasksColumns[26]},
+				Columns: []*schema.Column{GenerationTasksColumns[28]},
 			},
 		},
 	}

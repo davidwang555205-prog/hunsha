@@ -151,6 +151,16 @@ func CompletedAt(v time.Time) predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldEQ(FieldCompletedAt, v))
 }
 
+// ImageSize applies equality check predicate on the "image_size" field. It's identical to ImageSizeEQ.
+func ImageSize(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldImageSize, v))
+}
+
+// ImageQuality applies equality check predicate on the "image_quality" field. It's identical to ImageQualityEQ.
+func ImageQuality(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldImageQuality, v))
+}
+
 // Deleted applies equality check predicate on the "deleted" field. It's identical to DeletedEQ.
 func Deleted(v bool) predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldEQ(FieldDeleted, v))
@@ -1209,6 +1219,136 @@ func PromptsIsNil() predicate.GenerationTask {
 // PromptsNotNil applies the NotNil predicate on the "prompts" field.
 func PromptsNotNil() predicate.GenerationTask {
 	return predicate.GenerationTask(sql.FieldNotNull(FieldPrompts))
+}
+
+// ImageSizeEQ applies the EQ predicate on the "image_size" field.
+func ImageSizeEQ(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldImageSize, v))
+}
+
+// ImageSizeNEQ applies the NEQ predicate on the "image_size" field.
+func ImageSizeNEQ(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldImageSize, v))
+}
+
+// ImageSizeIn applies the In predicate on the "image_size" field.
+func ImageSizeIn(vs ...string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldImageSize, vs...))
+}
+
+// ImageSizeNotIn applies the NotIn predicate on the "image_size" field.
+func ImageSizeNotIn(vs ...string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldImageSize, vs...))
+}
+
+// ImageSizeGT applies the GT predicate on the "image_size" field.
+func ImageSizeGT(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldImageSize, v))
+}
+
+// ImageSizeGTE applies the GTE predicate on the "image_size" field.
+func ImageSizeGTE(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldImageSize, v))
+}
+
+// ImageSizeLT applies the LT predicate on the "image_size" field.
+func ImageSizeLT(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldImageSize, v))
+}
+
+// ImageSizeLTE applies the LTE predicate on the "image_size" field.
+func ImageSizeLTE(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldImageSize, v))
+}
+
+// ImageSizeContains applies the Contains predicate on the "image_size" field.
+func ImageSizeContains(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldContains(FieldImageSize, v))
+}
+
+// ImageSizeHasPrefix applies the HasPrefix predicate on the "image_size" field.
+func ImageSizeHasPrefix(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldHasPrefix(FieldImageSize, v))
+}
+
+// ImageSizeHasSuffix applies the HasSuffix predicate on the "image_size" field.
+func ImageSizeHasSuffix(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldHasSuffix(FieldImageSize, v))
+}
+
+// ImageSizeEqualFold applies the EqualFold predicate on the "image_size" field.
+func ImageSizeEqualFold(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEqualFold(FieldImageSize, v))
+}
+
+// ImageSizeContainsFold applies the ContainsFold predicate on the "image_size" field.
+func ImageSizeContainsFold(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldContainsFold(FieldImageSize, v))
+}
+
+// ImageQualityEQ applies the EQ predicate on the "image_quality" field.
+func ImageQualityEQ(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEQ(FieldImageQuality, v))
+}
+
+// ImageQualityNEQ applies the NEQ predicate on the "image_quality" field.
+func ImageQualityNEQ(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNEQ(FieldImageQuality, v))
+}
+
+// ImageQualityIn applies the In predicate on the "image_quality" field.
+func ImageQualityIn(vs ...string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldIn(FieldImageQuality, vs...))
+}
+
+// ImageQualityNotIn applies the NotIn predicate on the "image_quality" field.
+func ImageQualityNotIn(vs ...string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldNotIn(FieldImageQuality, vs...))
+}
+
+// ImageQualityGT applies the GT predicate on the "image_quality" field.
+func ImageQualityGT(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGT(FieldImageQuality, v))
+}
+
+// ImageQualityGTE applies the GTE predicate on the "image_quality" field.
+func ImageQualityGTE(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldGTE(FieldImageQuality, v))
+}
+
+// ImageQualityLT applies the LT predicate on the "image_quality" field.
+func ImageQualityLT(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLT(FieldImageQuality, v))
+}
+
+// ImageQualityLTE applies the LTE predicate on the "image_quality" field.
+func ImageQualityLTE(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldLTE(FieldImageQuality, v))
+}
+
+// ImageQualityContains applies the Contains predicate on the "image_quality" field.
+func ImageQualityContains(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldContains(FieldImageQuality, v))
+}
+
+// ImageQualityHasPrefix applies the HasPrefix predicate on the "image_quality" field.
+func ImageQualityHasPrefix(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldHasPrefix(FieldImageQuality, v))
+}
+
+// ImageQualityHasSuffix applies the HasSuffix predicate on the "image_quality" field.
+func ImageQualityHasSuffix(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldHasSuffix(FieldImageQuality, v))
+}
+
+// ImageQualityEqualFold applies the EqualFold predicate on the "image_quality" field.
+func ImageQualityEqualFold(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldEqualFold(FieldImageQuality, v))
+}
+
+// ImageQualityContainsFold applies the ContainsFold predicate on the "image_quality" field.
+func ImageQualityContainsFold(v string) predicate.GenerationTask {
+	return predicate.GenerationTask(sql.FieldContainsFold(FieldImageQuality, v))
 }
 
 // FeedbackIsNil applies the IsNil predicate on the "feedback" field.

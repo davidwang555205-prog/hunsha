@@ -64,6 +64,10 @@ type GenerationTask struct {
 	ReferenceImages []types.ReferenceImage `json:"reference_images,omitempty"`
 	// Prompts holds the value of the "prompts" field.
 	Prompts []string `json:"prompts,omitempty"`
+	// ImageSize holds the value of the "image_size" field.
+	ImageSize string `json:"image_size,omitempty"`
+	// ImageQuality holds the value of the "image_quality" field.
+	ImageQuality string `json:"image_quality,omitempty"`
 	// Feedback holds the value of the "feedback" field.
 	Feedback types.TaskFeedback `json:"feedback,omitempty"`
 	// Deleted holds the value of the "deleted" field.
@@ -107,7 +111,7 @@ func (*GenerationTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case generationtask.FieldUploadedImageCount, generationtask.FieldLatencyMs, generationtask.FieldTotalCount, generationtask.FieldCompletedCount, generationtask.FieldEstimatedSeconds:
 			values[i] = new(sql.NullInt64)
-		case generationtask.FieldUsername, generationtask.FieldStatus, generationtask.FieldModel, generationtask.FieldMode, generationtask.FieldTitle, generationtask.FieldBody, generationtask.FieldTopic, generationtask.FieldError, generationtask.FieldPromptHash:
+		case generationtask.FieldUsername, generationtask.FieldStatus, generationtask.FieldModel, generationtask.FieldMode, generationtask.FieldTitle, generationtask.FieldBody, generationtask.FieldTopic, generationtask.FieldError, generationtask.FieldPromptHash, generationtask.FieldImageSize, generationtask.FieldImageQuality:
 			values[i] = new(sql.NullString)
 		case generationtask.FieldStartedAt, generationtask.FieldCompletedAt, generationtask.FieldDeletedAt, generationtask.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -272,6 +276,18 @@ func (_m *GenerationTask) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field prompts: %w", err)
 				}
 			}
+		case generationtask.FieldImageSize:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_size", values[i])
+			} else if value.Valid {
+				_m.ImageSize = value.String
+			}
+		case generationtask.FieldImageQuality:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_quality", values[i])
+			} else if value.Valid {
+				_m.ImageQuality = value.String
+			}
 		case generationtask.FieldFeedback:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field feedback", values[i])
@@ -404,6 +420,12 @@ func (_m *GenerationTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("prompts=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Prompts))
+	builder.WriteString(", ")
+	builder.WriteString("image_size=")
+	builder.WriteString(_m.ImageSize)
+	builder.WriteString(", ")
+	builder.WriteString("image_quality=")
+	builder.WriteString(_m.ImageQuality)
 	builder.WriteString(", ")
 	builder.WriteString("feedback=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Feedback))

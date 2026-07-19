@@ -659,12 +659,20 @@ func init() {
 	generationtaskDescEstimatedSeconds := generationtaskFields[16].Descriptor()
 	// generationtask.DefaultEstimatedSeconds holds the default value on creation for the estimated_seconds field.
 	generationtask.DefaultEstimatedSeconds = generationtaskDescEstimatedSeconds.Default.(int)
+	// generationtaskDescImageSize is the schema descriptor for image_size field.
+	generationtaskDescImageSize := generationtaskFields[23].Descriptor()
+	// generationtask.DefaultImageSize holds the default value on creation for the image_size field.
+	generationtask.DefaultImageSize = generationtaskDescImageSize.Default.(string)
+	// generationtaskDescImageQuality is the schema descriptor for image_quality field.
+	generationtaskDescImageQuality := generationtaskFields[24].Descriptor()
+	// generationtask.DefaultImageQuality holds the default value on creation for the image_quality field.
+	generationtask.DefaultImageQuality = generationtaskDescImageQuality.Default.(string)
 	// generationtaskDescDeleted is the schema descriptor for deleted field.
-	generationtaskDescDeleted := generationtaskFields[24].Descriptor()
+	generationtaskDescDeleted := generationtaskFields[26].Descriptor()
 	// generationtask.DefaultDeleted holds the default value on creation for the deleted field.
 	generationtask.DefaultDeleted = generationtaskDescDeleted.Default.(bool)
 	// generationtaskDescCreatedAt is the schema descriptor for created_at field.
-	generationtaskDescCreatedAt := generationtaskFields[26].Descriptor()
+	generationtaskDescCreatedAt := generationtaskFields[28].Descriptor()
 	// generationtask.DefaultCreatedAt holds the default value on creation for the created_at field.
 	generationtask.DefaultCreatedAt = generationtaskDescCreatedAt.Default.(func() time.Time)
 	// generationtaskDescID is the schema descriptor for id field.

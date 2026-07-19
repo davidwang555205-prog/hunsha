@@ -139,6 +139,131 @@ func (u *Usecase) CancelTask(ctx context.Context, taskID uuid.UUID, userID uuid.
 	return u.repo.CancelTask(ctx, taskID)
 }
 
+// RetryImage 单张重试：重新生成失败/取消的某张子图。
+// 复用原任务 prompt/参考图/尺寸，用首张成功图重建连续性参考（sceneRef/identityRef 未持久化）。
+// 异步执行（go generateOne），前端轮询拿进度；成功扣 1 分，失败不扣。
+func (u *Usecase) RetryImage(ctx context.Context, taskID uuid.UUID, imageNumber int, user *domain.User) error {
+	rec, err := u.repo.GetTask(ctx, taskID)
+	if err != nil || rec == nil {
+		return wala.NewError(404, "任务不存在。")
+	}
+	if !user.HasUnlimitedImageGeneration() && rec.UserID != user.ID {
+		return wala.NewError(403, "无权重试他人任务的图片。")
+	}
+	if rec.Status != "failed" {
+		return wala.NewError(400, "仅失败任务可单张重试。")
+	}
+	idx := imageNumber - 1
+	var target *SubTaskStatusItem
+	for i := range rec.SubTaskStatus {
+		if rec.SubTaskStatus[i].Index == idx {
+			target = &rec.SubTaskStatus[i]
+			break
+		}
+	}
+	if target == nil {
+		return wala.NewError(400, "图片编号不存在。")
+	}
+	if target.Status != "failed" && target.Status != "cancelled" {
+		return wala.NewError(400, "仅失败或取消的图片可重试。")
+	}
+	// 至少 1 张成功：作连续性参考 + 区分整任务重试
+	var firstSuccess *ImageRecord
+	for i := range rec.SubTaskStatus {
+		if rec.SubTaskStatus[i].Status == "success" && rec.SubTaskStatus[i].Image != nil {
+			firstSuccess = rec.SubTaskStatus[i].Image
+			break
+		}
+	}
+	if firstSuccess == nil {
+		return wala.NewError(400, "无成功图片作为连续性参考，请整任务重试。")
+	}
+	// 积分校验（非管理员需 credits >= 1）
+	if !user.HasUnlimitedImageGeneration() && user.Credits < 1 {
+		return wala.NewError(402, fmt.Sprintf("积分余额不足。当前余额 %d，本次需要 1 积分。", user.Credits))
+	}
+	// 重建参考图（reference_images URL -> wala.FileInput）
+	var sceneFile *wala.FileInput
+	var productFiles []wala.FileInput
+	for _, ref := range rec.ReferenceImages {
+		wf, err := u.urlToWalaFile(ctx, ref.URL, ref.Name)
+		if err != nil {
+			return wala.NewError(502, "读取参考图失败："+err.Error())
+		}
+		if ref.Kind == "scene" {
+			sceneFile = &wf
+		} else {
+			productFiles = append(productFiles, wf)
+		}
+	}
+	if len(productFiles) < 4 {
+		return wala.NewError(400, "参考图不足 4 张，无法重试。")
+	}
+	// 重建连续性参考：首张成功图作 sceneRef + identityRef（保持人物/场景一致）
+	sceneRef, err := u.urlToWalaFile(ctx, firstSuccess.URL, firstSuccess.Name)
+	if err != nil {
+		return wala.NewError(502, "读取连续性参考图失败："+err.Error())
+	}
+	identityRef := &sceneRef
+	if idx < 0 || idx >= len(rec.Prompts) {
+		return wala.NewError(400, "图片编号越界。")
+	}
+	pl := promptPlan{prompt: rec.Prompts[idx]}
+	candidates := u.buildCandidates(ctx, rec.ChannelID)
+	if len(candidates) == 0 {
+		return wala.NewError(503, "无可用生图线路。")
+	}
+	userSem := u.getUserSem(user.ID, candidates[0].maxConcurrency)
+	size := rec.ImageSize
+	if size == "" {
+		size = "3:4"
+	}
+	quality := rec.ImageQuality
+	if quality == "" {
+		quality = "medium"
+	}
+	taskIDStr := taskID.String()
+	imageID := fmt.Sprintf("%s-%d", taskIDStr, imageNumber)
+	_ = u.repo.UpdateSubTaskImage(ctx, imageID, "processing", "", "", "", 0)
+	// 异步生成（复用 generateOne 全流程：调 wala + 线路 fallback + 存图 + 扣分）
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				u.logger.Error("retryImage generateOne panic", "task", taskID, "imageNumber", imageNumber, "panic", r)
+				_ = u.repo.UpdateSubTaskImage(context.Background(), imageID, "failed", "", "", "生成内部错误，请重试或新建任务。", 0)
+				u.reevaluateTaskStatus(context.Background(), taskID)
+			}
+		}()
+		bgCtx := context.Background()
+		_ = u.generateOne(bgCtx, taskID, taskIDStr, user, pl, idx, sceneFile, productFiles, &sceneRef, identityRef, candidates, size, quality, userSem)
+		u.reevaluateTaskStatus(bgCtx, taskID)
+	}()
+	return nil
+}
+
+// reevaluateTaskStatus 单张重试后重估任务状态：
+//  1. 修正 completed_count（generateOne 会 IncCompletedCount，失败子图重试会重复计数，按真实结束数重置）
+//  2. 全部子图 success -> task completed
+func (u *Usecase) reevaluateTaskStatus(ctx context.Context, taskID uuid.UUID) {
+	rec, err := u.repo.GetTask(ctx, taskID)
+	if err != nil || rec == nil {
+		return
+	}
+	finishedCount, successCount := 0, 0
+	for _, s := range rec.SubTaskStatus {
+		if s.Status == "success" || s.Status == "failed" || s.Status == "cancelled" {
+			finishedCount++
+		}
+		if s.Status == "success" {
+			successCount++
+		}
+	}
+	_ = u.repo.SetCompletedCount(ctx, taskID, finishedCount)
+	if rec.TotalCount > 0 && successCount == rec.TotalCount {
+		_ = u.repo.SetTaskDone(ctx, taskID, "completed", "")
+	}
+}
+
 // walaCaller 抽象 wala 调用（CallWithRetries + BuildOverloadMessage），便于测试 callWithFallback 的线路切换逻辑。
 // *wala.Client 实现此接口。
 type walaCaller interface {

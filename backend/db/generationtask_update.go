@@ -406,6 +406,34 @@ func (_u *GenerationTaskUpdate) ClearPrompts() *GenerationTaskUpdate {
 	return _u
 }
 
+// SetImageSize sets the "image_size" field.
+func (_u *GenerationTaskUpdate) SetImageSize(v string) *GenerationTaskUpdate {
+	_u.mutation.SetImageSize(v)
+	return _u
+}
+
+// SetNillableImageSize sets the "image_size" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableImageSize(v *string) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetImageSize(*v)
+	}
+	return _u
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (_u *GenerationTaskUpdate) SetImageQuality(v string) *GenerationTaskUpdate {
+	_u.mutation.SetImageQuality(v)
+	return _u
+}
+
+// SetNillableImageQuality sets the "image_quality" field if the given value is not nil.
+func (_u *GenerationTaskUpdate) SetNillableImageQuality(v *string) *GenerationTaskUpdate {
+	if v != nil {
+		_u.SetImageQuality(*v)
+	}
+	return _u
+}
+
 // SetFeedback sets the "feedback" field.
 func (_u *GenerationTaskUpdate) SetFeedback(v types.TaskFeedback) *GenerationTaskUpdate {
 	_u.mutation.SetFeedback(v)
@@ -670,6 +698,12 @@ func (_u *GenerationTaskUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if _u.mutation.PromptsCleared() {
 		_spec.ClearField(generationtask.FieldPrompts, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.ImageSize(); ok {
+		_spec.SetField(generationtask.FieldImageSize, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ImageQuality(); ok {
+		_spec.SetField(generationtask.FieldImageQuality, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Feedback(); ok {
 		_spec.SetField(generationtask.FieldFeedback, field.TypeJSON, value)
@@ -1129,6 +1163,34 @@ func (_u *GenerationTaskUpdateOne) ClearPrompts() *GenerationTaskUpdateOne {
 	return _u
 }
 
+// SetImageSize sets the "image_size" field.
+func (_u *GenerationTaskUpdateOne) SetImageSize(v string) *GenerationTaskUpdateOne {
+	_u.mutation.SetImageSize(v)
+	return _u
+}
+
+// SetNillableImageSize sets the "image_size" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableImageSize(v *string) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetImageSize(*v)
+	}
+	return _u
+}
+
+// SetImageQuality sets the "image_quality" field.
+func (_u *GenerationTaskUpdateOne) SetImageQuality(v string) *GenerationTaskUpdateOne {
+	_u.mutation.SetImageQuality(v)
+	return _u
+}
+
+// SetNillableImageQuality sets the "image_quality" field if the given value is not nil.
+func (_u *GenerationTaskUpdateOne) SetNillableImageQuality(v *string) *GenerationTaskUpdateOne {
+	if v != nil {
+		_u.SetImageQuality(*v)
+	}
+	return _u
+}
+
 // SetFeedback sets the "feedback" field.
 func (_u *GenerationTaskUpdateOne) SetFeedback(v types.TaskFeedback) *GenerationTaskUpdateOne {
 	_u.mutation.SetFeedback(v)
@@ -1423,6 +1485,12 @@ func (_u *GenerationTaskUpdateOne) sqlSave(ctx context.Context) (_node *Generati
 	}
 	if _u.mutation.PromptsCleared() {
 		_spec.ClearField(generationtask.FieldPrompts, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.ImageSize(); ok {
+		_spec.SetField(generationtask.FieldImageSize, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ImageQuality(); ok {
+		_spec.SetField(generationtask.FieldImageQuality, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Feedback(); ok {
 		_spec.SetField(generationtask.FieldFeedback, field.TypeJSON, value)

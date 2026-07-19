@@ -53,6 +53,7 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	gen.GET("/tasks/:id/invocations", web.BaseHandler(h.ListTaskModelInvocations))
 	gen.GET("/invocations", web.BaseHandler(h.ListModelInvocations))
 	gen.POST("/tasks/:id/cancel", web.BaseHandler(h.CancelTask))
+	gen.POST("/tasks/:id/images/:imageNumber/retry", web.BaseHandler(h.RetryImage))
 	// 手工指标录入已取消；历史 feedback 数据只读保留，新增数据必须经 Redfox 采集。
 	gen.POST("/tasks/:id/feedback", web.BaseHandler(h.LegacyFeedbackDisabled))
 	gen.POST("/tasks/:id/xhs-note", web.BindHandler(h.ImportXHSNote))
@@ -375,6 +376,27 @@ func (h *Handler) CancelTask(c *web.Context) error {
 		return handleGenError(c, err)
 	}
 	return c.JSON(http.StatusOK, map[string]any{"ok": true, "status": "cancelled"})
+}
+
+// RetryImage POST /api/v1/generation/tasks/:id/images/:imageNumber/retry -- 单张重试失败子图。
+// 仅失败任务且至少 1 张成功时可用，复用原任务 prompt/参考图/尺寸，用已成功图重建连续性参考。
+func (h *Handler) RetryImage(c *web.Context) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return sendGenError(c, http.StatusUnauthorized, "登录已失效。")
+	}
+	taskID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return sendGenError(c, http.StatusBadRequest, "任务 ID 格式不正确。")
+	}
+	imageNumber, err := strconv.Atoi(c.Param("imageNumber"))
+	if err != nil || imageNumber < 1 {
+		return sendGenError(c, http.StatusBadRequest, "图片编号格式不正确。")
+	}
+	if err := h.usecase.RetryImage(c.Request().Context(), taskID, imageNumber, user); err != nil {
+		return handleGenError(c, err)
+	}
+	return c.JSON(http.StatusAccepted, map[string]any{"ok": true})
 }
 
 // SubmitFeedback POST /api/v1/generation/tasks/:id/feedback -- 用户回填小红书发布反馈。

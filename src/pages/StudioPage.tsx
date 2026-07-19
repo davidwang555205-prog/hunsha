@@ -81,6 +81,18 @@ export function StudioPage() {
   const [contentNonce, setContentNonce] = useState(0);
   const [imageCount, setImageCount] = useState<3 | 5>(3);
   const [contentMessage, setContentMessage] = useState("");
+  // 二次确认弹窗：组装好请求后先展示本次内容与积分消耗，用户确认后再提交。
+  const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
+  const [pendingTaskReq, setPendingTaskReq] = useState<CreateTaskRequest | null>(null);
+  // 单张重试确认弹窗（部分成功时，对失败/取消的子图单独重试）
+  const [showRetryImageConfirm, setShowRetryImageConfirm] = useState(false);
+  const [retryImageTarget, setRetryImageTarget] = useState<{ imageNumber: number; name: string } | null>(null);
+  // 任务整体重试上限：超过则不再重试，引导用户创建新任务（避免对同一组素材反复提交）。
+  // 单张图的后端自动重试上限由 WalaImageRetryAttempts(=3) 控制，在此之外另加任务级手动重试限制。
+  const maxTaskRetry = 3;
+  const [taskRetryCount, setTaskRetryCount] = useState(0);
+  // 确认弹窗防重入：消除「关闭弹窗→setIsSubmitting 生效」毫秒级窗口内的重复提交
+  const confirmingRef = useRef(false);
   const [sceneFile, setSceneFile] = useState<File | null>(null);
   const [productFiles, setProductFiles] = useState<File[]>([]);
   const [showContentPreview, setShowContentPreview] = useState(false);
@@ -285,6 +297,22 @@ export function StudioPage() {
     try {
       const req = await buildTaskRequest();
       if (!req) return;
+      // 二次确认：先弹窗展示本次提交内容与积分消耗，用户确认后再真正提交。
+      setPendingTaskReq(req);
+      setShowConfirmGenerate(true);
+    } catch (err) {
+      gen.reportError(err);
+    }
+  };
+
+  // 用户在确认弹窗点击「确认生成」后真正提交任务
+  const confirmGenerate = async () => {
+    if (confirmingRef.current) return;
+    const req = pendingTaskReq;
+    if (!req) return;
+    confirmingRef.current = true;
+    setShowConfirmGenerate(false);
+    try {
       const taskId = await gen.submit(req);
       if (taskId) {
         window.localStorage.setItem(lastTaskStorageKey, taskId);
@@ -292,7 +320,34 @@ export function StudioPage() {
       }
     } catch (err) {
       gen.reportError(err);
+    } finally {
+      setPendingTaskReq(null);
+      confirmingRef.current = false;
     }
+  };
+
+  const cancelConfirmGenerate = () => {
+    setShowConfirmGenerate(false);
+    setPendingTaskReq(null);
+  };
+
+  // 单张重试：点失败/取消子图的「重试」-> 弹窗确认 -> gen.retryImage
+  const handleRetryImageClick = (imageNumber: number, name: string) => {
+    setRetryImageTarget({ imageNumber, name });
+    setShowRetryImageConfirm(true);
+  };
+  const confirmRetryImage = async () => {
+    if (!retryImageTarget) return;
+    if (taskRetryCount >= maxTaskRetry) return;
+    const { imageNumber } = retryImageTarget;
+    setShowRetryImageConfirm(false);
+    setRetryImageTarget(null);
+    setTaskRetryCount((c) => c + 1);
+    await gen.retryImage(imageNumber);
+  };
+  const cancelRetryImage = () => {
+    setShowRetryImageConfirm(false);
+    setRetryImageTarget(null);
   };
 
   // 文案引擎的“换一套内容”：contentNonce 会让后端重新选择同主题的一套文案与配图蓝图。
@@ -303,12 +358,17 @@ export function StudioPage() {
   };
 
   const handleRetry = async () => {
+    if (taskRetryCount >= maxTaskRetry) return;
+    setTaskRetryCount((c) => c + 1);
     gen.reset();
     await handleGenerate();
   };
 
   const handleDismiss = () => {
     gen.reset();
+    setTaskRetryCount(0);
+    setShowRetryImageConfirm(false);
+    setRetryImageTarget(null);
     window.localStorage.removeItem(lastTaskStorageKey);
     void refresh();
   };
@@ -323,6 +383,11 @@ export function StudioPage() {
     setShowUnviewedPrompt(false);
   };
 
+  const sizeLabel = imageSizeOptions.find((option) => option.value === imageSize)?.label ?? imageSize;
+  const hasAnySuccess = gen.subTaskStatus.some((s) => s.status === "success");
+  // 失败任务分流：全部失败 -> 整任务重试；至少 1 张成功 -> 单张重试失败子图
+  const allFailed = gen.stage === "failed" && !hasAnySuccess;
+  const canRetrySingleImage = gen.stage === "failed" && hasAnySuccess && taskRetryCount < maxTaskRetry;
   const completedImages = gen.stage === "completed" ? gen.resultImages : [];
   // 提交请求上传参考图时后端尚未回 taskId：此时也要立刻把右侧切到交付态，
   // 不能让用户在数秒内误以为点击没有生效。
@@ -460,8 +525,10 @@ export function StudioPage() {
                 isSubmitting={gen.isSubmitting}
                 error={gen.error}
                 onCancel={gen.cancel}
-                onRetry={handleRetry}
+                onRetry={allFailed ? handleRetry : undefined}
                 onDismiss={handleDismiss}
+                retryCount={taskRetryCount}
+                maxRetry={maxTaskRetry}
               />
             )}
 
@@ -474,7 +541,13 @@ export function StudioPage() {
                 {completedImages.length > 0 && <Button variant="secondary" size="sm" onClick={() => void downloadImages(completedImages)}>下载全部 {completedImages.length} 张</Button>}
               </div>
               {hasTaskOutput ? (
-                <ImageGenerationGrid subTaskStatus={gen.subTaskStatus} totalCount={gen.totalCount || imageCount} altPrefix={previewTitles[0] ?? currentCategory?.name ?? "生成图片"} />
+                <ImageGenerationGrid
+                  subTaskStatus={gen.subTaskStatus}
+                  totalCount={gen.totalCount || imageCount}
+                  altPrefix={previewTitles[0] ?? currentCategory?.name ?? "生成图片"}
+                  canRetryImage={canRetrySingleImage}
+                  onRetryImage={canRetrySingleImage ? handleRetryImageClick : undefined}
+                />
               ) : (
                 <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface px-6 text-center">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-xl text-primary">✦</span>
@@ -571,6 +644,102 @@ export function StudioPage() {
           <p className="text-sm text-text-muted">
             「{firstTitle(gen.task.title)}」已生成 {gen.task.resultImages?.length ?? 0} 张图，是否查看结果？
           </p>
+        )}
+      </Modal>
+
+      {/* 提交生图二次确认：展示本次内容与积分消耗，确认后才提交任务 */}
+      <Modal
+        open={showConfirmGenerate}
+        onClose={cancelConfirmGenerate}
+        title="确认生成"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={cancelConfirmGenerate} disabled={gen.isSubmitting}>
+              取消
+            </Button>
+            <Button variant="primary" size="sm" onClick={confirmGenerate} loading={gen.isSubmitting}>
+              确认生成
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <dl className="space-y-2 text-sm">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-text-muted">内容主题</dt>
+              <dd className="text-right font-medium text-text">{contentTopic || "-"}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-text-muted">配图数量</dt>
+              <dd className="font-medium text-text">{imageCount} 张</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-text-muted">图片尺寸</dt>
+              <dd className="font-medium text-text">{sizeLabel}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-text-muted">婚纱产品图</dt>
+              <dd className="font-medium text-text">{productFiles.length} 张</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-text-muted">场景参考图</dt>
+              <dd className="font-medium text-text">{sceneFile ? "已上传，锁定场景" : "未上传"}</dd>
+            </div>
+          </dl>
+          <div className="rounded-lg bg-primary/5 p-3 ring-1 ring-primary/10">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-sm text-text-muted">本次消耗</span>
+              <span className="text-base font-semibold text-primary">{imageCount} 积分</span>
+            </div>
+            <div className="mt-1 flex items-baseline justify-between gap-3">
+              <span className="text-sm text-text-muted">当前余额</span>
+              <span className="text-sm font-medium text-text">{user?.credits ?? 0} 积分</span>
+            </div>
+          </div>
+          <p className="text-xs leading-5 text-text-muted">
+            每张图片约需 90 秒生成；仅成功生成的图片扣除积分，失败不扣。提交后可在右侧查看逐张进度，期间可离开页面，任务会在后台继续。
+          </p>
+        </div>
+      </Modal>
+
+      {/* 单张重试确认：仅失败任务且有成功图时，对失败/取消子图单独重试，消耗 1 积分 */}
+      <Modal
+        open={showRetryImageConfirm}
+        onClose={cancelRetryImage}
+        title="确认重新生成"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={cancelRetryImage} disabled={gen.isRetrying}>
+              取消
+            </Button>
+            <Button variant="primary" size="sm" onClick={confirmRetryImage} loading={gen.isRetrying}>
+              确认重试
+            </Button>
+          </>
+        }
+      >
+        {retryImageTarget && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-primary/5 p-3 ring-1 ring-primary/10">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm text-text-muted">重新生成</span>
+                <span className="text-base font-semibold text-text">第 {retryImageTarget.imageNumber} 张</span>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-3">
+                <span className="text-sm text-text-muted">本次消耗</span>
+                <span className="text-base font-semibold text-primary">1 积分</span>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-3">
+                <span className="text-sm text-text-muted">当前余额</span>
+                <span className="text-sm font-medium text-text">{user?.credits ?? 0} 积分</span>
+              </div>
+            </div>
+            <p className="text-xs leading-5 text-text-muted">
+              将基于原任务参考图与已成功图重新生成这一张，保持人物/场景一致。仅成功生成的图片扣分，失败不扣。生成期间可离开页面，任务会在后台继续。
+            </p>
+          </div>
         )}
       </Modal>
     </>

@@ -16,9 +16,12 @@ type ImageGenerationGridProps = {
   subTaskStatus: SubTaskStatus[];
   totalCount: number;
   altPrefix: string;
+  /** 失败任务且至少 1 张成功时，允许单张重试失败/取消的子图 */
+  canRetryImage?: boolean;
+  onRetryImage?: (imageNumber: number, name: string) => void;
 };
 
-export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix }: ImageGenerationGridProps) {
+export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix, canRetryImage, onRetryImage }: ImageGenerationGridProps) {
   const [previewIndex, setPreviewIndex] = useState(-1);
 
   const items = Array.from({ length: totalCount }, (_, i) => {
@@ -64,10 +67,21 @@ export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix }: Im
                       </svg>
                     </button>
                   </>
-                ) : sub.status === "failed" ? (
-                  <span className="text-xs text-danger">失败</span>
-                ) : sub.status === "cancelled" ? (
-                  <span className="text-xs text-text-subtle">已取消</span>
+                ) : sub.status === "failed" || sub.status === "cancelled" ? (
+                  <div className="flex flex-col items-center gap-2 px-2 text-center">
+                    <span className={`text-xs ${sub.status === "failed" ? "text-danger" : "text-text-subtle"}`}>
+                      {sub.status === "failed" ? "失败" : "已取消"}
+                    </span>
+                    {canRetryImage && onRetryImage && (
+                      <button
+                        type="button"
+                        onClick={() => onRetryImage(sub.index + 1, sub.image?.name ?? `图 ${sub.index + 1}`)}
+                        className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition hover:bg-primary/20"
+                      >
+                        重试
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <div className="absolute inset-0 bg-surface/70" />

@@ -61,6 +61,14 @@ export function cancelTask(taskId: string) {
   );
 }
 
+/** 单张重试：重新生成失败/取消的某张子图（仅失败任务且至少 1 张成功时可用） */
+export function retryImage(taskId: string, imageNumber: number) {
+  return apiRequest<{ ok: boolean }>(
+    `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/images/${imageNumber}/retry`,
+    { method: "POST", timeoutMs: 30_000 }
+  );
+}
+
 /** 提交小红书发布反馈（笔记链接 + 阅读/点赞/收藏/评论） */
 export function submitFeedback(taskId: string, req: SubmitFeedbackRequest) {
   return apiRequest<{ task: HistoryRecord }>(

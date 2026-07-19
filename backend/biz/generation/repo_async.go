@@ -50,6 +50,8 @@ func (r *Repo) CreateTask(ctx context.Context, rec TaskRecord, names []string) e
 		SetTotalCount(len(names)).
 		SetCompletedCount(0).
 		SetEstimatedSeconds(rec.EstimatedSeconds).
+		SetImageSize(rec.ImageSize).
+		SetImageQuality(rec.ImageQuality).
 		SetCategoryID(rec.CategoryID).
 		SetChannelID(rec.ChannelID).
 		SetReferenceImages(recordsToRefImages(rec.ReferenceImages)).
@@ -154,6 +156,14 @@ func (r *Repo) UpdateSubTaskImage(ctx context.Context, imageID, status, url, thu
 func (r *Repo) IncCompletedCount(ctx context.Context, taskID uuid.UUID) error {
 	return r.db.GenerationTask.UpdateOneID(taskID).
 		AddCompletedCount(1). // SET completed_count = completed_count + 1，避免并发 read-modify-write 丢更新
+		Exec(ctx)
+}
+
+// SetCompletedCount 重置已完成数。单张重试走 generateOne 会 IncCompletedCount，
+// 但失败子图重试成功不应让 completed_count 超过 total_count，故按真实结束数重置。
+func (r *Repo) SetCompletedCount(ctx context.Context, taskID uuid.UUID, count int) error {
+	return r.db.GenerationTask.UpdateOneID(taskID).
+		SetCompletedCount(count).
 		Exec(ctx)
 }
 
@@ -400,6 +410,8 @@ func taskToRecord(t *db.GenerationTask) TaskRecord {
 		TotalCount:         t.TotalCount,
 		CompletedCount:     t.CompletedCount,
 		EstimatedSeconds:   t.EstimatedSeconds,
+		ImageSize:          t.ImageSize,
+		ImageQuality:       t.ImageQuality,
 		CategoryID:         t.CategoryID,
 		ChannelID:          t.ChannelID,
 		ReferenceImages:    refImagesToRecords(t.ReferenceImages),

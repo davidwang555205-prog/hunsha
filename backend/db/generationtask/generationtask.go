@@ -59,6 +59,10 @@ const (
 	FieldReferenceImages = "reference_images"
 	// FieldPrompts holds the string denoting the prompts field in the database.
 	FieldPrompts = "prompts"
+	// FieldImageSize holds the string denoting the image_size field in the database.
+	FieldImageSize = "image_size"
+	// FieldImageQuality holds the string denoting the image_quality field in the database.
+	FieldImageQuality = "image_quality"
 	// FieldFeedback holds the string denoting the feedback field in the database.
 	FieldFeedback = "feedback"
 	// FieldDeleted holds the string denoting the deleted field in the database.
@@ -105,6 +109,8 @@ var Columns = []string{
 	FieldCompletedAt,
 	FieldReferenceImages,
 	FieldPrompts,
+	FieldImageSize,
+	FieldImageQuality,
 	FieldFeedback,
 	FieldDeleted,
 	FieldDeletedAt,
@@ -152,6 +158,10 @@ var (
 	DefaultCompletedCount int
 	// DefaultEstimatedSeconds holds the default value on creation for the "estimated_seconds" field.
 	DefaultEstimatedSeconds int
+	// DefaultImageSize holds the default value on creation for the "image_size" field.
+	DefaultImageSize string
+	// DefaultImageQuality holds the default value on creation for the "image_quality" field.
+	DefaultImageQuality string
 	// DefaultDeleted holds the default value on creation for the "deleted" field.
 	DefaultDeleted bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -261,6 +271,16 @@ func ByStartedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByCompletedAt orders the results by the completed_at field.
 func ByCompletedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCompletedAt, opts...).ToFunc()
+}
+
+// ByImageSize orders the results by the image_size field.
+func ByImageSize(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageSize, opts...).ToFunc()
+}
+
+// ByImageQuality orders the results by the image_quality field.
+func ByImageQuality(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageQuality, opts...).ToFunc()
 }
 
 // ByDeleted orders the results by the deleted field.

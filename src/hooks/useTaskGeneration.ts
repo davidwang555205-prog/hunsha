@@ -10,7 +10,7 @@
  * 与旧 useGeneration 的区别：不再阻塞等待单次请求，而是异步任务 + 轮询。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createTask, getTask, cancelTask } from "../api/generation";
+import { createTask, getTask, cancelTask, retryImage as retryImageApi } from "../api/generation";
 import { isUnauthorizedError } from "../types/api";
 import type { CreateTaskRequest, GenerationTask } from "../types/api";
 import { describeGenerationFailure, type GenerationFeedback } from "../lib/generationFeedback";
@@ -24,6 +24,7 @@ export function useTaskGeneration() {
   const [stage, setStage] = useState<TaskStage>("idle");
   const [error, setError] = useState<GenerationFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   // 插值显示进度（与 task 解耦，submit/reset 直接重置，避免激活初始值残留）
   const [displayedProgress, setDisplayedProgress] = useState(0);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -55,8 +56,10 @@ export function useTaskGeneration() {
       stopPolling();
       pollTimerRef.current = setInterval(() => {
         void refreshTask(taskId).then((latest) => {
-          // 终态停止轮询
-          if (latest && ["completed", "failed", "cancelled"].includes(latest.status)) {
+          if (!latest) return;
+          // 终态且无子图 processing 才停（单张重试时 task 仍 failed 但子图在生成中，需继续轮询拿进度）
+          const hasProcessing = (latest.subTaskStatus ?? []).some((s) => s.status === "processing");
+          if (["completed", "failed", "cancelled"].includes(latest.status) && !hasProcessing) {
             stopPolling();
           }
         });
@@ -108,13 +111,44 @@ export function useTaskGeneration() {
     }
   }, [refreshTask, stopPolling]);
 
+  /** 单张重试：重新生成失败/取消的某张子图，复用原任务参数，用已成功图保持连续性 */
+  const retryImage = useCallback(
+    async (imageNumber: number) => {
+      if (!task) return;
+      setIsRetrying(true);
+      setError(null);
+      try {
+        await retryImageApi(task.id, imageNumber);
+        const latest = await refreshTask(task.id);
+        // 单张重试后 task 可能仍 failed 但子图 processing，启动轮询拿进度
+        if (latest) {
+          const hasProcessing = (latest.subTaskStatus ?? []).some((s) => s.status === "processing");
+          if (hasProcessing || !["completed", "failed", "cancelled"].includes(latest.status)) {
+            startPolling(task.id);
+          }
+        }
+      } catch (err) {
+        if (!isUnauthorizedError(err)) {
+          setError(describeGenerationFailure(err));
+        }
+      } finally {
+        setIsRetrying(false);
+      }
+    },
+    [task, refreshTask, startPolling]
+  );
+
   /** 恢复某个任务进度的轮询（重新进入页面时） */
   const resume = useCallback(
     async (taskId: string) => {
       taskIdRef.current = taskId;
       const latest = await refreshTask(taskId);
-      if (latest && !["completed", "failed", "cancelled"].includes(latest.status)) {
-        startPolling(taskId);
+      if (latest) {
+        // 单张重试时 task 仍 failed 但子图 processing，需继续轮询拿进度
+        const hasProcessing = (latest.subTaskStatus ?? []).some((s) => s.status === "processing");
+        if (hasProcessing || !["completed", "failed", "cancelled"].includes(latest.status)) {
+          startPolling(taskId);
+        }
       }
     },
     [refreshTask, startPolling]
@@ -127,6 +161,7 @@ export function useTaskGeneration() {
     setStage("idle");
     setError(null);
     setDisplayedProgress(0);
+    setIsRetrying(false);
   }, [stopPolling]);
 
   /** 供请求体组装等提交前步骤复用同一套用户提示。 */
@@ -201,8 +236,10 @@ export function useTaskGeneration() {
     resultImages,
     submit,
     cancel,
+    retryImage,
     resume,
     reportError,
-    reset
+    reset,
+    isRetrying
   };
 }
