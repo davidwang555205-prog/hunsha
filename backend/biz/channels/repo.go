@@ -27,18 +27,19 @@ func NewRepo(i *do.Injector) (*Repo, error) {
 
 // ChannelRecord 模型线路记录，对应前端 Channel 类型。
 type ChannelRecord struct {
-	ID             uuid.UUID
-	Name           string
-	APIBaseURL     string
-	APIKey         string
-	Protocol       string
-	ModelID        string
-	SupportedSizes []string
-	DefaultQuality string
-	IsEnabled      bool
-	IsDefault      bool
-	SortOrder      int
-	MaxConcurrency int
+	ID               uuid.UUID
+	Name             string
+	APIBaseURL       string
+	APIKey           string
+	Protocol         string
+	ModelID          string
+	SupportedSizes   []string
+	DefaultQuality   string
+	IsEnabled        bool
+	IsDefault        bool
+	SortOrder        int
+	MaxConcurrency   int
+	RequestTimeoutMs int
 	// 稳定性统计（累计，原子累加）
 	TotalRequests   int
 	SuccessRequests int
@@ -50,24 +51,25 @@ type ChannelRecord struct {
 
 func toRecord(c *db.ModelChannel) ChannelRecord {
 	return ChannelRecord{
-		ID:              c.ID,
-		Name:            c.Name,
-		APIBaseURL:      c.APIBaseURL,
-		APIKey:          c.APIKey,
-		Protocol:        c.Protocol,
-		ModelID:         c.ModelID,
-		SupportedSizes:  c.SupportedSizes,
-		DefaultQuality:  c.DefaultQuality,
-		IsEnabled:       c.IsEnabled,
-		IsDefault:       c.IsDefault,
-		SortOrder:       c.SortOrder,
-		MaxConcurrency:  c.MaxConcurrency,
-		TotalRequests:   c.TotalRequests,
-		SuccessRequests: c.SuccessRequests,
-		FailedRequests:  c.FailedRequests,
-		TotalLatencyMs:  c.TotalLatencyMs,
-		CreatedAt:       c.CreatedAt,
-		UpdatedAt:       c.UpdatedAt,
+		ID:               c.ID,
+		Name:             c.Name,
+		APIBaseURL:       c.APIBaseURL,
+		APIKey:           c.APIKey,
+		Protocol:         c.Protocol,
+		ModelID:          c.ModelID,
+		SupportedSizes:   c.SupportedSizes,
+		DefaultQuality:   c.DefaultQuality,
+		IsEnabled:        c.IsEnabled,
+		IsDefault:        c.IsDefault,
+		SortOrder:        c.SortOrder,
+		MaxConcurrency:   c.MaxConcurrency,
+		RequestTimeoutMs: c.RequestTimeoutMs,
+		TotalRequests:    c.TotalRequests,
+		SuccessRequests:  c.SuccessRequests,
+		FailedRequests:   c.FailedRequests,
+		TotalLatencyMs:   c.TotalLatencyMs,
+		CreatedAt:        c.CreatedAt,
+		UpdatedAt:        c.UpdatedAt,
 	}
 }
 
@@ -130,17 +132,18 @@ func (r *Repo) GetDefault(ctx context.Context) (*ChannelRecord, error) {
 
 // CreateInput 创建线路入参。
 type CreateInput struct {
-	Name           string
-	APIBaseURL     string
-	APIKey         string
-	Protocol       string
-	ModelID        string
-	SupportedSizes []string
-	DefaultQuality string
-	IsEnabled      bool
-	IsDefault      bool
-	SortOrder      int
-	MaxConcurrency int
+	Name             string
+	APIBaseURL       string
+	APIKey           string
+	Protocol         string
+	ModelID          string
+	SupportedSizes   []string
+	DefaultQuality   string
+	IsEnabled        bool
+	IsDefault        bool
+	SortOrder        int
+	MaxConcurrency   int
+	RequestTimeoutMs int
 }
 
 func (r *Repo) Create(ctx context.Context, in CreateInput) (*ChannelRecord, error) {
@@ -165,6 +168,7 @@ func (r *Repo) Create(ctx context.Context, in CreateInput) (*ChannelRecord, erro
 		SetIsDefault(in.IsDefault).
 		SetSortOrder(in.SortOrder).
 		SetMaxConcurrency(in.MaxConcurrency).
+		SetRequestTimeoutMs(in.RequestTimeoutMs).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -175,17 +179,18 @@ func (r *Repo) Create(ctx context.Context, in CreateInput) (*ChannelRecord, erro
 
 // UpdateInput 更新线路入参（指针 nil 表示不改）。
 type UpdateInput struct {
-	Name           *string
-	APIBaseURL     *string
-	APIKey         *string
-	Protocol       *string
-	ModelID        *string
-	SupportedSizes *[]string
-	DefaultQuality *string
-	IsEnabled      *bool
-	IsDefault      *bool
-	SortOrder      *int
-	MaxConcurrency *int
+	Name             *string
+	APIBaseURL       *string
+	APIKey           *string
+	Protocol         *string
+	ModelID          *string
+	SupportedSizes   *[]string
+	DefaultQuality   *string
+	IsEnabled        *bool
+	IsDefault        *bool
+	SortOrder        *int
+	MaxConcurrency   *int
+	RequestTimeoutMs *int
 }
 
 func (r *Repo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (*ChannelRecord, error) {
@@ -222,6 +227,9 @@ func (r *Repo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (*Chann
 	}
 	if in.MaxConcurrency != nil {
 		q = q.SetMaxConcurrency(*in.MaxConcurrency)
+	}
+	if in.RequestTimeoutMs != nil {
+		q = q.SetRequestTimeoutMs(*in.RequestTimeoutMs)
 	}
 	c, err := q.Save(ctx)
 	if err != nil {

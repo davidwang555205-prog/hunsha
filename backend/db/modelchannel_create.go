@@ -170,6 +170,20 @@ func (_c *ModelChannelCreate) SetNillableMaxConcurrency(v *int) *ModelChannelCre
 	return _c
 }
 
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (_c *ModelChannelCreate) SetRequestTimeoutMs(v int) *ModelChannelCreate {
+	_c.mutation.SetRequestTimeoutMs(v)
+	return _c
+}
+
+// SetNillableRequestTimeoutMs sets the "request_timeout_ms" field if the given value is not nil.
+func (_c *ModelChannelCreate) SetNillableRequestTimeoutMs(v *int) *ModelChannelCreate {
+	if v != nil {
+		_c.SetRequestTimeoutMs(*v)
+	}
+	return _c
+}
+
 // SetTotalRequests sets the "total_requests" field.
 func (_c *ModelChannelCreate) SetTotalRequests(v int) *ModelChannelCreate {
 	_c.mutation.SetTotalRequests(v)
@@ -347,6 +361,10 @@ func (_c *ModelChannelCreate) defaults() {
 		v := modelchannel.DefaultMaxConcurrency
 		_c.mutation.SetMaxConcurrency(v)
 	}
+	if _, ok := _c.mutation.RequestTimeoutMs(); !ok {
+		v := modelchannel.DefaultRequestTimeoutMs
+		_c.mutation.SetRequestTimeoutMs(v)
+	}
 	if _, ok := _c.mutation.TotalRequests(); !ok {
 		v := modelchannel.DefaultTotalRequests
 		_c.mutation.SetTotalRequests(v)
@@ -411,6 +429,9 @@ func (_c *ModelChannelCreate) check() error {
 	}
 	if _, ok := _c.mutation.MaxConcurrency(); !ok {
 		return &ValidationError{Name: "max_concurrency", err: errors.New(`db: missing required field "ModelChannel.max_concurrency"`)}
+	}
+	if _, ok := _c.mutation.RequestTimeoutMs(); !ok {
+		return &ValidationError{Name: "request_timeout_ms", err: errors.New(`db: missing required field "ModelChannel.request_timeout_ms"`)}
 	}
 	if _, ok := _c.mutation.TotalRequests(); !ok {
 		return &ValidationError{Name: "total_requests", err: errors.New(`db: missing required field "ModelChannel.total_requests"`)}
@@ -509,6 +530,10 @@ func (_c *ModelChannelCreate) createSpec() (*ModelChannel, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.MaxConcurrency(); ok {
 		_spec.SetField(modelchannel.FieldMaxConcurrency, field.TypeInt, value)
 		_node.MaxConcurrency = value
+	}
+	if value, ok := _c.mutation.RequestTimeoutMs(); ok {
+		_spec.SetField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
+		_node.RequestTimeoutMs = value
 	}
 	if value, ok := _c.mutation.TotalRequests(); ok {
 		_spec.SetField(modelchannel.FieldTotalRequests, field.TypeInt, value)
@@ -727,6 +752,24 @@ func (u *ModelChannelUpsert) UpdateMaxConcurrency() *ModelChannelUpsert {
 // AddMaxConcurrency adds v to the "max_concurrency" field.
 func (u *ModelChannelUpsert) AddMaxConcurrency(v int) *ModelChannelUpsert {
 	u.Add(modelchannel.FieldMaxConcurrency, v)
+	return u
+}
+
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (u *ModelChannelUpsert) SetRequestTimeoutMs(v int) *ModelChannelUpsert {
+	u.Set(modelchannel.FieldRequestTimeoutMs, v)
+	return u
+}
+
+// UpdateRequestTimeoutMs sets the "request_timeout_ms" field to the value that was provided on create.
+func (u *ModelChannelUpsert) UpdateRequestTimeoutMs() *ModelChannelUpsert {
+	u.SetExcluded(modelchannel.FieldRequestTimeoutMs)
+	return u
+}
+
+// AddRequestTimeoutMs adds v to the "request_timeout_ms" field.
+func (u *ModelChannelUpsert) AddRequestTimeoutMs(v int) *ModelChannelUpsert {
+	u.Add(modelchannel.FieldRequestTimeoutMs, v)
 	return u
 }
 
@@ -1039,6 +1082,27 @@ func (u *ModelChannelUpsertOne) AddMaxConcurrency(v int) *ModelChannelUpsertOne 
 func (u *ModelChannelUpsertOne) UpdateMaxConcurrency() *ModelChannelUpsertOne {
 	return u.Update(func(s *ModelChannelUpsert) {
 		s.UpdateMaxConcurrency()
+	})
+}
+
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (u *ModelChannelUpsertOne) SetRequestTimeoutMs(v int) *ModelChannelUpsertOne {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.SetRequestTimeoutMs(v)
+	})
+}
+
+// AddRequestTimeoutMs adds v to the "request_timeout_ms" field.
+func (u *ModelChannelUpsertOne) AddRequestTimeoutMs(v int) *ModelChannelUpsertOne {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.AddRequestTimeoutMs(v)
+	})
+}
+
+// UpdateRequestTimeoutMs sets the "request_timeout_ms" field to the value that was provided on create.
+func (u *ModelChannelUpsertOne) UpdateRequestTimeoutMs() *ModelChannelUpsertOne {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.UpdateRequestTimeoutMs()
 	})
 }
 
@@ -1534,6 +1598,27 @@ func (u *ModelChannelUpsertBulk) AddMaxConcurrency(v int) *ModelChannelUpsertBul
 func (u *ModelChannelUpsertBulk) UpdateMaxConcurrency() *ModelChannelUpsertBulk {
 	return u.Update(func(s *ModelChannelUpsert) {
 		s.UpdateMaxConcurrency()
+	})
+}
+
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (u *ModelChannelUpsertBulk) SetRequestTimeoutMs(v int) *ModelChannelUpsertBulk {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.SetRequestTimeoutMs(v)
+	})
+}
+
+// AddRequestTimeoutMs adds v to the "request_timeout_ms" field.
+func (u *ModelChannelUpsertBulk) AddRequestTimeoutMs(v int) *ModelChannelUpsertBulk {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.AddRequestTimeoutMs(v)
+	})
+}
+
+// UpdateRequestTimeoutMs sets the "request_timeout_ms" field to the value that was provided on create.
+func (u *ModelChannelUpsertBulk) UpdateRequestTimeoutMs() *ModelChannelUpsertBulk {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.UpdateRequestTimeoutMs()
 	})
 }
 

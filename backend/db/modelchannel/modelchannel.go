@@ -36,6 +36,8 @@ const (
 	FieldSortOrder = "sort_order"
 	// FieldMaxConcurrency holds the string denoting the max_concurrency field in the database.
 	FieldMaxConcurrency = "max_concurrency"
+	// FieldRequestTimeoutMs holds the string denoting the request_timeout_ms field in the database.
+	FieldRequestTimeoutMs = "request_timeout_ms"
 	// FieldTotalRequests holds the string denoting the total_requests field in the database.
 	FieldTotalRequests = "total_requests"
 	// FieldSuccessRequests holds the string denoting the success_requests field in the database.
@@ -66,6 +68,7 @@ var Columns = []string{
 	FieldIsDefault,
 	FieldSortOrder,
 	FieldMaxConcurrency,
+	FieldRequestTimeoutMs,
 	FieldTotalRequests,
 	FieldSuccessRequests,
 	FieldFailedRequests,
@@ -107,6 +110,8 @@ var (
 	DefaultSortOrder int
 	// DefaultMaxConcurrency holds the default value on creation for the "max_concurrency" field.
 	DefaultMaxConcurrency int
+	// DefaultRequestTimeoutMs holds the default value on creation for the "request_timeout_ms" field.
+	DefaultRequestTimeoutMs int
 	// DefaultTotalRequests holds the default value on creation for the "total_requests" field.
 	DefaultTotalRequests int
 	// DefaultSuccessRequests holds the default value on creation for the "success_requests" field.
@@ -181,6 +186,11 @@ func BySortOrder(opts ...sql.OrderTermOption) OrderOption {
 // ByMaxConcurrency orders the results by the max_concurrency field.
 func ByMaxConcurrency(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMaxConcurrency, opts...).ToFunc()
+}
+
+// ByRequestTimeoutMs orders the results by the request_timeout_ms field.
+func ByRequestTimeoutMs(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestTimeoutMs, opts...).ToFunc()
 }
 
 // ByTotalRequests orders the results by the total_requests field.

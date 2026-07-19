@@ -105,6 +105,11 @@ func MaxConcurrency(v int) predicate.ModelChannel {
 	return predicate.ModelChannel(sql.FieldEQ(FieldMaxConcurrency, v))
 }
 
+// RequestTimeoutMs applies equality check predicate on the "request_timeout_ms" field. It's identical to RequestTimeoutMsEQ.
+func RequestTimeoutMs(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldEQ(FieldRequestTimeoutMs, v))
+}
+
 // TotalRequests applies equality check predicate on the "total_requests" field. It's identical to TotalRequestsEQ.
 func TotalRequests(v int) predicate.ModelChannel {
 	return predicate.ModelChannel(sql.FieldEQ(FieldTotalRequests, v))
@@ -623,6 +628,46 @@ func MaxConcurrencyLT(v int) predicate.ModelChannel {
 // MaxConcurrencyLTE applies the LTE predicate on the "max_concurrency" field.
 func MaxConcurrencyLTE(v int) predicate.ModelChannel {
 	return predicate.ModelChannel(sql.FieldLTE(FieldMaxConcurrency, v))
+}
+
+// RequestTimeoutMsEQ applies the EQ predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsEQ(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldEQ(FieldRequestTimeoutMs, v))
+}
+
+// RequestTimeoutMsNEQ applies the NEQ predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsNEQ(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldNEQ(FieldRequestTimeoutMs, v))
+}
+
+// RequestTimeoutMsIn applies the In predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsIn(vs ...int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldIn(FieldRequestTimeoutMs, vs...))
+}
+
+// RequestTimeoutMsNotIn applies the NotIn predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsNotIn(vs ...int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldNotIn(FieldRequestTimeoutMs, vs...))
+}
+
+// RequestTimeoutMsGT applies the GT predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsGT(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldGT(FieldRequestTimeoutMs, v))
+}
+
+// RequestTimeoutMsGTE applies the GTE predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsGTE(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldGTE(FieldRequestTimeoutMs, v))
+}
+
+// RequestTimeoutMsLT applies the LT predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsLT(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldLT(FieldRequestTimeoutMs, v))
+}
+
+// RequestTimeoutMsLTE applies the LTE predicate on the "request_timeout_ms" field.
+func RequestTimeoutMsLTE(v int) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldLTE(FieldRequestTimeoutMs, v))
 }
 
 // TotalRequestsEQ applies the EQ predicate on the "total_requests" field.

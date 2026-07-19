@@ -1126,6 +1126,7 @@ var (
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "max_concurrency", Type: field.TypeInt, Default: 1},
+		{Name: "request_timeout_ms", Type: field.TypeInt, Default: 0},
 		{Name: "total_requests", Type: field.TypeInt, Default: 0},
 		{Name: "success_requests", Type: field.TypeInt, Default: 0},
 		{Name: "failed_requests", Type: field.TypeInt, Default: 0},

@@ -262,6 +262,13 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 			chQuality = u.cfg.Bridal.WalaImageQuality
 		}
 		chModelID := u.normalizedImageModelID(ch.ModelID)
+		chTimeoutMs := ch.RequestTimeoutMs
+		if chTimeoutMs <= 0 {
+			chTimeoutMs = u.cfg.Bridal.WalaImageTimeoutMs
+		}
+		if chTimeoutMs <= 0 {
+			chTimeoutMs = 180000
+		}
 		// 线路并发度归一化到 [1,10]（防御旧数据 0/负值；上限 10 防压垮中转 API）
 		chMC := ch.MaxConcurrency
 		if chMC < 1 {
@@ -274,7 +281,7 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 				APIKey:         ch.APIKey,
 				APIBaseURL:     ch.APIBaseURL,
 				ImageModel:     chModelID,
-				Timeout:        time.Duration(u.cfg.Bridal.WalaImageTimeoutMs) * time.Millisecond,
+				Timeout:        time.Duration(chTimeoutMs) * time.Millisecond,
 				RetryAttempts:  u.cfg.Bridal.WalaImageRetryAttempts,
 				DefaultQuality: chQuality,
 				Protocol:       ch.Protocol,

@@ -179,6 +179,39 @@ func productFiles() []wala.FileInput {
 	return []wala.FileInput{{Name: "prod", Type: "image/png", Data: []byte("x"), Size: 1}}
 }
 
+func TestBuildCandidates_UsesPerChannelRequestTimeout(t *testing.T) {
+	cases := []struct {
+		name           string
+		channelTimeout int
+		wantTimeout    time.Duration
+	}{
+		{name: "线路超时优先", channelTimeout: 420_000, wantTimeout: 420 * time.Second},
+		{name: "零值兼容全局超时", channelTimeout: 0, wantTimeout: 240 * time.Second},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			caller := &fakeCaller{name: "A"}
+			ch := testChannel(uuid.New())
+			ch.RequestTimeoutMs = tc.channelTimeout
+			u := newTestUsecase(newFakeRepo(), &fakeCredits{}, &fakeChannels{configs: []channels.ChannelRecord{ch}}, caller)
+			u.cfg = &config.Config{Bridal: config.Bridal{WalaImageTimeoutMs: 240_000}}
+
+			var got wala.Config
+			u.newClient = func(cfg wala.Config) walaCaller {
+				got = cfg
+				return caller
+			}
+			if candidates := u.buildCandidates(context.Background(), uuid.Nil); len(candidates) != 1 {
+				t.Fatalf("候选线路数应为 1，得 %d", len(candidates))
+			}
+			if got.Timeout != tc.wantTimeout {
+				t.Fatalf("Timeout=%s，want %s", got.Timeout, tc.wantTimeout)
+			}
+		})
+	}
+}
+
 // 场景1：3 图全成功。验证首张串行 + 后续并发（耗时显著 < 串行）、积分扣 3、状态 completed。
 func TestRunTask_Concurrent(t *testing.T) {
 	caller := &fakeCaller{

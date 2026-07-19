@@ -404,6 +404,8 @@ export type Channel = {
   isDefault: boolean;
   sortOrder: number;
   maxConcurrency: number;
+  /** 单次上游请求超时；0 表示使用系统兼容默认值。 */
+  requestTimeoutMs: number;
   apiKey?: string;
   stats?: ChannelStats | null;
   createdAt: string;
@@ -425,6 +427,7 @@ export type CreateChannelRequest = {
   isDefault?: boolean;
   sortOrder?: number;
   maxConcurrency?: number;
+  requestTimeoutMs?: number;
 };
 
 export type UpdateChannelRequest = Partial<Omit<CreateChannelRequest, "id">>;

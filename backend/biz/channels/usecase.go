@@ -38,38 +38,40 @@ type ChannelStats struct {
 
 // ChannelResp 对外线路，对应前端 Channel 类型（src/types/api.ts）。
 type ChannelResp struct {
-	ID             string        `json:"id"`
-	Name           string        `json:"name"`
-	APIBaseURL     string        `json:"apiBaseUrl"`
-	Protocol       string        `json:"protocol"`
-	ModelID        string        `json:"modelId"`
-	SupportedSizes []string      `json:"supportedSizes"`
-	DefaultQuality string        `json:"defaultQuality"`
-	IsEnabled      bool          `json:"isEnabled"`
-	IsDefault      bool          `json:"isDefault"`
-	SortOrder      int           `json:"sortOrder"`
-	MaxConcurrency int           `json:"maxConcurrency"`   // 单次任务内并发段最大并发度（1=逐张串行）
-	APIKey         string        `json:"apiKey,omitempty"` // 仅 admin 列表返
-	Stats          *ChannelStats `json:"stats,omitempty"`  // 本轮 nil
-	CreatedAt      string        `json:"createdAt"`
-	UpdatedAt      string        `json:"updatedAt"`
+	ID               string        `json:"id"`
+	Name             string        `json:"name"`
+	APIBaseURL       string        `json:"apiBaseUrl"`
+	Protocol         string        `json:"protocol"`
+	ModelID          string        `json:"modelId"`
+	SupportedSizes   []string      `json:"supportedSizes"`
+	DefaultQuality   string        `json:"defaultQuality"`
+	IsEnabled        bool          `json:"isEnabled"`
+	IsDefault        bool          `json:"isDefault"`
+	SortOrder        int           `json:"sortOrder"`
+	MaxConcurrency   int           `json:"maxConcurrency"`   // 单次任务内并发段最大并发度（1=逐张串行）
+	RequestTimeoutMs int           `json:"requestTimeoutMs"` // 单次上游请求超时；0=使用全局兼容值
+	APIKey           string        `json:"apiKey,omitempty"` // 仅 admin 列表返
+	Stats            *ChannelStats `json:"stats,omitempty"`  // 本轮 nil
+	CreatedAt        string        `json:"createdAt"`
+	UpdatedAt        string        `json:"updatedAt"`
 }
 
 func sanitize(c ChannelRecord, includeAPIKey bool) ChannelResp {
 	resp := ChannelResp{
-		ID:             c.ID.String(),
-		Name:           c.Name,
-		APIBaseURL:     c.APIBaseURL,
-		Protocol:       c.Protocol,
-		ModelID:        c.ModelID,
-		SupportedSizes: c.SupportedSizes,
-		DefaultQuality: c.DefaultQuality,
-		IsEnabled:      c.IsEnabled,
-		IsDefault:      c.IsDefault,
-		SortOrder:      c.SortOrder,
-		MaxConcurrency: c.MaxConcurrency,
-		CreatedAt:      c.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      c.UpdatedAt.Format(time.RFC3339),
+		ID:               c.ID.String(),
+		Name:             c.Name,
+		APIBaseURL:       c.APIBaseURL,
+		Protocol:         c.Protocol,
+		ModelID:          c.ModelID,
+		SupportedSizes:   c.SupportedSizes,
+		DefaultQuality:   c.DefaultQuality,
+		IsEnabled:        c.IsEnabled,
+		IsDefault:        c.IsDefault,
+		SortOrder:        c.SortOrder,
+		MaxConcurrency:   c.MaxConcurrency,
+		RequestTimeoutMs: c.RequestTimeoutMs,
+		CreatedAt:        c.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:        c.UpdatedAt.Format(time.RFC3339),
 	}
 	if includeAPIKey {
 		resp.APIKey = c.APIKey
@@ -122,17 +124,18 @@ func (u *Usecase) ListPublic(ctx context.Context) ([]ChannelResp, error) {
 
 // CreateReq 创建线路请求，对应前端 CreateChannelRequest。
 type CreateReq struct {
-	Name           string   `json:"name"`
-	APIBaseURL     string   `json:"apiBaseUrl"`
-	APIKey         string   `json:"apiKey"`
-	Protocol       string   `json:"protocol,omitempty"`
-	ModelID        string   `json:"modelId"`
-	SupportedSizes []string `json:"supportedSizes,omitempty"`
-	DefaultQuality string   `json:"defaultQuality,omitempty"`
-	IsEnabled      *bool    `json:"isEnabled,omitempty"`
-	IsDefault      *bool    `json:"isDefault,omitempty"`
-	SortOrder      *int     `json:"sortOrder,omitempty"`
-	MaxConcurrency *int     `json:"maxConcurrency,omitempty"`
+	Name             string   `json:"name"`
+	APIBaseURL       string   `json:"apiBaseUrl"`
+	APIKey           string   `json:"apiKey"`
+	Protocol         string   `json:"protocol,omitempty"`
+	ModelID          string   `json:"modelId"`
+	SupportedSizes   []string `json:"supportedSizes,omitempty"`
+	DefaultQuality   string   `json:"defaultQuality,omitempty"`
+	IsEnabled        *bool    `json:"isEnabled,omitempty"`
+	IsDefault        *bool    `json:"isDefault,omitempty"`
+	SortOrder        *int     `json:"sortOrder,omitempty"`
+	MaxConcurrency   *int     `json:"maxConcurrency,omitempty"`
+	RequestTimeoutMs *int     `json:"requestTimeoutMs,omitempty"`
 }
 
 // Create 创建线路。
@@ -165,23 +168,28 @@ func (u *Usecase) Create(ctx context.Context, req CreateReq) (*ChannelResp, erro
 		sortOrder = *req.SortOrder
 	}
 	maxConcurrency := clampConcurrency(req.MaxConcurrency)
+	requestTimeoutMs, err := validateRequestTimeoutMs(req.RequestTimeoutMs)
+	if err != nil {
+		return nil, err
+	}
 	if isDefault {
 		if err := u.repo.ClearDefault(ctx); err != nil {
 			return nil, err
 		}
 	}
 	rec, err := u.repo.Create(ctx, CreateInput{
-		Name:           req.Name,
-		APIBaseURL:     req.APIBaseURL,
-		APIKey:         req.APIKey,
-		Protocol:       req.Protocol,
-		ModelID:        req.ModelID,
-		SupportedSizes: req.SupportedSizes,
-		DefaultQuality: req.DefaultQuality,
-		IsEnabled:      enabled,
-		IsDefault:      isDefault,
-		SortOrder:      sortOrder,
-		MaxConcurrency: maxConcurrency,
+		Name:             req.Name,
+		APIBaseURL:       req.APIBaseURL,
+		APIKey:           req.APIKey,
+		Protocol:         req.Protocol,
+		ModelID:          req.ModelID,
+		SupportedSizes:   req.SupportedSizes,
+		DefaultQuality:   req.DefaultQuality,
+		IsEnabled:        enabled,
+		IsDefault:        isDefault,
+		SortOrder:        sortOrder,
+		MaxConcurrency:   maxConcurrency,
+		RequestTimeoutMs: requestTimeoutMs,
 	})
 	if err != nil {
 		return nil, err
@@ -192,17 +200,18 @@ func (u *Usecase) Create(ctx context.Context, req CreateReq) (*ChannelResp, erro
 
 // UpdateReq 更新线路请求，对应前端 UpdateChannelRequest。
 type UpdateReq struct {
-	Name           *string   `json:"name,omitempty"`
-	APIBaseURL     *string   `json:"apiBaseUrl,omitempty"`
-	APIKey         *string   `json:"apiKey,omitempty"`
-	Protocol       *string   `json:"protocol,omitempty"`
-	ModelID        *string   `json:"modelId,omitempty"`
-	SupportedSizes *[]string `json:"supportedSizes,omitempty"`
-	DefaultQuality *string   `json:"defaultQuality,omitempty"`
-	IsEnabled      *bool     `json:"isEnabled,omitempty"`
-	IsDefault      *bool     `json:"isDefault,omitempty"`
-	SortOrder      *int      `json:"sortOrder,omitempty"`
-	MaxConcurrency *int      `json:"maxConcurrency,omitempty"`
+	Name             *string   `json:"name,omitempty"`
+	APIBaseURL       *string   `json:"apiBaseUrl,omitempty"`
+	APIKey           *string   `json:"apiKey,omitempty"`
+	Protocol         *string   `json:"protocol,omitempty"`
+	ModelID          *string   `json:"modelId,omitempty"`
+	SupportedSizes   *[]string `json:"supportedSizes,omitempty"`
+	DefaultQuality   *string   `json:"defaultQuality,omitempty"`
+	IsEnabled        *bool     `json:"isEnabled,omitempty"`
+	IsDefault        *bool     `json:"isDefault,omitempty"`
+	SortOrder        *int      `json:"sortOrder,omitempty"`
+	MaxConcurrency   *int      `json:"maxConcurrency,omitempty"`
+	RequestTimeoutMs *int      `json:"requestTimeoutMs,omitempty"`
 }
 
 // Update 更新线路。
@@ -217,18 +226,27 @@ func (u *Usecase) Update(ctx context.Context, id uuid.UUID, req UpdateReq) (*Cha
 		v := clampConcurrency(req.MaxConcurrency)
 		maxConcurrency = &v
 	}
+	var requestTimeoutMs *int
+	if req.RequestTimeoutMs != nil {
+		v, err := validateRequestTimeoutMs(req.RequestTimeoutMs)
+		if err != nil {
+			return nil, err
+		}
+		requestTimeoutMs = &v
+	}
 	rec, err := u.repo.Update(ctx, id, UpdateInput{
-		Name:           req.Name,
-		APIBaseURL:     req.APIBaseURL,
-		APIKey:         req.APIKey,
-		Protocol:       req.Protocol,
-		ModelID:        req.ModelID,
-		SupportedSizes: req.SupportedSizes,
-		DefaultQuality: req.DefaultQuality,
-		IsEnabled:      req.IsEnabled,
-		IsDefault:      req.IsDefault,
-		SortOrder:      req.SortOrder,
-		MaxConcurrency: maxConcurrency,
+		Name:             req.Name,
+		APIBaseURL:       req.APIBaseURL,
+		APIKey:           req.APIKey,
+		Protocol:         req.Protocol,
+		ModelID:          req.ModelID,
+		SupportedSizes:   req.SupportedSizes,
+		DefaultQuality:   req.DefaultQuality,
+		IsEnabled:        req.IsEnabled,
+		IsDefault:        req.IsDefault,
+		SortOrder:        req.SortOrder,
+		MaxConcurrency:   maxConcurrency,
+		RequestTimeoutMs: requestTimeoutMs,
 	})
 	if err != nil {
 		return nil, err
@@ -284,4 +302,16 @@ func clampConcurrency(v *int) int {
 		n = 10
 	}
 	return n
+}
+
+// validateRequestTimeoutMs 校验单次上游请求超时。0 表示兼容继承全局值；其余限制在 30-600 秒，
+// 避免管理员误填过短导致稳定失败，或无限等待耗尽任务槽位。
+func validateRequestTimeoutMs(v *int) (int, error) {
+	if v == nil || *v == 0 {
+		return 0, nil
+	}
+	if *v < 30_000 || *v > 600_000 {
+		return 0, fmt.Errorf("单次请求超时需为 0，或 30000-600000 毫秒")
+	}
+	return *v, nil
 }

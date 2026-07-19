@@ -196,6 +196,27 @@ func (_u *ModelChannelUpdate) AddMaxConcurrency(v int) *ModelChannelUpdate {
 	return _u
 }
 
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (_u *ModelChannelUpdate) SetRequestTimeoutMs(v int) *ModelChannelUpdate {
+	_u.mutation.ResetRequestTimeoutMs()
+	_u.mutation.SetRequestTimeoutMs(v)
+	return _u
+}
+
+// SetNillableRequestTimeoutMs sets the "request_timeout_ms" field if the given value is not nil.
+func (_u *ModelChannelUpdate) SetNillableRequestTimeoutMs(v *int) *ModelChannelUpdate {
+	if v != nil {
+		_u.SetRequestTimeoutMs(*v)
+	}
+	return _u
+}
+
+// AddRequestTimeoutMs adds value to the "request_timeout_ms" field.
+func (_u *ModelChannelUpdate) AddRequestTimeoutMs(v int) *ModelChannelUpdate {
+	_u.mutation.AddRequestTimeoutMs(v)
+	return _u
+}
+
 // SetTotalRequests sets the "total_requests" field.
 func (_u *ModelChannelUpdate) SetTotalRequests(v int) *ModelChannelUpdate {
 	_u.mutation.ResetTotalRequests()
@@ -399,6 +420,12 @@ func (_u *ModelChannelUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.AddedMaxConcurrency(); ok {
 		_spec.AddField(modelchannel.FieldMaxConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.RequestTimeoutMs(); ok {
+		_spec.SetField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRequestTimeoutMs(); ok {
+		_spec.AddField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.TotalRequests(); ok {
 		_spec.SetField(modelchannel.FieldTotalRequests, field.TypeInt, value)
@@ -615,6 +642,27 @@ func (_u *ModelChannelUpdateOne) SetNillableMaxConcurrency(v *int) *ModelChannel
 // AddMaxConcurrency adds value to the "max_concurrency" field.
 func (_u *ModelChannelUpdateOne) AddMaxConcurrency(v int) *ModelChannelUpdateOne {
 	_u.mutation.AddMaxConcurrency(v)
+	return _u
+}
+
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (_u *ModelChannelUpdateOne) SetRequestTimeoutMs(v int) *ModelChannelUpdateOne {
+	_u.mutation.ResetRequestTimeoutMs()
+	_u.mutation.SetRequestTimeoutMs(v)
+	return _u
+}
+
+// SetNillableRequestTimeoutMs sets the "request_timeout_ms" field if the given value is not nil.
+func (_u *ModelChannelUpdateOne) SetNillableRequestTimeoutMs(v *int) *ModelChannelUpdateOne {
+	if v != nil {
+		_u.SetRequestTimeoutMs(*v)
+	}
+	return _u
+}
+
+// AddRequestTimeoutMs adds value to the "request_timeout_ms" field.
+func (_u *ModelChannelUpdateOne) AddRequestTimeoutMs(v int) *ModelChannelUpdateOne {
+	_u.mutation.AddRequestTimeoutMs(v)
 	return _u
 }
 
@@ -851,6 +899,12 @@ func (_u *ModelChannelUpdateOne) sqlSave(ctx context.Context) (_node *ModelChann
 	}
 	if value, ok := _u.mutation.AddedMaxConcurrency(); ok {
 		_spec.AddField(modelchannel.FieldMaxConcurrency, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.RequestTimeoutMs(); ok {
+		_spec.SetField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRequestTimeoutMs(); ok {
+		_spec.AddField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.TotalRequests(); ok {
 		_spec.SetField(modelchannel.FieldTotalRequests, field.TypeInt, value)

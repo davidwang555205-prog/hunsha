@@ -30,6 +30,7 @@ type ChannelDraft = {
   isDefault: boolean;
   sortOrder: string;
   maxConcurrency: string;
+  requestTimeoutSeconds: string;
 };
 
 const emptyDraft: ChannelDraft = {
@@ -43,7 +44,8 @@ const emptyDraft: ChannelDraft = {
   isEnabled: true,
   isDefault: false,
   sortOrder: "0",
-  maxConcurrency: "1"
+  maxConcurrency: "1",
+  requestTimeoutSeconds: "0"
 };
 
 const protocolOptions = [
@@ -125,7 +127,8 @@ export function AdminChannelsPage() {
       isEnabled: ch.isEnabled,
       isDefault: ch.isDefault,
       sortOrder: String(ch.sortOrder),
-      maxConcurrency: String(ch.maxConcurrency ?? 1)
+      maxConcurrency: String(ch.maxConcurrency ?? 1),
+      requestTimeoutSeconds: ch.requestTimeoutMs > 0 ? String(ch.requestTimeoutMs / 1000) : "0"
     });
     setShowCreate(false);
   };
@@ -151,7 +154,8 @@ export function AdminChannelsPage() {
         isEnabled: draft.isEnabled,
         isDefault: draft.isDefault,
         sortOrder: Number(draft.sortOrder) || 0,
-        maxConcurrency: Number(draft.maxConcurrency) || 1
+        maxConcurrency: Number(draft.maxConcurrency) || 1,
+        requestTimeoutMs: Math.round((Number(draft.requestTimeoutSeconds) || 0) * 1000)
       };
       if (editingId) {
         await updateChannel(editingId, body);
@@ -239,6 +243,10 @@ export function AdminChannelsPage() {
             <Input type="number" value={draft.maxConcurrency} onChange={(e) => setDraft({ ...draft, maxConcurrency: e.target.value })} />
             <span className="mt-1 block text-xs text-text-muted">1=逐张串行生成，2=最多 2 张并发（建议 1-5）</span>
           </Field>
+          <Field label="单次请求超时（秒）">
+            <Input type="number" min="0" max="600" value={draft.requestTimeoutSeconds} onChange={(e) => setDraft({ ...draft, requestTimeoutSeconds: e.target.value })} />
+            <span className="mt-1 block text-xs text-text-muted">0=继承系统兼容值；建议 OpenRouter 240 秒、WalaAPI 420 秒</span>
+          </Field>
           <Field label="启用">
             <label className="flex items-center gap-2 pt-2.5">
               <input type="checkbox" checked={draft.isEnabled} onChange={(e) => setDraft({ ...draft, isEnabled: e.target.checked })} />
@@ -317,7 +325,7 @@ export function AdminChannelsPage() {
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead>
               <tr>
-                {["名称", "协议", "模型", "并发", "状态", "调用次数", "成功率", "平均耗时", "操作"].map((h) => (
+                {["名称", "协议", "模型", "并发", "超时", "状态", "调用次数", "成功率", "平均耗时", "操作"].map((h) => (
                   <th key={h} className="whitespace-nowrap border-b border-border py-3 px-4 text-xs font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
@@ -332,6 +340,7 @@ export function AdminChannelsPage() {
                   <td className="px-4 py-3 text-text-muted">{ch.protocol || "openai"}</td>
                   <td className="px-4 py-3 text-text">{ch.modelId}</td>
                   <td className="px-4 py-3 text-text-muted">{ch.maxConcurrency}</td>
+                  <td className="px-4 py-3 text-text-muted">{ch.requestTimeoutMs > 0 ? `${Math.round(ch.requestTimeoutMs / 1000)}s` : "继承"}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${ch.isEnabled ? "bg-success/10 text-success" : "bg-bg text-text-muted"}`}>
                       {ch.isEnabled ? "启用" : "禁用"}
@@ -351,7 +360,7 @@ export function AdminChannelsPage() {
                 </tr>
               ))}
               {channels.length === 0 && !isLoading && (
-                <tr><td colSpan={9} className="py-8 text-center text-sm text-text-muted">暂无线路，请新增</td></tr>
+                <tr><td colSpan={10} className="py-8 text-center text-sm text-text-muted">暂无线路，请新增</td></tr>
               )}
             </tbody>
           </table>

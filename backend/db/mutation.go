@@ -35065,6 +35065,8 @@ type ModelChannelMutation struct {
 	addsort_order         *int
 	max_concurrency       *int
 	addmax_concurrency    *int
+	request_timeout_ms    *int
+	addrequest_timeout_ms *int
 	total_requests        *int
 	addtotal_requests     *int
 	success_requests      *int
@@ -35636,6 +35638,62 @@ func (m *ModelChannelMutation) ResetMaxConcurrency() {
 	m.addmax_concurrency = nil
 }
 
+// SetRequestTimeoutMs sets the "request_timeout_ms" field.
+func (m *ModelChannelMutation) SetRequestTimeoutMs(i int) {
+	m.request_timeout_ms = &i
+	m.addrequest_timeout_ms = nil
+}
+
+// RequestTimeoutMs returns the value of the "request_timeout_ms" field in the mutation.
+func (m *ModelChannelMutation) RequestTimeoutMs() (r int, exists bool) {
+	v := m.request_timeout_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestTimeoutMs returns the old "request_timeout_ms" field's value of the ModelChannel entity.
+// If the ModelChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelChannelMutation) OldRequestTimeoutMs(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestTimeoutMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestTimeoutMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestTimeoutMs: %w", err)
+	}
+	return oldValue.RequestTimeoutMs, nil
+}
+
+// AddRequestTimeoutMs adds i to the "request_timeout_ms" field.
+func (m *ModelChannelMutation) AddRequestTimeoutMs(i int) {
+	if m.addrequest_timeout_ms != nil {
+		*m.addrequest_timeout_ms += i
+	} else {
+		m.addrequest_timeout_ms = &i
+	}
+}
+
+// AddedRequestTimeoutMs returns the value that was added to the "request_timeout_ms" field in this mutation.
+func (m *ModelChannelMutation) AddedRequestTimeoutMs() (r int, exists bool) {
+	v := m.addrequest_timeout_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRequestTimeoutMs resets all changes to the "request_timeout_ms" field.
+func (m *ModelChannelMutation) ResetRequestTimeoutMs() {
+	m.request_timeout_ms = nil
+	m.addrequest_timeout_ms = nil
+}
+
 // SetTotalRequests sets the "total_requests" field.
 func (m *ModelChannelMutation) SetTotalRequests(i int) {
 	m.total_requests = &i
@@ -35966,7 +36024,7 @@ func (m *ModelChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModelChannelMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.name != nil {
 		fields = append(fields, modelchannel.FieldName)
 	}
@@ -35999,6 +36057,9 @@ func (m *ModelChannelMutation) Fields() []string {
 	}
 	if m.max_concurrency != nil {
 		fields = append(fields, modelchannel.FieldMaxConcurrency)
+	}
+	if m.request_timeout_ms != nil {
+		fields = append(fields, modelchannel.FieldRequestTimeoutMs)
 	}
 	if m.total_requests != nil {
 		fields = append(fields, modelchannel.FieldTotalRequests)
@@ -36048,6 +36109,8 @@ func (m *ModelChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.SortOrder()
 	case modelchannel.FieldMaxConcurrency:
 		return m.MaxConcurrency()
+	case modelchannel.FieldRequestTimeoutMs:
+		return m.RequestTimeoutMs()
 	case modelchannel.FieldTotalRequests:
 		return m.TotalRequests()
 	case modelchannel.FieldSuccessRequests:
@@ -36091,6 +36154,8 @@ func (m *ModelChannelMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldSortOrder(ctx)
 	case modelchannel.FieldMaxConcurrency:
 		return m.OldMaxConcurrency(ctx)
+	case modelchannel.FieldRequestTimeoutMs:
+		return m.OldRequestTimeoutMs(ctx)
 	case modelchannel.FieldTotalRequests:
 		return m.OldTotalRequests(ctx)
 	case modelchannel.FieldSuccessRequests:
@@ -36189,6 +36254,13 @@ func (m *ModelChannelMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMaxConcurrency(v)
 		return nil
+	case modelchannel.FieldRequestTimeoutMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestTimeoutMs(v)
+		return nil
 	case modelchannel.FieldTotalRequests:
 		v, ok := value.(int)
 		if !ok {
@@ -36245,6 +36317,9 @@ func (m *ModelChannelMutation) AddedFields() []string {
 	if m.addmax_concurrency != nil {
 		fields = append(fields, modelchannel.FieldMaxConcurrency)
 	}
+	if m.addrequest_timeout_ms != nil {
+		fields = append(fields, modelchannel.FieldRequestTimeoutMs)
+	}
 	if m.addtotal_requests != nil {
 		fields = append(fields, modelchannel.FieldTotalRequests)
 	}
@@ -36269,6 +36344,8 @@ func (m *ModelChannelMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSortOrder()
 	case modelchannel.FieldMaxConcurrency:
 		return m.AddedMaxConcurrency()
+	case modelchannel.FieldRequestTimeoutMs:
+		return m.AddedRequestTimeoutMs()
 	case modelchannel.FieldTotalRequests:
 		return m.AddedTotalRequests()
 	case modelchannel.FieldSuccessRequests:
@@ -36299,6 +36376,13 @@ func (m *ModelChannelMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMaxConcurrency(v)
+		return nil
+	case modelchannel.FieldRequestTimeoutMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRequestTimeoutMs(v)
 		return nil
 	case modelchannel.FieldTotalRequests:
 		v, ok := value.(int)
@@ -36387,6 +36471,9 @@ func (m *ModelChannelMutation) ResetField(name string) error {
 		return nil
 	case modelchannel.FieldMaxConcurrency:
 		m.ResetMaxConcurrency()
+		return nil
+	case modelchannel.FieldRequestTimeoutMs:
+		m.ResetRequestTimeoutMs()
 		return nil
 	case modelchannel.FieldTotalRequests:
 		m.ResetTotalRequests()
