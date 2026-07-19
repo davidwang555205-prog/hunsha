@@ -8,7 +8,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"image"
-	_ "image/jpeg"
+	"image/color"
+	"image/jpeg"
 	_ "image/png"
 	"io"
 	"log/slog"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/samber/do"
+	"golang.org/x/image/draw"
 	_ "golang.org/x/image/webp"
 
 	"bridal/backend/biz/channels"
@@ -335,6 +337,47 @@ func extensionFromMime(mime string) string {
 	}
 }
 
+// maxReferenceImageEdge 参考图长边像素上限。超过则等比缩小，规避 gpt-image-2 "Invalid image
+// file or mode for image"（实测 5712x4284 iPhone 原图触发；官方输出 size 约束最大边≤3840，
+// 输入参考图尺寸/模式上限未文档化，以此为兜底阈值）。
+const maxReferenceImageEdge = 3840
+
+// normalizeReferenceImage 规范化参考图：长边超过 maxEdge 时等比缩小，画到白底后转 JPEG
+// （JPEG 天然 RGB，顺带去掉 alpha/索引/灰度等非 RGB 模式）。小图（长边≤maxEdge）原样返回，
+// 零额外损耗。解码失败不阻塞（原样返回，交由上游拒绝并给出明确错误）。
+func normalizeReferenceImage(data []byte, contentType string, maxEdge int) ([]byte, string) {
+	// 先用轻量 DecodeConfig 判尺寸，小图直接原样返回，避免全量解码占内存（生图并发时尤其重要）
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 {
+		return data, contentType
+	}
+	if cfg.Width <= maxEdge && cfg.Height <= maxEdge {
+		return data, contentType
+	}
+	srcImg, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return data, contentType
+	}
+	bounds := srcImg.Bounds()
+	w, h := bounds.Dx(), bounds.Dy()
+	if w >= h {
+		h = h * maxEdge / w
+		w = maxEdge
+	} else {
+		w = w * maxEdge / h
+		h = maxEdge
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	// 先铺白底，避免 RGBA 透明区域在去 alpha 后变黑
+	draw.Draw(dst, dst.Rect, &image.Uniform{C: color.White}, image.Point{}, draw.Src)
+	draw.CatmullRom.Scale(dst, dst.Rect, srcImg, bounds, draw.Over, nil)
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: 90}); err != nil {
+		return data, contentType
+	}
+	return buf.Bytes(), "image/jpeg"
+}
+
 // toWalaFile 把 bridal FileInput 转 wala.FileInput（解码 dataUrl）。
 func toWalaFile(f FileInput) (wala.FileInput, error) {
 	_, data, err := parseDataURL(f.DataURL)
@@ -359,6 +402,8 @@ func toWalaFile(f FileInput) (wala.FileInput, error) {
 	if !ok {
 		return wala.FileInput{}, fmt.Errorf("仅支持 JPG、PNG 或 WebP 图片")
 	}
+	// 规范化：长边超阈值等比缩小并转 RGB JPEG（白底去 alpha），规避 gpt-image-2 对大图/非 RGB 模式的拒绝。
+	data, contentType = normalizeReferenceImage(data, contentType, maxReferenceImageEdge)
 	name := f.Name
 	if name == "" {
 		name = "reference" + extensionFromMime(contentType)
@@ -366,6 +411,49 @@ func toWalaFile(f FileInput) (wala.FileInput, error) {
 		name = strings.TrimSuffix(name, ext) + extensionFromMime(contentType)
 	}
 	return wala.FileInput{Name: name, Type: contentType, Size: int64(len(data)), Data: data}, nil
+}
+
+// urlToWalaFile 把已存储图片 URL（MinIO 代理路径或完整 URL）转 wala.FileInput，
+// 供单张重试重建参考图/连续性参考用。复用 toWalaFile 的校验与规范化（长边缩小 + 转 RGB JPEG）。
+func (u *Usecase) urlToWalaFile(ctx context.Context, url, name string) (wala.FileInput, error) {
+	if url == "" {
+		return wala.FileInput{}, fmt.Errorf("图片 URL 为空")
+	}
+	var data []byte
+	if strings.HasPrefix(url, "/api/v1/generation/images/") {
+		// MinIO 代理路径：提取 filename 直接读对象存储，避免后端 HTTP 自调
+		filename := strings.TrimPrefix(url, "/api/v1/generation/images/")
+		rc, err := u.store.GetImage(ctx, filename)
+		if err != nil {
+			return wala.FileInput{}, fmt.Errorf("读取参考图失败: %w", err)
+		}
+		defer rc.Close()
+		data, err = io.ReadAll(rc)
+		if err != nil {
+			return wala.FileInput{}, err
+		}
+	} else {
+		// 完整 URL（remote 生成图或公有读 COS）：HTTP 下载
+		resp, err := http.Get(url)
+		if err != nil {
+			return wala.FileInput{}, fmt.Errorf("下载参考图失败: %w", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode >= 400 {
+			return wala.FileInput{}, fmt.Errorf("参考图下载失败: HTTP %d", resp.StatusCode)
+		}
+		data, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return wala.FileInput{}, err
+		}
+	}
+	if len(data) == 0 {
+		return wala.FileInput{}, fmt.Errorf("图片数据为空")
+	}
+	// 嗅探内容类型，构造 dataUrl 复用 toWalaFile 的校验 + 规范化
+	contentType := http.DetectContentType(data)
+	dataURL := "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(data)
+	return toWalaFile(FileInput{Name: name, DataURL: dataURL})
 }
 
 // generatedImageToReferenceFile 与 Node generatedImageToReferenceFile 一致：
@@ -722,6 +810,8 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		PromptHash:         promptHash,
 		UploadedImageCount: uploadedCount,
 		EstimatedSeconds:   estimatedSeconds,
+		ImageSize:          req.Size,
+		ImageQuality:       req.Quality,
 		CategoryID:         categoryID,
 		ChannelID:          channelID,
 	}

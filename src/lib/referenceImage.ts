@@ -1,5 +1,7 @@
 export const acceptedReferenceImageTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 export const maxReferenceImageSize = 10 * 1024 * 1024;
+// 参考图长边建议上限。超过后端会自动等比缩小（规避 gpt-image-2 对大图的拒绝），此处仅作前端提示。
+export const recommendedReferenceImageEdge = 4096;
 
 /** 在上传阶段确认浏览器能够实际解码图片，避免只依赖可伪造的 MIME 类型。 */
 export async function validateReferenceImage(file: File): Promise<string | null> {

@@ -260,19 +260,26 @@ func TestCallWithFallback_NoFallbackOn400(t *testing.T) {
 	}
 }
 
-// 场景4b：线路返回明确的参考图兼容错误，源图已在提交前校验过，应切备用线路而非让整项任务失败。
-func TestCallWithFallback_FallbackOnImageCompatibility400(t *testing.T) {
+// 场景4b：参考图兼容错误 "Invalid image file or mode" 是 user-correctable 错误，官方明确不应
+// 自动重试/降级；且 fallback 到同为 OpenAI 的线路必同样失败，应立即失败不切线路（源图问题，非线路问题）。
+func TestCallWithFallback_NoFallbackOnImageCompatibility400(t *testing.T) {
 	u := &Usecase{}
 	c1 := &fakeCaller{name: "OpenRouter", results: []fakeResult{{status: 400, body: "Invalid image file or mode for image 1"}}}
 	c2 := &fakeCaller{name: "WalaAPI", results: []fakeResult{{status: 200, body: `{"data":[{"b64_json":"x"}]}`}}}
 	cands := []channelClient{{client: c1, name: "OpenRouter"}, {client: c2, name: "WalaAPI"}}
 
 	status, _, used, err := u.callWithFallback(context.Background(), cands, wala.Request{})
-	if err != nil || status != 200 || used.name != "WalaAPI" {
-		t.Fatalf("图片兼容错误后应切到 WalaAPI，status=%d used=%s err=%v", status, used.name, err)
+	if status != 400 {
+		t.Fatalf("图片兼容错误应直接返回 400，status 得 %d", status)
 	}
-	if c1.callCount() != 1 || c2.callCount() != 1 {
-		t.Fatalf("OpenRouter/WalaAPI 各应调用一次，得 %d/%d", c1.callCount(), c2.callCount())
+	if err != nil {
+		t.Fatalf("400 是 HTTP 响应，err 应 nil，得 %v", err)
+	}
+	if used.name != "OpenRouter" {
+		t.Fatalf("不应切线路，used 得 %s", used.name)
+	}
+	if c2.callCount() != 0 {
+		t.Fatalf("WalaAPI 不应被调用，得 %d", c2.callCount())
 	}
 }
 

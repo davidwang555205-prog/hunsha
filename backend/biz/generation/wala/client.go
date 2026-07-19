@@ -421,11 +421,11 @@ func IsRetryable(status int, bodyText string) bool {
 }
 
 // IsFallbackable 判断是否应切换到下一条模型线路。
-// 404 或明确的参考图兼容错误通常是当前渠道的问题，适合立刻降级；但不属于同渠道重试，避免对错误线路反复等待。
+// 404（接口不存在）切线路；可重试错误（429/5xx/负载饱和）也切。其余（含 400 user error，
+// 如 "Invalid image file or mode for image"）不切--官方明确 user-correctable 错误不应自动
+// 重试/降级，需改 prompt 或输入图；且 fallback 到同为 OpenAI 的线路必同样失败，降级只白烧 token。
 func IsFallbackable(status int, bodyText string) bool {
-	return status == http.StatusNotFound ||
-		(status == http.StatusBadRequest && strings.Contains(strings.ToLower(bodyText), "invalid image file or mode for image")) ||
-		IsRetryable(status, bodyText)
+	return status == http.StatusNotFound || IsRetryable(status, bodyText)
 }
 
 // retryDelay 与 Node retryDelayMs 一致：min(30s, 4s*2^(attempt-1))。

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import { ImageLightbox, type LightboxImage } from "./ui/ImageLightbox";
-import { acceptedReferenceImageTypes, validateReferenceImage } from "../lib/referenceImage";
+import { acceptedReferenceImageTypes, recommendedReferenceImageEdge, validateReferenceImage } from "../lib/referenceImage";
 
 type ReferenceImageUploaderProps = {
   files?: File[];
@@ -108,6 +108,9 @@ export function ReferenceImageUploader({
           </span>
           <span className="mt-2 text-xs leading-5 text-text-muted">
             {hint ?? "支持 JPG、PNG、WebP 格式，单张不超过 10MB。"}
+          </span>
+          <span className="text-xs leading-5 text-text-subtle">
+            JPG / PNG / WebP · 单张 ≤10MB · 长边 ≤{recommendedReferenceImageEdge}px（超大自动压缩）
           </span>
           <span className="text-xs leading-5 text-text-subtle">
             {required && minCount ? `至少 ${minCount} 张，最多 ${maxCount} 张` : `最多 ${maxCount} 张`}
