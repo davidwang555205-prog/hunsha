@@ -1,112 +1,56 @@
 /**
- * CaptchaWidget -- 人机验证占位 UI（go-cap 行为验证）
+ * CaptchaWidget -- Cap.js 行为验证码（Proof of Work）
  *
- * 行为：拉 challenge → 展示"请完成 N 个质询" → 用户输入答案 → 回调 onComplete(solutions)
- * 流程：父组件持 captchaToken state；点击"获取验证码"时若 token 空就调 CaptchaWidget
+ * Cap.js 是自托管 PoW 验证码（https://trycap.dev），与后端 go-cap SDK 协议完全兼容。
  *
- * 当前是占位 UI（文字提示 + 答案 input），完整行为验证 UI（拼图/拖拽）后续独立 PR。
- * dev 环境：u.config.Debug=true 时后端跳过 captcha 校验，本组件不强制。
+ * 流程（widget 自动完成）：
+ * 1. widget 自动调 POST /api/v1/public/captcha/challenge
+ * 2. 用户点击验证 → widget 在浏览器做 PoW 计算（用 WebAssembly + Worker）
+ * 3. widget 自动调 POST /api/v1/public/captcha/redeem 拿 captcha_token
+ * 4. 'solve' 事件携带 token → 父组件 setCaptchaToken
  *
- * 重置策略：父组件传 key={resetSignal} prop，React 在 key 变化时自动卸载+重挂载组件，
- * 避免 useEffect setState 的 anti-pattern。
+ * dev/prod 行为：
+ * - dev（u.config.Debug=true）：后端跳过 captcha 校验，widget 仍算 PoW（多花几十 ms 但流程一致）
+ * - prod（Debug=false）：后端强校验 captcha_token
+ *
+ * 重置：父组件传 key={resetSignal} prop，React 在 key 变化时自动卸载+重挂载。
  */
-import { useState } from "react";
-import { getChallenge } from "../../api/captcha";
-import { Spinner } from "../ui/Spinner";
-import { Field } from "../ui/Field";
-import { Input } from "../ui/Input";
+import { useEffect, useRef } from "react";
+import "@cap.js/widget";
+import type { CapSolveEvent, CapWidget } from "@cap.js/widget";
 
 type Props = {
-  /** 父组件拿到的回调：solutions 给 fetchCaptchaToken 用 */
-  onComplete: (solutions: number[]) => void;
+  /** 父组件拿到的回调：Cap.js widget solve 后携 token */
+  onToken: (token: string) => void;
+  /** 父组件拿到的回调：widget error 时携 code + message */
+  onError?: (code: string, message: string) => void;
 };
 
-export function CaptchaWidget({ onComplete }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [challenge, setChallenge] = useState<{ c: number; token: string } | null>(null);
-  const [answer, setAnswer] = useState("");
+export function CaptchaWidget({ onToken, onError }: Props) {
+  const ref = useRef<CapWidget>(null);
 
-  const refresh = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const c = await getChallenge();
-      setChallenge({ c: c.challenge.c, token: c.token });
-    } catch (err) {
-      setError((err as Error | undefined)?.message || "获取验证质询失败。");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirm = () => {
-    if (!challenge) return;
-    const parts = answer
-      .split(/[,\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-    if (parts.length !== challenge.c) {
-      setError(`请输入 ${challenge.c} 个答案（用空格或逗号分隔）。`);
-      return;
-    }
-    const nums = parts.map((s) => Number(s));
-    if (nums.some((n) => !Number.isFinite(n))) {
-      setError("答案必须为数字。");
-      return;
-    }
-    setError("");
-    onComplete(nums);
-  };
-
-  if (!challenge) {
-    return (
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          disabled={loading}
-          className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? <Spinner size={14} /> : "进行人机验证"}
-        </button>
-        {error && <p className="text-xs text-danger" role="alert">{error}</p>}
-      </div>
-    );
-  }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const handleSolve = (e: Event) => {
+      const detail = (e as CapSolveEvent).detail;
+      onToken(detail.token);
+    };
+    const handleError = (e: Event) => {
+      const ce = e as CustomEvent<{ isCap: boolean; code: string; message: string }>;
+      onError?.(ce.detail.code, ce.detail.message);
+    };
+    el.addEventListener("solve", handleSolve);
+    el.addEventListener("error", handleError);
+    return () => {
+      el.removeEventListener("solve", handleSolve);
+      el.removeEventListener("error", handleError);
+    };
+  }, [onToken, onError]);
 
   return (
-    <div className="space-y-2">
-      <Field
-        label={`人机验证：请完成 ${challenge.c} 个质询`}
-        hint="输入答案（用空格或逗号分隔，如：1 2 3）"
-      >
-        <Input
-          type="text"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder={`${challenge.c} 个数字答案`}
-          autoComplete="off"
-        />
-      </Field>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleConfirm}
-          className="inline-flex flex-1 items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-white transition hover:bg-primary-600"
-        >
-          确认验证
-        </button>
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          disabled={loading}
-          className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? <Spinner size={14} /> : "换一组"}
-        </button>
-      </div>
-      {error && <p className="text-xs text-danger" role="alert">{error}</p>}
-    </div>
+    // cap-widget 是 Web Component（HTMLElementTagNameMap 已注册 CapWidget 类型）
+    // 末尾 / 必加，Cap.js 拼接 challenge/redeem 路径
+    <cap-widget ref={ref} data-cap-api-endpoint="/api/v1/public/captcha/" />
   );
 }

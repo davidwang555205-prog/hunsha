@@ -24,7 +24,6 @@ import {
   VerificationChannel,
   errorCodeOf
 } from "../types/api";
-import { fetchCaptchaToken } from "../lib/captcha";
 import { BlurText } from "../components/motion/BlurText";
 import { GradientText } from "../components/motion/GradientText";
 import { GlassCard } from "../components/motion/GlassCard";
@@ -87,17 +86,16 @@ export function RegisterPage() {
     clearFeedback();
   };
 
-  const handleCaptchaComplete = async (solutions: number[]) => {
+  const handleCaptchaToken = (token: string) => {
+    setCaptchaToken(token);
+    setInfo("人机验证通过。");
     clearFeedback();
-    try {
-      const token = await fetchCaptchaToken(solutions);
-      setCaptchaToken(token);
-      setInfo("人机验证通过。");
-    } catch (err) {
-      setError((err as ApiError | undefined)?.message || "人机验证失败，请重试。");
-      setCaptchaToken(null);
-      setCaptchaResetSignal((s) => s + 1);
-    }
+  };
+
+  const handleCaptchaError = (_code: string, message: string) => {
+    setCaptchaToken(null);
+    setError(message || "人机验证失败，请重试。");
+    setCaptchaResetSignal((s) => s + 1);
   };
 
   const handleSendCode = async () => {
@@ -302,7 +300,8 @@ export function RegisterPage() {
             <Field label="人机验证" hint={captchaToken ? "✓ 已通过" : "请完成验证再获取验证码"}>
               <CaptchaWidget
                 key={captchaResetSignal}
-                onComplete={handleCaptchaComplete}
+                onToken={handleCaptchaToken}
+                onError={handleCaptchaError}
               />
             </Field>
 
