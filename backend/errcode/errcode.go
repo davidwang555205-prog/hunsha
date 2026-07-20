@@ -128,6 +128,14 @@ var (
 	ErrRegisterDisabled   = web.NewErr(http.StatusOK, 10641, "err-register-disabled")
 	ErrMustChangePassword = web.NewErr(http.StatusOK, 10642, "err-must-change-password")
 
+	// 邮件验证码注册 / 重置密码（SMS 降级兜底通道）
+	ErrEmailCodeRequired            = web.NewErr(http.StatusOK, 10643, "err-email-code-required")
+	ErrEmailCodeInvalid             = web.NewErr(http.StatusOK, 10644, "err-email-code-invalid")
+	ErrEmailCodeSendTooFrequent     = web.NewErr(http.StatusOK, 10645, "err-email-code-send-too-frequent")
+	ErrEmailCodeSendFailed          = web.NewErr(http.StatusOK, 10646, "err-email-code-send-failed")
+	ErrVerificationChannelUnavailable = web.NewErr(http.StatusOK, 10647, "err-verification-channel-unavailable")
+	ErrSmsUnavailableForPhone       = web.NewErr(http.StatusOK, 10648, "err-sms-unavailable-for-phone")
+
 	// captcha 模块
 	ErrCreateCaptchaFailed = web.NewErr(http.StatusOK, 10700, "err-create-captcha-failed")
 	ErrRedeemCaptchaFailed = web.NewErr(http.StatusOK, 10701, "err-redeem-captcha-failed")

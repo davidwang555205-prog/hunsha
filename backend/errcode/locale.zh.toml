@@ -330,3 +330,21 @@ other = "注册功能未开启"
 
 [err-must-change-password]
 other = "首次登录需修改初始密码"
+
+[err-email-code-required]
+other = "邮件验证码不能为空"
+
+[err-email-code-invalid]
+other = "邮件验证码无效或已过期"
+
+[err-email-code-send-too-frequent]
+other = "邮件验证码发送过于频繁，请稍后再试"
+
+[err-email-code-send-failed]
+other = "邮件验证码发送失败"
+
+[err-verification-channel-unavailable]
+other = "当前验证码通道不可用，请联系管理员"
+
+[err-sms-unavailable-for-phone]
+other = "短信通道暂不可用，请补充邮箱以接收验证码"

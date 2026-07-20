@@ -509,3 +509,63 @@ func (u *Usecase) smtpPublicFromConfig(cfg config.SMTP) SMTPConfigPublic {
 		TLS:            cfg.TLS,
 	}
 }
+
+// ===== 验证码通道可用性（SMS 降级邮件用） =====
+
+// VerificationAvailability 验证码通道运行时可用性（静态判定，仅看配置完整性）。
+// - SMS 可用：Enabled=true 且 SecretID/SecretKey/AppID/SignName/TemplateID/Region 全部非空。
+// - Email 可用：Host/Port/From 非空，且 Username/Password 同时空（无认证 SMTP）或同时非空（认证 SMTP）。
+//
+// 注意：本结构只回答"通道是否配置完整可用"，不做网络探测 / SMTP 登录 / 失败计数。
+// 配置存储故障应原样上抛，不静默降级（避免把后端故障误判为"通道不可用"）。
+type VerificationAvailability struct {
+	SMS   bool
+	Email bool
+}
+
+// GetVerificationAvailability 返回当前运行时验证码通道可用性。
+// 单次请求只读一次快照；调用方拿到后自行决策（pkg/verify.Selector 使用）。
+func (u *Usecase) GetVerificationAvailability(ctx context.Context) (VerificationAvailability, error) {
+	smsCfg, smsErr := u.GetSMSConfig(ctx)
+	if smsErr != nil {
+		return VerificationAvailability{}, fmt.Errorf("读短信配置失败: %w", smsErr)
+	}
+	smtpCfg, smtpErr := u.GetSMTPConfig(ctx)
+	if smtpErr != nil {
+		return VerificationAvailability{}, fmt.Errorf("读 SMTP 配置失败: %w", smtpErr)
+	}
+	return VerificationAvailability{
+		SMS:   isSMSConfigComplete(smsCfg),
+		Email: isSMTPConfigComplete(smtpCfg),
+	}, nil
+}
+
+// isSMSConfigComplete 判定 SMS 配置是否完整可用（不依赖 Enabled 之外的状态）。
+// 必填：Enabled && SecretID && SecretKey && AppID && SignName && TemplateID && Region 全部非空（TrimSpace 后）。
+func isSMSConfigComplete(cfg config.SMSConfig) bool {
+	return cfg.Enabled &&
+		strings.TrimSpace(cfg.SecretID) != "" &&
+		strings.TrimSpace(cfg.SecretKey) != "" &&
+		strings.TrimSpace(cfg.AppID) != "" &&
+		strings.TrimSpace(cfg.SignName) != "" &&
+		strings.TrimSpace(cfg.TemplateID) != "" &&
+		strings.TrimSpace(cfg.Region) != ""
+}
+
+// isSMTPConfigComplete 判定 SMTP 配置是否完整可用。
+// 必填：Host / Port / From 全部非空；Username / Password 必须同时空（无认证 SMTP）或同时非空（认证 SMTP）。
+// 单边填视为配置不合法，返回 false。
+// 不探测网络、不登录 SMTP。
+func isSMTPConfigComplete(cfg config.SMTP) bool {
+	if strings.TrimSpace(cfg.Host) == "" ||
+		strings.TrimSpace(cfg.Port) == "" ||
+		strings.TrimSpace(cfg.From) == "" {
+		return false
+	}
+	user := strings.TrimSpace(cfg.Username)
+	pass := strings.TrimSpace(cfg.Password)
+	if (user == "") != (pass == "") {
+		return false
+	}
+	return true
+}

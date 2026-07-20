@@ -332,3 +332,21 @@ other = "Registration is disabled"
 
 [err-must-change-password]
 other = "Initial password must be changed on first login"
+
+[err-email-code-required]
+other = "Email verification code is required"
+
+[err-email-code-invalid]
+other = "Email verification code is invalid or expired"
+
+[err-email-code-send-too-frequent]
+other = "Email verification code sent too frequently, please try later"
+
+[err-email-code-send-failed]
+other = "Failed to send email verification code"
+
+[err-verification-channel-unavailable]
+other = "Verification channel is currently unavailable, please contact administrator"
+
+[err-sms-unavailable-for-phone]
+other = "SMS channel unavailable, please provide an email to receive the code"
