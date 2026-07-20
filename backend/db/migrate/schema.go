@@ -2151,6 +2151,8 @@ var (
 		{Name: "visible_category_ids", Type: field.TypeJSON, Nullable: true},
 		{Name: "password_salt", Type: field.TypeString, Nullable: true},
 		{Name: "password_hash", Type: field.TypeString, Nullable: true},
+		{Name: "phone", Type: field.TypeString, Nullable: true},
+		{Name: "must_change_password", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}

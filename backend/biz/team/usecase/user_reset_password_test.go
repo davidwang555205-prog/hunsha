@@ -38,8 +38,8 @@ func TestResetPasswordReturnsGeneratedPasswordAndUpdatesTeamMember(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Email != "member@example.com" {
-		t.Fatalf("email = %q, want member@example.com", resp.Email)
+	if resp.Account != "member@example.com" {
+		t.Fatalf("account = %q, want member@example.com", resp.Account)
 	}
 	if len(resp.Password) != 16 {
 		t.Fatalf("password length = %d, want 16", len(resp.Password))

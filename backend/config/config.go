@@ -133,6 +133,22 @@ type Bridal struct {
 	RedfoxAPIBaseURL string `mapstructure:"redfox_api_base_url"`
 	// RedfoxTimeoutMs 单次笔记/账号/相似账号查询超时毫秒。
 	RedfoxTimeoutMs int `mapstructure:"redfox_timeout_ms"`
+	// SMS 腾讯云短信服务配置（短信验证码注册/重置密码）。Enabled=false 时相关接口返回 ErrRegisterDisabled。
+	SMS SMSConfig `mapstructure:"sms"`
+}
+
+// SMSConfig 腾讯云短信服务配置。模板正文含 {1}=验证码、{2}=有效期分钟两个参数。
+type SMSConfig struct {
+	Enabled         bool   `mapstructure:"enabled"`
+	SecretID        string `mapstructure:"secret_id"`
+	SecretKey       string `mapstructure:"secret_key"`
+	Region          string `mapstructure:"region"`           // 如 ap-guangzhou
+	AppID           string `mapstructure:"app_id"`           // SmsSdkAppId
+	SignName        string `mapstructure:"sign_name"`        // 短信签名
+	TemplateID      string `mapstructure:"template_id"`      // 验证码模板 ID
+	CodeExpireMin   int    `mapstructure:"code_expire_min"`    // 验证码有效期分钟，默认 5
+	SendIntervalSec int    `mapstructure:"send_interval_sec"` // 同号发送间隔秒，默认 60
+	DailyLimit      int    `mapstructure:"daily_limit"`       // 同号每日发送上限，默认 10
 }
 
 type ReviewAgent struct {
@@ -475,6 +491,12 @@ func Init(dir string) (*Config, error) {
 	v.SetDefault("bridal.wala_image_retry_attempts", 3)
 	v.SetDefault("bridal.redfox_api_base_url", "https://redfox.hk")
 	v.SetDefault("bridal.redfox_timeout_ms", 15000)
+	// 腾讯云短信服务默认值
+	v.SetDefault("bridal.sms.enabled", false)
+	v.SetDefault("bridal.sms.region", "ap-guangzhou")
+	v.SetDefault("bridal.sms.code_expire_min", 5)
+	v.SetDefault("bridal.sms.send_interval_sec", 60)
+	v.SetDefault("bridal.sms.daily_limit", 10)
 
 	v.SetConfigType("yaml")
 	v.AddConfigPath(dir)
@@ -561,6 +583,28 @@ func applyBridalEnvDefaults(b *Bridal) {
 		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
 			b.WalaImageReferenceLimit = n
 		}
+	}
+	// 腾讯云短信服务：兼容 TENCENT_SMS_* 命名（无 MCAI_ 前缀）
+	if v := os.Getenv("TENCENT_SMS_ENABLED"); v != "" {
+		b.SMS.Enabled = v == "true" || v == "1"
+	}
+	if b.SMS.SecretID == "" {
+		b.SMS.SecretID = os.Getenv("TENCENT_SMS_SECRET_ID")
+	}
+	if b.SMS.SecretKey == "" {
+		b.SMS.SecretKey = os.Getenv("TENCENT_SMS_SECRET_KEY")
+	}
+	if b.SMS.AppID == "" {
+		b.SMS.AppID = os.Getenv("TENCENT_SMS_APP_ID")
+	}
+	if b.SMS.SignName == "" {
+		b.SMS.SignName = os.Getenv("TENCENT_SMS_SIGN_NAME")
+	}
+	if b.SMS.TemplateID == "" {
+		b.SMS.TemplateID = os.Getenv("TENCENT_SMS_TEMPLATE_ID")
+	}
+	if b.SMS.Region == "" {
+		b.SMS.Region = os.Getenv("TENCENT_SMS_REGION")
 	}
 }
 

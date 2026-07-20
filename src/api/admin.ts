@@ -34,6 +34,10 @@ import type {
   MemberListResponse,
   ResetPasswordResponse,
   SettingsListResponse,
+  SmsSettings,
+  SmsSettingsUpdateRequest,
+  SmtpSettings,
+  SmtpSettingsUpdateRequest,
   UpdateCategoryRequest,
   UpdateChannelRequest,
   UpdateEngineRequest,
@@ -199,6 +203,32 @@ export function listSettings() {
 export function updateSetting(key: string, req: UpdateSettingRequest) {
   return apiRequest<UpdateSettingResponse>(`/api/admin/settings/${encodeURIComponent(key)}`, {
     method: "PATCH",
+    body: JSON.stringify(req)
+  });
+}
+
+/** GET /api/admin/settings/sms（短信服务配置，SecretKey 脱敏） */
+export function getSmsSettings() {
+  return apiRequest<{ sms: SmsSettings }>("/api/admin/settings/sms");
+}
+
+/** PUT /api/admin/settings/sms（更新短信服务配置，secret_key 空=保留原值） */
+export function updateSmsSettings(req: SmsSettingsUpdateRequest) {
+  return apiRequest<{ sms: SmsSettings }>("/api/admin/settings/sms", {
+    method: "PUT",
+    body: JSON.stringify(req)
+  });
+}
+
+/** GET /api/admin/settings/smtp（邮箱服务配置，密码脱敏） */
+export function getSmtpSettings() {
+  return apiRequest<{ smtp: SmtpSettings }>("/api/admin/settings/smtp");
+}
+
+/** PUT /api/admin/settings/smtp（更新邮箱服务配置，password 空=保留原值） */
+export function updateSmtpSettings(req: SmtpSettingsUpdateRequest) {
+  return apiRequest<{ smtp: SmtpSettings }>("/api/admin/settings/smtp", {
+    method: "PUT",
     body: JSON.stringify(req)
   });
 }

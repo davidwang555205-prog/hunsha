@@ -161,7 +161,11 @@ func (u *TeamGroupUserUsecase) ResetPassword(ctx context.Context, teamUser *doma
 	}
 	resp := &domain.TeamUserPassword{Password: password}
 	if member.Edges.User != nil {
-		resp.Email = member.Edges.User.Email
+		if member.Edges.User.Phone != "" {
+			resp.Account = member.Edges.User.Phone
+		} else {
+			resp.Account = member.Edges.User.Email
+		}
 	}
 	return resp, nil
 }

@@ -28,6 +28,10 @@ export type ApiUser = {
   credits: number;
   /** 空数组表示可见全部启用类目；非空时仅能看到所列类目。 */
   visibleCategoryIds: string[];
+  /** 手机号（短信注册用户），老 email 用户为空 */
+  phone?: string;
+  /** 初始密码标记：admin 建号 true，首登强制改密后清零 */
+  mustChangePassword?: boolean;
   team?: Team | null;
 };
 
@@ -143,7 +147,7 @@ export type XHSAccountSnapshot = {
 export type XHSNoteSnapshot = {
   id: string;
   sequence: number;
-  trigger: "initial" | "user_refresh" | "admin_refresh" | "user_link_edit" | "admin_link_edit";
+  trigger: "initial" | "user_refresh" | "admin_refresh" | "user_link_edit" | "admin_link_edit" | "auto";
   status: "success" | "failed";
   error?: string;
   capturedAt: string;
@@ -171,11 +175,11 @@ export type XHSNoteTracking = {
   workType: string;
   publishedAt: string;
   userRefreshCount: number;
-  /** 管理员无额度限制，因此该字段缺省。 */
-  userRefreshesRemaining?: number;
   userLinkEditCount: number;
   /** 管理员无额度限制，因此该字段缺省。 */
   userLinkEditsRemaining?: number;
+  /** 下次自动采集时间；首次提交后由后台异步采集，之后按 1/7/15 天节奏推进。 */
+  nextRefreshAt?: string;
   snapshots: XHSNoteSnapshot[];
 };
 
@@ -308,15 +312,105 @@ export type GenerateRequest = {
   quality: string;
 };
 
-/** POST /api/v1/teams/users/login 请求体（captcha_token 为空时后端跳过校验） */
+/** POST /api/v1/teams/users/login 请求体（email/phone 二选一，captcha_token 为空时后端跳过校验） */
 export type LoginRequest = {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
   captcha_token?: string;
 };
 
 /** login 响应 = Resp.data = ApiUser（cookie 由后端 Set-Cookie 建立，无 token） */
 export type LoginResponse = ApiUser;
+
+/** POST /api/v1/users/sms/send 请求体（scene: register | reset_password） */
+export type SendSmsCodeRequest = {
+  phone: string;
+  scene: "register" | "reset_password";
+  captcha_token?: string;
+};
+
+/** POST /api/v1/users/register 请求体（手机号 + 密码 + 短信验证码） */
+export type RegisterRequest = {
+  phone: string;
+  password: string;
+  sms_code: string;
+};
+
+/** PUT /api/v1/users/passwords/reset-by-sms 请求体 */
+export type ResetBySmsRequest = {
+  phone: string;
+  sms_code: string;
+  new_password: string;
+};
+
+/** PUT /api/v1/users/passwords/change 请求体（已登录改密，初始密码强制改密也走此接口） */
+export type ChangePasswordRequest = {
+  current_password: string;
+  new_password: string;
+};
+
+/** PUT /api/v1/users/passwords/reset-request 请求体（邮件重置：发重置邮件，email 用户用） */
+export type ResetPasswordEmailRequest = {
+  emails: string[];
+  captcha_token?: string;
+};
+
+/** PUT /api/v1/users/passwords/reset 请求体（token 重置密码：邮件链接跳转后提交） */
+export type ResetPasswordTokenRequest = {
+  token: string;
+  new_password: string;
+};
+
+/** GET /api/admin/settings/sms 响应（短信服务配置，SecretKey 脱敏） */
+export type SmsSettings = {
+  enabled: boolean;
+  secret_id: string;
+  masked_secret_key: string;
+  configured: boolean;
+  app_id: string;
+  sign_name: string;
+  template_id: string;
+  region: string;
+  code_expire_min: number;
+  send_interval_sec: number;
+  daily_limit: number;
+};
+
+/** PUT /api/admin/settings/sms 请求（secret_key 空=保留原值不覆盖） */
+export type SmsSettingsUpdateRequest = {
+  enabled: boolean;
+  secret_id: string;
+  secret_key?: string;
+  app_id: string;
+  sign_name: string;
+  template_id: string;
+  region: string;
+  code_expire_min: number;
+  send_interval_sec: number;
+  daily_limit: number;
+};
+
+/** GET /api/admin/settings/smtp 响应（SMTP 配置，密码脱敏） */
+export type SmtpSettings = {
+  host: string;
+  port: string;
+  username: string;
+  masked_password: string;
+  configured: boolean;
+  from: string;
+  tls: boolean;
+};
+
+/** PUT /api/admin/settings/smtp 请求（password 空=保留原值） */
+export type SmtpSettingsUpdateRequest = {
+  host: string;
+  port: string;
+  username: string;
+  password?: string;
+  from: string;
+  tls: boolean;
+};
 
 /** team 成员角色（consts/team.go:6-7） */
 export type TeamMemberRole = "admin" | "user";
@@ -339,11 +433,11 @@ export type MemberListResponse = {
 };
 
 /** 创号/重置密码返回的初始密码（仅回传一次） */
-export type TeamUserPassword = { email: string; password: string };
+export type TeamUserPassword = { account: string; password: string };
 
 /** POST /api/v1/teams/users/with-password 请求体（批量建 subaccount 成员） */
 export type CreateUserRequest = {
-  emails: string[];
+  phones: string[];
   dailyImageLimit: number;
 };
 

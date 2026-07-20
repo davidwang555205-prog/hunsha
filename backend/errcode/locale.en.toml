@@ -302,3 +302,33 @@ other = "License is not active yet"
 
 [err-license-machine-mismatch]
 other = "License machine code does not match"
+
+[err-phone-required]
+other = "Phone number is required"
+
+[err-phone-invalid]
+other = "Invalid phone number format"
+
+[err-phone-taken]
+other = "Phone number already registered"
+
+[err-phone-not-found]
+other = "Phone number not registered"
+
+[err-sms-code-required]
+other = "SMS verification code is required"
+
+[err-sms-code-invalid]
+other = "SMS verification code is invalid or expired"
+
+[err-sms-send-too-frequent]
+other = "SMS sent too frequently, please try later"
+
+[err-sms-send-failed]
+other = "Failed to send SMS"
+
+[err-register-disabled]
+other = "Registration is disabled"
+
+[err-must-change-password]
+other = "Initial password must be changed on first login"

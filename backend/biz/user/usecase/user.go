@@ -11,29 +11,37 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
 
+	"bridal/backend/biz/syssetting"
 	"bridal/backend/config"
+	"bridal/backend/consts"
 	"bridal/backend/db"
 	"bridal/backend/domain"
 	"bridal/backend/errcode"
+	"bridal/backend/pkg/crypto"
 	"bridal/backend/pkg/cvt"
+	"bridal/backend/pkg/sms"
 )
 
 type UserUsecase struct {
-	repo   domain.UserRepo
-	logger *slog.Logger
-	redis  *redis.Client
-	config *config.Config
-	email  domain.EmailSender
+	repo       domain.UserRepo
+	logger     *slog.Logger
+	redis      *redis.Client
+	config     *config.Config
+	email      domain.EmailSender
+	smsCode    *sms.CodeService
+	syssetting *syssetting.Usecase
 }
 
 func NewUserUsecase(i *do.Injector) (domain.UserUsecase, error) {
 	cfg := do.MustInvoke[*config.Config](i)
 	return &UserUsecase{
-		repo:   do.MustInvoke[domain.UserRepo](i),
-		logger: do.MustInvoke[*slog.Logger](i),
-		redis:  do.MustInvoke[*redis.Client](i),
-		config: cfg,
-		email:  do.MustInvoke[domain.EmailSender](i),
+		repo:       do.MustInvoke[domain.UserRepo](i),
+		logger:     do.MustInvoke[*slog.Logger](i),
+		redis:      do.MustInvoke[*redis.Client](i),
+		config:     cfg,
+		email:      do.MustInvoke[domain.EmailSender](i),
+		smsCode:    do.MustInvoke[*sms.CodeService](i),
+		syssetting: do.MustInvoke[*syssetting.Usecase](i),
 	}, nil
 }
 
@@ -125,6 +133,10 @@ func (u *UserUsecase) SendResetPasswordEmail(ctx context.Context, req *domain.Re
 // sendEmail sends a reset password email via SMTP.
 func (u *UserUsecase) sendEmail(ctx context.Context, emailAddr, username, token string) {
 	resetURL := fmt.Sprintf("%s/resetpassword?token=%s", u.config.Server.BaseURL, token)
+	if u.config.Debug {
+		u.logger.InfoContext(ctx, "dev mode: reset email skipped, use reset_url", "email", emailAddr, "reset_url", resetURL)
+		return
+	}
 	err := u.email.SendResetPasswordEmail(ctx, emailAddr, username, resetURL)
 	if err != nil {
 		u.logger.ErrorContext(ctx, "send email failed", "error", err, "email", emailAddr)
@@ -184,8 +196,11 @@ func (u *UserUsecase) SendBindEmailVerification(ctx context.Context, userID uuid
 		return errcode.ErrDatabaseQuery.Wrap(err)
 	}
 
-	// 异步发送邮件
 	verifyURL := fmt.Sprintf("%s/api/v1/users/email/verify?token=%s", u.config.Server.BaseURL, token)
+	if u.config.Debug {
+		u.logger.InfoContext(ctx, "dev mode: bind email skipped, use verify_url", "email", req.Email, "verify_url", verifyURL)
+		return nil
+	}
 	go func() {
 		if err := u.email.SendBindEmailVerification(context.Background(), req.Email, user.Name, verifyURL); err != nil {
 			u.logger.ErrorContext(ctx, "send bind email verification mail failed", "userID", userID, "email", req.Email, "error", err)
@@ -241,4 +256,150 @@ func (u *UserUsecase) VerifyBindEmail(ctx context.Context, token string) error {
 
 	u.logger.InfoContext(ctx, "bind email success", "user_id", userID, "email", email)
 	return nil
+}
+
+// SendSmsCode 发送短信验证码（注册/重置密码场景）。
+// 注册场景：手机号已注册则拒；重置场景：手机号未注册则拒。
+func (u *UserUsecase) SendSmsCode(ctx context.Context, req *domain.SendSmsReq) error {
+	cfg, err := u.syssetting.GetSMSConfig(ctx)
+	if err != nil {
+		return errcode.ErrInternalServer.Wrap(err)
+	}
+	if !u.config.Debug && !cfg.Enabled {
+		return errcode.ErrRegisterDisabled
+	}
+	scene := sms.Scene(req.Scene)
+	if !scene.Valid() {
+		return errcode.ErrBadRequest
+	}
+	phone := normalizePhoneInput(req.Phone)
+	if !isPhoneValid(phone) {
+		return errcode.ErrPhoneInvalid
+	}
+
+	existing, err := u.repo.GetByPhone(ctx, phone)
+	if err != nil && !db.IsNotFound(err) {
+		return errcode.ErrDatabaseQuery.Wrap(err)
+	}
+	switch scene {
+	case sms.SceneRegister:
+		if existing != nil {
+			return errcode.ErrPhoneTaken
+		}
+	case sms.SceneResetPassword:
+		if existing == nil {
+			return errcode.ErrPhoneNotFound
+		}
+	}
+
+	if u.config.Debug {
+		u.logger.InfoContext(ctx, "dev mode: sms code fixed 123456", "phone", phone, "scene", req.Scene)
+		return u.smsCode.SendDevCode(ctx, phone, scene, cfg)
+	}
+	sender, err := sms.NewSender(cfg)
+	if err != nil {
+		return errcode.ErrSmsSendFailed.Wrap(err)
+	}
+	return u.smsCode.Send(ctx, phone, scene, sender, cfg)
+}
+
+// Register 用户注册（手机号 + 密码 + 短信验证码），创建 individual 用户。
+func (u *UserUsecase) Register(ctx context.Context, req *domain.RegisterReq) (*domain.User, error) {
+	cfg, err := u.syssetting.GetSMSConfig(ctx)
+	if err != nil {
+		return nil, errcode.ErrInternalServer.Wrap(err)
+	}
+	if !u.config.Debug && !cfg.Enabled {
+		return nil, errcode.ErrRegisterDisabled
+	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+	phone := normalizePhoneInput(req.Phone)
+	if !isPhoneValid(phone) {
+		return nil, errcode.ErrPhoneInvalid
+	}
+	// 校验短信验证码（一次性消费）
+	if err := u.smsCode.Verify(ctx, phone, sms.SceneRegister, req.SmsCode); err != nil {
+		return nil, err
+	}
+	// 再次查重（防并发注册）
+	if existing, err := u.repo.GetByPhone(ctx, phone); err != nil {
+		if !db.IsNotFound(err) {
+			return nil, errcode.ErrDatabaseQuery.Wrap(err)
+		}
+	} else if existing != nil {
+		return nil, errcode.ErrPhoneTaken
+	}
+
+	hashed, err := crypto.HashPassword(req.Password)
+	if err != nil {
+		return nil, errcode.ErrPasswordHashFailed.Wrap(err)
+	}
+	usr, err := u.repo.CreateIndividual(ctx, phone, hashed)
+	if err != nil {
+		return nil, errcode.ErrDatabaseOperation.Wrap(err)
+	}
+	u.logger.InfoContext(ctx, "user registered", "phone", phone, "user_id", usr.ID)
+	return cvt.From(usr, &domain.User{}), nil
+}
+
+// ResetPasswordBySms 短信验证码重置密码（手机号 + 验证码 + 新密码）。
+// enterprise 不允许从此接口重置（沿用邮件重置约束）。返回用户供 handler 清 session。
+func (u *UserUsecase) ResetPasswordBySms(ctx context.Context, req *domain.ResetBySmsReq) (*domain.User, error) {
+	cfg, err := u.syssetting.GetSMSConfig(ctx)
+	if err != nil {
+		return nil, errcode.ErrInternalServer.Wrap(err)
+	}
+	if !u.config.Debug && !cfg.Enabled {
+		return nil, errcode.ErrRegisterDisabled
+	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+	phone := normalizePhoneInput(req.Phone)
+	if !isPhoneValid(phone) {
+		return nil, errcode.ErrPhoneInvalid
+	}
+	if err := u.smsCode.Verify(ctx, phone, sms.SceneResetPassword, req.SmsCode); err != nil {
+		return nil, err
+	}
+
+	usr, err := u.repo.GetByPhone(ctx, phone)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return nil, errcode.ErrPhoneNotFound
+		}
+		return nil, errcode.ErrDatabaseQuery.Wrap(err)
+	}
+	if usr.Role == consts.UserRoleEnterprise {
+		return nil, errcode.ErrEnterpriseResetPasswordDenied
+	}
+	if err := u.repo.ChangePassword(ctx, usr.ID, "", req.NewPassword, true); err != nil {
+		return nil, err
+	}
+	u.logger.InfoContext(ctx, "password reset by sms", "phone", phone, "user_id", usr.ID)
+	return cvt.From(usr, &domain.User{}), nil
+}
+
+// normalizePhoneInput 规范化手机号输入：去空格 / + / 86 前缀 / 前导 0，保留纯数字。
+func normalizePhoneInput(phone string) string {
+	p := strings.TrimSpace(phone)
+	p = strings.TrimPrefix(p, "+")
+	p = strings.TrimPrefix(p, "86")
+	p = strings.TrimLeft(p, "0")
+	return p
+}
+
+// isPhoneValid 校验中国大陆手机号：11 位、1 开头、全数字。
+func isPhoneValid(phone string) bool {
+	if len(phone) != 11 || phone[0] != '1' {
+		return false
+	}
+	for _, r := range phone {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }

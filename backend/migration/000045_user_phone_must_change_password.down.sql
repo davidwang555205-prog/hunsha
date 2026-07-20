@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS users_phone_key;
+ALTER TABLE users DROP COLUMN IF EXISTS must_change_password;
+ALTER TABLE users DROP COLUMN IF EXISTS phone;

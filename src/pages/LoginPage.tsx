@@ -8,7 +8,7 @@
  * team cookie session：email + password 登录（captcha 开发阶段后端放宽，前端暂不接）。
  */
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
 import type { ApiError } from "../types/api";
@@ -26,7 +26,7 @@ type LoginErrorKind = "credentials" | "network" | "validation" | "session" | nul
 export function LoginPage() {
   const { login, isAuthenticated, isAdmin } = useAuth();
   const location = useLocation();
-  const [email, setEmail] = useState("");
+  const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
@@ -55,14 +55,14 @@ export function LoginPage() {
     setError("");
     setErrorKind(null);
     // 前端空值校验，避免空请求打到后端
-    if (!email.trim() || !password) {
-      setError("请输入邮箱和密码。");
+    if (!account.trim() || !password) {
+      setError("请输入账号和密码。");
       setErrorKind("validation");
       return;
     }
     setLoading(true);
     try {
-      await login(email, password);
+      await login(account, password);
       setPassword("");
     } catch (err) {
       // 网络错误（statusCode 缺失）单独提示；业务错误（含 HTTP 200 的登录失败）统一友好文案，
@@ -99,19 +99,19 @@ export function LoginPage() {
               void handleSubmit();
             }}
           >
-            <Field label="邮箱">
+            <Field label="账号">
               <Input
-                type="email"
-                value={email}
+                type="text"
+                value={account}
                 onChange={(event) => {
-                  setEmail(event.target.value);
+                  setAccount(event.target.value);
                   if (error) {
                     setError("");
                     setErrorKind(null);
                   }
                 }}
-                autoComplete="email"
-                placeholder="admin@example.com"
+                autoComplete="username"
+                placeholder="邮箱或手机号"
               />
             </Field>
             <Field label="密码">
@@ -153,6 +153,15 @@ export function LoginPage() {
               {loading && <Spinner size={16} />}
               {loading ? "登录中..." : "登录"}
             </MagneticButton>
+
+            <div className="flex items-center justify-between text-sm text-text-muted">
+              <Link to="/register" className="font-medium text-primary transition hover:text-primary-600">
+                注册账号
+              </Link>
+              <Link to="/forgot-password" className="transition hover:text-primary">
+                忘记密码？
+              </Link>
+            </div>
           </form>
         </GlassCard>
       </div>

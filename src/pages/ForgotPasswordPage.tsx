@@ -1,0 +1,256 @@
+/**
+ * ForgotPasswordPage -- 忘记密码（邮箱走邮件 / 手机号走短信，自动判断）
+ *
+ * 输入邮箱或手机号：
+ * - 邮箱（含 @）：发送重置邮件，用户去邮箱点链接跳 /resetpassword 完成
+ * - 手机号（11 位）：短信验证码 + 新密码一步完成重置
+ * 两类用户都能自助重置（email 老用户走邮件，手机号新用户走短信）。
+ */
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
+import { resetPasswordBySms, sendResetPasswordEmail, sendSmsCode } from "../api/auth";
+import type { ApiError } from "../types/api";
+import { BlurText } from "../components/motion/BlurText";
+import { GradientText } from "../components/motion/GradientText";
+import { GlassCard } from "../components/motion/GlassCard";
+import { MagneticButton } from "../components/motion/MagneticButton";
+import { Input } from "../components/ui/Input";
+import { Field } from "../components/ui/Field";
+import { Spinner } from "../components/ui/Spinner";
+import logo from "../assets/logo.png";
+
+const PHONE_RE = /^\d{11}$/;
+
+export function ForgotPasswordPage() {
+  const navigate = useNavigate();
+  const [account, setAccount] = useState("");
+  const [smsCode, setSmsCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  const isEmail = account.includes("@");
+  const isPhone = PHONE_RE.test(account);
+  const mode: "email" | "phone" | null = isEmail ? "email" : isPhone ? "phone" : null;
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  const clearMsg = () => {
+    if (error) setError("");
+    if (info) setInfo("");
+  };
+
+  const handleSendCode = async () => {
+    setError("");
+    setInfo("");
+    if (!isPhone) {
+      setError("请输入 11 位手机号。");
+      return;
+    }
+    setSending(true);
+    try {
+      await sendSmsCode({ phone: account, scene: "reset_password" });
+      setCountdown(60);
+    } catch (err) {
+      setError((err as ApiError | undefined)?.message || "验证码发送失败。");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setError("");
+    setInfo("");
+    if (mode === null) {
+      setError("请输入有效的邮箱或 11 位手机号。");
+      return;
+    }
+    if (mode === "email") {
+      setLoading(true);
+      try {
+        await sendResetPasswordEmail({ emails: [account] });
+        setInfo("重置链接已发送到邮箱，请查收邮件完成重置。");
+      } catch (err) {
+        const statusCode = (err as ApiError | undefined)?.statusCode;
+        setError(
+          statusCode === undefined
+            ? "无法连接服务，请检查网络后重试。"
+            : (err as ApiError | undefined)?.message || "发送失败。"
+        );
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    // phone 模式
+    if (!smsCode.trim()) {
+      setError("请输入短信验证码。");
+      return;
+    }
+    if (newPassword.length < 8 || newPassword.length > 32) {
+      setError("新密码长度需为 8-32 个字符。");
+      return;
+    }
+    if (newPassword !== confirm) {
+      setError("两次输入的新密码不一致。");
+      return;
+    }
+    setLoading(true);
+    try {
+      await resetPasswordBySms({ phone: account, sms_code: smsCode, new_password: newPassword });
+      navigate("/login", { replace: true });
+    } catch (err) {
+      const statusCode = (err as ApiError | undefined)?.statusCode;
+      setError(
+        statusCode === undefined
+          ? "无法连接服务，请检查网络后重试。"
+          : (err as ApiError | undefined)?.message || "重置密码失败。"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buttonLabel = mode === "email" ? (loading ? "发送中..." : "发送重置邮件") : loading ? "重置中..." : "重置密码";
+
+  return (
+    <main className="flex min-h-screen flex-col px-4 py-8 text-text">
+      <div className="flex flex-1 items-center justify-center">
+        <GlassCard className="w-full max-w-md p-8">
+          <div className="mb-7 flex flex-col items-center text-center">
+            <div className="mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient p-1 shadow-md">
+              <img src={logo} alt="Bridal & Dress" className="h-full w-full rounded-md object-cover" />
+            </div>
+            <GradientText duration={6} className="font-display text-sm uppercase tracking-[0.24em]">
+              Bridal &amp; Dress
+            </GradientText>
+            <BlurText as="h1" text="重置密码" stagger={40} className="mt-3 text-h1 font-display text-text" />
+            <p className="mt-2 text-sm text-text-muted">邮箱走邮件 / 手机号走短信</p>
+          </div>
+
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
+          >
+            <Field
+              label="邮箱或手机号"
+              hint={mode === "email" ? "将发送重置链接到邮箱" : mode === "phone" ? "使用短信验证码重置" : "输入邮箱或 11 位手机号"}
+            >
+              <Input
+                type="text"
+                value={account}
+                onChange={(e) => {
+                  setAccount(e.target.value);
+                  clearMsg();
+                }}
+                autoComplete="username"
+                placeholder="邮箱或手机号"
+              />
+            </Field>
+
+            {mode === "phone" && (
+              <>
+                <Field label="短信验证码">
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={smsCode}
+                      onChange={(e) => {
+                        setSmsCode(e.target.value);
+                        clearMsg();
+                      }}
+                      placeholder="6 位验证码"
+                      maxLength={6}
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleSendCode()}
+                      disabled={sending || countdown > 0}
+                      className="inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-surface px-3 py-2.5 text-sm font-medium text-text transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {sending ? <Spinner size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
+                    </button>
+                  </div>
+                </Field>
+                <Field label="新密码" hint="8-32 个字符">
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      clearMsg();
+                    }}
+                    autoComplete="new-password"
+                  />
+                </Field>
+                <Field label="确认新密码">
+                  <Input
+                    type="password"
+                    value={confirm}
+                    onChange={(e) => {
+                      setConfirm(e.target.value);
+                      clearMsg();
+                    }}
+                    autoComplete="new-password"
+                  />
+                </Field>
+              </>
+            )}
+
+            {info && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary ring-1 ring-primary/20"
+                role="status"
+              >
+                {info}
+              </motion.div>
+            )}
+
+            {error && (
+              <motion.p
+                initial={{ x: -6 }}
+                animate={{ x: [0, -6, 6, -4, 4, 0] }}
+                transition={{ duration: 0.32 }}
+                className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger ring-1 ring-danger/20"
+                role="alert"
+              >
+                {error}
+              </motion.p>
+            )}
+
+            <MagneticButton
+              type="submit"
+              loading={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-md transition duration-fast ease-out hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading && <Spinner size={16} />}
+              {buttonLabel}
+            </MagneticButton>
+
+            <div className="text-center text-sm text-text-muted">
+              想起密码了？
+              <Link to="/login" className="ml-1 font-medium text-primary transition hover:text-primary-600">
+                返回登录
+              </Link>
+            </div>
+          </form>
+        </GlassCard>
+      </div>
+    </main>
+  );
+}

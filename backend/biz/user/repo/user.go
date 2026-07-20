@@ -77,13 +77,21 @@ func (u *userRepo) WechatMPBound(ctx context.Context, uid uuid.UUID) (bool, erro
 
 // PasswordLogin implements domain.UserRepo.
 func (u *userRepo) PasswordLogin(ctx context.Context, req *domain.TeamLoginReq) (*db.User, error) {
-	usr, err := u.db.User.Query().
-		Where(user.EmailEQ(req.Email)).
+	query := u.db.User.Query().
 		Where(user.RoleNEQ(consts.UserRoleEnterprise)).
 		WithTeamMembers(func(q *db.TeamMemberQuery) {
 			q.WithTeam()
-		}).
-		First(ctx)
+		})
+	// email 与 phone 二选一：email 非空走邮箱查询，否则走手机号
+	switch {
+	case req.Email != "":
+		query = query.Where(user.EmailEQ(req.Email))
+	case req.Phone != "":
+		query = query.Where(user.PhoneEQ(req.Phone))
+	default:
+		return nil, errcode.ErrLoginFailed
+	}
+	usr, err := query.First(ctx)
 	if err != nil {
 		return nil, errcode.ErrLoginFailed.Wrap(err)
 	}
@@ -141,6 +149,7 @@ func (u *userRepo) ChangePassword(ctx context.Context, userID uuid.UUID, current
 	}
 	err = u.db.User.UpdateOneID(userID).
 		SetPassword(hashedNewPassword).
+		SetMustChangePassword(false).
 		Exec(ctx)
 	if err != nil {
 		return errcode.ErrDatabaseOperation.Wrap(err)
@@ -156,4 +165,21 @@ func (u *userRepo) GetUserByEmail(ctx context.Context, emails []string) ([]*db.U
 // SetEmail implements domain.UserRepo.
 func (u *userRepo) SetEmail(ctx context.Context, userID uuid.UUID, email string) error {
 	return u.db.User.UpdateOneID(userID).SetEmail(email).Exec(ctx)
+}
+
+// GetByPhone 按手机号查询用户（短信注册/重置密码用）。
+func (u *userRepo) GetByPhone(ctx context.Context, phone string) (*db.User, error) {
+	return u.db.User.Query().Where(user.PhoneEQ(phone)).First(ctx)
+}
+
+// CreateIndividual 创建 individual 用户（短信验证码注册）。不建团队，name 默认手机号。
+func (u *userRepo) CreateIndividual(ctx context.Context, phone, hashedPassword string) (*db.User, error) {
+	return u.db.User.Create().
+		SetID(uuid.New()).
+		SetName(phone).
+		SetPhone(phone).
+		SetPassword(hashedPassword).
+		SetStatus(consts.UserStatusActive).
+		SetRole(consts.UserRoleIndividual).
+		Save(ctx)
 }

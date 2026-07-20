@@ -13,6 +13,7 @@ import (
 
 	"github.com/samber/do"
 
+	"bridal/backend/biz/syssetting"
 	"bridal/backend/config"
 	"bridal/backend/domain"
 	"bridal/backend/templates"
@@ -24,7 +25,7 @@ type EmailClient struct {
 
 func NewSMTPClient(i *do.Injector) (domain.EmailSender, error) {
 	return &EmailClient{
-		Smtp: NewSmtp(do.MustInvoke[*config.Config](i)),
+		Smtp: NewSmtp(do.MustInvoke[*config.Config](i), do.MustInvoke[*syssetting.Usecase](i)),
 	}, nil
 }
 
@@ -40,7 +41,7 @@ func (c *EmailClient) SendResetPasswordEmail(ctx context.Context, to, username, 
 	}); err != nil {
 		return err
 	}
-	return c.Send("Reset Your Password", to, buf.String())
+	return c.Send(ctx, "Reset Your Password", to, buf.String())
 }
 
 func (c *EmailClient) SendBindEmailVerification(ctx context.Context, to, username, verifyURL string) error {
@@ -55,29 +56,34 @@ func (c *EmailClient) SendBindEmailVerification(ctx context.Context, to, usernam
 	}); err != nil {
 		return err
 	}
-	return c.Send("Verify Your Email", to, buf.String())
+	return c.Send(ctx, "Verify Your Email", to, buf.String())
 }
 
 type Smtp struct {
-	cfg *config.Config
+	cfg        *config.Config
+	syssetting *syssetting.Usecase
 }
 
-func NewSmtp(cfg *config.Config) *Smtp {
-	return &Smtp{
-		cfg: cfg,
+func NewSmtp(cfg *config.Config, ss *syssetting.Usecase) *Smtp {
+	return &Smtp{cfg: cfg, syssetting: ss}
+}
+
+// Send 读 system_settings 的 SMTP 配置发送（admin 前端可配，未配置回退 config.SMTP）。
+func (s *Smtp) Send(ctx context.Context, subject, receiver, content string) error {
+	smtpCfg, err := s.syssetting.GetSMTPConfig(ctx)
+	if err != nil || smtpCfg.Host == "" {
+		smtpCfg = s.cfg.SMTP
 	}
-}
 
-func (s *Smtp) Send(subject, receiver, content string) error {
-	addr := net.JoinHostPort(s.cfg.SMTP.Host, s.cfg.SMTP.Port)
-	c, err := dial(addr, s.cfg.SMTP.TLS)
+	addr := net.JoinHostPort(smtpCfg.Host, smtpCfg.Port)
+	c, err := dial(addr, smtpCfg.TLS)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
 	header := make(map[string]string)
-	header["From"] = "MonkeyCode-AI" + "<" + s.cfg.SMTP.From + ">"
+	header["From"] = "MonkeyCode-AI" + "<" + smtpCfg.From + ">"
 	header["To"] = receiver
 	header["Subject"] = subject
 	header["Content-Type"] = "text/html; charset=UTF-8"
@@ -90,9 +96,9 @@ func (s *Smtp) Send(subject, receiver, content string) error {
 
 	auth := smtp.PlainAuth(
 		"",
-		s.cfg.SMTP.From,
-		s.cfg.SMTP.Password,
-		s.cfg.SMTP.Host,
+		smtpCfg.From,
+		smtpCfg.Password,
+		smtpCfg.Host,
 	)
 
 	if ok, _ := c.Extension("AUTH"); ok {
@@ -102,7 +108,7 @@ func (s *Smtp) Send(subject, receiver, content string) error {
 		}
 	}
 
-	if err = c.Mail(s.cfg.SMTP.From); err != nil {
+	if err = c.Mail(smtpCfg.From); err != nil {
 		return err
 	}
 

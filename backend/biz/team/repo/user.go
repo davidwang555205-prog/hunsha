@@ -183,23 +183,33 @@ func (r *TeamGroupUserRepo) DeleteGroupUser(ctx context.Context, groupID, userID
 
 // Login 团队用户登录
 // bridal 单租户定制：enterprise（团队所有者/admin，不限额度）优先，subaccount（受限成员）兜底，
-// 二者均可登录生图。MonkeyCode 原意仅 enterprise 登录，bridal 改为所有团队成员可登录。
+// individual（手机号注册用户）再兜底，三者均可登录。支持 email 或手机号登录。
 func (r *TeamGroupUserRepo) Login(ctx context.Context, req *domain.TeamLoginReq) (*db.User, error) {
-	usr, err := r.db.User.Query().
-		WithTeams().
-		Where(user.Email(req.Email)).
-		Where(user.Role(consts.UserRoleEnterprise)).
-		First(ctx)
-	if err != nil {
-		if !db.IsNotFound(err) {
+	// 账号条件：email 优先，否则手机号（bridal 短信注册用户）
+	base := r.db.User.Query().WithTeams()
+	switch {
+	case req.Email != "":
+		base = base.Where(user.EmailEQ(req.Email))
+	case req.Phone != "":
+		base = base.Where(user.PhoneEQ(req.Phone))
+	default:
+		return nil, errcode.ErrLoginFailed
+	}
+
+	usr, err := base.Clone().Where(user.Role(consts.UserRoleEnterprise)).First(ctx)
+	if err != nil && !db.IsNotFound(err) {
+		return nil, errcode.ErrLoginFailed.Wrap(err)
+	}
+	if usr == nil {
+		// enterprise 未命中，回退查 subaccount（bridal 受限成员）
+		usr, err = base.Clone().Where(user.Role(consts.UserRoleSubAccount)).First(ctx)
+		if err != nil && !db.IsNotFound(err) {
 			return nil, errcode.ErrLoginFailed.Wrap(err)
 		}
-		// enterprise 未命中，回退查 subaccount（bridal 受限成员）
-		usr, err = r.db.User.Query().
-			WithTeams().
-			Where(user.Email(req.Email)).
-			Where(user.Role(consts.UserRoleSubAccount)).
-			First(ctx)
+	}
+	if usr == nil {
+		// subaccount 未命中，回退查 individual（手机号注册用户）
+		usr, err = base.Clone().Where(user.Role(consts.UserRoleIndividual)).First(ctx)
 		if err != nil {
 			return nil, errcode.ErrLoginFailed.Wrap(err)
 		}
@@ -207,7 +217,7 @@ func (r *TeamGroupUserRepo) Login(ctx context.Context, req *domain.TeamLoginReq)
 
 	err = crypto.VerifyPassword(usr.Password, req.Password)
 	if err != nil {
-		r.logger.Error("invalid password", "email", req.Email, "error", err)
+		r.logger.Error("invalid password", "email", req.Email, "phone", req.Phone, "error", err)
 		return nil, errcode.ErrLoginFailed
 	}
 	return usr, nil
@@ -366,6 +376,7 @@ func (r *TeamGroupUserRepo) InitTeam(ctx context.Context, email string, name str
 				SetStatus(consts.UserStatusActive).
 				SetPassword(hashedPassword).
 				SetRole(consts.UserRoleEnterprise).
+				SetMustChangePassword(true).
 				Save(ctx)
 			if err != nil {
 				return err
@@ -447,6 +458,7 @@ func (r *TeamGroupUserRepo) ensureInitTeamMember(ctx context.Context, tx *db.Tx,
 			SetPassword(hashedPassword).
 			SetRole(consts.UserRoleSubAccount).
 			SetDailyImageLimit(domain.DefaultDailyImageLimit).
+			SetMustChangePassword(true).
 			Save(ctx)
 		if err != nil {
 			return err

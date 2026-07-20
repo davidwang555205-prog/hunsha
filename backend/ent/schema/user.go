@@ -56,6 +56,10 @@ func (User) Fields() []ent.Field {
 		field.JSON("visible_category_ids", []uuid.UUID{}).Optional(),
 		field.String("password_salt").Optional(), // scrypt salt hex（bridal 认证）
 		field.String("password_hash").Optional(), // scrypt hash hex（bridal 认证）
+		// 手机号：新用户短信验证码注册的账号标识，唯一（部分唯一索引允许多个 NULL 供老 email 用户）。
+		field.String("phone").Optional(),
+		// 初始密码标记：admin 建号（subaccount/enterprise）生成随机密码时置 true，首登强制改密后清零。
+		field.Bool("must_change_password").Default(false),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

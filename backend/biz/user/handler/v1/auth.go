@@ -64,6 +64,11 @@ func NewAuthHandler(i *do.Injector) (*AuthHandler, error) {
 	v1.GET("/passwords/accounts/:token", web.BindHandler(h.GetAccountInfo))
 	v1.PUT("/passwords/reset", web.BindHandler(h.ResetPassword))
 
+	// 短信验证码注册 / 短信重置密码（无需鉴权）
+	v1.POST("/sms/send", web.BindHandler(h.SendSmsCode), targetActive.TargetActive())
+	v1.POST("/register", web.BindHandler(h.Register), targetActive.TargetActive())
+	v1.PUT("/passwords/reset-by-sms", web.BindHandler(h.ResetPasswordBySms), targetActive.TargetActive())
+
 	// 密码登录
 	v1.POST("/password-login", web.BindHandler(h.PasswordLogin), targetActive.TargetActive())
 	v1.GET("/oauth/:provider/login", web.BindHandler(h.OAuthLogin), targetActive.TargetActive())
@@ -242,6 +247,9 @@ func oauthErrorCode(err error) string {
 //	@Router			/api/v1/users/password-login [post]
 func (h *AuthHandler) PasswordLogin(c *web.Context, req domain.TeamLoginReq) error {
 	ctx := c.Request().Context()
+	if err := req.Validate(); err != nil {
+		return err
+	}
 	if !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
 		return errcode.ErrForbidden
 	}
@@ -577,6 +585,88 @@ func (h *AuthHandler) ResetPassword(c *web.Context, req domain.ResetUserPassword
 		return err
 	}
 
+	return c.Success(nil)
+}
+
+// SendSmsCode 发送短信验证码（注册/重置密码场景，图形验证码前置防刷）。
+//
+//	@Summary		发送短信验证码
+//	@Description	手机号注册/重置密码前发送短信验证码，60s 间隔 + 每日上限限流
+//	@Tags			【用户】短信验证码
+//	@Accept			json
+//	@Produce		json
+//	@Param			req	body		domain.SendSmsReq	true	"发送短信验证码请求"
+//	@Success		200	{object}	web.Resp{}
+//	@Router			/api/v1/users/sms/send [post]
+func (h *AuthHandler) SendSmsCode(c *web.Context, req domain.SendSmsReq) error {
+	ctx := c.Request().Context()
+	if !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
+		return errcode.ErrForbidden
+	}
+	if err := h.usecase.SendSmsCode(ctx, &req); err != nil {
+		h.logger.WarnContext(ctx, "send sms code failed", "phone", req.Phone, "scene", req.Scene, "error", err)
+		return err
+	}
+	return c.Success(nil)
+}
+
+// Register 用户注册（手机号 + 密码 + 短信验证码），成功后直接建立 session 自动登录。
+//
+//	@Summary		用户注册
+//	@Description	手机号 + 密码 + 短信验证码注册，创建 individual 用户并自动登录
+//	@Tags			【用户】短信验证码
+//	@Accept			json
+//	@Produce		json
+//	@Param			req	body		domain.RegisterReq	true	"注册请求"
+//	@Success		200	{object}	web.Resp{data=domain.User}
+//	@Router			/api/v1/users/register [post]
+func (h *AuthHandler) Register(c *web.Context, req domain.RegisterReq) error {
+	ctx := c.Request().Context()
+	if err := req.Validate(); err != nil {
+		return err
+	}
+	user, err := h.usecase.Register(ctx, &req)
+	if err != nil {
+		h.logger.WarnContext(ctx, "register failed", "phone", req.Phone, "error", err)
+		return err
+	}
+	// 建双 session（与 team Login 一致：TeamSession 供 team status 读，AISession 供 generation/credits 等 module 读）
+	if _, err := h.authMiddleware.Session.Save(c, consts.MonkeyCodeAITeamSession, user.ID, user); err != nil {
+		h.logger.ErrorContext(ctx, "save register team session failed", "error", err)
+		return errcode.ErrInternalServer
+	}
+	if _, err := h.authMiddleware.Session.Save(c, consts.MonkeyCodeAISession, user.ID, user); err != nil {
+		h.logger.ErrorContext(ctx, "save register session failed", "error", err)
+		return errcode.ErrInternalServer
+	}
+	return c.Success(user)
+}
+
+// ResetPasswordBySms 短信验证码重置密码，成功后清该用户所有 session（强制重新登录）。
+//
+//	@Summary		短信重置密码
+//	@Description	手机号 + 短信验证码 + 新密码重置密码
+//	@Tags			【用户】密码管理
+//	@Accept			json
+//	@Produce		json
+//	@Param			req	body		domain.ResetBySmsReq	true	"短信重置密码请求"
+//	@Success		200	{object}	web.Resp{}
+//	@Router			/api/v1/users/passwords/reset-by-sms [put]
+func (h *AuthHandler) ResetPasswordBySms(c *web.Context, req domain.ResetBySmsReq) error {
+	ctx := c.Request().Context()
+	if err := req.Validate(); err != nil {
+		return err
+	}
+	user, err := h.usecase.ResetPasswordBySms(ctx, &req)
+	if err != nil {
+		h.logger.WarnContext(ctx, "reset password by sms failed", "phone", req.Phone, "error", err)
+		return err
+	}
+	// 清双 session（踢所有设备强制重新登录，与 team Login 双写对应）
+	_ = h.authMiddleware.Session.Trunc(ctx, consts.MonkeyCodeAITeamSession, user.ID)
+	if err := h.authMiddleware.Session.Trunc(ctx, consts.MonkeyCodeAISession, user.ID); err != nil {
+		return err
+	}
 	return c.Success(nil)
 }
 

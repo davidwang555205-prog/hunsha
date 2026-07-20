@@ -23,6 +23,9 @@ type UserUsecase interface {
 	GetUserByEmail(ctx context.Context, emails []string) ([]*User, error)
 	SendBindEmailVerification(ctx context.Context, userID uuid.UUID, req *SendBindEmailVerificationReq) error
 	VerifyBindEmail(ctx context.Context, token string) error
+	SendSmsCode(ctx context.Context, req *SendSmsReq) error
+	Register(ctx context.Context, req *RegisterReq) (*User, error)
+	ResetPasswordBySms(ctx context.Context, req *ResetBySmsReq) (*User, error)
 }
 
 type UserRepo interface {
@@ -34,6 +37,8 @@ type UserRepo interface {
 	ChangePassword(ctx context.Context, uid uuid.UUID, currentPassword, newPassword string, isReset bool) error
 	GetUserByEmail(ctx context.Context, emails []string) ([]*db.User, error)
 	SetEmail(ctx context.Context, userID uuid.UUID, email string) error
+	GetByPhone(ctx context.Context, phone string) (*db.User, error)
+	CreateIndividual(ctx context.Context, phone, hashedPassword string) (*db.User, error)
 }
 
 type OAuthLoginUser struct {
@@ -104,6 +109,9 @@ type User struct {
 	DailyImageLimit    int         `json:"dailyImageLimit"`
 	Credits            int         `json:"credits"`
 	VisibleCategoryIDs []uuid.UUID `json:"visibleCategoryIds"`
+	// bridal 短信注册 / 初始密码
+	Phone              string `json:"phone,omitempty"`
+	MustChangePassword bool   `json:"mustChangePassword"`
 }
 
 type SubscriptionResp struct {
@@ -131,6 +139,8 @@ func (u *User) From(src *db.User) *User {
 	u.DailyImageLimit = src.DailyImageLimit
 	u.Credits = src.Credits
 	u.VisibleCategoryIDs = src.VisibleCategoryIds
+	u.Phone = src.Phone
+	u.MustChangePassword = src.MustChangePassword
 	u.Identities = cvt.Iter(src.Edges.Identities, func(_ int, i *db.UserIdentity) *UserIdentity {
 		return cvt.From(i, &UserIdentity{})
 	})
@@ -286,4 +296,41 @@ type SendBindEmailVerificationReq struct {
 // VerifyBindEmailReq 验证邮箱请求
 type VerifyBindEmailReq struct {
 	Token string `query:"token" validate:"required"` // 验证 token
+}
+
+// SendSmsReq 发送短信验证码请求（注册 / 重置密码共用，scene 区分）。
+type SendSmsReq struct {
+	Phone        string `json:"phone" validate:"required"`
+	Scene        string `json:"scene" validate:"required"`        // register | reset_password
+	CaptchaToken string `json:"captcha_token"`
+}
+
+// RegisterReq 用户注册请求（手机号 + 密码 + 短信验证码）。
+type RegisterReq struct {
+	Phone    string `json:"phone" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	SmsCode  string `json:"sms_code" validate:"required"`
+}
+
+// Validate 校验密码长度 8-32。
+func (r *RegisterReq) Validate() error {
+	if len(r.Password) < 8 || len(r.Password) > 32 {
+		return errcode.ErrPasswordLength
+	}
+	return nil
+}
+
+// ResetBySmsReq 短信验证码重置密码请求。
+type ResetBySmsReq struct {
+	Phone       string `json:"phone" validate:"required"`
+	SmsCode     string `json:"sms_code" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required"`
+}
+
+// Validate 校验新密码长度 8-32。
+func (r *ResetBySmsReq) Validate() error {
+	if len(r.NewPassword) < 8 || len(r.NewPassword) > 32 {
+		return errcode.ErrPasswordLength
+	}
+	return nil
 }

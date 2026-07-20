@@ -149,3 +149,23 @@ static_files:
 host_installer:
   mode: "online"
   bundle_path: "installer/{{.arch}}/host.tgz"
+
+# Bridal 短信服务配置（腾讯云，短信验证码注册 / 重置密码）。
+# 运行时配置优先存 system_settings（admin 前端 /admin/settings 系统配置页配置，SecretKey 加密存库），
+# syssetting.Usecase.GetSMSConfig 动态读取；未配置时回退此处 yaml / env 兜底。
+# 环境变量注入（见 backend/config/config.go 的 applyBridalEnvDefaults）：
+#   TENCENT_SMS_ENABLED / TENCENT_SMS_SECRET_ID / TENCENT_SMS_SECRET_KEY
+#   TENCENT_SMS_APP_ID / TENCENT_SMS_SIGN_NAME / TENCENT_SMS_TEMPLATE_ID / TENCENT_SMS_REGION
+# enabled=false 时注册/短信重置接口返回 ErrRegisterDisabled。
+bridal:
+  sms:
+    enabled: false
+    secret_id: ""
+    secret_key: ""
+    region: "ap-guangzhou"
+    app_id: ""
+    sign_name: ""
+    template_id: ""
+    code_expire_min: 5
+    send_interval_sec: 60
+    daily_limit: 10

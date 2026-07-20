@@ -229,6 +229,34 @@ func (_c *UserCreate) SetNillablePasswordHash(v *string) *UserCreate {
 	return _c
 }
 
+// SetPhone sets the "phone" field.
+func (_c *UserCreate) SetPhone(v string) *UserCreate {
+	_c.mutation.SetPhone(v)
+	return _c
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (_c *UserCreate) SetNillablePhone(v *string) *UserCreate {
+	if v != nil {
+		_c.SetPhone(*v)
+	}
+	return _c
+}
+
+// SetMustChangePassword sets the "must_change_password" field.
+func (_c *UserCreate) SetMustChangePassword(v bool) *UserCreate {
+	_c.mutation.SetMustChangePassword(v)
+	return _c
+}
+
+// SetNillableMustChangePassword sets the "must_change_password" field if the given value is not nil.
+func (_c *UserCreate) SetNillableMustChangePassword(v *bool) *UserCreate {
+	if v != nil {
+		_c.SetMustChangePassword(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *UserCreate) SetCreatedAt(v time.Time) *UserCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -627,6 +655,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultCredits
 		_c.mutation.SetCredits(v)
 	}
+	if _, ok := _c.mutation.MustChangePassword(); !ok {
+		v := user.DefaultMustChangePassword
+		_c.mutation.SetMustChangePassword(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		if user.DefaultCreatedAt == nil {
 			return fmt.Errorf("db: uninitialized user.DefaultCreatedAt (forgotten import db/runtime?)")
@@ -673,6 +705,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.Credits(); !ok {
 		return &ValidationError{Name: "credits", err: errors.New(`db: missing required field "User.credits"`)}
+	}
+	if _, ok := _c.mutation.MustChangePassword(); !ok {
+		return &ValidationError{Name: "must_change_password", err: errors.New(`db: missing required field "User.must_change_password"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "User.created_at"`)}
@@ -779,6 +814,14 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 		_node.PasswordHash = value
+	}
+	if value, ok := _c.mutation.Phone(); ok {
+		_spec.SetField(user.FieldPhone, field.TypeString, value)
+		_node.Phone = value
+	}
+	if value, ok := _c.mutation.MustChangePassword(); ok {
+		_spec.SetField(user.FieldMustChangePassword, field.TypeBool, value)
+		_node.MustChangePassword = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
@@ -1455,6 +1498,36 @@ func (u *UserUpsert) ClearPasswordHash() *UserUpsert {
 	return u
 }
 
+// SetPhone sets the "phone" field.
+func (u *UserUpsert) SetPhone(v string) *UserUpsert {
+	u.Set(user.FieldPhone, v)
+	return u
+}
+
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePhone() *UserUpsert {
+	u.SetExcluded(user.FieldPhone)
+	return u
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (u *UserUpsert) ClearPhone() *UserUpsert {
+	u.SetNull(user.FieldPhone)
+	return u
+}
+
+// SetMustChangePassword sets the "must_change_password" field.
+func (u *UserUpsert) SetMustChangePassword(v bool) *UserUpsert {
+	u.Set(user.FieldMustChangePassword, v)
+	return u
+}
+
+// UpdateMustChangePassword sets the "must_change_password" field to the value that was provided on create.
+func (u *UserUpsert) UpdateMustChangePassword() *UserUpsert {
+	u.SetExcluded(user.FieldMustChangePassword)
+	return u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (u *UserUpsert) SetCreatedAt(v time.Time) *UserUpsert {
 	u.Set(user.FieldCreatedAt, v)
@@ -1832,6 +1905,41 @@ func (u *UserUpsertOne) UpdatePasswordHash() *UserUpsertOne {
 func (u *UserUpsertOne) ClearPasswordHash() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearPasswordHash()
+	})
+}
+
+// SetPhone sets the "phone" field.
+func (u *UserUpsertOne) SetPhone(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPhone(v)
+	})
+}
+
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePhone() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePhone()
+	})
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (u *UserUpsertOne) ClearPhone() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPhone()
+	})
+}
+
+// SetMustChangePassword sets the "must_change_password" field.
+func (u *UserUpsertOne) SetMustChangePassword(v bool) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetMustChangePassword(v)
+	})
+}
+
+// UpdateMustChangePassword sets the "must_change_password" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateMustChangePassword() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateMustChangePassword()
 	})
 }
 
@@ -2383,6 +2491,41 @@ func (u *UserUpsertBulk) UpdatePasswordHash() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearPasswordHash() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearPasswordHash()
+	})
+}
+
+// SetPhone sets the "phone" field.
+func (u *UserUpsertBulk) SetPhone(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPhone(v)
+	})
+}
+
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePhone() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePhone()
+	})
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (u *UserUpsertBulk) ClearPhone() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPhone()
+	})
+}
+
+// SetMustChangePassword sets the "must_change_password" field.
+func (u *UserUpsertBulk) SetMustChangePassword(v bool) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetMustChangePassword(v)
+	})
+}
+
+// UpdateMustChangePassword sets the "must_change_password" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateMustChangePassword() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateMustChangePassword()
 	})
 }
 

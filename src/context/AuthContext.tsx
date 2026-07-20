@@ -9,21 +9,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { setUnauthorizedHandler } from "../api/client";
 import { login as apiLogin, getStatus, logout as apiLogout } from "../api/auth";
-import type { ApiUser } from "../types/api";
+import type { ApiUser, LoginRequest } from "../types/api";
 
 type AuthContextValue = {
   user: ApiUser | null;
   isAuthenticated: boolean;
   /** 是否管理员（enterprise=团队所有者 / admin=系统管理员，不限额度） */
   isAdmin: boolean;
-  /** 登录，失败抛错由调用方处理 UI */
-  login: (email: string, password: string) => Promise<void>;
+  /** 登录，失败抛错由调用方处理 UI（account 可为邮箱或手机号） */
+  login: (account: string, password: string) => Promise<void>;
   /** 主动登出：调 team logout 清 cookie + 清 user */
   logout: () => void;
   /** 被动登出（401）：不调 logout 接口（session 已失效），仅清 user + 错误提示 */
   logoutWithError: (message?: string) => void;
   /** 刷新当前用户信息（来自 /status 的 user） */
   refreshUser: (user: ApiUser) => void;
+  /** 改密后从 /status 重新拉取 user（mustChangePassword 等字段刷新） */
+  refreshStatus: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -52,12 +54,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logoutRef.current = logout;
   }, [logout]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const u = await apiLogin({ email, password });
+  const login = useCallback(async (account: string, password: string) => {
+    // 账号自动识别：含 @ 视为邮箱，否则视为手机号
+    const req: LoginRequest = { password };
+    if (account.includes("@")) {
+      req.email = account;
+    } else {
+      req.phone = account;
+    }
+    const u = await apiLogin(req);
     setUser(u);
   }, []);
 
   const refreshUser = useCallback((u: ApiUser) => setUser(u), []);
+
+  /** 改密后从 /status 重新拉取 user（刷新 mustChangePassword 等字段） */
+  const refreshStatus = useCallback(async () => {
+    try {
+      const tu = await getStatus();
+      setUser(tu.user);
+    } catch {
+      // session 失效等，忽略
+    }
+  }, []);
 
   // 启动：调 status 确认登录态（cookie 有效则恢复 user）
   useEffect(() => {
@@ -92,9 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       logoutWithError,
-      refreshUser
+      refreshUser,
+      refreshStatus
     }),
-    [user, login, logout, logoutWithError, refreshUser]
+    [user, login, logout, logoutWithError, refreshUser, refreshStatus]
   );
 
   // logoutError 暴露给消费方（如 LoginPage 展示被动登出原因）--通过自定义事件桥接，

@@ -3,17 +3,19 @@
  *
  * 路由 /admin/users。功能：
  * - 成员列表（listMembers，分页 + 搜索）
- * - 创建成员（email 批量 + dailyImageLimit，返回初始密码，结构化展示 + 复制）
+ * - 创建成员（手机号批量 + dailyImageLimit，返回初始密码，结构化展示 + 复制）
  * - 编辑成员（name/dailyImageLimit + 重置密码）
  * - 删除成员（admin）
  * - 列表行：Switch 停用/启用即时切换、积分调整弹窗、积分流水跳转
+ *
+ * 账号标识统一为手机号（与注册一致）；老 email 用户用 phone || email 兜底显示。
  */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { listMembers, listAllCategories, createUser, updateUser, deleteUser, adjustCredits, resetPassword } from "../../api/admin";
 import { isUnauthorizedError } from "../../types/api";
-import type { Category, TeamMemberInfo, TeamUserPassword } from "../../types/api";
+import type { ApiUser, Category, TeamMemberInfo, TeamUserPassword } from "../../types/api";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
@@ -24,6 +26,9 @@ import { Pagination } from "../../components/ui/Pagination";
 import { inputClass } from "../../studio/constants";
 import { formatDate, pickUserLabel } from "../../lib/format";
 import { copyText } from "../../lib/clipboard";
+
+// 账号标识：手机号优先，老 email 用户兜底（兼容历史数据）
+const accountOf = (u: ApiUser): string => u.phone || u.email || u.username || u.displayName || u.id;
 
 export function AdminUsersPage() {
   const { user, isAdmin } = useAuth();
@@ -39,9 +44,9 @@ export function AdminUsersPage() {
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
 
-  // 创建表单（team：email 批量 + dailyImageLimit）
+  // 创建表单（team：手机号批量 + dailyImageLimit）
   const [nu, setNu] = useState({
-    emails: "",
+    phones: "",
     dailyImageLimit: "20"
   });
 
@@ -104,22 +109,22 @@ export function AdminUsersPage() {
   };
 
   const handleCreate = async () => {
-    const emails = nu.emails
+    const phones = nu.phones
       .split(/[\s,，;]+/)
       .map((s) => s.trim())
       .filter(Boolean);
-    if (emails.length === 0) {
-      setMessage("请输入至少一个邮箱。");
+    if (phones.length === 0) {
+      setMessage("请输入至少一个手机号。");
       return;
     }
     setBusy(true);
     setMessage("");
     try {
       const payload = await createUser({
-        emails,
+        phones,
         dailyImageLimit: Math.max(0, Math.floor(Number(nu.dailyImageLimit) || 0))
       });
-      setNu({ emails: "", dailyImageLimit: "20" });
+      setNu({ phones: "", dailyImageLimit: "20" });
       setShowCreate(false);
       setCreatedPasswords(payload.passwords);
       setMessage(`已创建 ${payload.users.length} 个成员，请复制保存初始密码。`);
@@ -142,7 +147,7 @@ export function AdminUsersPage() {
         visibleCategoryIds: ed.visibleCategoryIds
       });
       setEditing(null);
-      setMessage(`已更新 ${payload.user.username || payload.user.email} 的信息。`);
+      setMessage(`已更新 ${accountOf(payload.user)} 的信息。`);
       await reload();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "更新失败。");
@@ -158,7 +163,7 @@ export function AdminUsersPage() {
     setMessage("");
     try {
       await updateUser(m.user.id, { is_blocked: !m.user.is_blocked });
-      setMessage(`${m.user.email} 已${m.user.is_blocked ? "启用" : "停用"}。`);
+      setMessage(`${accountOf(m.user)} 已${m.user.is_blocked ? "启用" : "停用"}。`);
       await reload();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "操作失败。");
@@ -181,7 +186,7 @@ export function AdminUsersPage() {
       const payload = await adjustCredits(creditTarget.user.id, { amount, description: creditForm.desc || undefined });
       setCreditForm({ amount: "", desc: "" });
       setCreditTarget(null);
-      setMessage(`已调整 ${creditTarget.user.email} 的积分，当前余额 ${payload.balance}。`);
+      setMessage(`已调整 ${accountOf(creditTarget.user)} 的积分，当前余额 ${payload.balance}。`);
       await reload();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "调整积分失败。");
@@ -198,7 +203,7 @@ export function AdminUsersPage() {
     try {
       const result = await resetPassword(editing.user.id);
       setResetResult(result);
-      setMessage(`已重置 ${result.email} 的密码，请复制保存。`);
+      setMessage(`已重置 ${result.account} 的密码，请复制保存。`);
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "重置密码失败。");
     } finally {
@@ -223,7 +228,7 @@ export function AdminUsersPage() {
   };
 
   const copyAllPasswords = async (list: TeamUserPassword[]) => {
-    const text = list.map((p) => `${p.email} : ${p.password}`).join("\n");
+    const text = list.map((p) => `${p.account} : ${p.password}`).join("\n");
     await copyText(text);
     setMessage("已复制全部账号密码。");
   };
@@ -248,21 +253,31 @@ export function AdminUsersPage() {
 
   return (
     <>
-      <PageHeader title="用户管理" subtitle="创建成员、管理额度与积分" />
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="用户管理"
+        subtitle="创建成员、管理额度与积分"
+        actions={
           <Button variant="primary" size="sm" onClick={() => { setShowCreate(true); setMessage(""); }}>
             创建新成员
           </Button>
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索邮箱 / 账号 / 显示名"
-            className="w-64"
-          />
-        </div>
-        {message && <span className="whitespace-pre-line text-sm text-text-muted">{message}</span>}
+        }
+      />
+
+      <div className="flex items-center gap-3">
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="搜索手机号 / 邮箱 / 显示名"
+          className="w-64"
+        />
+        {message && (
+          <div
+            className="ml-auto max-w-md truncate rounded-md bg-bg px-3 py-2 text-sm text-text-muted ring-1 ring-border"
+            title={message}
+          >
+            {message}
+          </div>
+        )}
       </div>
 
       {/* 成员列表 */}
@@ -286,7 +301,7 @@ export function AdminUsersPage() {
                   <tr key={m.user.id} className="border-b border-border/50 hover:bg-bg">
                     <td className="px-3 py-3">
                       <div className="font-medium text-text">{pickUserLabel(m.user)}</div>
-                      <div className="text-xs text-text-muted">{m.user.email}</div>
+                      <div className="text-xs text-text-muted">{accountOf(m.user)}</div>
                     </td>
                     <td className="px-3 py-3"><span className="rounded-full bg-bg px-2 py-0.5 text-xs text-text-muted">{roleLabel(m)}</span></td>
                     <td className="px-3 py-3">
@@ -353,24 +368,24 @@ export function AdminUsersPage() {
         footer={
           <>
             <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>取消</Button>
-            <Button variant="primary" size="sm" onClick={handleCreate} loading={busy} disabled={!nu.emails}>创建</Button>
+            <Button variant="primary" size="sm" onClick={handleCreate} loading={busy} disabled={!nu.phones}>创建</Button>
           </>
         }
       >
         <div className="grid gap-3">
-          <Field label="邮箱（多个用空格/逗号分隔，批量创建 subaccount 成员）">
+          <Field label="手机号（多个用空格/逗号分隔，批量创建 subaccount 成员）">
             <textarea
               className={inputClass}
               rows={3}
-              value={nu.emails}
-              onChange={(e) => setNu({ ...nu, emails: e.target.value })}
-              placeholder="user1@example.com, user2@example.com"
+              value={nu.phones}
+              onChange={(e) => setNu({ ...nu, phones: e.target.value })}
+              placeholder="13800138000, 13900139000"
             />
           </Field>
           <Field label="每日生图上限（enterprise/admin 不受限，此值对 subaccount 生效）">
             <Input type="number" value={nu.dailyImageLimit} onChange={(e) => setNu({ ...nu, dailyImageLimit: e.target.value })} />
           </Field>
-          <p className="text-xs text-text-muted">创建后后端生成随机初始密码，仅在弹窗中显示一次，请及时复制保存。</p>
+          <p className="text-xs text-text-muted">创建后后端生成随机初始密码，仅在弹窗中显示一次，请及时复制保存。成员首登需修改初始密码。</p>
         </div>
       </Modal>
 
@@ -389,12 +404,12 @@ export function AdminUsersPage() {
       >
         <div className="space-y-2">
           {createdPasswords?.map((p) => (
-            <div key={p.email} className="flex items-center justify-between gap-2 rounded-md bg-bg px-3 py-2">
+            <div key={p.account} className="flex items-center justify-between gap-2 rounded-md bg-bg px-3 py-2">
               <div className="min-w-0 text-sm">
-                <div className="truncate font-medium text-text">{p.email}</div>
+                <div className="truncate font-medium text-text">{p.account}</div>
                 <div className="truncate font-mono text-text-muted">{p.password}</div>
               </div>
-              <Button variant="ghost" size="sm" onClick={async () => { await copyText(`${p.email} : ${p.password}`); setMessage(`已复制 ${p.email}。`); }}>复制</Button>
+              <Button variant="ghost" size="sm" onClick={async () => { await copyText(`${p.account} : ${p.password}`); setMessage(`已复制 ${p.account}。`); }}>复制</Button>
             </div>
           ))}
           <p className="text-xs text-danger">⚠️ 密码仅显示一次，关闭后将无法再次查看，请务必复制保存。</p>
@@ -416,7 +431,7 @@ export function AdminUsersPage() {
       >
         {editing && (
           <>
-            <p className="mb-4 text-xs text-text-muted">{editing.user.email}</p>
+            <p className="mb-4 text-xs text-text-muted">{accountOf(editing.user)}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="显示名"><Input value={ed.name} onChange={(e) => setEd({ ...ed, name: e.target.value })} /></Field>
               <Field label="每日限制"><Input type="number" value={ed.dailyImageLimit} onChange={(e) => setEd({ ...ed, dailyImageLimit: e.target.value })} /></Field>
@@ -465,7 +480,7 @@ export function AdminUsersPage() {
         size="sm"
         footer={
           <>
-            <Button variant="secondary" size="sm" onClick={async () => { if (resetResult) { await copyText(`${resetResult.email} : ${resetResult.password}`); setMessage("已复制新密码。"); } }}>复制</Button>
+            <Button variant="secondary" size="sm" onClick={async () => { if (resetResult) { await copyText(`${resetResult.account} : ${resetResult.password}`); setMessage("已复制新密码。"); } }}>复制</Button>
             <Button variant="primary" size="sm" onClick={() => setResetResult(null)}>我已保存</Button>
           </>
         }
@@ -473,7 +488,7 @@ export function AdminUsersPage() {
         {resetResult && (
           <div className="space-y-2">
             <div className="rounded-md bg-bg px-3 py-2 text-sm">
-              <div className="font-medium text-text">{resetResult.email}</div>
+              <div className="font-medium text-text">{resetResult.account}</div>
               <div className="font-mono text-text-muted">{resetResult.password}</div>
             </div>
             <p className="text-xs text-danger">⚠️ 密码仅显示一次，关闭后将无法再次查看。</p>
@@ -496,7 +511,7 @@ export function AdminUsersPage() {
       >
         {creditTarget && (
           <div className="grid gap-3">
-            <p className="text-xs text-text-muted">{creditTarget.user.displayName || creditTarget.user.email}（当前余额 {creditTarget.user.credits}）</p>
+            <p className="text-xs text-text-muted">{creditTarget.user.displayName || accountOf(creditTarget.user)}（当前余额 {creditTarget.user.credits}）</p>
             <Field label="数量（正=增加 负=扣减）">
               <Input type="number" value={creditForm.amount} onChange={(e) => setCreditForm({ ...creditForm, amount: e.target.value })} placeholder="如 100 或 -50" />
             </Field>

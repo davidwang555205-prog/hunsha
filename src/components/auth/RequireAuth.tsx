@@ -9,10 +9,14 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  // 初始密码强制改密：mustChangePassword=true 且不在改密页，跳转强制改密
+  if (user?.mustChangePassword && !location.pathname.startsWith("/change-password")) {
+    return <Navigate to="/change-password?force=1" replace />;
   }
   return <>{children}</>;
 }

@@ -229,9 +229,18 @@ type JoinGroupResp struct {
 
 // TeamLoginReq 团队用户登录请求
 type TeamLoginReq struct {
-	Email        string `json:"email" validate:"required"`    // 用户邮箱
-	Password     string `json:"password" validate:"required"` // 用户密码（MD5加密后的值）
+	Email        string `json:"email" validate:"omitempty"`    // 邮箱（与手机号二选一）
+	Phone        string `json:"phone" validate:"omitempty"`    // 手机号（与邮箱二选一，短信注册用户）
+	Password     string `json:"password" validate:"required"` // 用户密码
 	CaptchaToken string `json:"captcha_token"`                // 验证码Token
+}
+
+// Validate 校验邮箱与手机号至少一个非空。
+func (r *TeamLoginReq) Validate() error {
+	if r.Email == "" && r.Phone == "" {
+		return errcode.ErrLoginFailed
+	}
+	return nil
 }
 
 // TeamLoginResp 团队用户登录响应
@@ -274,13 +283,13 @@ type TeamLogoutResp struct {
 
 // AddTeamUserReq 创建团队成员请求
 type AddTeamUserReq struct {
-	Emails          []string  `json:"emails" validate:"required"`           // 邮箱列表
+	Phones          []string  `json:"phones" validate:"required"`           // 手机号列表
 	GroupID         uuid.UUID `json:"group_id" validate:"omitempty"`        // 团队组ID
 	DailyImageLimit int       `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：批量成员每日生图额度（0 用默认）
 }
 
 type AddTeamUserWithPasswordReq struct {
-	Emails    []string          `json:"emails" validate:"required"`
+	Phones    []string          `json:"phones" validate:"required"`
 	GroupID   uuid.UUID         `json:"group_id" validate:"omitempty"`
 	Passwords map[string]string `json:"-" swaggerignore:"true"`
 }
@@ -291,7 +300,7 @@ type AddTeamUserResp struct {
 }
 
 type TeamUserPassword struct {
-	Email    string `json:"email"`
+	Account  string `json:"account"` // 账号标识（手机号或邮箱）
 	Password string `json:"password"`
 }
 
@@ -310,8 +319,8 @@ type DeleteTeamUserReq struct {
 
 // AddTeamAdminReq 创建团队管理员请求
 type AddTeamAdminReq struct {
-	Email           string `json:"email" validate:"required,email"` // 邮箱
-	Name            string `json:"name" validate:"required"`        // 姓名
+	Phone           string `json:"phone" validate:"required"` // 手机号
+	Name            string `json:"name" validate:"required"`   // 姓名
 	Password        string `json:"-" swaggerignore:"true"`
 	DailyImageLimit int    `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：admin 不受限，此值仅存档
 }

@@ -300,3 +300,33 @@ other = "License 尚未生效"
 
 [err-license-machine-mismatch]
 other = "License 机器码不匹配"
+
+[err-phone-required]
+other = "手机号不能为空"
+
+[err-phone-invalid]
+other = "手机号格式无效"
+
+[err-phone-taken]
+other = "该手机号已注册"
+
+[err-phone-not-found]
+other = "该手机号未注册"
+
+[err-sms-code-required]
+other = "短信验证码不能为空"
+
+[err-sms-code-invalid]
+other = "短信验证码无效或已过期"
+
+[err-sms-send-too-frequent]
+other = "短信发送过于频繁，请稍后再试"
+
+[err-sms-send-failed]
+other = "短信发送失败"
+
+[err-register-disabled]
+other = "注册功能未开启"
+
+[err-must-change-password]
+other = "首次登录需修改初始密码"

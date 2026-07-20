@@ -116,6 +116,18 @@ var (
 	ErrOAuthLoginFailed              = web.NewErr(http.StatusOK, 10631, "err-oauth-login-failed")
 	ErrOAuthLoginRedirectInvalid     = web.NewErr(http.StatusOK, 10632, "err-oauth-login-redirect-invalid")
 
+	// 短信验证码注册 / 重置密码
+	ErrPhoneRequired      = web.NewErr(http.StatusOK, 10633, "err-phone-required")
+	ErrPhoneInvalid       = web.NewErr(http.StatusOK, 10634, "err-phone-invalid")
+	ErrPhoneTaken         = web.NewErr(http.StatusOK, 10635, "err-phone-taken")
+	ErrPhoneNotFound      = web.NewErr(http.StatusOK, 10636, "err-phone-not-found")
+	ErrSmsCodeRequired    = web.NewErr(http.StatusOK, 10637, "err-sms-code-required")
+	ErrSmsCodeInvalid     = web.NewErr(http.StatusOK, 10638, "err-sms-code-invalid")
+	ErrSmsSendTooFrequent = web.NewErr(http.StatusOK, 10639, "err-sms-send-too-frequent")
+	ErrSmsSendFailed      = web.NewErr(http.StatusOK, 10640, "err-sms-send-failed")
+	ErrRegisterDisabled   = web.NewErr(http.StatusOK, 10641, "err-register-disabled")
+	ErrMustChangePassword = web.NewErr(http.StatusOK, 10642, "err-must-change-password")
+
 	// captcha 模块
 	ErrCreateCaptchaFailed = web.NewErr(http.StatusOK, 10700, "err-create-captcha-failed")
 	ErrRedeemCaptchaFailed = web.NewErr(http.StatusOK, 10701, "err-redeem-captcha-failed")

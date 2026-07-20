@@ -44,6 +44,11 @@ const AdminEnginesPage = lazy(() =>
 const AdminModelInvocationsPage = lazy(() =>
   import("./pages/admin/AdminModelInvocationsPage").then((m) => ({ default: m.AdminModelInvocationsPage }))
 );
+const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
+const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage").then((m) => ({ default: m.ChangePasswordPage })));
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage").then((m) => ({ default: m.AdminSettingsPage })));
 
 function PageFallback() {
   return (
@@ -88,6 +93,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<LazyPage><RegisterPage /></LazyPage>} />
+        <Route path="/forgot-password" element={<LazyPage><ForgotPasswordPage /></LazyPage>} />
+        <Route path="/resetpassword" element={<LazyPage><ResetPasswordPage /></LazyPage>} />
+        <Route path="/change-password" element={<RequireAuth><LazyPage><ChangePasswordPage /></LazyPage></RequireAuth>} />
         <Route path="/" element={<Shell><ToolsHomePage /></Shell>} />
         <Route path="/studio" element={<Shell><StudioPage /></Shell>} />
         <Route path="/history" element={<Shell><HistoryPage /></Shell>} />
@@ -99,6 +108,7 @@ export default function App() {
         <Route path="/admin/categories" element={<AdminShell><AdminCategoriesPage /></AdminShell>} />
         <Route path="/admin/credits" element={<AdminShell><AdminCreditsPage /></AdminShell>} />
         <Route path="/admin/engines" element={<AdminShell><AdminEnginesPage /></AdminShell>} />
+        <Route path="/admin/settings" element={<AdminShell><AdminSettingsPage /></AdminShell>} />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>

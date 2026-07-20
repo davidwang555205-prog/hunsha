@@ -61,23 +61,23 @@ func (m *Manager) addUsersWithPassword(ctx context.Context, teamUser *domain.Tea
 	}
 	limit := domain.NormalizeDailyImageLimit(req.DailyImageLimit, domain.DefaultDailyImageLimit)
 
-	users := make([]*domain.TeamUser, 0, len(req.Emails))
-	passwords := make([]*domain.TeamUserPassword, 0, len(req.Emails))
-	for _, email := range req.Emails {
-		tu, pwd, err := m.createSubAccount(ctx, teamID, email, req.GroupID, limit)
+	users := make([]*domain.TeamUser, 0, len(req.Phones))
+	passwords := make([]*domain.TeamUserPassword, 0, len(req.Phones))
+	for _, phone := range req.Phones {
+		tu, pwd, err := m.createSubAccount(ctx, teamID, phone, req.GroupID, limit)
 		if err != nil {
-			m.logger.ErrorContext(ctx, "create subaccount failed", "email", email, "error", err)
+			m.logger.ErrorContext(ctx, "create subaccount failed", "phone", phone, "error", err)
 			continue
 		}
 		users = append(users, tu)
-		passwords = append(passwords, &domain.TeamUserPassword{Email: email, Password: pwd})
+		passwords = append(passwords, &domain.TeamUserPassword{Account: phone, Password: pwd})
 	}
 	return &domain.AddTeamUserWithPasswordResp{Users: users, Passwords: passwords}, nil
 }
 
 // createSubAccount 建 subaccount 用户 + TeamMember(user) + TeamGroupMember，返回 TeamUser + 明文密码。
-// 幂等：email+subaccount 已存在则复用用户，补建成员关系。
-func (m *Manager) createSubAccount(ctx context.Context, teamID uuid.UUID, email string, groupID uuid.UUID, dailyLimit int) (*domain.TeamUser, string, error) {
+// 手机号唯一：已被任何用户占用则报错（phone 部分唯一索引）。
+func (m *Manager) createSubAccount(ctx context.Context, teamID uuid.UUID, phone string, groupID uuid.UUID, dailyLimit int) (*domain.TeamUser, string, error) {
 	pwd := random.String(16)
 	hashed, err := crypto.HashPassword(pwd)
 	if err != nil {
@@ -85,26 +85,25 @@ func (m *Manager) createSubAccount(ctx context.Context, teamID uuid.UUID, email 
 	}
 	var teamUser *domain.TeamUser
 	err = entx.WithTx2(ctx, m.db, func(tx *db.Tx) error {
-		existing, qerr := tx.User.Query().Where(user.EmailEQ(email), user.RoleEQ(consts.UserRoleSubAccount)).First(ctx)
+		existing, qerr := tx.User.Query().Where(user.PhoneEQ(phone)).First(ctx)
 		if qerr != nil && !db.IsNotFound(qerr) {
 			return qerr
 		}
-		var u *db.User
 		if existing != nil {
-			u = existing
-		} else {
-			u, err = tx.User.Create().
-				SetID(uuid.New()).
-				SetName(email).
-				SetEmail(email).
-				SetStatus(consts.UserStatusActive).
-				SetPassword(hashed).
-				SetRole(consts.UserRoleSubAccount).
-				SetDailyImageLimit(dailyLimit).
-				Save(ctx)
-			if err != nil {
-				return err
-			}
+			return fmt.Errorf("手机号 %s 已被使用", phone)
+		}
+		u, err := tx.User.Create().
+			SetID(uuid.New()).
+			SetName(phone).
+			SetPhone(phone).
+			SetStatus(consts.UserStatusActive).
+			SetPassword(hashed).
+			SetRole(consts.UserRoleSubAccount).
+			SetDailyImageLimit(dailyLimit).
+			SetMustChangePassword(true).
+			Save(ctx)
+		if err != nil {
+			return err
 		}
 		// TeamMember（role=user）
 		memberExists, err := tx.TeamMember.Query().Where(teammember.TeamIDEQ(teamID), teammember.UserIDEQ(u.ID)).Exist(ctx)
@@ -172,11 +171,12 @@ func (m *Manager) AddAdmin(ctx context.Context, teamUser *domain.TeamUser, req *
 		u, err := tx.User.Create().
 			SetID(uuid.New()).
 			SetName(req.Name).
-			SetEmail(req.Email).
+			SetPhone(req.Phone).
 			SetStatus(consts.UserStatusActive).
 			SetPassword(hashed).
 			SetRole(consts.UserRoleEnterprise).
 			SetDailyImageLimit(dailyLimit).
+			SetMustChangePassword(true).
 			Save(ctx)
 		if err != nil {
 			return err
