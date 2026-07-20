@@ -1,16 +1,29 @@
 /**
- * RegisterPage -- 手机号注册（短信验证码）
+ * RegisterPage -- 单 input 通用注册（手机号或邮箱 + 6 位数字验证码）
  *
- * 手机号 + 密码 + 确认密码 + 短信验证码（60s 倒计时发送）。
- * 注册成功后端建双 session 自动登录，前端 setUser 后跳首页。
- * 短信服务未配置时后端返回 ErrRegisterDisabled，前端展示后端 message。
+ * 流程：
+ * 1. 用户输入手机号或邮箱，mode 智能判断（11 位数字 = phone，含 @ = email）
+ * 2. 点"获取验证码" → 调 sendVerificationCode
+ *    - 成功：保存 channel + masked_destination，倒计时开始
+ *    - 失败 10648 ErrSmsUnavailableForPhone：显示 fallback email 输入框（SMS 不可用，phone 用户补 email）
+ *    - 失败 10647 ErrVerificationChannelUnavailable：双不可用，明确错误
+ * 3. 用户补填 email 后再次点"获取验证码"（带 fallbackEmail 入参）
+ * 4. 填验证码 + 密码 + 确认密码 → 调 registerByCode（带回 channel 与所有 target）
+ * 5. 成功自动登录（后端写双 session），前端 setUser 跳首页
+ *
+ * account 改动立即清空 channel/code/countdown/所有提示，防止 A 账号验证码提交到 B 账号。
  */
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
-import { register, sendSmsCode } from "../api/auth";
-import type { ApiError } from "../types/api";
+import { registerByCode, sendVerificationCode } from "../api/auth";
+import {
+  ApiError,
+  VerificationErrorCode,
+  VerificationChannel,
+  errorCodeOf
+} from "../types/api";
 import { BlurText } from "../components/motion/BlurText";
 import { GradientText } from "../components/motion/GradientText";
 import { GlassCard } from "../components/motion/GlassCard";
@@ -18,17 +31,21 @@ import { MagneticButton } from "../components/motion/MagneticButton";
 import { Input } from "../components/ui/Input";
 import { Field } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
+import { identifyAccount, isPhone } from "../lib/accountIdentifier";
 import logo from "../assets/logo.png";
-
-const PHONE_RE = /^\d{11}$/;
 
 export function RegisterPage() {
   const { isAuthenticated, refreshUser } = useAuth();
-  const [phone, setPhone] = useState("");
+  const [account, setAccount] = useState("");
+  const [fallbackEmail, setFallbackEmail] = useState(""); // phone SMS 不可用时展示
+  const [showFallbackEmail, setShowFallbackEmail] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [smsCode, setSmsCode] = useState("");
+  const [code, setCode] = useState("");
+  const [channel, setChannel] = useState<VerificationChannel | null>(null);
+  const [maskedDestination, setMaskedDestination] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -43,29 +60,82 @@ export function RegisterPage() {
     return <Navigate to="/" replace />;
   }
 
-  const clearError = () => error && setError("");
+  const clearFeedback = () => {
+    if (error) setError("");
+    if (info) setInfo("");
+  };
+
+  const resetDeliveryState = () => {
+    setChannel(null);
+    setMaskedDestination("");
+    setCode("");
+    setCountdown(0);
+    setShowFallbackEmail(false);
+    setFallbackEmail("");
+  };
+
+  const handleAccountChange = (v: string) => {
+    setAccount(v);
+    // account 改变：清空所有 delivery state 防止 A 账号验证码提交到 B 账号
+    resetDeliveryState();
+    clearFeedback();
+  };
 
   const handleSendCode = async () => {
-    setError("");
-    if (!PHONE_RE.test(phone)) {
-      setError("请输入 11 位手机号。");
+    clearFeedback();
+    const kind = identifyAccount(account);
+    if (kind === "invalid") {
+      setError("请输入 11 位手机号或邮箱地址。");
       return;
+    }
+    if (kind === "phone" && !showFallbackEmail) {
+      // 第一次发码用 phone 试 SMS；若后端返 10648，再让用户补 email
+    }
+    if (showFallbackEmail) {
+      // 第二次发码必须先填 fallback email
+      const fk = identifyAccount(fallbackEmail);
+      if (fk !== "email") {
+        setError("请补充有效的邮箱地址。");
+        return;
+      }
     }
     setSending(true);
     try {
-      await sendSmsCode({ phone, scene: "register" });
-      setCountdown(60);
+      const phone = kind === "phone" ? account : undefined;
+      const email = kind === "email" ? account : showFallbackEmail ? fallbackEmail : undefined;
+      const d = await sendVerificationCode({
+        phone,
+        email,
+        scene: "register"
+      });
+      setChannel(d.channel);
+      setMaskedDestination(d.masked_destination);
+      setCountdown(d.retry_after_seconds || 60);
+      setInfo(channelSuccessMessage(d.channel, d.masked_destination));
     } catch (err) {
-      setError((err as ApiError | undefined)?.message || "验证码发送失败。");
+      const code = errorCodeOf(err);
+      if (code === VerificationErrorCode.SmsUnavailableForPhone) {
+        // 10648: phone SMS 不可用，让用户补 email
+        setShowFallbackEmail(true);
+        setError("短信通道暂不可用，请补充邮箱以接收验证码。");
+      } else if (code === VerificationErrorCode.VerificationChannelUnavailable) {
+        setError("当前验证码通道不可用，请联系管理员。");
+      } else if (code === VerificationErrorCode.PhoneTaken || code === VerificationErrorCode.EmailTaken) {
+        // 用 i18n 风格直接显示 message（后端 i18n key 已翻译）
+        setError((err as ApiError).message || "该账号已注册。");
+      } else {
+        setError((err as ApiError | undefined)?.message || "验证码发送失败。");
+      }
     } finally {
       setSending(false);
     }
   };
 
   const handleSubmit = async () => {
-    setError("");
-    if (!PHONE_RE.test(phone)) {
-      setError("请输入 11 位手机号。");
+    clearFeedback();
+    const kind = identifyAccount(account);
+    if (kind === "invalid") {
+      setError("请输入 11 位手机号或邮箱地址。");
       return;
     }
     if (password.length < 8 || password.length > 32) {
@@ -76,13 +146,25 @@ export function RegisterPage() {
       setError("两次输入的密码不一致。");
       return;
     }
-    if (!smsCode.trim()) {
-      setError("请输入短信验证码。");
+    if (!code.trim()) {
+      setError("请输入验证码。");
+      return;
+    }
+    if (!channel) {
+      setError("请先获取验证码。");
       return;
     }
     setLoading(true);
     try {
-      const u = await register({ phone, password, sms_code: smsCode });
+      const phone = kind === "phone" ? account : undefined;
+      const email = kind === "email" ? account : showFallbackEmail ? fallbackEmail : undefined;
+      const u = await registerByCode({
+        phone,
+        email,
+        password,
+        code,
+        channel
+      });
       refreshUser(u);
     } catch (err) {
       const statusCode = (err as ApiError | undefined)?.statusCode;
@@ -108,7 +190,7 @@ export function RegisterPage() {
               Bridal &amp; Dress
             </GradientText>
             <BlurText as="h1" text="账号注册" stagger={40} className="mt-3 text-h1 font-display text-text" />
-            <p className="mt-2 text-sm text-text-muted">手机号验证码注册</p>
+            <p className="mt-2 text-sm text-text-muted">手机号或邮箱 + 验证码注册</p>
           </div>
 
           <form
@@ -118,26 +200,39 @@ export function RegisterPage() {
               void handleSubmit();
             }}
           >
-            <Field label="手机号">
+            <Field label="手机号或邮箱">
               <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value);
-                  clearError();
-                }}
-                autoComplete="tel"
-                placeholder="11 位手机号"
-                maxLength={11}
+                type="text"
+                value={account}
+                onChange={(e) => handleAccountChange(e.target.value)}
+                autoComplete="username"
+                placeholder="11 位手机号或邮箱"
+                maxLength={64}
               />
             </Field>
+
+            {showFallbackEmail && isPhone(account) && (
+              <Field label="补充邮箱" hint="短信通道暂不可用，请用邮箱接收验证码">
+                <Input
+                  type="email"
+                  value={fallbackEmail}
+                  onChange={(e) => {
+                    setFallbackEmail(e.target.value);
+                    clearFeedback();
+                  }}
+                  autoComplete="email"
+                  placeholder="example@domain.com"
+                />
+              </Field>
+            )}
+
             <Field label="密码" hint="8-32 个字符">
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  clearError();
+                  clearFeedback();
                 }}
                 autoComplete="new-password"
               />
@@ -148,19 +243,22 @@ export function RegisterPage() {
                 value={confirm}
                 onChange={(e) => {
                   setConfirm(e.target.value);
-                  clearError();
+                  clearFeedback();
                 }}
                 autoComplete="new-password"
               />
             </Field>
-            <Field label="短信验证码">
+            <Field
+              label="验证码"
+              hint={maskedDestination ? `已发送至 ${maskedDestination}` : "6 位数字验证码"}
+            >
               <div className="flex gap-2">
                 <Input
                   type="text"
-                  value={smsCode}
+                  value={code}
                   onChange={(e) => {
-                    setSmsCode(e.target.value);
-                    clearError();
+                    setCode(e.target.value);
+                    clearFeedback();
                   }}
                   placeholder="6 位验证码"
                   maxLength={6}
@@ -176,6 +274,12 @@ export function RegisterPage() {
                 </button>
               </div>
             </Field>
+
+            {info && !error && (
+              <p className="rounded-md bg-primary/5 px-3 py-2 text-sm text-primary ring-1 ring-primary/20" role="status">
+                {info}
+              </p>
+            )}
 
             {error && (
               <motion.p
@@ -209,4 +313,8 @@ export function RegisterPage() {
       </div>
     </main>
   );
+}
+
+function channelSuccessMessage(channel: VerificationChannel, dest: string): string {
+  return channel === "sms" ? `短信验证码已发送至 ${dest}` : `验证码已发送至 ${dest}`;
 }

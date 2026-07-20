@@ -462,14 +462,88 @@ export type UpdateUserResponse = { user: ApiUser };
 /** 重置密码响应 = Resp.data */
 export type ResetPasswordResponse = TeamUserPassword;
 
-/** 统一错误：归一化后的 HTTP 错误，401 触发全局登出 */
+/** 统一错误：归一化后的 HTTP 错误，401 触发全局登出。
+ *
+ * - statusCode：HTTP 状态码；web.Resp 业务错误 HTTP 仍 200，由 code 区分。
+ * - code：web.Resp 业务码（106xx），与 i18n key 对应；前端按 code 做差异化文案，不用 message 字符串判断。
+ */
 export type ApiError = Error & {
   statusCode?: number;
+  code?: number;
 };
 
 /** 判断是否为 401 未授权错误 */
 export function isUnauthorizedError(error: unknown): error is ApiError {
   return error instanceof Error && (error as ApiError).statusCode === 401;
+}
+
+/** 验证码通道（前端按响应 channel 渲染提示文案，不假设 phone 必走 SMS） */
+export type VerificationChannel = "sms" | "email";
+
+/** POST /api/v1/users/verification/send 请求体（phone 或 email 之一） */
+export type SendVerificationCodeRequest = {
+  phone?: string;
+  email?: string;
+  scene: "register" | "reset_password";
+  captcha_token?: string;
+};
+
+/** 验证码发送响应（前端保存 channel 给后续 register/reset 提交带回） */
+export type VerificationDelivery = {
+  channel: VerificationChannel;
+  masked_destination: string;
+  expires_in_seconds: number;
+  retry_after_seconds: number;
+};
+
+/** POST /api/v1/users/register-by-code 请求体（phone 或 email 之一 + code + channel） */
+export type RegisterByCodeRequest = {
+  phone?: string;
+  email?: string;
+  password: string;
+  code: string;
+  channel: VerificationChannel;
+};
+
+/** PUT /api/v1/users/passwords/reset-by-code 请求体（phone 或 email 之一 + code + channel + 新密码） */
+export type ResetByCodeRequest = {
+  phone?: string;
+  email?: string;
+  code: string;
+  channel: VerificationChannel;
+  new_password: string;
+};
+
+/** 验证码业务错误码（与 backend/errcode/errcode.go 10633-10648 对齐） */
+export const VerificationErrorCode = {
+  PhoneRequired: 10633,
+  PhoneInvalid: 10634,
+  PhoneTaken: 10635,
+  PhoneNotFound: 10636,
+  SmsCodeRequired: 10637,
+  SmsCodeInvalid: 10638,
+  SmsSendTooFrequent: 10639,
+  SmsSendFailed: 10640,
+  RegisterDisabled: 10641,
+  MustChangePassword: 10642,
+  EmailCodeRequired: 10643,
+  EmailCodeInvalid: 10644,
+  EmailCodeSendTooFrequent: 10645,
+  EmailCodeSendFailed: 10646,
+  VerificationChannelUnavailable: 10647,
+  SmsUnavailableForPhone: 10648,
+  // 业务相关：email 注册查重 / phone 找回密码 email 兜底
+  EmailTaken: 10613,
+  EmailNotBound: 10615
+} as const;
+export type VerificationErrorCodeValue = (typeof VerificationErrorCode)[keyof typeof VerificationErrorCode];
+
+/** 从 ApiError 提取业务码（无业务码返 undefined） */
+export function errorCodeOf(error: unknown): number | undefined {
+  if (error instanceof Error) {
+    return (error as ApiError).code;
+  }
+  return undefined;
 }
 
 // ============================================================

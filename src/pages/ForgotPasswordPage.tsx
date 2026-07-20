@@ -1,16 +1,25 @@
 /**
- * ForgotPasswordPage -- 忘记密码（邮箱走邮件 / 手机号走短信，自动判断）
+ * ForgotPasswordPage -- 忘记密码（单 input 通用验证码重置）
  *
- * 输入邮箱或手机号：
- * - 邮箱（含 @）：发送重置邮件，用户去邮箱点链接跳 /resetpassword 完成
- * - 手机号（11 位）：短信验证码 + 新密码一步完成重置
- * 两类用户都能自助重置（email 老用户走邮件，手机号新用户走短信）。
+ * 输入邮箱或手机号，按 mode 走 6 位数字验证码通道：
+ * - email 模式：邮件验证码（替代旧的 24h 邮件链接）
+ * - phone 模式：短信验证码
+ *
+ * SMS 不可用时（10648 ErrSmsUnavailableForPhone）：提示用户改用邮箱重置
+ *   （不允许任意补 email，避免重置错误账号——绑定 email 走 user 表由后端控制）。
+ *
+ * 双不可用（10647）：系统级通道不可用，提示联系管理员。
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { resetPasswordBySms, sendResetPasswordEmail, sendSmsCode } from "../api/auth";
-import type { ApiError } from "../types/api";
+import { resetPasswordByCode, sendVerificationCode } from "../api/auth";
+import {
+  ApiError,
+  VerificationChannel,
+  VerificationErrorCode,
+  errorCodeOf
+} from "../types/api";
 import { BlurText } from "../components/motion/BlurText";
 import { GradientText } from "../components/motion/GradientText";
 import { GlassCard } from "../components/motion/GlassCard";
@@ -18,25 +27,22 @@ import { MagneticButton } from "../components/motion/MagneticButton";
 import { Input } from "../components/ui/Input";
 import { Field } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
+import { identifyAccount } from "../lib/accountIdentifier";
 import logo from "../assets/logo.png";
-
-const PHONE_RE = /^\d{11}$/;
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [account, setAccount] = useState("");
-  const [smsCode, setSmsCode] = useState("");
+  const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [channel, setChannel] = useState<VerificationChannel | null>(null);
+  const [maskedDestination, setMaskedDestination] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
-
-  const isEmail = account.includes("@");
-  const isPhone = PHONE_RE.test(account);
-  const mode: "email" | "phone" | null = isEmail ? "email" : isPhone ? "phone" : null;
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -49,51 +55,71 @@ export function ForgotPasswordPage() {
     if (info) setInfo("");
   };
 
+  const resetDeliveryState = () => {
+    setChannel(null);
+    setMaskedDestination("");
+    setCode("");
+    setCountdown(0);
+  };
+
+  const handleAccountChange = (v: string) => {
+    setAccount(v);
+    resetDeliveryState();
+    clearMsg();
+  };
+
   const handleSendCode = async () => {
-    setError("");
-    setInfo("");
-    if (!isPhone) {
-      setError("请输入 11 位手机号。");
+    clearMsg();
+    const kind = identifyAccount(account);
+    if (kind === "invalid") {
+      setError("请输入 11 位手机号或邮箱地址。");
       return;
     }
     setSending(true);
     try {
-      await sendSmsCode({ phone: account, scene: "reset_password" });
-      setCountdown(60);
+      const phone = kind === "phone" ? account : undefined;
+      const email = kind === "email" ? account : undefined;
+      const d = await sendVerificationCode({ phone, email, scene: "reset_password" });
+      setChannel(d.channel);
+      setMaskedDestination(d.masked_destination);
+      setCountdown(d.retry_after_seconds || 60);
+      setInfo(
+        d.channel === "sms"
+          ? `短信验证码已发送至 ${d.masked_destination}`
+          : `验证码已发送至 ${d.masked_destination}`
+      );
     } catch (err) {
-      setError((err as ApiError | undefined)?.message || "验证码发送失败。");
+      const codeVal = errorCodeOf(err);
+      if (codeVal === VerificationErrorCode.SmsUnavailableForPhone) {
+        setError("短信通道暂不可用，如该账号绑定邮箱，请改用邮箱重置。");
+      } else if (codeVal === VerificationErrorCode.VerificationChannelUnavailable) {
+        setError("当前验证码通道不可用，请联系管理员。");
+      } else if (
+        codeVal === VerificationErrorCode.PhoneNotFound ||
+        codeVal === VerificationErrorCode.EmailNotBound
+      ) {
+        setError((err as ApiError).message || "该账号未注册。");
+      } else {
+        setError((err as ApiError | undefined)?.message || "验证码发送失败。");
+      }
     } finally {
       setSending(false);
     }
   };
 
   const handleSubmit = async () => {
-    setError("");
-    setInfo("");
-    if (mode === null) {
-      setError("请输入有效的邮箱或 11 位手机号。");
+    clearMsg();
+    const kind = identifyAccount(account);
+    if (kind === "invalid") {
+      setError("请输入 11 位手机号或邮箱地址。");
       return;
     }
-    if (mode === "email") {
-      setLoading(true);
-      try {
-        await sendResetPasswordEmail({ emails: [account] });
-        setInfo("重置链接已发送到邮箱，请查收邮件完成重置。");
-      } catch (err) {
-        const statusCode = (err as ApiError | undefined)?.statusCode;
-        setError(
-          statusCode === undefined
-            ? "无法连接服务，请检查网络后重试。"
-            : (err as ApiError | undefined)?.message || "发送失败。"
-        );
-      } finally {
-        setLoading(false);
-      }
+    if (!code.trim()) {
+      setError("请输入验证码。");
       return;
     }
-    // phone 模式
-    if (!smsCode.trim()) {
-      setError("请输入短信验证码。");
+    if (!channel) {
+      setError("请先获取验证码。");
       return;
     }
     if (newPassword.length < 8 || newPassword.length > 32) {
@@ -106,7 +132,15 @@ export function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
-      await resetPasswordBySms({ phone: account, sms_code: smsCode, new_password: newPassword });
+      const phone = kind === "phone" ? account : undefined;
+      const email = kind === "email" ? account : undefined;
+      await resetPasswordByCode({
+        phone,
+        email,
+        code,
+        channel,
+        new_password: newPassword
+      });
       navigate("/login", { replace: true });
     } catch (err) {
       const statusCode = (err as ApiError | undefined)?.statusCode;
@@ -120,8 +154,6 @@ export function ForgotPasswordPage() {
     }
   };
 
-  const buttonLabel = mode === "email" ? (loading ? "发送中..." : "发送重置邮件") : loading ? "重置中..." : "重置密码";
-
   return (
     <main className="flex min-h-screen flex-col px-4 py-8 text-text">
       <div className="flex flex-1 items-center justify-center">
@@ -134,7 +166,7 @@ export function ForgotPasswordPage() {
               Bridal &amp; Dress
             </GradientText>
             <BlurText as="h1" text="重置密码" stagger={40} className="mt-3 text-h1 font-display text-text" />
-            <p className="mt-2 text-sm text-text-muted">邮箱走邮件 / 手机号走短信</p>
+            <p className="mt-2 text-sm text-text-muted">邮箱或手机号 + 6 位数字验证码重置</p>
           </div>
 
           <form
@@ -144,81 +176,71 @@ export function ForgotPasswordPage() {
               void handleSubmit();
             }}
           >
-            <Field
-              label="邮箱或手机号"
-              hint={mode === "email" ? "将发送重置链接到邮箱" : mode === "phone" ? "使用短信验证码重置" : "输入邮箱或 11 位手机号"}
-            >
+            <Field label="邮箱或手机号">
               <Input
                 type="text"
                 value={account}
-                onChange={(e) => {
-                  setAccount(e.target.value);
-                  clearMsg();
-                }}
+                onChange={(e) => handleAccountChange(e.target.value)}
                 autoComplete="username"
-                placeholder="邮箱或手机号"
+                placeholder="邮箱或 11 位手机号"
+                maxLength={64}
               />
             </Field>
 
-            {mode === "phone" && (
-              <>
-                <Field label="短信验证码">
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={smsCode}
-                      onChange={(e) => {
-                        setSmsCode(e.target.value);
-                        clearMsg();
-                      }}
-                      placeholder="6 位验证码"
-                      maxLength={6}
-                      className="flex-1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void handleSendCode()}
-                      disabled={sending || countdown > 0}
-                      className="inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-surface px-3 py-2.5 text-sm font-medium text-text transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {sending ? <Spinner size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
-                    </button>
-                  </div>
-                </Field>
-                <Field label="新密码" hint="8-32 个字符">
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value);
-                      clearMsg();
-                    }}
-                    autoComplete="new-password"
-                  />
-                </Field>
-                <Field label="确认新密码">
-                  <Input
-                    type="password"
-                    value={confirm}
-                    onChange={(e) => {
-                      setConfirm(e.target.value);
-                      clearMsg();
-                    }}
-                    autoComplete="new-password"
-                  />
-                </Field>
-              </>
-            )}
+            <Field
+              label="验证码"
+              hint={maskedDestination ? `已发送至 ${maskedDestination}` : "6 位数字验证码"}
+            >
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value);
+                    clearMsg();
+                  }}
+                  placeholder="6 位验证码"
+                  maxLength={6}
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleSendCode()}
+                  disabled={sending || countdown > 0}
+                  className="inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-surface px-3 py-2.5 text-sm font-medium text-text transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {sending ? <Spinner size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
+                </button>
+              </div>
+            </Field>
 
-            {info && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary ring-1 ring-primary/20"
-                role="status"
-              >
+            <Field label="新密码" hint="8-32 个字符">
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  clearMsg();
+                }}
+                autoComplete="new-password"
+              />
+            </Field>
+            <Field label="确认新密码">
+              <Input
+                type="password"
+                value={confirm}
+                onChange={(e) => {
+                  setConfirm(e.target.value);
+                  clearMsg();
+                }}
+                autoComplete="new-password"
+              />
+            </Field>
+
+            {info && !error && (
+              <p className="rounded-md bg-primary/5 px-3 py-2 text-sm text-primary ring-1 ring-primary/20" role="status">
                 {info}
-              </motion.div>
+              </p>
             )}
 
             {error && (
@@ -239,7 +261,7 @@ export function ForgotPasswordPage() {
               className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-md transition duration-fast ease-out hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading && <Spinner size={16} />}
-              {buttonLabel}
+              {loading ? "重置中..." : "重置密码"}
             </MagneticButton>
 
             <div className="text-center text-sm text-text-muted">

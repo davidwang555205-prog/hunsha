@@ -79,7 +79,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       (typeof payload.message === "string" && payload.message) ||
       "请求失败。";
     const apiError = Object.assign(new Error(message), {
-      statusCode: response.status
+      statusCode: response.status,
+      code: typeof (payload as { code?: unknown }).code === "number" ? (payload as { code: number }).code : undefined
     }) as ApiError;
     // 401 统一登出：交由注入的处理器，避免 4+ 处重复。
     // skipUnauthorized 跳过（status 探测 / logout 自身），防止 logout 401 再触发拦截死循环。
@@ -94,7 +95,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     // 必须主动校验 code 才能识别，否则前端静默返回 data=null，用户无任何反馈。
     if (payload.code !== 0) {
       throw Object.assign(new Error(payload.message || "请求失败。"), {
-        statusCode: response.status
+        statusCode: response.status,
+        code: payload.code
       }) as ApiError;
     }
     return payload.data as T;
