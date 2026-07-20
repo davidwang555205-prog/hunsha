@@ -66,6 +66,67 @@ func (r *Repo) ListAll(ctx context.Context) ([]EngineRecord, error) {
 	return out, nil
 }
 
+// EngineSummaryRecord 列表用的精简引擎记录（无 Config，对应前端 ContentEngineSummary）。
+// config 是 jsonb 大字段（单值几十到几百 KB），管理列表页只展示 8 个标量字段，
+// SELECT * 全量返回会让 PG 解码 + Go 反序列化 + JSON 响应体全部放大到 MB 级。
+type EngineSummaryRecord struct {
+	ID          uuid.UUID
+	Key         string
+	Name        string
+	Description string
+	IsEnabled   bool
+	SortOrder   int
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+// ListSummary 管理列表专用：Select 投影裁掉 config 大字段，响应体从 MB 级降到 KB 级。
+func (r *Repo) ListSummary(ctx context.Context) ([]EngineSummaryRecord, error) {
+	es, err := r.db.ContentEngine.Query().
+		Select(
+			contentengine.FieldID,
+			contentengine.FieldKey,
+			contentengine.FieldName,
+			contentengine.FieldDescription,
+			contentengine.FieldIsEnabled,
+			contentengine.FieldSortOrder,
+			contentengine.FieldCreatedAt,
+			contentengine.FieldUpdatedAt,
+		).
+		Order(db.Asc(contentengine.FieldSortOrder), db.Asc(contentengine.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]EngineSummaryRecord, 0, len(es))
+	for _, e := range es {
+		out = append(out, EngineSummaryRecord{
+			ID:          e.ID,
+			Key:         e.Key,
+			Name:        e.Name,
+			Description: e.Description,
+			IsEnabled:   e.IsEnabled,
+			SortOrder:   e.SortOrder,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		})
+	}
+	return out, nil
+}
+
+// GetByID 按 ID 取完整引擎记录（含 config），编辑弹窗回填用。
+func (r *Repo) GetByID(ctx context.Context, id uuid.UUID) (*EngineRecord, error) {
+	e, err := r.db.ContentEngine.Get(ctx, id)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	rec := toRecord(e)
+	return &rec, nil
+}
+
 func (r *Repo) ListEnabled(ctx context.Context) ([]EngineRecord, error) {
 	es, err := r.db.ContentEngine.Query().
 		Where(contentengine.IsEnabledEQ(true)).

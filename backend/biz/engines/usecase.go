@@ -71,6 +71,57 @@ func (u *Usecase) ListAdmin(ctx context.Context) ([]EngineResp, error) {
 	return out, nil
 }
 
+// EngineSummaryResp 管理列表用的精简引擎（无 Config，对应前端 ContentEngineSummary）。
+type EngineSummaryResp struct {
+	ID          string `json:"id"`
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsEnabled   bool   `json:"isEnabled"`
+	SortOrder   int    `json:"sortOrder"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
+func sanitizeSummary(e EngineSummaryRecord) EngineSummaryResp {
+	return EngineSummaryResp{
+		ID:          e.ID.String(),
+		Key:         e.Key,
+		Name:        e.Name,
+		Description: e.Description,
+		IsEnabled:   e.IsEnabled,
+		SortOrder:   e.SortOrder,
+		CreatedAt:   e.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   e.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+// ListAdminSummary 管理列表（含禁用），裁掉 config 大字段，P95 从 30s 降到 <100ms。
+func (u *Usecase) ListAdminSummary(ctx context.Context) ([]EngineSummaryResp, error) {
+	recs, err := u.repo.ListSummary(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]EngineSummaryResp, 0, len(recs))
+	for _, r := range recs {
+		out = append(out, sanitizeSummary(r))
+	}
+	return out, nil
+}
+
+// GetByID 按 ID 取完整引擎（含 config），编辑弹窗回填用。
+func (u *Usecase) GetByID(ctx context.Context, id uuid.UUID) (*EngineResp, error) {
+	rec, err := u.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if rec == nil {
+		return nil, nil
+	}
+	resp := sanitize(*rec)
+	return &resp, nil
+}
+
 // ListPublic 公开列表（仅启用，含 config 供前端运行时拉取覆盖代码默认素材）。
 func (u *Usecase) ListPublic(ctx context.Context) ([]EngineResp, error) {
 	recs, err := u.repo.ListEnabled(ctx)

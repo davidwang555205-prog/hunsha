@@ -30,7 +30,9 @@ import type {
   ContentEngine,
   CreateEngineRequest,
   DefaultAssets,
+  EngineDetailResponse,
   EngineListResponse,
+  EngineSummaryListResponse,
   MemberListResponse,
   ResetPasswordResponse,
   SettingsListResponse,
@@ -258,9 +260,14 @@ export function generateContent(engineKey: string, req: GenerateContentRequest) 
   );
 }
 
-/** 管理内容引擎列表（admin，含禁用） */
+/** 管理内容引擎列表（admin，含禁用，精简行无 config；编辑场景用 getEngine 拉完整 config） */
 export function listAllEngines() {
-  return apiRequest<EngineListResponse>("/api/admin/engines");
+  return apiRequest<EngineSummaryListResponse>("/api/admin/engines");
+}
+
+/** 单条完整内容引擎（admin，含 config），编辑弹窗回填用 */
+export function getEngine(engineId: string) {
+  return apiRequest<EngineDetailResponse>(`/api/admin/engines/${encodeURIComponent(engineId)}`);
 }
 
 /** 默认素材（admin，供编辑弹窗与 config.seeding 合并显示当前生效值） */

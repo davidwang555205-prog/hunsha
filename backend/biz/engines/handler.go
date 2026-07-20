@@ -20,7 +20,8 @@ import (
 //	GET    /api/engines                       公开列表（登录用户，仅启用，含 config 供运行时拉取）
 //	POST   /api/engines/:key/generate         生成内容（登录用户，按 key 路由引擎 + config 覆盖素材）
 //	GET    /api/engines/:key/topic-options    当前引擎 JSON 配置的主题列表
-//	GET    /api/admin/engines                 管理列表（admin，含禁用）
+//	GET    /api/admin/engines                 管理列表（admin，含禁用，无 config 大字段）
+//	GET    /api/admin/engines/:id             单条完整引擎（admin，含 config，编辑弹窗回填用）
 //	POST   /api/admin/engines                 创建引擎（admin）
 //	PATCH  /api/admin/engines/:id             更新引擎（admin）
 //	DELETE /api/admin/engines/:id             删除引擎（admin）
@@ -47,6 +48,7 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	w.Echo().GET("/api/engines/:key/prompt-options", h.promptOptions, authM)
 	w.Echo().GET("/api/admin/engines", h.listAdmin, authM, adminM)
 	w.Echo().GET("/api/admin/engines/default-assets", h.defaultAssets, authM, adminM)
+	w.Echo().GET("/api/admin/engines/:id", h.getByID, authM, adminM)
 	w.Echo().POST("/api/admin/engines", h.create, authM, adminM)
 	w.Echo().PATCH("/api/admin/engines/:id", h.update, authM, adminM)
 	w.Echo().DELETE("/api/admin/engines/:id", h.remove, authM, adminM)
@@ -86,12 +88,29 @@ func (h *Handler) listPublic(c echo.Context) error {
 }
 
 func (h *Handler) listAdmin(c echo.Context) error {
-	out, err := h.usecase.ListAdmin(c.Request().Context())
+	out, err := h.usecase.ListAdminSummary(c.Request().Context())
 	if err != nil {
 		h.logger.ErrorContext(c.Request().Context(), "list admin engines failed", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "获取内容引擎列表失败。"})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"engines": out})
+}
+
+// getByID GET /api/admin/engines/:id：单条完整引擎（含 config），编辑弹窗回填用。
+func (h *Handler) getByID(c echo.Context) error {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "引擎 ID 格式不正确。"})
+	}
+	resp, err := h.usecase.GetByID(c.Request().Context(), id)
+	if err != nil {
+		h.logger.ErrorContext(c.Request().Context(), "get engine failed", "id", id, "error", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "获取内容引擎失败。"})
+	}
+	if resp == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "内容引擎不存在。"})
+	}
+	return c.JSON(http.StatusOK, map[string]any{"engine": resp})
 }
 
 // defaultAssets GET /api/admin/engines/default-assets：返回代码默认素材，供编辑弹窗与 config.seeding 合并显示。

@@ -12,6 +12,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
   listAllEngines,
+  getEngine,
   createEngine,
   updateEngine,
   deleteEngine,
@@ -19,7 +20,7 @@ import {
 } from "../../api/admin";
 import { getPromptOptions } from "../../api/engines";
 import { isUnauthorizedError } from "../../types/api";
-import type { ContentEngine, DefaultAssets } from "../../types/api";
+import type { ContentEngine, ContentEngineSummary, DefaultAssets } from "../../types/api";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Segmented } from "../../components/ui/Segmented";
@@ -53,9 +54,38 @@ const TAB_LABELS: { key: TabKey; label: string }[] = [
   { key: "prompt", label: "生图提示词" }
 ];
 
+/** sessionStorage 缓存 key：管理列表 SWR 模式，二次进入秒开（tab 关闭即失效，避免陈旧） */
+const ENGINES_CACHE_KEY = "admin-engines-list";
+
+function readEnginesCache(): ContentEngineSummary[] | null {
+  try {
+    const raw = window.sessionStorage.getItem(ENGINES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { engines?: ContentEngineSummary[] };
+    return Array.isArray(parsed.engines) ? parsed.engines : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeEnginesCache(engines: ContentEngineSummary[]) {
+  try {
+    window.sessionStorage.setItem(ENGINES_CACHE_KEY, JSON.stringify({ engines }));
+  } catch {
+    // 隐私模式写不进去，忽略
+  }
+}
+
+/** 保存/创建接口返回的是完整 ContentEngine，本地列表存精简行（剥离 config） */
+function toSummary(engine: ContentEngine): ContentEngineSummary {
+  const { config: _config, ...summary } = engine;
+  return summary;
+}
+
 export function AdminEnginesPage() {
-  const [engines, setEngines] = useState<ContentEngine[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // SWR：先渲染 sessionStorage 缓存，再后台 revalidate
+  const [engines, setEngines] = useState<ContentEngineSummary[]>(() => readEnginesCache() ?? []);
+  const [isLoading, setIsLoading] = useState(() => readEnginesCache() === null);
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EngineDraft>(emptyDraft);
@@ -69,10 +99,12 @@ export function AdminEnginesPage() {
   const [copyEnabled, setCopyEnabled] = useState(true);
 
   const fetchEngines = async () => {
-    setIsLoading(true);
+    // 有缓存时后台 revalidate，不再切 isLoading 防止闪烁
+    if (engines.length === 0) setIsLoading(true);
     try {
       const payload = await listAllEngines();
       setEngines(payload.engines);
+      writeEnginesCache(payload.engines);
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "加载失败。");
     } finally {
@@ -83,6 +115,7 @@ export function AdminEnginesPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchEngines();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 拉默认素材 + 引擎 config，初始化两个 JSON 编辑框（均显示当前生效值）
@@ -115,7 +148,7 @@ export function AdminEnginesPage() {
     setActiveTab("basic");
   };
 
-  const startEdit = (e: ContentEngine) => {
+  const startEdit = (e: ContentEngineSummary) => {
     setEditingId(e.id);
     setDraft({
       key: e.key,
@@ -125,7 +158,15 @@ export function AdminEnginesPage() {
       isEnabled: e.isEnabled
     });
     setShowCreate(false);
-    void initFormAssets(e.key, e.config);
+    // 列表行无 config（精简响应），编辑弹窗需单独拉完整引擎回填
+    void (async () => {
+      try {
+        const { engine } = await getEngine(e.id);
+        await initFormAssets(engine.key, engine.config);
+      } catch (err) {
+        if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "加载引擎详情失败。");
+      }
+    })();
   };
 
   const openCreate = () => {
@@ -181,14 +222,24 @@ export function AdminEnginesPage() {
         isEnabled: draft.isEnabled
       };
       if (editingId) {
-        await updateEngine(editingId, body);
+        const { engine } = await updateEngine(editingId, body);
+        // 本地更新：用接口返回的最新 row 替换，不再整表重拉
+        setEngines((prev) => {
+          const next = prev.map((row) => (row.id === engine.id ? toSummary(engine) : row));
+          writeEnginesCache(next);
+          return next;
+        });
         setMessage("已更新引擎。");
       } else {
-        await createEngine(body);
+        const { engine } = await createEngine(body);
+        setEngines((prev) => {
+          const next = [...prev, toSummary(engine)];
+          writeEnginesCache(next);
+          return next;
+        });
         setMessage("已创建引擎。");
       }
       closeModal();
-      await fetchEngines();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "保存失败。");
     } finally {
@@ -201,8 +252,12 @@ export function AdminEnginesPage() {
     setBusy(true);
     try {
       await deleteEngine(id);
+      setEngines((prev) => {
+        const next = prev.filter((row) => row.id !== id);
+        writeEnginesCache(next);
+        return next;
+      });
       setMessage("已删除引擎。");
-      await fetchEngines();
     } catch (err) {
       if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "删除失败。");
     } finally {
@@ -360,27 +415,38 @@ export function AdminEnginesPage() {
               </tr>
             </thead>
             <tbody>
-              {engines.map((e) => (
-                <tr key={e.id} className="border-b border-border/50 hover:bg-bg">
-                  <td className="px-4 py-3 font-medium text-text">{e.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-text-muted">{e.key}</td>
-                  <td className="max-w-[320px] px-4 py-3 text-text-muted">
-                    <span className="line-clamp-2">{e.description || "-"}</span>
-                  </td>
-                  <td className="px-4 py-3 text-text">{e.sortOrder}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${e.isEnabled ? "bg-success/10 text-success" : "bg-bg text-text-muted"}`}>
-                      {e.isEnabled ? "启用" : "禁用"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      <Button variant="secondary" size="sm" onClick={() => startEdit(e)}>编辑</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(e.id)} loading={busy}>删除</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading && engines.length === 0
+                ? // 骨架屏：5 行占位，避免白屏 30s 感知
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={`skeleton-${i}`} className="border-b border-border/50">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <td key={j} className="px-4 py-3">
+                          <div className="h-4 w-full animate-pulse rounded bg-bg" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                : engines.map((e) => (
+                    <tr key={e.id} className="border-b border-border/50 hover:bg-bg">
+                      <td className="px-4 py-3 font-medium text-text">{e.name}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-text-muted">{e.key}</td>
+                      <td className="max-w-[320px] px-4 py-3 text-text-muted">
+                        <span className="line-clamp-2">{e.description || "-"}</span>
+                      </td>
+                      <td className="px-4 py-3 text-text">{e.sortOrder}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${e.isEnabled ? "bg-success/10 text-success" : "bg-bg text-text-muted"}`}>
+                          {e.isEnabled ? "启用" : "禁用"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <Button variant="secondary" size="sm" onClick={() => startEdit(e)}>编辑</Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(e.id)} loading={busy}>删除</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               {engines.length === 0 && !isLoading && (
                 <tr><td colSpan={6} className="py-8 text-center text-sm text-text-muted">暂无内容引擎</td></tr>
               )}

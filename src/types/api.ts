@@ -778,6 +778,16 @@ export type ContentEngine = {
 
 export type EngineListResponse = { engines: ContentEngine[] };
 
+/** 列表用的精简 ContentEngine（无 config 字段，对应后端 EngineSummaryResp）。
+ *  content_engines.config 是 jsonb 大字段，列表页只用 8 个标量字段，裁剪后响应体 KB 级。 */
+export type ContentEngineSummary = Omit<ContentEngine, "config">;
+
+/** GET /api/admin/engines 管理列表响应（精简行，无 config） */
+export type EngineSummaryListResponse = { engines: ContentEngineSummary[] };
+
+/** GET /api/admin/engines/:id 返回完整 ContentEngine（含 config），供编辑弹窗回填 */
+export type EngineDetailResponse = { engine: ContentEngine };
+
 /** 主题覆盖文案（每个主题 10 字段，均 string[]，可选--未覆盖字段用默认） */
 export type TopicOverride = {
   audiences?: string[];
