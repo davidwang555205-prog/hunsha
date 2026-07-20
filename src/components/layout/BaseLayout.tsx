@@ -6,8 +6,11 @@
  *
  * navItems / navTitle / showBackToSite 由调用方（AppShell / AdminLayout）传入，
  * 消除两套布局壳的重复结构（DRY）。
+ *
+ * 点击即时高亮：pendingPath 本地态（点击瞬间置为目标 path，URL 变化后清空）。
+ * 懒加载 chunk 期间旧路由仍在，原生 isActive 不会立即变，这里补一拍交互反馈。
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { AppHeader } from "./AppHeader";
 import { ArrowLeftIcon, ChevronLeftIcon } from "../icons";
@@ -32,11 +35,11 @@ type BaseLayoutProps = {
   children: ReactNode;
 };
 
-const navClass = ({ isActive }: { isActive: boolean }, collapsed: boolean) =>
+const navClass = (active: boolean, collapsed: boolean) =>
   `group relative flex items-center rounded-md transition duration-fast ease-out ${
     collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-3 py-2"
   } text-sm font-medium ${
-    isActive ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-text"
+    active ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-text"
   }`;
 
 function Tooltip({ label }: { label: string }) {
@@ -54,6 +57,25 @@ export function BaseLayout({ navItems, navTitle, showBackToSite, children }: Bas
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_KEY) === SIDEBAR_COLLAPSED;
   });
+  // 点击瞬间的本地高亮路径；URL 变化（路由真正生效）或 5s 超时后清空，避免与路由状态错位。
+  // 用 derived-state 模式：把上一次 location.pathname 也存进 state，渲染期对比差异并一次性清空，
+  // 避免 react-hooks/set-state-in-effect 与 react-hooks/refs 两组 lint 规则冲突。
+  const [highlight, setHighlight] = useState<{ pendingPath: string | null; lastPathname: string }>({
+    pendingPath: null,
+    lastPathname: location.pathname
+  });
+  if (highlight.lastPathname !== location.pathname) {
+    setHighlight({ pendingPath: null, lastPathname: location.pathname });
+  }
+  const pendingPath = highlight.pendingPath;
+  const setPendingPath = (path: string | null) =>
+    setHighlight((cur) => ({ pendingPath: path, lastPathname: cur.lastPathname }));
+
+  useEffect(() => {
+    if (!pendingPath) return;
+    const timer = window.setTimeout(() => setPendingPath(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [pendingPath]);
 
   const toggleCollapsed = () => {
     setCollapsed((c) => {
@@ -98,7 +120,13 @@ export function BaseLayout({ navItems, navTitle, showBackToSite, children }: Bas
             <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-text-subtle">{navTitle}</p>
           )}
           {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={(state) => navClass(state, collapsed)}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={() => setPendingPath(item.to)}
+              className={({ isActive }) => navClass(pendingPath === item.to || isActive, collapsed)}
+            >
               <span className="shrink-0">{item.icon}</span>
               {!collapsed && <span className="truncate">{item.label}</span>}
               {collapsed && <Tooltip label={item.label} />}

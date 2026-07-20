@@ -4,7 +4,7 @@
  * 左侧 sidebar 导航在 BaseLayout。本组件只承载右上角三件套：
  *   - 积分：点击弹窗（余额 + 消耗明细）
  *   - 通知：铃铛 + 红点，弹窗本地通知列表
- *   - 头像：弹窗（昵称 + 额度 + 后台管理入口[admin] + 退出登录）
+ *   - 头像：弹窗（用户信息 + 个人中心 + 管理后台入口[admin] + 退出登录）
  * z-index 走 token：header(z-header) / popover(z-popover) / 外部点击遮罩(z-dropdown)。
  */
 import { useEffect, useState } from "react";
@@ -17,10 +17,10 @@ import { Button } from "../ui/Button";
 import type { CreditTransaction } from "../../types/api";
 import logo from "../../assets/logo.png";
 
-type PopoverKey = "credits" | "notify" | null;
+type PopoverKey = "credits" | "notify" | "avatar" | null;
 
 export function AppHeader() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout, isAdmin } = useAuth();
   const { notifications, unreadCount, markRead, markAllRead, clear } = useNotifications();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState<PopoverKey>(null);
@@ -28,6 +28,7 @@ export function AppHeader() {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
 
   const credits = user?.credits ?? 0;
+  const accountLabel = user?.email || user?.phone || user?.username || "未绑定账号";
 
   // 打开积分弹窗时拉余额 + 明细
   useEffect(() => {
@@ -48,6 +49,17 @@ export function AppHeader() {
   }, [openPopover]);
 
   const toggle = (key: PopoverKey) => setOpenPopover((cur) => (cur === key ? null : key));
+
+  const goto = (path: string) => {
+    setOpenPopover(null);
+    navigate(path);
+  };
+
+  const handleLogout = () => {
+    setOpenPopover(null);
+    logout();
+    navigate("/login");
+  };
 
   return (
     <>
@@ -143,15 +155,64 @@ export function AppHeader() {
             )}
           </div>
 
-          {/* 头像：点击进入个人中心 */}
-          <button
-            type="button"
-            onClick={() => navigate("/profile")}
-            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15 transition duration-fast ease-out hover:ring-primary/40"
-            aria-label="进入个人中心"
-          >
-            <img src={user?.avatar_url || logo} alt="用户头像" className="h-full w-full object-cover" />
-          </button>
+          {/* 头像：弹窗（用户信息 + 管理后台[admin] + 退出登录） */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggle("avatar")}
+              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15 transition duration-fast ease-out hover:ring-primary/40"
+              aria-label="用户菜单"
+              aria-expanded={openPopover === "avatar"}
+            >
+              <img src={user?.avatar_url || logo} alt="用户头像" className="h-full w-full object-cover" />
+            </button>
+            {openPopover === "avatar" && (
+              <div className="absolute right-0 top-full z-popover mt-2 w-64 overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
+                {/* 用户区：点击进入个人中心 */}
+                <button
+                  type="button"
+                  onClick={() => goto("/profile")}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-bg"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15">
+                    <img src={user?.avatar_url || logo} alt="用户头像" className="h-full w-full object-cover" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-text">{user?.displayName || user?.name || "未设置昵称"}</span>
+                    <span className="block truncate text-xs text-text-muted">{accountLabel}</span>
+                  </span>
+                </button>
+
+                {isAdmin && (
+                  <>
+                    <div className="border-t border-border/60" />
+                    <button
+                      type="button"
+                      onClick={() => goto("/admin")}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text transition hover:bg-bg"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-text-muted">
+                        <path d="M2 6.5 8 2l6 4.5M3.5 6v7h9V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      管理后台
+                    </button>
+                  </>
+                )}
+
+                <div className="border-t border-border/60" />
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-danger transition hover:bg-bg"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+                    <path d="M6 3H3.5v10H6M10 11l3-3-3-3M13 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  退出登录
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

@@ -16,13 +16,14 @@
  *   /admin/credits         积分记录
  */
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { LoginPage } from "./pages/LoginPage";
 import { AppShell } from "./components/layout/AppShell";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { RequireAuth, RequireAdmin } from "./components/auth/RequireAuth";
 import { FadeIn } from "./components/motion/FadeIn";
 import { Spinner } from "./components/ui/Spinner";
+import { useAuth } from "./context/AuthContext";
 
 const StudioPage = lazy(() => import("./pages/StudioPage").then((m) => ({ default: m.StudioPage })));
 const ToolsHomePage = lazy(() => import("./pages/ToolsHomePage").then((m) => ({ default: m.ToolsHomePage })));
@@ -90,6 +91,15 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** /admin 根路径按角色分流：管理员看概览，非管理员直达个人中心 */
+function AdminIndexPage() {
+  const { isAdmin } = useAuth();
+  if (!isAdmin) {
+    return <Navigate to="/admin/profile" replace />;
+  }
+  return <AdminPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -104,7 +114,8 @@ export default function App() {
         <Route path="/" element={<Shell><ToolsHomePage /></Shell>} />
         <Route path="/studio" element={<Shell><StudioPage /></Shell>} />
         <Route path="/history" element={<Shell><HistoryPage /></Shell>} />
-        <Route path="/admin" element={<AdminShell><AdminPage /></AdminShell>} />
+        <Route path="/admin" element={<AdminShell><AdminIndexPage /></AdminShell>} />
+        <Route path="/admin/profile" element={<AdminShell><ProfilePage /></AdminShell>} />
         <Route path="/admin/users" element={<AdminShell><AdminUsersPage /></AdminShell>} />
         <Route path="/admin/history" element={<AdminShell><HistoryPage adminMode /></AdminShell>} />
         <Route path="/admin/model-invocations" element={<AdminShell><AdminModelInvocationsPage /></AdminShell>} />
