@@ -35,9 +35,9 @@ func TestImagesOnlyUsesJSONBlueprintsWithoutCopyAlignment(t *testing.T) {
 	if len(content.Images) != 3 {
 		t.Fatalf("want 3 JSON blueprints, got %d", len(content.Images))
 	}
-	// ImageDraft.Name 由 buildDisplayImageName 生成（"图N|imageType 简称|purpose"），
+	// ImageDraft.Name 由 buildDisplayImageName 生成（"图N-imageType 简称"，半角连字符），
 	// 验 "蓝图被正确加载 + 文案不混入" 的核心断言保留（ExtraRequirement 含 BLUEPRINT、无 Visual recipe）。
-	for index, wantName := range []string{"图1|主图|front view", "图2|生活|side view", "图3|细节|detail view"} {
+	for index, wantName := range []string{"图1-主图", "图2-生活", "图3-细节"} {
 		image := content.Images[index]
 		if image.Name != wantName {
 			t.Fatalf("image %d = %q, want %q", index+1, image.Name, wantName)

@@ -13,7 +13,7 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { formatDate } from "../../lib/format";
 import { copyText as copyToClipboard } from "../../lib/clipboard";
-import { downloadImage, downloadImages } from "../../lib/download";
+import { downloadImage, downloadImages, normalizeImageDisplayName } from "../../lib/download";
 import type { HistoryRecord } from "../../types/api";
 
 type HistoryCardProps = {
@@ -188,11 +188,11 @@ export function HistoryCard({ record, categoryName, showGenerationMeta = false, 
                         type="button"
                         className="block w-full rounded px-3 py-1.5 text-left text-xs text-text hover:bg-bg"
                         onClick={() => {
-                          void downloadImage(image);
+                          void downloadImage(image, undefined, index);
                           setMenuOpen(false);
                         }}
                       >
-                        下载图 {index + 1}
+                        下载 {normalizeImageDisplayName(image.name, index)}
                       </button>
                     ))}
                   </>

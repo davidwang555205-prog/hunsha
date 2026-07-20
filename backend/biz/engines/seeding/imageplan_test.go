@@ -1,12 +1,12 @@
 package seeding
 
 import (
-	"strings"
 	"testing"
 )
 
-// buildDisplayImageName 输出用户可见命名 "图N|类型简称|purpose"，purpose 截断 30 rune。
+// buildDisplayImageName 输出用户可见命名 "图N-类型简称"，半角连字符分隔。
 // 完全脱钩蓝图 rawName，避免 PMS-族前缀 + F01/S01/U01/V01/E01 等内部代号泄露到前端。
+// purpose 不再拼入名字（名字过长是用户痛点），仅在 brief 缺失时降级为裸序号。
 func TestBuildDisplayImageName(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -15,16 +15,15 @@ func TestBuildDisplayImageName(t *testing.T) {
 		purpose   string
 		want      string
 	}{
-		{"产品上身图→主图", 0, "产品上身图", "用真实顾客视角呈现完整上身状态", "图1|主图|用真实顾客视角呈现完整上身状态"},
-		{"对镜穿搭图→对镜", 1, "对镜穿搭图", "补充真实穿搭视角", "图2|对镜|补充真实穿搭视角"},
-		{"生活场景图→生活", 2, "生活场景图", "把裙子放进真实日常或约会场景", "图3|生活|把裙子放进真实日常或约会场景"},
-		{"材质图→细节", 3, "拍摄花絮 / 材质图", "展示蕾丝、缎面、珠绣、裙摆或头纱细节", "图4|细节|展示蕾丝、缎面、珠绣、裙摆或头纱细节"},
-		{"氛围图→氛围", 4, "非产品氛围图", "建立婚纱馆或婚礼场景情绪", "图5|氛围|建立婚纱馆或婚礼场景情绪"},
-		{"静物图→静物", 0, "产品静物图", "展示婚纱静物、衣架、头纱或配件", "图1|静物|展示婚纱静物、衣架、头纱或配件"},
-		{"purpose 为空降级", 0, "产品上身图", "", "图1|主图"},
-		{"purpose 为空格降级", 1, "对镜穿搭图", "   ", "图2|对镜"},
-		{"未识别 imageType 降级为「图片」", 2, "未知类型", "随便", "图3|图片|随便"},
-		{"purpose 超 30 rune 截断", 0, "产品上身图", strings.Repeat("长", 50), "图1|主图|" + strings.Repeat("长", 30)},
+		{"产品上身图→主图", 0, "产品上身图", "用真实顾客视角呈现完整上身状态", "图1-主图"},
+		{"对镜穿搭图→对镜", 1, "对镜穿搭图", "补充真实穿搭视角", "图2-对镜"},
+		{"生活场景图→生活", 2, "生活场景图", "把裙子放进真实日常或约会场景", "图3-生活"},
+		{"材质图→细节", 3, "拍摄花絮 / 材质图", "展示蕾丝、缎面、珠绣、裙摆或头纱细节", "图4-细节"},
+		{"氛围图→氛围", 4, "非产品氛围图", "建立婚纱馆或婚礼场景情绪", "图5-氛围"},
+		{"静物图→静物", 0, "产品静物图", "展示婚纱静物、衣架、头纱或配件", "图1-静物"},
+		{"purpose 为空仍按 brief 输出", 0, "产品上身图", "", "图1-主图"},
+		{"purpose 为空格仍按 brief 输出", 1, "对镜穿搭图", "   ", "图2-对镜"},
+		{"未识别 imageType 降级为裸序号", 2, "未知类型", "随便", "图3"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -53,15 +52,15 @@ func TestGetBridalImageDraftsStripsInternalCodes(t *testing.T) {
 	if len(drafts) != 2 {
 		t.Fatalf("getBridalImageDrafts got %d drafts, want 2", len(drafts))
 	}
-	if drafts[0].Name != "图1|主图|封面主图呈现完整状态" {
-		t.Errorf("drafts[0].Name = %q, want %q", drafts[0].Name, "图1|主图|封面主图呈现完整状态")
+	if drafts[0].Name != "图1-主图" {
+		t.Errorf("drafts[0].Name = %q, want %q", drafts[0].Name, "图1-主图")
 	}
-	if drafts[1].Name != "图2|对镜|对镜确认比例" {
-		t.Errorf("drafts[1].Name = %q, want %q", drafts[1].Name, "图2|对镜|对镜确认比例")
+	if drafts[1].Name != "图2-对镜" {
+		t.Errorf("drafts[1].Name = %q, want %q", drafts[1].Name, "图2-对镜")
 	}
 	// 兜底路径：没有自定义 blueprint 时仍用 hardcoded 中文名（不动）
 	fallback := getBridalImageDrafts(assets, "未知主题", 5, "seed")
-	if len(fallback) == 0 || fallback[0].Name != "图1｜主图｜完整状态" {
+	if len(fallback) == 0 || fallback[0].Name != "图1-主图" {
 		t.Errorf("fallback name broken: %q", fallback[0].Name)
 	}
 }

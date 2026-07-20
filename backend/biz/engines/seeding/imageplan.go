@@ -304,7 +304,7 @@ func ternary(cond bool, a, b string) string {
 	return b
 }
 
-// imageTypeBriefs 6 种 imageType → 自媒体友好的简称。生成图名固定格式 "图N|brief|purpose"。
+// imageTypeBriefs 6 种 imageType → 自媒体友好的简称。生成图名固定格式 "图N-brief"。
 // 与展示 / 下载 / 内容预览一致；不在此处回退到 rawName，避免蓝图内部代号（PMS-xxx｜F01-...）
 // 漏到前端。
 var imageTypeBriefs = map[string]string{
@@ -316,23 +316,16 @@ var imageTypeBriefs = map[string]string{
 	"产品静物图":        "静物",
 }
 
-// buildDisplayImageName 拼装给用户展示的图片命名："图N | 类型简称 | 用途描述"。
-// 半角 "|" 分隔（便于复制到自媒体后台）；purpose 截断到 30 rune 兜底，避免超长文案撑爆标题。
+// buildDisplayImageName 拼装给用户展示的图片命名："图N-类型简称"。
+// 半角连字符 "-" 分隔（Windows/macOS 文件名安全，复制到自媒体后台也不会被竖线截断）。
 // 完全脱钩蓝图 rawName，不暴露 PMS 族前缀 + F01/S01/U01/V01/E01 等内部代号。
-func buildDisplayImageName(index int, imageType, purpose string) string {
+// purpose 参数保留仅为兼容旧调用方签名，不再拼入名字（名字过长是用户痛点，见 PRD 需求 3）。
+func buildDisplayImageName(index int, imageType, _ string) string {
 	brief := imageTypeBriefs[imageType]
 	if brief == "" {
-		brief = "图片"
+		return fmt.Sprintf("图%d", index+1)
 	}
-	desc := strings.TrimSpace(purpose)
-	if desc == "" {
-		return fmt.Sprintf("图%d|%s", index+1, brief)
-	}
-	runes := []rune(desc)
-	if len(runes) > 30 {
-		runes = runes[:30]
-	}
-	return fmt.Sprintf("图%d|%s|%s", index+1, brief, string(runes))
+	return fmt.Sprintf("图%d-%s", index+1, brief)
 }
 
 // getBridalImageDrafts TS :2711-2772
@@ -356,7 +349,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 	mainScene := orDefault(assets.BridalMainSceneByTopic[topic], "试纱间")
 	return []ImageDraft{
 		{
-			Name:             "图1｜主图｜完整状态",
+			Name:             "图1-主图",
 			Purpose:          "作为内容封面，展示婚纱或礼服的整体比例。",
 			Description:      "人物、场景和服装结构同时清楚，保留真实新娘状态。",
 			ImageType:        "产品上身图",
@@ -364,7 +357,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 			ExtraRequirement: "Create the cover image with the full gown clearly visible, preserving neckline, waistline, skirt volume, hemline, and fabric detail from the reference.",
 		},
 		{
-			Name:             "图2｜情绪｜同一模特风格",
+			Name:             "图2-情绪",
 			Purpose:          "补充更接近真实试纱或婚礼前状态的情绪图。",
 			Description:      "延续同一模特气质，动作更轻，重点是新娘状态。",
 			ImageType:        ternary(topic == "试纱体验", "对镜穿搭图", "生活场景图"),
@@ -372,7 +365,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 			ExtraRequirement: "Keep a consistent model style with the cover image if a person appears. Capture a quieter emotional moment, not a commercial pose.",
 		},
 		{
-			Name:             "图3｜细节｜面料与工艺",
+			Name:             "图3-细节",
 			Purpose:          "展示蕾丝、缎面、珠绣、裙摆或头纱细节。",
 			Description:      "可用于说明材质质感，让内容更可信。",
 			ImageType:        "拍摄花絮 / 材质图",
@@ -380,7 +373,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 			ExtraRequirement: "Focus on fabric close-up, lace pattern, satin drape, veil texture, embroidery, beadwork, hanger, dress rack, sketch notes, and refined tactile details.",
 		},
 		{
-			Name:             "图4｜氛围｜场景铺垫",
+			Name:             "图4-氛围",
 			Purpose:          "不强制产品出现，建立婚纱馆或婚礼场景情绪。",
 			Description:      "适合做组图过渡，不像广告硬切。",
 			ImageType:        "非产品氛围图",
@@ -388,7 +381,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 			ExtraRequirement: "Create a non-product atmosphere image that may show boutique space, veil, flowers, mirror reflection, morning light, garment rack, or quiet ceremony details.",
 		},
 		{
-			Name:             "图5｜静物｜挂装与配件",
+			Name:             "图5-静物",
 			Purpose:          "收尾展示婚纱静物、衣架、头纱或配件。",
 			Description:      "形成可收藏的品牌细节图。",
 			ImageType:        "产品静物图",
@@ -407,7 +400,7 @@ func getDressImageDrafts(assets *Assets, topic string) []ImageDraft {
 	}
 	return []ImageDraft{
 		{
-			Name:             "图1｜主图｜完整穿搭",
+			Name:             "图1-主图",
 			Purpose:          "作为内容封面，展示裙装完整比例和场合感。",
 			Description:      "人物状态自然，裙长、腰线和面料垂坠清楚。",
 			ImageType:        "产品上身图",
@@ -415,7 +408,7 @@ func getDressImageDrafts(assets *Assets, topic string) []ImageDraft {
 			ExtraRequirement: "Create the cover image with the dress clearly visible, preserving silhouette, waist shape, skirt length, drape, texture, hemline, fit, and styling proportion from the reference.",
 		},
 		{
-			Name:             "图2｜对镜｜比例确认",
+			Name:             "图2-对镜",
 			Purpose:          "补充真实穿搭视角，强调比例修饰。",
 			Description:      "延续同一模特风格，像出门前确认穿搭。",
 			ImageType:        "对镜穿搭图",
@@ -423,7 +416,7 @@ func getDressImageDrafts(assets *Assets, topic string) []ImageDraft {
 			ExtraRequirement: "Keep a consistent model style with the cover image if a person appears. Show a realistic mirror outfit moment with clear waistline and skirt length.",
 		},
 		{
-			Name:             "图3｜生活｜场景代入",
+			Name:             "图3-生活",
 			Purpose:          "把裙子放进真实日常或约会场景。",
 			Description:      "画面像朋友记录，不要硬凹姿势。",
 			ImageType:        "生活场景图",
@@ -431,7 +424,7 @@ func getDressImageDrafts(assets *Assets, topic string) []ImageDraft {
 			ExtraRequirement: "Create a natural lifestyle image with relaxed movement, real-camera composition, and the dress integrated into the setting without over-styling.",
 		},
 		{
-			Name:             "图4｜细节｜面料与垂坠",
+			Name:             "图4-细节",
 			Purpose:          "展示面料、褶裥、裙摆或纹理。",
 			Description:      "让用户看清衣服本身，而不是只看氛围。",
 			ImageType:        "拍摄花絮 / 材质图",
@@ -439,7 +432,7 @@ func getDressImageDrafts(assets *Assets, topic string) []ImageDraft {
 			ExtraRequirement: "Focus on fabric drape, pleats, texture, hemline, print or solid color, hanger, dress rack, swatches, and calm daylight.",
 		},
 		{
-			Name:             "图5｜静物｜衣橱与搭配",
+			Name:             "图5-静物",
 			Purpose:          "收尾展示裙装静物和搭配线索。",
 			Description:      "适合做收藏图，提示一条裙子的生活范围。",
 			ImageType:        "产品静物图",

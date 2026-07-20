@@ -59,7 +59,7 @@ export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix, canR
                       type="button"
                       aria-label="下载本张"
                       title="下载本张"
-                      onClick={() => sub.image && void downloadImage(sub.image)}
+                      onClick={() => sub.image && void downloadImage(sub.image, undefined, sub.index)}
                       className="absolute right-1 top-1 rounded bg-surface/80 p-1 text-text opacity-0 ring-1 ring-border transition hover:bg-surface group-hover:opacity-100"
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -113,7 +113,7 @@ export function ImageGenerationGrid({ subTaskStatus, totalCount, altPrefix, canR
         onIndexChange={setPreviewIndex}
         onDownload={(i) => {
           const target = successItems[i];
-          if (target?.image) void downloadImage(target.image);
+          if (target?.image) void downloadImage(target.image, undefined, target.index);
         }}
       />
     </>

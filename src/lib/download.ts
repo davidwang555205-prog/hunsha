@@ -1,5 +1,46 @@
 import type { GeneratedImage } from "../types/api";
 
+/**
+ * 历史数据兜底：把各种历史格式的展示名统一规范为 "图N-brief" / "图N"。
+ *
+ * 后端 buildDisplayImageName 已改为 "图N-brief" 新格式（半角连字符），
+ * 但 DB 里仍存历史长名：
+ *   - "图N|brief|purpose"（半角竖线，旧 buildDisplayImageName 产物）
+ *   - "图N｜brief｜purpose"（全角竖线，旧默认草稿硬编码）
+ *   - "图N|brief"（purpose 缺失时的旧产物）
+ *
+ * 本函数防御性兜底这些历史数据：
+ *   - 已是 "图N-brief" 新格式：原样返回；
+ *   - 含 "|" / "｜" 的历史名：切分取前两段拼成 "图N-brief"（brief 为空时取 "图N" 裸名）；
+ *   - 完全不识别：返回 "图{index+1}"。
+ *
+ * 下载文件名与展示名共用它，保证用户看到的 / 下载到的名字一致。
+ */
+export function normalizeImageDisplayName(name: string | undefined, index: number): string {
+  const fallback = `图${index + 1}`;
+  if (!name) return fallback;
+  const trimmed = name.trim();
+  if (!trimmed) return fallback;
+
+  // 历史格式：含半角 "|" 或全角 "｜"
+  if (trimmed.includes("|") || trimmed.includes("｜")) {
+    const parts = trimmed.split(/[|｜]/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) return fallback;
+    const head = parts[0]; // "图N"
+    const brief = parts[1]; // 可能不存在
+    // 验证 head 是 "图N" 形式，否则直接走兜底
+    if (!/^图\d+$/.test(head)) return fallback;
+    if (!brief) return head;
+    return `${head}-${brief}`;
+  }
+
+  // 已是新格式 "图N-brief" 或 "图N"：原样返回
+  if (/^图\d+(-.+)?$/.test(trimmed)) return trimmed;
+
+  // 其他自定义名（不识别）：原样返回，尊重用户/蓝图自定义
+  return trimmed;
+}
+
 /** 将页面展示名称转换为可跨系统保存的文件名，保留原文，仅替换文件系统禁用字符。 */
 function safeFilenameStem(name?: string) {
   const stem = (name || "generated-image").trim().replace(/[\\/:*?"<>|]/g, "-");
@@ -34,18 +75,21 @@ async function fetchImageBlob(image: GeneratedImage) {
   return response.blob();
 }
 
-/** 下载单张生成图，文件名使用页面展示名称。 */
-export async function downloadImage(image: GeneratedImage, displayName = image.name) {
+/** 下载单张生成图，文件名使用 normalizeImageDisplayName 兜底后的展示名。 */
+export async function downloadImage(image: GeneratedImage, displayName?: string, index = 0) {
   const blob = await fetchImageBlob(image);
-  triggerDownload(blob, buildImageDownloadName(displayName, blob));
+  const normalized = normalizeImageDisplayName(displayName ?? image.name, index);
+  triggerDownload(blob, buildImageDownloadName(normalized, blob));
 }
 
-/** 批量逐张下载，不打包为 ZIP；若页面名称重复，仅为后续文件追加序号避免覆盖。 */
+/** 批量逐张下载，不打包为 ZIP；每张先走 normalizeImageDisplayName 兜底，重名仅为后续文件追加序号避免覆盖。 */
 export async function downloadImages(images: GeneratedImage[]) {
   const usedNames = new Set<string>();
-  for (const image of images) {
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
     const blob = await fetchImageBlob(image);
-    const baseName = buildImageDownloadName(image.name, blob);
+    const normalized = normalizeImageDisplayName(image.name, i);
+    const baseName = buildImageDownloadName(normalized, blob);
     let filename = baseName;
     let duplicateIndex = 2;
     while (usedNames.has(filename)) {

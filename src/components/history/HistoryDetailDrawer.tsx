@@ -15,7 +15,7 @@ import { Button } from "../ui/Button";
 import { ImageLightbox } from "../ui/ImageLightbox";
 import { useBodyScrollLock } from "../../lib/useBodyScrollLock";
 import { formatDate } from "../../lib/format";
-import { downloadImage } from "../../lib/download";
+import { downloadImage, normalizeImageDisplayName } from "../../lib/download";
 import { copyText } from "../../lib/clipboard";
 import { XHSNotePanel } from "./XHSNotePanel";
 import { ModelInvocationTimeline } from "./ModelInvocationTimeline";
@@ -103,7 +103,7 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
                       <button type="button" onClick={() => setGenPreview(index)} className="block w-full" aria-label={`预览图 ${index + 1}`}>
                         <img className="aspect-[3/4] w-full object-cover" src={image.thumbUrl ?? image.url} alt={`生成图 ${index + 1}`} />
                       </button>
-                      <figcaption className="px-3 py-2 text-xs text-text-muted">{image.name || `图 ${index + 1}`}</figcaption>
+                      <figcaption className="px-3 py-2 text-xs text-text-muted">{normalizeImageDisplayName(image.name, index)}</figcaption>
                     </figure>
                   ))}
                 </div>
@@ -235,7 +235,7 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
             index={Math.max(0, genPreview)}
             onClose={() => setGenPreview(-1)}
             onIndexChange={setGenPreview}
-            onDownload={(i) => void downloadImage(record.images[i])}
+            onDownload={(i) => void downloadImage(record.images[i], undefined, i)}
           />
           {/* 参考图放大预览 */}
           <ImageLightbox
@@ -244,7 +244,7 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
             index={Math.max(0, refPreview)}
             onClose={() => setRefPreview(-1)}
             onIndexChange={setRefPreview}
-            onDownload={(i) => void downloadImage((record.referenceImages ?? [])[i])}
+            onDownload={(i) => void downloadImage((record.referenceImages ?? [])[i], undefined, i)}
           />
         </motion.div>
       )}
