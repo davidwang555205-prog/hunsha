@@ -12,15 +12,15 @@ func TestImagesOnlyUsesJSONBlueprintsWithoutCopyAlignment(t *testing.T) {
 		XiaohongshuBridalContentProfiles: map[string]XhsContentProfile{
 			"JSON 新主题": {
 				ImageBlueprints: []XhsImageBlueprint{
-					{Name: "JSON-001｜F01-正面", ImageType: "产品上身图", ScenePreference: "试纱间", ExtraRequirement: "BLUEPRINT FRONT VIEW"},
-					{Name: "JSON-002｜F02-侧面", ImageType: "生活场景图", ScenePreference: "试纱间", ExtraRequirement: "BLUEPRINT SIDE VIEW"},
-					{Name: "JSON-003｜F03-细节", ImageType: "拍摄花絮 / 材质图", ScenePreference: "材质工作台", ExtraRequirement: "BLUEPRINT DETAIL VIEW"},
+					{Name: "JSON-001｜F01-正面", Purpose: "front view", ImageType: "产品上身图", ScenePreference: "试纱间", ExtraRequirement: "BLUEPRINT FRONT VIEW"},
+					{Name: "JSON-002｜F02-侧面", Purpose: "side view", ImageType: "生活场景图", ScenePreference: "试纱间", ExtraRequirement: "BLUEPRINT SIDE VIEW"},
+					{Name: "JSON-003｜F03-细节", Purpose: "detail view", ImageType: "拍摄花絮 / 材质图", ScenePreference: "材质工作台", ExtraRequirement: "BLUEPRINT DETAIL VIEW"},
 				},
 			},
 		},
 		BridalScenesByImageType: map[string][]string{
-			"产品上身图":      {"试纱间"},
-			"生活场景图":      {"试纱间"},
+			"产品上身图":         {"试纱间"},
+			"生活场景图":         {"试纱间"},
 			"拍摄花絮 / 材质图": {"材质工作台"},
 		},
 	}
@@ -35,7 +35,9 @@ func TestImagesOnlyUsesJSONBlueprintsWithoutCopyAlignment(t *testing.T) {
 	if len(content.Images) != 3 {
 		t.Fatalf("want 3 JSON blueprints, got %d", len(content.Images))
 	}
-	for index, wantName := range []string{"JSON-001｜F01-正面", "JSON-002｜F02-侧面", "JSON-003｜F03-细节"} {
+	// ImageDraft.Name 由 buildDisplayImageName 生成（"图N|imageType 简称|purpose"），
+	// 验 "蓝图被正确加载 + 文案不混入" 的核心断言保留（ExtraRequirement 含 BLUEPRINT、无 Visual recipe）。
+	for index, wantName := range []string{"图1|主图|front view", "图2|生活|side view", "图3|细节|detail view"} {
 		image := content.Images[index]
 		if image.Name != wantName {
 			t.Fatalf("image %d = %q, want %q", index+1, image.Name, wantName)

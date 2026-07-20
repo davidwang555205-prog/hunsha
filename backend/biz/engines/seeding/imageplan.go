@@ -1,6 +1,7 @@
 package seeding
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -303,14 +304,45 @@ func ternary(cond bool, a, b string) string {
 	return b
 }
 
+// imageTypeBriefs 6 种 imageType → 自媒体友好的简称。生成图名固定格式 "图N|brief|purpose"。
+// 与展示 / 下载 / 内容预览一致；不在此处回退到 rawName，避免蓝图内部代号（PMS-xxx｜F01-...）
+// 漏到前端。
+var imageTypeBriefs = map[string]string{
+	"产品上身图":        "主图",
+	"对镜穿搭图":        "对镜",
+	"生活场景图":        "生活",
+	"拍摄花絮 / 材质图": "细节",
+	"非产品氛围图":      "氛围",
+	"产品静物图":        "静物",
+}
+
+// buildDisplayImageName 拼装给用户展示的图片命名："图N | 类型简称 | 用途描述"。
+// 半角 "|" 分隔（便于复制到自媒体后台）；purpose 截断到 30 rune 兜底，避免超长文案撑爆标题。
+// 完全脱钩蓝图 rawName，不暴露 PMS 族前缀 + F01/S01/U01/V01/E01 等内部代号。
+func buildDisplayImageName(index int, imageType, purpose string) string {
+	brief := imageTypeBriefs[imageType]
+	if brief == "" {
+		brief = "图片"
+	}
+	desc := strings.TrimSpace(purpose)
+	if desc == "" {
+		return fmt.Sprintf("图%d|%s", index+1, brief)
+	}
+	runes := []rune(desc)
+	if len(runes) > 30 {
+		runes = runes[:30]
+	}
+	return fmt.Sprintf("图%d|%s|%s", index+1, brief, string(runes))
+}
+
 // getBridalImageDrafts TS :2711-2772
 func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSeed string) []ImageDraft {
 	if profile, ok := assets.XiaohongshuBridalContentProfiles[topic]; ok && len(profile.ImageBlueprints) > 0 {
 		blueprints := selectBlueprints(profile.ImageBlueprints, assets.BlueprintSelection[topic], imageCount, batchSeed)
 		drafts := make([]ImageDraft, 0, len(blueprints))
-		for _, bp := range blueprints {
+		for i, bp := range blueprints {
 			drafts = append(drafts, ImageDraft{
-				Name:                   bp.Name,
+				Name:                   buildDisplayImageName(i, bp.ImageType, bp.Purpose),
 				Purpose:                bp.Purpose,
 				Description:            bp.Description,
 				ImageType:              bp.ImageType,
