@@ -11,8 +11,6 @@
  *   POST /api/v1/users/verification/send       发 6 位数字验证码
  *   POST /api/v1/users/register-by-code         通用注册（phone 或 email + code + channel）
  *   PUT  /api/v1/users/passwords/reset-by-code  通用重置（phone 或 email + code + channel + 新密码）
- *
- * 老 SMS-only 接口（/sms/send /register /passwords/reset-by-sms）保留一个发布周期用于回滚/旧 SPA 兼容。
  */
 import { apiRequest } from "./client";
 import type {
@@ -20,12 +18,7 @@ import type {
   LoginRequest,
   LoginResponse,
   RegisterByCodeRequest,
-  RegisterRequest,
   ResetByCodeRequest,
-  ResetBySmsRequest,
-  ResetPasswordEmailRequest,
-  ResetPasswordTokenRequest,
-  SendSmsCodeRequest,
   SendVerificationCodeRequest,
   StatusResponse,
   VerificationDelivery
@@ -52,7 +45,7 @@ export function logout() {
   });
 }
 
-// ===== 通用验证码（SMS + Email 双通道，前端首选）=====
+// ===== 通用验证码（SMS + Email 双通道）=====
 
 /** POST /api/v1/users/verification/send（phone 或 email 之一，按可用性选通道） */
 export function sendVerificationCode(req: SendVerificationCodeRequest) {
@@ -78,56 +71,9 @@ export function resetPasswordByCode(req: ResetByCodeRequest) {
   });
 }
 
-// ===== 老 SMS-only 接口（Deprecated，保留一个发布周期用于回滚/旧 SPA 兼容）=====
-
-/** @deprecated 改用 sendVerificationCode（支持 SMS + Email 双通道） */
-export function sendSmsCode(req: SendSmsCodeRequest) {
-  return apiRequest<unknown>("/api/v1/users/sms/send", {
-    method: "POST",
-    body: JSON.stringify(req)
-  });
-}
-
-/** @deprecated 改用 registerByCode */
-export function register(req: RegisterRequest) {
-  return apiRequest<LoginResponse>("/api/v1/users/register", {
-    method: "POST",
-    body: JSON.stringify(req)
-  });
-}
-
-/** @deprecated 改用 resetPasswordByCode */
-export function resetPasswordBySms(req: ResetBySmsRequest) {
-  return apiRequest<unknown>("/api/v1/users/passwords/reset-by-sms", {
-    method: "PUT",
-    body: JSON.stringify(req)
-  });
-}
-
 /** PUT /api/v1/users/passwords/change（已登录改密，初始密码强制改密也走此接口） */
 export function changePassword(req: ChangePasswordRequest) {
   return apiRequest<unknown>("/api/v1/users/passwords/change", {
-    method: "PUT",
-    body: JSON.stringify(req)
-  });
-}
-
-/** @deprecated 邮件链接重置（保留一个发布周期，新流程走 resetPasswordByCode 邮件验证码） */
-export function sendResetPasswordEmail(req: ResetPasswordEmailRequest) {
-  return apiRequest<unknown>("/api/v1/users/passwords/reset-request", {
-    method: "PUT",
-    body: JSON.stringify(req)
-  });
-}
-
-/** @deprecated 邮件链接重置 token 解析（保留兼容） */
-export function getAccountInfo(token: string) {
-  return apiRequest<StatusResponse>(`/api/v1/users/passwords/accounts/${encodeURIComponent(token)}`);
-}
-
-/** @deprecated 邮件链接重置 token 提交（保留兼容） */
-export function resetPassword(req: ResetPasswordTokenRequest) {
-  return apiRequest<unknown>("/api/v1/users/passwords/reset", {
     method: "PUT",
     body: JSON.stringify(req)
   });

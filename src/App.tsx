@@ -46,7 +46,6 @@ const AdminModelInvocationsPage = lazy(() =>
 );
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })));
-const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage").then((m) => ({ default: m.ChangePasswordPage })));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage").then((m) => ({ default: m.AdminSettingsPage })));
 
@@ -95,7 +94,6 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<LazyPage><RegisterPage /></LazyPage>} />
         <Route path="/forgot-password" element={<LazyPage><ForgotPasswordPage /></LazyPage>} />
-        <Route path="/resetpassword" element={<LazyPage><ResetPasswordPage /></LazyPage>} />
         <Route path="/change-password" element={<RequireAuth><LazyPage><ChangePasswordPage /></LazyPage></RequireAuth>} />
         <Route path="/" element={<Shell><ToolsHomePage /></Shell>} />
         <Route path="/studio" element={<Shell><StudioPage /></Shell>} />

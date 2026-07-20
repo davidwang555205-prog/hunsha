@@ -323,27 +323,6 @@ export type LoginRequest = {
 /** login 响应 = Resp.data = ApiUser（cookie 由后端 Set-Cookie 建立，无 token） */
 export type LoginResponse = ApiUser;
 
-/** POST /api/v1/users/sms/send 请求体（scene: register | reset_password） */
-export type SendSmsCodeRequest = {
-  phone: string;
-  scene: "register" | "reset_password";
-  captcha_token?: string;
-};
-
-/** POST /api/v1/users/register 请求体（手机号 + 密码 + 短信验证码） */
-export type RegisterRequest = {
-  phone: string;
-  password: string;
-  sms_code: string;
-};
-
-/** PUT /api/v1/users/passwords/reset-by-sms 请求体 */
-export type ResetBySmsRequest = {
-  phone: string;
-  sms_code: string;
-  new_password: string;
-};
-
 /** PUT /api/v1/users/passwords/change 请求体（已登录改密，初始密码强制改密也走此接口） */
 export type ChangePasswordRequest = {
   current_password: string;

@@ -19,16 +19,9 @@ type UserUsecase interface {
 	GetUserWithTeams(ctx context.Context, userID uuid.UUID) (*TeamUserInfo, error)
 	PasswordLogin(ctx context.Context, req *TeamLoginReq) (*User, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, req *ChangePasswordReq, isReset bool) error
-	SendResetPasswordEmail(ctx context.Context, req *ResetUserPasswordEmailReq) error
 	GetUserByEmail(ctx context.Context, emails []string) ([]*User, error)
 	SendBindEmailVerification(ctx context.Context, userID uuid.UUID, req *SendBindEmailVerificationReq) error
 	VerifyBindEmail(ctx context.Context, token string) error
-
-	// SendSmsCode / Register / ResetPasswordBySms 保留一个发布周期（被新接口 SendVerificationCode /
-	// RegisterByCode / ResetPasswordByCode 替代；新逻辑支持 SMS 与 Email 双通道，SMS 不可用时降级）。
-	SendSmsCode(ctx context.Context, req *SendSmsReq) error
-	Register(ctx context.Context, req *RegisterReq) (*User, error)
-	ResetPasswordBySms(ctx context.Context, req *ResetBySmsReq) (*User, error)
 
 	// SendVerificationCode 发 6 位数字验证码（phone 或 email 之一，Selector 按可用性选通道）。
 	// 返回 Delivery 含实际 channel + 脱敏 destination；前端带回 channel 给 register/reset。
@@ -318,52 +311,6 @@ type SendBindEmailVerificationReq struct {
 // VerifyBindEmailReq 验证邮箱请求
 type VerifyBindEmailReq struct {
 	Token string `query:"token" validate:"required"` // 验证 token
-}
-
-// SendSmsReq 发送短信验证码请求（注册 / 重置密码共用，scene 区分）。
-//
-// Deprecated: 由 SendVerificationCodeReq + SendVerificationCode 替代（支持 SMS + Email 双通道）。
-// 保留一个发布周期用于回滚与旧 SPA 兼容。
-type SendSmsReq struct {
-	Phone        string `json:"phone" validate:"required"`
-	Scene        string `json:"scene" validate:"required"` // register | reset_password
-	CaptchaToken string `json:"captcha_token"`
-}
-
-// RegisterReq 用户注册请求（手机号 + 密码 + 短信验证码）。
-//
-// Deprecated: 由 RegisterByCodeReq + RegisterByCode 替代（支持 SMS + Email 双通道）。
-// 保留一个发布周期。
-type RegisterReq struct {
-	Phone    string `json:"phone" validate:"required"`
-	Password string `json:"password" validate:"required"`
-	SmsCode  string `json:"sms_code" validate:"required"`
-}
-
-// Validate 校验密码长度 8-32。
-func (r *RegisterReq) Validate() error {
-	if len(r.Password) < 8 || len(r.Password) > 32 {
-		return errcode.ErrPasswordLength
-	}
-	return nil
-}
-
-// ResetBySmsReq 短信验证码重置密码请求。
-//
-// Deprecated: 由 ResetByCodeReq + ResetPasswordByCode 替代。
-// 保留一个发布周期。
-type ResetBySmsReq struct {
-	Phone       string `json:"phone" validate:"required"`
-	SmsCode     string `json:"sms_code" validate:"required"`
-	NewPassword string `json:"new_password" validate:"required"`
-}
-
-// Validate 校验新密码长度 8-32。
-func (r *ResetBySmsReq) Validate() error {
-	if len(r.NewPassword) < 8 || len(r.NewPassword) > 32 {
-		return errcode.ErrPasswordLength
-	}
-	return nil
 }
 
 // ===== 新通用验证码接口（SMS / Email 双通道，Selector 选路）=====
