@@ -337,6 +337,17 @@ func (u *UserUsecase) precheckVerificationTarget(ctx context.Context, t domain.V
 			}
 			return errcode.ErrEmailNotBound
 		}
+	case verify.SceneChangePhone:
+		// 变更手机号：新手机号不能已被他人占用（当前用户自身号允许，视为空操作）。
+		if t.Phone != "" {
+			if existing, err := u.repo.GetByPhone(ctx, t.Phone); err != nil {
+				if !db.IsNotFound(err) {
+					return errcode.ErrDatabaseQuery.Wrap(err)
+				}
+			} else if existing != nil {
+				return errcode.ErrPhoneTaken
+			}
+		}
 	}
 	return nil
 }
@@ -454,4 +465,50 @@ func (u *UserUsecase) ResetPasswordByCode(ctx context.Context, req *domain.Reset
 	u.logger.InfoContext(ctx, "password reset by code",
 		"phone", t.Phone, "email", t.Email, "channel", req.Channel, "user_id", usr.ID)
 	return cvt.From(usr, &domain.User{}), nil
+}
+
+// ChangePhoneByCode 登录态变更手机号：发码到新手机号（scene=change_phone），
+// 校验通过后把当前登录用户的手机号改为新号；新号若已被他人占用则拒绝。
+func (u *UserUsecase) ChangePhoneByCode(ctx context.Context, userID uuid.UUID, req *domain.ChangePhoneByCodeReq) error {
+	if err := req.Validate(); err != nil {
+		return err
+	}
+
+	t := req.VerificationTarget
+	if t.Phone != "" {
+		t.Phone = normalizePhoneInput(t.Phone)
+		if !isPhoneValid(t.Phone) {
+			return errcode.ErrPhoneInvalid
+		}
+	}
+	if t.Email != "" {
+		t.Email = t.NormalizeEmail()
+	}
+
+	// 校验验证码：按 channel 路由到对应 channel.Verify
+	destination := t.Phone
+	if req.Channel == "email" {
+		destination = t.Email
+	}
+	if err := u.verifySelector.Verify(ctx, verify.ChannelName(req.Channel), destination, verify.SceneChangePhone, req.Code); err != nil {
+		return err
+	}
+
+	// 新号占用检查：若已被其他用户占用则拒绝（排除当前用户自身，允许“改成自己当前号”的空操作）
+	if t.Phone != "" {
+		if existing, err := u.repo.GetByPhone(ctx, t.Phone); err != nil {
+			if !db.IsNotFound(err) {
+				return errcode.ErrDatabaseQuery.Wrap(err)
+			}
+		} else if existing != nil && existing.ID != userID {
+			return errcode.ErrPhoneTaken
+		}
+	}
+
+	if err := u.repo.SetPhone(ctx, userID, t.Phone); err != nil {
+		return errcode.ErrDatabaseOperation.Wrap(err)
+	}
+	u.logger.InfoContext(ctx, "user phone changed by code",
+		"phone", t.Phone, "channel", req.Channel, "user_id", userID)
+	return nil
 }

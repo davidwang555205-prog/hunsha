@@ -33,6 +33,10 @@ type UserUsecase interface {
 	// ResetPasswordByCode 通用重置：phone 或 email + code + channel + 新密码。
 	// phone 重置时 fallback email 从数据库 user.Email 取（不信客户端）。
 	ResetPasswordByCode(ctx context.Context, req *ResetByCodeReq) (*User, error)
+
+	// ChangePhoneByCode 登录态变更手机号：向新手机号发码（scene=change_phone），
+	// 校验通过后把当前登录用户的手机号改为新号；新号若已被他人占用则拒绝。
+	ChangePhoneByCode(ctx context.Context, userID uuid.UUID, req *ChangePhoneByCodeReq) error
 }
 
 type UserRepo interface {
@@ -44,6 +48,7 @@ type UserRepo interface {
 	ChangePassword(ctx context.Context, uid uuid.UUID, currentPassword, newPassword string, isReset bool) error
 	GetUserByEmail(ctx context.Context, emails []string) ([]*db.User, error)
 	SetEmail(ctx context.Context, userID uuid.UUID, email string) error
+	SetPhone(ctx context.Context, userID uuid.UUID, phone string) error
 	GetByPhone(ctx context.Context, phone string) (*db.User, error)
 	CreateIndividual(ctx context.Context, phone, hashedPassword string) (*db.User, error)
 
@@ -393,6 +398,26 @@ func (r *ResetByCodeReq) Validate() error {
 	}
 	if len(r.NewPassword) < 8 || len(r.NewPassword) > 32 {
 		return errcode.ErrPasswordLength
+	}
+	if r.Channel != "sms" && r.Channel != "email" {
+		return errcode.ErrBadRequest
+	}
+	return nil
+}
+
+// ChangePhoneByCodeReq 登录态变更手机号请求（新手机号 + code + channel）。
+// channel 由 SendVerificationCode(change_phone) 返回的 Delivery 带回，与发码一致。
+// 新手机号的规范化与格式校验在 usecase 层完成（与 RegisterByCode 一致）。
+type ChangePhoneByCodeReq struct {
+	VerificationTarget
+	Code    string `json:"code" validate:"required"`
+	Channel string `json:"channel" validate:"required"` // sms | email
+}
+
+// Validate 校验 target 非空 + channel 合法（手机号的格式校验下沉到 usecase）。
+func (r *ChangePhoneByCodeReq) Validate() error {
+	if !r.VerificationTarget.Valid() {
+		return errcode.ErrBadRequest
 	}
 	if r.Channel != "sms" && r.Channel != "email" {
 		return errcode.ErrBadRequest

@@ -47,6 +47,9 @@ const AdminModelInvocationsPage = lazy(() =>
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage").then((m) => ({ default: m.ChangePasswordPage })));
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage").then((m) => ({ default: m.ChangeEmailPage })));
+const ChangePhonePage = lazy(() => import("./pages/ChangePhonePage").then((m) => ({ default: m.ChangePhonePage })));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage").then((m) => ({ default: m.AdminSettingsPage })));
 
 function PageFallback() {
@@ -95,6 +98,9 @@ export default function App() {
         <Route path="/register" element={<LazyPage><RegisterPage /></LazyPage>} />
         <Route path="/forgot-password" element={<LazyPage><ForgotPasswordPage /></LazyPage>} />
         <Route path="/change-password" element={<RequireAuth><LazyPage><ChangePasswordPage /></LazyPage></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><LazyPage><ProfilePage /></LazyPage></RequireAuth>} />
+        <Route path="/profile/email" element={<RequireAuth><LazyPage><ChangeEmailPage /></LazyPage></RequireAuth>} />
+        <Route path="/profile/phone" element={<RequireAuth><LazyPage><ChangePhonePage /></LazyPage></RequireAuth>} />
         <Route path="/" element={<Shell><ToolsHomePage /></Shell>} />
         <Route path="/studio" element={<Shell><StudioPage /></Shell>} />
         <Route path="/history" element={<Shell><HistoryPage /></Shell>} />

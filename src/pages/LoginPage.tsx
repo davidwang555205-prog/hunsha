@@ -19,6 +19,7 @@ import { MagneticButton } from "../components/motion/MagneticButton";
 import { Input } from "../components/ui/Input";
 import { Field } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
+import { CaptchaWidget } from "../components/auth/CaptchaWidget";
 import logo from "../assets/logo.png";
 
 type LoginErrorKind = "credentials" | "network" | "validation" | "session" | null;
@@ -28,6 +29,8 @@ export function LoginPage() {
   const location = useLocation();
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetSignal, setCaptchaResetSignal] = useState(0);
   const [error, setError] = useState("");
   const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +54,17 @@ export function LoginPage() {
   // 来源路径（守卫跳转时携带）
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
 
+  const handleCaptchaToken = (token: string) => {
+    setCaptchaToken(token);
+  };
+
+  const handleCaptchaError = (_code: string, message: string) => {
+    setCaptchaToken(null);
+    setCaptchaResetSignal((s) => s + 1);
+    setError(message || "人机验证失败，请重试。");
+    setErrorKind("validation");
+  };
+
   const handleSubmit = async () => {
     setError("");
     setErrorKind(null);
@@ -60,10 +74,17 @@ export function LoginPage() {
       setErrorKind("validation");
       return;
     }
+    if (!captchaToken) {
+      setError("请先完成人机验证。");
+      setErrorKind("validation");
+      return;
+    }
     setLoading(true);
     try {
-      await login(account, password);
+      await login(account, password, captchaToken);
       setPassword("");
+      setCaptchaToken(null);
+      setCaptchaResetSignal((s) => s + 1);
     } catch (err) {
       // 网络错误（statusCode 缺失）单独提示；业务错误（含 HTTP 200 的登录失败）统一友好文案，
       // 不暴露后端技术性 message，也不泄露邮箱是否存在。保留密码并选中，方便用户直接修正输入。
@@ -105,6 +126,9 @@ export function LoginPage() {
                 value={account}
                 onChange={(event) => {
                   setAccount(event.target.value);
+                  // account 改变：清空已通过的人机验证，防止 A 账号验证码提交到 B 账号
+                  setCaptchaToken(null);
+                  setCaptchaResetSignal((s) => s + 1);
                   if (error) {
                     setError("");
                     setErrorKind(null);
@@ -129,6 +153,14 @@ export function LoginPage() {
                 autoComplete="current-password"
                 error={errorKind === "credentials"}
                 aria-invalid={errorKind === "credentials"}
+              />
+            </Field>
+
+            <Field label="人机验证" hint={captchaToken ? "✓ 已通过" : "请完成验证再登录"}>
+              <CaptchaWidget
+                key={captchaResetSignal}
+                onToken={handleCaptchaToken}
+                onError={handleCaptchaError}
               />
             </Field>
 

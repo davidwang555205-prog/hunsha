@@ -28,12 +28,13 @@ type Scene string
 const (
 	SceneRegister      Scene = "register"
 	SceneResetPassword Scene = "reset_password"
+	SceneChangePhone   Scene = "change_phone"
 )
 
 // Valid 校验场景合法性。
 func (s Scene) Valid() bool {
 	switch s {
-	case SceneRegister, SceneResetPassword:
+	case SceneRegister, SceneResetPassword, SceneChangePhone:
 		return true
 	}
 	return false

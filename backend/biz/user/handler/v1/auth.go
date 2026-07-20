@@ -81,6 +81,9 @@ func NewAuthHandler(i *do.Injector) (*AuthHandler, error) {
 	v1.PUT("/email/bind-request", web.BindHandler(h.SendBindEmailVerification), auth.Auth(), targetActive.TargetActive())
 	v1.GET("/email/verify", web.BindHandler(h.VerifyBindEmail), targetActive.TargetActive())
 
+	// 变更手机号（登录态，验证码校验新号）
+	v1.PUT("/phone", web.BindHandler(h.ChangePhone), auth.Auth(), targetActive.TargetActive())
+
 	return h, nil
 }
 
@@ -475,6 +478,29 @@ func (h *AuthHandler) VerifyBindEmail(c *web.Context, req domain.VerifyBindEmail
 	return c.Redirect(http.StatusFound, h.config.Server.BaseURL)
 }
 
+// ChangePhone 登录态变更手机号
+//
+//	@Summary		变更手机号
+//	@Description	登录用户验证新手机号验证码后更换绑定手机号
+//	@Tags			【用户】用户
+//	@Accept			json
+//	@Produce		json
+//	@Security		MonkeyCodeAIAuth
+//	@Param			req	body		domain.ChangePhoneByCodeReq	true	"变更手机号请求"
+//	@Success		200	{object}	web.Resp{}
+//	@Router			/api/v1/users/phone [put]
+func (h *AuthHandler) ChangePhone(c *web.Context, req domain.ChangePhoneByCodeReq) error {
+	ctx := c.Request().Context()
+	user := middleware.GetUser(c)
+	if user == nil {
+		return errcode.ErrUnauthorized
+	}
+	if err := h.usecase.ChangePhoneByCode(ctx, user.ID, &req); err != nil {
+		return err
+	}
+	return c.Success(nil)
+}
+
 // ===== 通用验证码接口（SMS + Email 双通道，SMS 不可用时降级到 Email）=====
 
 // SendVerificationCode 发 6 位数字验证码（phone 或 email 之一）。返回 Delivery 含实际 channel + 脱敏 destination。
@@ -494,7 +520,7 @@ func (h *AuthHandler) SendVerificationCode(c *web.Context, req domain.SendVerifi
 	if !req.VerificationTarget.Valid() {
 		return errcode.ErrBadRequest
 	}
-	if req.Scene != "register" && req.Scene != "reset_password" {
+	if req.Scene != "register" && req.Scene != "reset_password" && req.Scene != "change_phone" {
 		return errcode.ErrBadRequest
 	}
 	// 防刷：dev 环境跳过 captcha 校验方便开发；prod 强制要求 captcha_token。

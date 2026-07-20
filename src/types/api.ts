@@ -329,6 +329,20 @@ export type ChangePasswordRequest = {
   new_password: string;
 };
 
+/** PUT /api/v1/users 请求体（当前用户修改昵称 / 头像，multipart/form-data） */
+export type UpdateCurrentUserRequest = {
+  name?: string;
+  avatar_url?: string;
+};
+
+/** PUT /api/v1/users/phone 请求体（登录态变更手机号，验证码校验新号） */
+export type ChangePhoneRequest = {
+  phone?: string;
+  email?: string;
+  code: string;
+  channel: VerificationChannel;
+};
+
 /** PUT /api/v1/users/passwords/reset-request 请求体（邮件重置：发重置邮件，email 用户用） */
 export type ResetPasswordEmailRequest = {
   emails: string[];
@@ -463,7 +477,7 @@ export type VerificationChannel = "sms" | "email";
 export type SendVerificationCodeRequest = {
   phone?: string;
   email?: string;
-  scene: "register" | "reset_password";
+  scene: "register" | "reset_password" | "change_phone";
   captcha_token?: string;
 };
 

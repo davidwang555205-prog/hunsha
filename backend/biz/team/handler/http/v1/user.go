@@ -97,12 +97,10 @@ func NewTeamGroupUserHandler(i *do.Injector) (*TeamGroupUserHandler, error) {
 //	@Router			/api/v1/teams/users/login [post]
 func (h *TeamGroupUserHandler) Login(c *web.Context, req domain.TeamLoginReq) error {
 	ctx := c.Request().Context()
-	// bridal 单租户开发阶段：captcha_token 为空时跳过校验（前端暂未接图形验证码）。
-	// 生产环境应前端接入 /api/v1/public/captcha challenge/redeem 并传 captcha_token。
-	if req.CaptchaToken != "" {
-		if !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
-			return errcode.ErrForbidden
-		}
+	// captcha 校验与发码逻辑保持一致：dev（config.Debug=true）跳过方便本地调测；
+	// prod（config.Debug=false）强制要求 captcha_token，否则拒绝登录（防爆破）。
+	if !h.config.Debug && !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
+		return errcode.ErrForbidden
 	}
 
 	user, err := h.usecase.Login(ctx, &req)

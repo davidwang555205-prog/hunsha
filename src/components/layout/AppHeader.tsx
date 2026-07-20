@@ -13,15 +13,14 @@ import { useAuth } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationContext";
 import { listCreditTransactions } from "../../api/admin";
 import { getCreditBalance } from "../../api/credits";
-import { ShieldIcon } from "../icons";
 import { Button } from "../ui/Button";
 import type { CreditTransaction } from "../../types/api";
 import logo from "../../assets/logo.png";
 
-type PopoverKey = "credits" | "notify" | "user" | null;
+type PopoverKey = "credits" | "notify" | null;
 
 export function AppHeader() {
-  const { user, isAdmin, logout, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { notifications, unreadCount, markRead, markAllRead, clear } = useNotifications();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState<PopoverKey>(null);
@@ -29,12 +28,6 @@ export function AppHeader() {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
 
   const credits = user?.credits ?? 0;
-  const displayName = user?.displayName ?? "用户";
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
 
   // 打开积分弹窗时拉余额 + 明细
   useEffect(() => {
@@ -150,49 +143,15 @@ export function AppHeader() {
             )}
           </div>
 
-          {/* 头像 */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => toggle("user")}
-              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15 transition duration-fast ease-out hover:ring-primary/40"
-              aria-label="用户菜单"
-            >
-              <img src={logo} alt="默认用户头像" className="h-full w-full object-cover" />
-            </button>
-            {openPopover === "user" && (
-              <div className="absolute right-0 top-full z-popover mt-2 w-56 rounded-xl border border-border bg-surface p-4 shadow-lg">
-                <div className="flex items-center gap-3 border-b border-border pb-3">
-                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15">
-                    <img src={logo} alt="默认用户头像" className="h-full w-full object-cover" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-text">{displayName}</p>
-                    <p className="truncate text-xs text-text-subtle">@{user?.username}</p>
-                  </div>
-                </div>
-                <div className="py-2 text-xs text-text-muted">
-                  {isAdmin ? <p>管理员 · 生图不限量</p> : <p>每日额度 {user?.dailyImageLimit ?? 0} 张 · 积分 {credits}</p>}
-                </div>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenPopover(null);
-                      navigate("/admin");
-                    }}
-                    className="mb-2 flex w-full items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/15"
-                  >
-                    <ShieldIcon size={16} />
-                    进入后台管理
-                  </button>
-                )}
-                <Button variant="danger" block onClick={handleLogout}>
-                  退出登录
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* 头像：点击进入个人中心 */}
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-primary/15 transition duration-fast ease-out hover:ring-primary/40"
+            aria-label="进入个人中心"
+          >
+            <img src={user?.avatar_url || logo} alt="用户头像" className="h-full w-full object-cover" />
+          </button>
         </div>
       </header>
 

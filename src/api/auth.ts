@@ -15,6 +15,7 @@
 import { apiRequest } from "./client";
 import type {
   ChangePasswordRequest,
+  ChangePhoneRequest,
   LoginRequest,
   LoginResponse,
   RegisterByCodeRequest,
@@ -74,6 +75,22 @@ export function resetPasswordByCode(req: ResetByCodeRequest) {
 /** PUT /api/v1/users/passwords/change（已登录改密，初始密码强制改密也走此接口） */
 export function changePassword(req: ChangePasswordRequest) {
   return apiRequest<unknown>("/api/v1/users/passwords/change", {
+    method: "PUT",
+    body: JSON.stringify(req)
+  });
+}
+
+/** PUT /api/v1/users/phone（登录态变更手机号，验证码校验新号） */
+export function changePhone(req: ChangePhoneRequest) {
+  return apiRequest<unknown>("/api/v1/users/phone", {
+    method: "PUT",
+    body: JSON.stringify(req)
+  });
+}
+
+/** PUT /api/v1/users/email/bind-request（登录态请求绑定/变更邮箱，发验证邮件） */
+export function sendBindEmailVerification(req: { email: string }) {
+  return apiRequest<unknown>("/api/v1/users/email/bind-request", {
     method: "PUT",
     body: JSON.stringify(req)
   });

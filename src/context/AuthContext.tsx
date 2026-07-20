@@ -16,8 +16,8 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   /** 是否管理员（enterprise=团队所有者 / admin=系统管理员，不限额度） */
   isAdmin: boolean;
-  /** 登录，失败抛错由调用方处理 UI（account 可为邮箱或手机号） */
-  login: (account: string, password: string) => Promise<void>;
+  /** 登录，失败抛错由调用方处理 UI（account 可为邮箱或手机号）。captchaToken 为 Cap.js 人机验证 token，prod 必填 */
+  login: (account: string, password: string, captchaToken?: string) => Promise<void>;
   /** 主动登出：调 team logout 清 cookie + 清 user */
   logout: () => void;
   /** 被动登出（401）：不调 logout 接口（session 已失效），仅清 user + 错误提示 */
@@ -54,13 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logoutRef.current = logout;
   }, [logout]);
 
-  const login = useCallback(async (account: string, password: string) => {
+  const login = useCallback(async (account: string, password: string, captchaToken?: string) => {
     // 账号自动识别：含 @ 视为邮箱，否则视为手机号
     const req: LoginRequest = { password };
     if (account.includes("@")) {
       req.email = account;
     } else {
       req.phone = account;
+    }
+    if (captchaToken) {
+      req.captcha_token = captchaToken;
     }
     const u = await apiLogin(req);
     setUser(u);

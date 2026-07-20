@@ -168,6 +168,11 @@ func (u *userRepo) SetEmail(ctx context.Context, userID uuid.UUID, email string)
 	return u.db.User.UpdateOneID(userID).SetEmail(email).Exec(ctx)
 }
 
+// SetPhone implements domain.UserRepo.
+func (u *userRepo) SetPhone(ctx context.Context, userID uuid.UUID, phone string) error {
+	return u.db.User.UpdateOneID(userID).SetPhone(phone).Exec(ctx)
+}
+
 // GetByPhone 按手机号查询用户（短信注册/重置密码用）。
 func (u *userRepo) GetByPhone(ctx context.Context, phone string) (*db.User, error) {
 	return u.db.User.Query().Where(user.PhoneEQ(phone)).First(ctx)
