@@ -27,3 +27,6 @@ var ResetPassword []byte
 
 //go:embed bind_email.html.tmpl
 var BindEmail []byte
+
+//go:embed verification_code.html.tmpl
+var VerificationCode []byte

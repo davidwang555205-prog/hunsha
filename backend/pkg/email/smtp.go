@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"github.com/samber/do"
 
@@ -59,6 +60,24 @@ func (c *EmailClient) SendBindEmailVerification(ctx context.Context, to, usernam
 	return c.Send(ctx, "Verify Your Email", to, buf.String())
 }
 
+// SendVerificationCode 发 6 位数字验证码邮件。expireMinutes 用于模板渲染（显示有效期）。
+// 注册时无 username，传空字符串即可（模板会跳过 user 变量引用）。
+func (c *EmailClient) SendVerificationCode(ctx context.Context, to, username, code string, expireMinutes int) error {
+	tmpl, err := template.New("verification_code").Parse(string(templates.VerificationCode))
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, map[string]string{
+		"user":       username,
+		"code":       code,
+		"expire_min": fmt.Sprintf("%d", expireMinutes),
+	}); err != nil {
+		return err
+	}
+	return c.Send(ctx, "Your Verification Code", to, buf.String())
+}
+
 type Smtp struct {
 	cfg        *config.Config
 	syssetting *syssetting.Usecase
@@ -96,7 +115,7 @@ func (s *Smtp) Send(ctx context.Context, subject, receiver, content string) erro
 
 	auth := smtp.PlainAuth(
 		"",
-		smtpCfg.From,
+		smtpCfg.Username,
 		smtpCfg.Password,
 		smtpCfg.Host,
 	)
@@ -134,20 +153,28 @@ func (s *Smtp) Send(ctx context.Context, subject, receiver, content string) erro
 	return c.Quit()
 }
 
+// smtpDialTimeout 单次 SMTP 建连超时，避免被无响应的 SMTP 服务器永久阻塞发码请求。
+const smtpDialTimeout = 10 * time.Second
+
 // return a smtp client
 func dial(addr string, useTLS bool) (*smtp.Client, error) {
 	host, _, _ := net.SplitHostPort(addr)
 	if useTLS {
-		conn, err := tls.Dial("tcp", addr, nil)
+		conn, err := tls.DialWithDialer(&net.Dialer{Timeout: smtpDialTimeout}, "tcp", addr, nil)
 		if err != nil {
 			log.Println("Dialing Error:", err)
 			return nil, err
 		}
 		return smtp.NewClient(conn, host)
 	}
-	c, err := smtp.Dial(addr)
+	conn, err := net.DialTimeout("tcp", addr, smtpDialTimeout)
 	if err != nil {
 		log.Println("Dialing Error:", err)
+		return nil, err
+	}
+	c, err := smtp.NewClient(conn, host)
+	if err != nil {
+		conn.Close()
 		return nil, err
 	}
 	return c, nil
