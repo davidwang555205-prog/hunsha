@@ -25,11 +25,19 @@ import (
 )
 
 const (
-	maxUserXHSRefreshes = 7
 	maxUserXHSLinkEdits = 3
 )
 
 var xhsURLPattern = regexp.MustCompile(`(?i)https?://[^\s<>"']+`)
+
+// xhsRefreshIntervals 自动采集节奏：提交后立即首次采集，之后按 1d -> 7d -> 15d 推进，
+// 第 3 次起稳定 15d 持续不停止。索引 = 当前 epoch 内 success 快照数 - 1（cap 到末位）。
+var xhsRefreshIntervals = []time.Duration{
+	24 * time.Hour,      // 第 1 次采后 +1d
+	7 * 24 * time.Hour,  // 第 2 次采后 +7d
+	15 * 24 * time.Hour, // 第 3 次采后 +15d
+	15 * 24 * time.Hour, // 第 4 次及以后 +15d
+}
 
 // XHSUsecase owns note tracking separately from the legacy feedback JSON field.
 // Snapshot rows are append-only so numerical deltas always have a real baseline.
@@ -72,9 +80,9 @@ type XHSNoteResponse struct {
 	WorkType               string                `json:"workType"`
 	PublishedAt            string                `json:"publishedAt"`
 	UserRefreshCount       int                   `json:"userRefreshCount"`
-	UserRefreshesRemaining *int                  `json:"userRefreshesRemaining,omitempty"`
 	UserLinkEditCount      int                   `json:"userLinkEditCount"`
 	UserLinkEditsRemaining *int                  `json:"userLinkEditsRemaining,omitempty"`
+	NextRefreshAt          *time.Time            `json:"nextRefreshAt,omitempty"`
 	Snapshots              []XHSNoteSnapshotResp `json:"snapshots"`
 }
 
@@ -110,6 +118,8 @@ type XHSAccountResp struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
+// Import 只存储笔记链接并设 next_refresh_at=now，提交过程不采集数据。
+// 首次采集由 triggerAutoCollect 异步触发（贴合"立即首次"且不阻塞提交），后续按 1/7/15 由后台 ticker 推进。
 func (u *XHSUsecase) Import(ctx context.Context, user *domain.User, taskID uuid.UUID, req XHSNoteImportReq) (*XHSNoteResponse, error) {
 	noteURL, err := normalizeXHSURL(req.NoteURL)
 	if err != nil {
@@ -123,91 +133,25 @@ func (u *XHSUsecase) Import(ctx context.Context, user *domain.User, taskID uuid.
 	lock.Lock()
 	defer lock.Unlock()
 	if existing, err := u.db.XHSNoteTracking.Query().Where(xhsnotetracking.TaskIDEQ(taskID)).Only(ctx); err == nil && existing != nil {
-		return nil, &redfox.Error{StatusCode: http.StatusConflict, Message: "该生图记录已关联小红书笔记，请使用刷新数据。"}
+		return nil, &redfox.Error{StatusCode: http.StatusConflict, Message: "该生图记录已关联小红书笔记，请使用修改链接。"}
 	} else if err != nil && !db.IsNotFound(err) {
-		return nil, err
-	}
-	work, account, similar, warn, err := u.collect(ctx, noteURL, "")
-	if err != nil {
 		return nil, err
 	}
 	tracking, err := u.db.XHSNoteTracking.Create().
 		SetTaskID(taskID).
 		SetUserID(task.UserID).
 		SetNoteURL(noteURL).
-		SetCanonicalURL(firstNonEmpty(work.WorkURL, noteURL)).
-		SetWorkID(work.WorkID).
-		SetAccountUserID(firstNonEmpty(account.UserID, work.AccountUserID)).
-		SetAccountID(account.AccountID).
-		SetTitle(work.WorkTitle).
-		SetBody(work.WorkDesc).
-		SetCoverURL(work.CoverURL).
-		SetWorkType(work.WorkType).
-		SetPublishedAt(work.WorkPublishTime).
+		SetNextRefreshAt(time.Now()).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := u.createSnapshot(ctx, tracking, 1, "initial", work, account, similar, warn); err != nil {
-		return nil, err
-	}
+	u.triggerAutoCollect(tracking)
 	return u.Get(ctx, user, taskID)
 }
 
-func (u *XHSUsecase) Refresh(ctx context.Context, user *domain.User, taskID uuid.UUID) (*XHSNoteResponse, error) {
-	if _, err := u.authorizeTask(ctx, user, taskID); err != nil {
-		return nil, err
-	}
-	lock := u.taskLock(taskID)
-	lock.Lock()
-	defer lock.Unlock()
-	tracking, err := u.db.XHSNoteTracking.Query().Where(xhsnotetracking.TaskIDEQ(taskID)).Only(ctx)
-	if db.IsNotFound(err) {
-		return nil, redfoxURLInputError(fmt.Errorf("请先填写小红书笔记链接"))
-	}
-	if err != nil {
-		return nil, err
-	}
-	isAdmin := user.HasUnlimitedImageGeneration()
-	if !isAdmin && tracking.UserRefreshCount >= maxUserXHSRefreshes {
-		return nil, redfoxURLInputError(fmt.Errorf("本笔记已用完 %d 次刷新机会", maxUserXHSRefreshes))
-	}
-	work, account, similar, warn, err := u.collect(ctx, tracking.NoteURL, tracking.AccountUserID)
-	if err != nil {
-		return nil, err
-	}
-	sequence, err := u.db.XHSNoteSnapshot.Query().Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID)).Count(ctx)
-	if err != nil {
-		return nil, err
-	}
-	trigger := "user_refresh"
-	if isAdmin {
-		trigger = "admin_refresh"
-	}
-	if _, err := u.createSnapshot(ctx, tracking, sequence+1, trigger, work, account, similar, warn); err != nil {
-		return nil, err
-	}
-	update := u.db.XHSNoteTracking.UpdateOneID(tracking.ID).
-		SetCanonicalURL(firstNonEmpty(work.WorkURL, tracking.CanonicalURL)).
-		SetWorkID(firstNonEmpty(work.WorkID, tracking.WorkID)).
-		SetAccountUserID(firstNonEmpty(account.UserID, work.AccountUserID, tracking.AccountUserID)).
-		SetAccountID(firstNonEmpty(account.AccountID, tracking.AccountID)).
-		SetTitle(firstNonEmpty(work.WorkTitle, tracking.Title)).
-		SetBody(firstNonEmpty(work.WorkDesc, tracking.Body)).
-		SetCoverURL(firstNonEmpty(work.CoverURL, tracking.CoverURL)).
-		SetWorkType(firstNonEmpty(work.WorkType, tracking.WorkType)).
-		SetPublishedAt(firstNonEmpty(work.WorkPublishTime, tracking.PublishedAt))
-	if !isAdmin {
-		update = update.AddUserRefreshCount(1)
-	}
-	if err := update.Exec(ctx); err != nil {
-		return nil, err
-	}
-	return u.Get(ctx, user, taskID)
-}
-
-// UpdateLink replaces a tracking link, immediately collects the new note, and
-// appends a snapshot so previously collected data remains traceable.
+// UpdateLink 只存储新链接并重置采集节奏（link_epoch+1、next_refresh_at=now），不立即采集。
+// 旧 epoch 快照保留入库，前端只展示当前 epoch；新链接首次采集由 triggerAutoCollect 异步触发。
 func (u *XHSUsecase) UpdateLink(ctx context.Context, user *domain.User, taskID uuid.UUID, req XHSNoteImportReq) (*XHSNoteResponse, error) {
 	noteURL, err := normalizeXHSURL(req.NoteURL)
 	if err != nil {
@@ -233,36 +177,50 @@ func (u *XHSUsecase) UpdateLink(ctx context.Context, user *domain.User, taskID u
 	if !isAdmin && tracking.UserLinkEditCount >= maxUserXHSLinkEdits {
 		return nil, redfoxURLInputError(fmt.Errorf("本笔记链接已用完 %d 次修改机会", maxUserXHSLinkEdits))
 	}
-	work, account, similar, warn, err := u.collect(ctx, noteURL, "")
-	if err != nil {
-		return nil, err
-	}
-	sequence, err := u.db.XHSNoteSnapshot.Query().Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID)).Count(ctx)
-	if err != nil {
-		return nil, err
-	}
-	trigger := "user_link_edit"
-	if isAdmin {
-		trigger = "admin_link_edit"
-	}
-	if _, err := u.createSnapshot(ctx, tracking, sequence+1, trigger, work, account, similar, warn); err != nil {
-		return nil, err
-	}
+	// 旧链接回填字段清空，等新链接采集后由 collectOnce 回填。
 	update := u.db.XHSNoteTracking.UpdateOneID(tracking.ID).
 		SetNoteURL(noteURL).
-		SetCanonicalURL(firstNonEmpty(work.WorkURL, noteURL)).
-		SetWorkID(work.WorkID).
-		SetAccountUserID(firstNonEmpty(account.UserID, work.AccountUserID)).
-		SetAccountID(account.AccountID).
-		SetTitle(work.WorkTitle).
-		SetBody(work.WorkDesc).
-		SetCoverURL(work.CoverURL).
-		SetWorkType(work.WorkType).
-		SetPublishedAt(work.WorkPublishTime)
+		SetCanonicalURL("").
+		SetWorkID("").
+		SetAccountUserID("").
+		SetAccountID("").
+		SetTitle("").
+		SetBody("").
+		SetCoverURL("").
+		SetWorkType("").
+		SetPublishedAt("").
+		AddLinkEpoch(1).
+		SetNextRefreshAt(time.Now())
 	if !isAdmin {
 		update = update.AddUserLinkEditCount(1)
 	}
-	if err := update.Exec(ctx); err != nil {
+	updated, err := update.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	u.triggerAutoCollect(updated)
+	return u.Get(ctx, user, taskID)
+}
+
+// Refresh 仅管理员可用：立即采一次（trigger=admin_refresh），不推进 next_refresh_at，不影响自动节奏。
+func (u *XHSUsecase) Refresh(ctx context.Context, user *domain.User, taskID uuid.UUID) (*XHSNoteResponse, error) {
+	if _, err := u.authorizeTask(ctx, user, taskID); err != nil {
+		return nil, err
+	}
+	if !user.HasUnlimitedImageGeneration() {
+		return nil, &redfox.Error{StatusCode: http.StatusForbidden, Message: "数据由系统自动采集，无需手动刷新。"}
+	}
+	lock := u.taskLock(taskID)
+	lock.Lock()
+	defer lock.Unlock()
+	tracking, err := u.db.XHSNoteTracking.Query().Where(xhsnotetracking.TaskIDEQ(taskID)).Only(ctx)
+	if db.IsNotFound(err) {
+		return nil, redfoxURLInputError(fmt.Errorf("请先填写小红书笔记链接"))
+	}
+	if err != nil {
+		return nil, err
+	}
+	if _, err := u.collectOnce(ctx, tracking, "admin_refresh", false); err != nil {
 		return nil, err
 	}
 	return u.Get(ctx, user, taskID)
@@ -279,8 +237,9 @@ func (u *XHSUsecase) Get(ctx context.Context, user *domain.User, taskID uuid.UUI
 	if err != nil {
 		return nil, err
 	}
+	// 只返回当前 link_epoch 的快照，旧链接快照保留入库但不展示，避免趋势混淆。
 	snapshots, err := u.db.XHSNoteSnapshot.Query().
-		Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID)).
+		Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID), xhsnotesnapshot.LinkEpochEQ(tracking.LinkEpoch)).
 		Order(db.Asc(xhsnotesnapshot.FieldSequence)).
 		All(ctx)
 	if err != nil {
@@ -299,11 +258,10 @@ func (u *XHSUsecase) Get(ctx context.Context, user *domain.User, taskID uuid.UUI
 		PublishedAt:       tracking.PublishedAt,
 		UserRefreshCount:  tracking.UserRefreshCount,
 		UserLinkEditCount: tracking.UserLinkEditCount,
+		NextRefreshAt:     tracking.NextRefreshAt,
 		Snapshots:         make([]XHSNoteSnapshotResp, 0, len(snapshots)),
 	}
 	if !user.HasUnlimitedImageGeneration() {
-		remaining := max(0, maxUserXHSRefreshes-tracking.UserRefreshCount)
-		resp.UserRefreshesRemaining = &remaining
 		linkEditsRemaining := max(0, maxUserXHSLinkEdits-tracking.UserLinkEditCount)
 		resp.UserLinkEditsRemaining = &linkEditsRemaining
 	}
@@ -324,6 +282,68 @@ func (u *XHSUsecase) authorizeTask(ctx context.Context, user *domain.User, taskI
 	return task, nil
 }
 
+// collectOnce 采集一次并追加快照、回填 tracking 基础字段。
+// advanceSchedule=true 时按 1/7/15 节奏推进 next_refresh_at（后台自动采集用）；
+// false 时不动 next_refresh_at（admin 手动刷新用，不影响自动节奏）。
+// 采集失败落一条 status=failed 快照（保留入库），advanceSchedule=true 时短重试 1h。
+func (u *XHSUsecase) collectOnce(ctx context.Context, tracking *db.XHSNoteTracking, trigger string, advanceSchedule bool) (*db.XHSNoteSnapshot, error) {
+	work, account, similar, warn, err := u.collect(ctx, tracking.NoteURL, tracking.AccountUserID)
+	sequence, seqErr := u.db.XHSNoteSnapshot.Query().Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID)).Count(ctx)
+	if seqErr != nil {
+		return nil, seqErr
+	}
+	if err != nil {
+		// QueryWork 失败：落 failed 快照，不推进节奏、短重试。
+		snap, snapErr := u.createSnapshot(ctx, tracking, sequence+1, trigger, "failed", safeProviderMessage(err), work, account, similar)
+		if advanceSchedule {
+			u.db.XHSNoteTracking.UpdateOneID(tracking.ID).SetNextRefreshAt(time.Now().Add(time.Hour)).Exec(ctx)
+		}
+		if snapErr != nil {
+			return nil, snapErr
+		}
+		return snap, err
+	}
+	snap, err := u.createSnapshot(ctx, tracking, sequence+1, trigger, "success", warn, work, account, similar)
+	if err != nil {
+		return nil, err
+	}
+	update := u.db.XHSNoteTracking.UpdateOneID(tracking.ID).
+		SetCanonicalURL(firstNonEmpty(work.WorkURL, tracking.NoteURL)).
+		SetWorkID(firstNonEmpty(work.WorkID, tracking.WorkID)).
+		SetAccountUserID(firstNonEmpty(account.UserID, work.AccountUserID, tracking.AccountUserID)).
+		SetAccountID(firstNonEmpty(account.AccountID, tracking.AccountID)).
+		SetTitle(firstNonEmpty(work.WorkTitle, tracking.Title)).
+		SetBody(firstNonEmpty(work.WorkDesc, tracking.Body)).
+		SetCoverURL(firstNonEmpty(work.CoverURL, tracking.CoverURL)).
+		SetWorkType(firstNonEmpty(work.WorkType, tracking.WorkType)).
+		SetPublishedAt(firstNonEmpty(work.WorkPublishTime, tracking.PublishedAt))
+	if advanceSchedule {
+		successCount, _ := u.db.XHSNoteSnapshot.Query().
+			Where(xhsnotesnapshot.TrackingIDEQ(tracking.ID), xhsnotesnapshot.LinkEpochEQ(tracking.LinkEpoch), xhsnotesnapshot.StatusEQ("success")).Count(ctx)
+		update = update.SetNextRefreshAt(time.Now().Add(nextRefreshAfter(successCount)))
+	}
+	if err := update.Exec(ctx); err != nil {
+		return nil, err
+	}
+	return snap, nil
+}
+
+// triggerAutoCollect 后台异步触发首次采集，提交过程不阻塞；采集落库后前端 Get 可见。
+func (u *XHSUsecase) triggerAutoCollect(tracking *db.XHSNoteTracking) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				u.logger.Error("async xhs collect panicked", "trackingId", tracking.ID, "panic", r)
+			}
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if _, err := u.collectOnce(ctx, tracking, "auto", true); err != nil {
+			u.logger.Warn("async xhs collect failed", "trackingId", tracking.ID, "error", err)
+		}
+	}()
+}
+
 func (u *XHSUsecase) collect(ctx context.Context, noteURL, fallbackAccountUserID string) (redfox.Work, redfox.Account, redfox.SimilarResult, string, error) {
 	client, err := u.redfoxClient(ctx)
 	if err != nil {
@@ -335,18 +355,17 @@ func (u *XHSUsecase) collect(ctx context.Context, noteURL, fallbackAccountUserID
 	}
 	accountUserID := firstNonEmpty(work.AccountUserID, fallbackAccountUserID)
 	if accountUserID == "" {
-		return work, redfox.Account{}, redfox.SimilarResult{}, "账号标识未返回，暂时无法采集账号和相似账号数据。", nil
+		return work, redfox.Account{}, redfox.SimilarResult{}, "账号标识未返回，暂时无法采集账号数据。", nil
 	}
 	account, accountErr := client.QueryAccount(ctx, accountUserID)
-	similar, similarErr := client.QuerySimilarAccounts(ctx, accountUserID)
-	warnings := make([]string, 0, 2)
+	// 对标账号数据不再获取（需求4）：注释掉 QuerySimilarAccounts，similar 留空，字段保留以便未来恢复。
+	// similar, similarErr := client.QuerySimilarAccounts(ctx, accountUserID)
+	warnings := make([]string, 0, 1)
 	if accountErr != nil {
 		warnings = append(warnings, "账号基础数据未获取："+safeProviderMessage(accountErr))
 	}
-	if similarErr != nil {
-		warnings = append(warnings, "相似账号未获取："+safeProviderMessage(similarErr))
-	}
-	return work, account, similar, strings.Join(warnings, "；"), nil
+	// if similarErr != nil { warnings = append(warnings, "相似账号未获取："+safeProviderMessage(similarErr)) }
+	return work, account, redfox.SimilarResult{}, strings.Join(warnings, "；"), nil
 }
 
 // redfoxClient reads the key for every collection. Replacing the key from the
@@ -366,7 +385,7 @@ func (u *XHSUsecase) redfoxClient(ctx context.Context) (*redfox.Client, error) {
 	return redfox.NewClient(cfg), nil
 }
 
-func (u *XHSUsecase) createSnapshot(ctx context.Context, tracking *db.XHSNoteTracking, sequence int, trigger string, work redfox.Work, account redfox.Account, similar redfox.SimilarResult, warning string) (*db.XHSNoteSnapshot, error) {
+func (u *XHSUsecase) createSnapshot(ctx context.Context, tracking *db.XHSNoteTracking, sequence int, trigger, status, errMsg string, work redfox.Work, account redfox.Account, similar redfox.SimilarResult) (*db.XHSNoteSnapshot, error) {
 	items := make([]types.XHSSimilarAccount, 0, len(similar.SameLevelAccounts)+len(similar.HighLevelAccounts))
 	for i, item := range similar.SameLevelAccounts {
 		items = append(items, similarAccount(item, i+1, "same_level"))
@@ -378,8 +397,9 @@ func (u *XHSUsecase) createSnapshot(ctx context.Context, tracking *db.XHSNoteTra
 		SetTrackingID(tracking.ID).
 		SetSequence(sequence).
 		SetTrigger(trigger).
-		SetStatus("success").
-		SetError(warning).
+		SetStatus(status).
+		SetError(errMsg).
+		SetLinkEpoch(tracking.LinkEpoch).
 		SetWorkUpdatedAt(work.WorkUpdateTime).
 		SetViews(work.WorkReadedCount).
 		SetLikes(work.WorkLikedCount).
@@ -491,4 +511,16 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// nextRefreshAfter 根据当前 epoch 内 success 快照数返回距下次采集的间隔。
+func nextRefreshAfter(successCount int) time.Duration {
+	idx := successCount - 1
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(xhsRefreshIntervals) {
+		idx = len(xhsRefreshIntervals) - 1
+	}
+	return xhsRefreshIntervals[idx]
 }

@@ -70,6 +70,8 @@ type XHSNoteSnapshot struct {
 	SimilarAccounts []types.XHSSimilarAccount `json:"similar_accounts,omitempty"`
 	// SimilarSummary holds the value of the "similar_summary" field.
 	SimilarSummary string `json:"similar_summary,omitempty"`
+	// LinkEpoch holds the value of the "link_epoch" field.
+	LinkEpoch int `json:"link_epoch,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt    time.Time `json:"created_at,omitempty"`
 	selectValues sql.SelectValues
@@ -82,7 +84,7 @@ func (*XHSNoteSnapshot) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case xhsnotesnapshot.FieldSimilarAccounts:
 			values[i] = new([]byte)
-		case xhsnotesnapshot.FieldSequence, xhsnotesnapshot.FieldViews, xhsnotesnapshot.FieldLikes, xhsnotesnapshot.FieldCollects, xhsnotesnapshot.FieldComments, xhsnotesnapshot.FieldShares, xhsnotesnapshot.FieldAccountFans, xhsnotesnapshot.FieldAccountTotalWorks, xhsnotesnapshot.FieldAccountLikes, xhsnotesnapshot.FieldAccountCollects, xhsnotesnapshot.FieldAccountFollows:
+		case xhsnotesnapshot.FieldSequence, xhsnotesnapshot.FieldViews, xhsnotesnapshot.FieldLikes, xhsnotesnapshot.FieldCollects, xhsnotesnapshot.FieldComments, xhsnotesnapshot.FieldShares, xhsnotesnapshot.FieldAccountFans, xhsnotesnapshot.FieldAccountTotalWorks, xhsnotesnapshot.FieldAccountLikes, xhsnotesnapshot.FieldAccountCollects, xhsnotesnapshot.FieldAccountFollows, xhsnotesnapshot.FieldLinkEpoch:
 			values[i] = new(sql.NullInt64)
 		case xhsnotesnapshot.FieldTrigger, xhsnotesnapshot.FieldStatus, xhsnotesnapshot.FieldError, xhsnotesnapshot.FieldWorkUpdatedAt, xhsnotesnapshot.FieldAccountName, xhsnotesnapshot.FieldAccountAvatar, xhsnotesnapshot.FieldAccountDisplayID, xhsnotesnapshot.FieldAccountUserID, xhsnotesnapshot.FieldAccountDescription, xhsnotesnapshot.FieldAccountUpdatedAt, xhsnotesnapshot.FieldSimilarSummary:
 			values[i] = new(sql.NullString)
@@ -263,6 +265,12 @@ func (_m *XHSNoteSnapshot) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SimilarSummary = value.String
 			}
+		case xhsnotesnapshot.FieldLinkEpoch:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field link_epoch", values[i])
+			} else if value.Valid {
+				_m.LinkEpoch = int(value.Int64)
+			}
 		case xhsnotesnapshot.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -379,6 +387,9 @@ func (_m *XHSNoteSnapshot) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("similar_summary=")
 	builder.WriteString(_m.SimilarSummary)
+	builder.WriteString(", ")
+	builder.WriteString("link_epoch=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LinkEpoch))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

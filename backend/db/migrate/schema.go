@@ -2278,6 +2278,7 @@ var (
 		{Name: "account_updated_at", Type: field.TypeString, Default: ""},
 		{Name: "similar_accounts", Type: field.TypeJSON},
 		{Name: "similar_summary", Type: field.TypeString, Default: ""},
+		{Name: "link_epoch", Type: field.TypeInt, Default: 1},
 		{Name: "created_at", Type: field.TypeTime},
 	}
 	// GenerationTaskXhsSnapshotsTable holds the schema information for the "generation_task_xhs_snapshots" table.
@@ -2315,6 +2316,8 @@ var (
 		{Name: "published_at", Type: field.TypeString, Default: ""},
 		{Name: "user_refresh_count", Type: field.TypeInt, Default: 0},
 		{Name: "user_link_edit_count", Type: field.TypeInt, Default: 0},
+		{Name: "next_refresh_at", Type: field.TypeTime, Nullable: true},
+		{Name: "link_epoch", Type: field.TypeInt, Default: 1},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -2327,7 +2330,7 @@ var (
 			{
 				Name:    "xhsnotetracking_user_id_updated_at",
 				Unique:  false,
-				Columns: []*schema.Column{GenerationTaskXhsNotesColumns[2], GenerationTaskXhsNotesColumns[16]},
+				Columns: []*schema.Column{GenerationTaskXhsNotesColumns[2], GenerationTaskXhsNotesColumns[18]},
 			},
 		},
 	}

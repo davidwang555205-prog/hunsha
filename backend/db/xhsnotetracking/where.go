@@ -125,6 +125,16 @@ func UserLinkEditCount(v int) predicate.XHSNoteTracking {
 	return predicate.XHSNoteTracking(sql.FieldEQ(FieldUserLinkEditCount, v))
 }
 
+// NextRefreshAt applies equality check predicate on the "next_refresh_at" field. It's identical to NextRefreshAtEQ.
+func NextRefreshAt(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldEQ(FieldNextRefreshAt, v))
+}
+
+// LinkEpoch applies equality check predicate on the "link_epoch" field. It's identical to LinkEpochEQ.
+func LinkEpoch(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldEQ(FieldLinkEpoch, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.XHSNoteTracking {
 	return predicate.XHSNoteTracking(sql.FieldEQ(FieldCreatedAt, v))
@@ -943,6 +953,96 @@ func UserLinkEditCountLT(v int) predicate.XHSNoteTracking {
 // UserLinkEditCountLTE applies the LTE predicate on the "user_link_edit_count" field.
 func UserLinkEditCountLTE(v int) predicate.XHSNoteTracking {
 	return predicate.XHSNoteTracking(sql.FieldLTE(FieldUserLinkEditCount, v))
+}
+
+// NextRefreshAtEQ applies the EQ predicate on the "next_refresh_at" field.
+func NextRefreshAtEQ(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldEQ(FieldNextRefreshAt, v))
+}
+
+// NextRefreshAtNEQ applies the NEQ predicate on the "next_refresh_at" field.
+func NextRefreshAtNEQ(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNEQ(FieldNextRefreshAt, v))
+}
+
+// NextRefreshAtIn applies the In predicate on the "next_refresh_at" field.
+func NextRefreshAtIn(vs ...time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldIn(FieldNextRefreshAt, vs...))
+}
+
+// NextRefreshAtNotIn applies the NotIn predicate on the "next_refresh_at" field.
+func NextRefreshAtNotIn(vs ...time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNotIn(FieldNextRefreshAt, vs...))
+}
+
+// NextRefreshAtGT applies the GT predicate on the "next_refresh_at" field.
+func NextRefreshAtGT(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldGT(FieldNextRefreshAt, v))
+}
+
+// NextRefreshAtGTE applies the GTE predicate on the "next_refresh_at" field.
+func NextRefreshAtGTE(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldGTE(FieldNextRefreshAt, v))
+}
+
+// NextRefreshAtLT applies the LT predicate on the "next_refresh_at" field.
+func NextRefreshAtLT(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldLT(FieldNextRefreshAt, v))
+}
+
+// NextRefreshAtLTE applies the LTE predicate on the "next_refresh_at" field.
+func NextRefreshAtLTE(v time.Time) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldLTE(FieldNextRefreshAt, v))
+}
+
+// NextRefreshAtIsNil applies the IsNil predicate on the "next_refresh_at" field.
+func NextRefreshAtIsNil() predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldIsNull(FieldNextRefreshAt))
+}
+
+// NextRefreshAtNotNil applies the NotNil predicate on the "next_refresh_at" field.
+func NextRefreshAtNotNil() predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNotNull(FieldNextRefreshAt))
+}
+
+// LinkEpochEQ applies the EQ predicate on the "link_epoch" field.
+func LinkEpochEQ(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldEQ(FieldLinkEpoch, v))
+}
+
+// LinkEpochNEQ applies the NEQ predicate on the "link_epoch" field.
+func LinkEpochNEQ(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNEQ(FieldLinkEpoch, v))
+}
+
+// LinkEpochIn applies the In predicate on the "link_epoch" field.
+func LinkEpochIn(vs ...int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldIn(FieldLinkEpoch, vs...))
+}
+
+// LinkEpochNotIn applies the NotIn predicate on the "link_epoch" field.
+func LinkEpochNotIn(vs ...int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldNotIn(FieldLinkEpoch, vs...))
+}
+
+// LinkEpochGT applies the GT predicate on the "link_epoch" field.
+func LinkEpochGT(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldGT(FieldLinkEpoch, v))
+}
+
+// LinkEpochGTE applies the GTE predicate on the "link_epoch" field.
+func LinkEpochGTE(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldGTE(FieldLinkEpoch, v))
+}
+
+// LinkEpochLT applies the LT predicate on the "link_epoch" field.
+func LinkEpochLT(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldLT(FieldLinkEpoch, v))
+}
+
+// LinkEpochLTE applies the LTE predicate on the "link_epoch" field.
+func LinkEpochLTE(v int) predicate.XHSNoteTracking {
+	return predicate.XHSNoteTracking(sql.FieldLTE(FieldLinkEpoch, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

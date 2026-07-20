@@ -42,6 +42,10 @@ const (
 	FieldUserRefreshCount = "user_refresh_count"
 	// FieldUserLinkEditCount holds the string denoting the user_link_edit_count field in the database.
 	FieldUserLinkEditCount = "user_link_edit_count"
+	// FieldNextRefreshAt holds the string denoting the next_refresh_at field in the database.
+	FieldNextRefreshAt = "next_refresh_at"
+	// FieldLinkEpoch holds the string denoting the link_epoch field in the database.
+	FieldLinkEpoch = "link_epoch"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -67,6 +71,8 @@ var Columns = []string{
 	FieldPublishedAt,
 	FieldUserRefreshCount,
 	FieldUserLinkEditCount,
+	FieldNextRefreshAt,
+	FieldLinkEpoch,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -104,6 +110,8 @@ var (
 	DefaultUserRefreshCount int
 	// DefaultUserLinkEditCount holds the default value on creation for the "user_link_edit_count" field.
 	DefaultUserLinkEditCount int
+	// DefaultLinkEpoch holds the default value on creation for the "link_epoch" field.
+	DefaultLinkEpoch int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -190,6 +198,16 @@ func ByUserRefreshCount(opts ...sql.OrderTermOption) OrderOption {
 // ByUserLinkEditCount orders the results by the user_link_edit_count field.
 func ByUserLinkEditCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserLinkEditCount, opts...).ToFunc()
+}
+
+// ByNextRefreshAt orders the results by the next_refresh_at field.
+func ByNextRefreshAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextRefreshAt, opts...).ToFunc()
+}
+
+// ByLinkEpoch orders the results by the link_epoch field.
+func ByLinkEpoch(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkEpoch, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

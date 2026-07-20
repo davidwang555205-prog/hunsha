@@ -55,4 +55,8 @@ func InvokeGeneration(i *do.Injector) {
 			run()
 		}
 	}()
+
+	// 定时自动采集小红书笔记数据（提交后立即首次 + 1/7/15 天节奏持续）。
+	// 首次采集由 Import/UpdateLink 异步触发，本 ticker 负责后续节点与失败短重试。
+	InvokeXHSAutoRefresh(i)
 }

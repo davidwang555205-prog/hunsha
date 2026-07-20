@@ -46,6 +46,10 @@ type XHSNoteTracking struct {
 	UserRefreshCount int `json:"user_refresh_count,omitempty"`
 	// UserLinkEditCount holds the value of the "user_link_edit_count" field.
 	UserLinkEditCount int `json:"user_link_edit_count,omitempty"`
+	// NextRefreshAt holds the value of the "next_refresh_at" field.
+	NextRefreshAt *time.Time `json:"next_refresh_at,omitempty"`
+	// LinkEpoch holds the value of the "link_epoch" field.
+	LinkEpoch int `json:"link_epoch,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -58,11 +62,11 @@ func (*XHSNoteTracking) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case xhsnotetracking.FieldUserRefreshCount, xhsnotetracking.FieldUserLinkEditCount:
+		case xhsnotetracking.FieldUserRefreshCount, xhsnotetracking.FieldUserLinkEditCount, xhsnotetracking.FieldLinkEpoch:
 			values[i] = new(sql.NullInt64)
 		case xhsnotetracking.FieldNoteURL, xhsnotetracking.FieldCanonicalURL, xhsnotetracking.FieldWorkID, xhsnotetracking.FieldAccountUserID, xhsnotetracking.FieldAccountID, xhsnotetracking.FieldTitle, xhsnotetracking.FieldBody, xhsnotetracking.FieldCoverURL, xhsnotetracking.FieldWorkType, xhsnotetracking.FieldPublishedAt:
 			values[i] = new(sql.NullString)
-		case xhsnotetracking.FieldCreatedAt, xhsnotetracking.FieldUpdatedAt:
+		case xhsnotetracking.FieldNextRefreshAt, xhsnotetracking.FieldCreatedAt, xhsnotetracking.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case xhsnotetracking.FieldID, xhsnotetracking.FieldTaskID, xhsnotetracking.FieldUserID:
 			values[i] = new(uuid.UUID)
@@ -171,6 +175,19 @@ func (_m *XHSNoteTracking) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UserLinkEditCount = int(value.Int64)
 			}
+		case xhsnotetracking.FieldNextRefreshAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_refresh_at", values[i])
+			} else if value.Valid {
+				_m.NextRefreshAt = new(time.Time)
+				*_m.NextRefreshAt = value.Time
+			}
+		case xhsnotetracking.FieldLinkEpoch:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field link_epoch", values[i])
+			} else if value.Valid {
+				_m.LinkEpoch = int(value.Int64)
+			}
 		case xhsnotetracking.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -260,6 +277,14 @@ func (_m *XHSNoteTracking) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_link_edit_count=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UserLinkEditCount))
+	builder.WriteString(", ")
+	if v := _m.NextRefreshAt; v != nil {
+		builder.WriteString("next_refresh_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("link_epoch=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LinkEpoch))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

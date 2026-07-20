@@ -196,6 +196,34 @@ func (_c *XHSNoteTrackingCreate) SetNillableUserLinkEditCount(v *int) *XHSNoteTr
 	return _c
 }
 
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (_c *XHSNoteTrackingCreate) SetNextRefreshAt(v time.Time) *XHSNoteTrackingCreate {
+	_c.mutation.SetNextRefreshAt(v)
+	return _c
+}
+
+// SetNillableNextRefreshAt sets the "next_refresh_at" field if the given value is not nil.
+func (_c *XHSNoteTrackingCreate) SetNillableNextRefreshAt(v *time.Time) *XHSNoteTrackingCreate {
+	if v != nil {
+		_c.SetNextRefreshAt(*v)
+	}
+	return _c
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (_c *XHSNoteTrackingCreate) SetLinkEpoch(v int) *XHSNoteTrackingCreate {
+	_c.mutation.SetLinkEpoch(v)
+	return _c
+}
+
+// SetNillableLinkEpoch sets the "link_epoch" field if the given value is not nil.
+func (_c *XHSNoteTrackingCreate) SetNillableLinkEpoch(v *int) *XHSNoteTrackingCreate {
+	if v != nil {
+		_c.SetLinkEpoch(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *XHSNoteTrackingCreate) SetCreatedAt(v time.Time) *XHSNoteTrackingCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -317,6 +345,10 @@ func (_c *XHSNoteTrackingCreate) defaults() {
 		v := xhsnotetracking.DefaultUserLinkEditCount
 		_c.mutation.SetUserLinkEditCount(v)
 	}
+	if _, ok := _c.mutation.LinkEpoch(); !ok {
+		v := xhsnotetracking.DefaultLinkEpoch
+		_c.mutation.SetLinkEpoch(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := xhsnotetracking.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -374,6 +406,9 @@ func (_c *XHSNoteTrackingCreate) check() error {
 	}
 	if _, ok := _c.mutation.UserLinkEditCount(); !ok {
 		return &ValidationError{Name: "user_link_edit_count", err: errors.New(`db: missing required field "XHSNoteTracking.user_link_edit_count"`)}
+	}
+	if _, ok := _c.mutation.LinkEpoch(); !ok {
+		return &ValidationError{Name: "link_epoch", err: errors.New(`db: missing required field "XHSNoteTracking.link_epoch"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "XHSNoteTracking.created_at"`)}
@@ -472,6 +507,14 @@ func (_c *XHSNoteTrackingCreate) createSpec() (*XHSNoteTracking, *sqlgraph.Creat
 	if value, ok := _c.mutation.UserLinkEditCount(); ok {
 		_spec.SetField(xhsnotetracking.FieldUserLinkEditCount, field.TypeInt, value)
 		_node.UserLinkEditCount = value
+	}
+	if value, ok := _c.mutation.NextRefreshAt(); ok {
+		_spec.SetField(xhsnotetracking.FieldNextRefreshAt, field.TypeTime, value)
+		_node.NextRefreshAt = &value
+	}
+	if value, ok := _c.mutation.LinkEpoch(); ok {
+		_spec.SetField(xhsnotetracking.FieldLinkEpoch, field.TypeInt, value)
+		_node.LinkEpoch = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotetracking.FieldCreatedAt, field.TypeTime, value)
@@ -710,6 +753,42 @@ func (u *XHSNoteTrackingUpsert) UpdateUserLinkEditCount() *XHSNoteTrackingUpsert
 // AddUserLinkEditCount adds v to the "user_link_edit_count" field.
 func (u *XHSNoteTrackingUpsert) AddUserLinkEditCount(v int) *XHSNoteTrackingUpsert {
 	u.Add(xhsnotetracking.FieldUserLinkEditCount, v)
+	return u
+}
+
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (u *XHSNoteTrackingUpsert) SetNextRefreshAt(v time.Time) *XHSNoteTrackingUpsert {
+	u.Set(xhsnotetracking.FieldNextRefreshAt, v)
+	return u
+}
+
+// UpdateNextRefreshAt sets the "next_refresh_at" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsert) UpdateNextRefreshAt() *XHSNoteTrackingUpsert {
+	u.SetExcluded(xhsnotetracking.FieldNextRefreshAt)
+	return u
+}
+
+// ClearNextRefreshAt clears the value of the "next_refresh_at" field.
+func (u *XHSNoteTrackingUpsert) ClearNextRefreshAt() *XHSNoteTrackingUpsert {
+	u.SetNull(xhsnotetracking.FieldNextRefreshAt)
+	return u
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (u *XHSNoteTrackingUpsert) SetLinkEpoch(v int) *XHSNoteTrackingUpsert {
+	u.Set(xhsnotetracking.FieldLinkEpoch, v)
+	return u
+}
+
+// UpdateLinkEpoch sets the "link_epoch" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsert) UpdateLinkEpoch() *XHSNoteTrackingUpsert {
+	u.SetExcluded(xhsnotetracking.FieldLinkEpoch)
+	return u
+}
+
+// AddLinkEpoch adds v to the "link_epoch" field.
+func (u *XHSNoteTrackingUpsert) AddLinkEpoch(v int) *XHSNoteTrackingUpsert {
+	u.Add(xhsnotetracking.FieldLinkEpoch, v)
 	return u
 }
 
@@ -992,6 +1071,48 @@ func (u *XHSNoteTrackingUpsertOne) AddUserLinkEditCount(v int) *XHSNoteTrackingU
 func (u *XHSNoteTrackingUpsertOne) UpdateUserLinkEditCount() *XHSNoteTrackingUpsertOne {
 	return u.Update(func(s *XHSNoteTrackingUpsert) {
 		s.UpdateUserLinkEditCount()
+	})
+}
+
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (u *XHSNoteTrackingUpsertOne) SetNextRefreshAt(v time.Time) *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.SetNextRefreshAt(v)
+	})
+}
+
+// UpdateNextRefreshAt sets the "next_refresh_at" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsertOne) UpdateNextRefreshAt() *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.UpdateNextRefreshAt()
+	})
+}
+
+// ClearNextRefreshAt clears the value of the "next_refresh_at" field.
+func (u *XHSNoteTrackingUpsertOne) ClearNextRefreshAt() *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.ClearNextRefreshAt()
+	})
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (u *XHSNoteTrackingUpsertOne) SetLinkEpoch(v int) *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.SetLinkEpoch(v)
+	})
+}
+
+// AddLinkEpoch adds v to the "link_epoch" field.
+func (u *XHSNoteTrackingUpsertOne) AddLinkEpoch(v int) *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.AddLinkEpoch(v)
+	})
+}
+
+// UpdateLinkEpoch sets the "link_epoch" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsertOne) UpdateLinkEpoch() *XHSNoteTrackingUpsertOne {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.UpdateLinkEpoch()
 	})
 }
 
@@ -1445,6 +1566,48 @@ func (u *XHSNoteTrackingUpsertBulk) AddUserLinkEditCount(v int) *XHSNoteTracking
 func (u *XHSNoteTrackingUpsertBulk) UpdateUserLinkEditCount() *XHSNoteTrackingUpsertBulk {
 	return u.Update(func(s *XHSNoteTrackingUpsert) {
 		s.UpdateUserLinkEditCount()
+	})
+}
+
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (u *XHSNoteTrackingUpsertBulk) SetNextRefreshAt(v time.Time) *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.SetNextRefreshAt(v)
+	})
+}
+
+// UpdateNextRefreshAt sets the "next_refresh_at" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsertBulk) UpdateNextRefreshAt() *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.UpdateNextRefreshAt()
+	})
+}
+
+// ClearNextRefreshAt clears the value of the "next_refresh_at" field.
+func (u *XHSNoteTrackingUpsertBulk) ClearNextRefreshAt() *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.ClearNextRefreshAt()
+	})
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (u *XHSNoteTrackingUpsertBulk) SetLinkEpoch(v int) *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.SetLinkEpoch(v)
+	})
+}
+
+// AddLinkEpoch adds v to the "link_epoch" field.
+func (u *XHSNoteTrackingUpsertBulk) AddLinkEpoch(v int) *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.AddLinkEpoch(v)
+	})
+}
+
+// UpdateLinkEpoch sets the "link_epoch" field to the value that was provided on create.
+func (u *XHSNoteTrackingUpsertBulk) UpdateLinkEpoch() *XHSNoteTrackingUpsertBulk {
+	return u.Update(func(s *XHSNoteTrackingUpsert) {
+		s.UpdateLinkEpoch()
 	})
 }
 

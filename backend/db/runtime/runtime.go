@@ -1889,8 +1889,12 @@ func init() {
 	xhsnotesnapshotDescSimilarSummary := xhsnotesnapshotFields[25].Descriptor()
 	// xhsnotesnapshot.DefaultSimilarSummary holds the default value on creation for the similar_summary field.
 	xhsnotesnapshot.DefaultSimilarSummary = xhsnotesnapshotDescSimilarSummary.Default.(string)
+	// xhsnotesnapshotDescLinkEpoch is the schema descriptor for link_epoch field.
+	xhsnotesnapshotDescLinkEpoch := xhsnotesnapshotFields[26].Descriptor()
+	// xhsnotesnapshot.DefaultLinkEpoch holds the default value on creation for the link_epoch field.
+	xhsnotesnapshot.DefaultLinkEpoch = xhsnotesnapshotDescLinkEpoch.Default.(int)
 	// xhsnotesnapshotDescCreatedAt is the schema descriptor for created_at field.
-	xhsnotesnapshotDescCreatedAt := xhsnotesnapshotFields[26].Descriptor()
+	xhsnotesnapshotDescCreatedAt := xhsnotesnapshotFields[27].Descriptor()
 	// xhsnotesnapshot.DefaultCreatedAt holds the default value on creation for the created_at field.
 	xhsnotesnapshot.DefaultCreatedAt = xhsnotesnapshotDescCreatedAt.Default.(func() time.Time)
 	// xhsnotesnapshotDescID is the schema descriptor for id field.
@@ -1943,12 +1947,16 @@ func init() {
 	xhsnotetrackingDescUserLinkEditCount := xhsnotetrackingFields[14].Descriptor()
 	// xhsnotetracking.DefaultUserLinkEditCount holds the default value on creation for the user_link_edit_count field.
 	xhsnotetracking.DefaultUserLinkEditCount = xhsnotetrackingDescUserLinkEditCount.Default.(int)
+	// xhsnotetrackingDescLinkEpoch is the schema descriptor for link_epoch field.
+	xhsnotetrackingDescLinkEpoch := xhsnotetrackingFields[16].Descriptor()
+	// xhsnotetracking.DefaultLinkEpoch holds the default value on creation for the link_epoch field.
+	xhsnotetracking.DefaultLinkEpoch = xhsnotetrackingDescLinkEpoch.Default.(int)
 	// xhsnotetrackingDescCreatedAt is the schema descriptor for created_at field.
-	xhsnotetrackingDescCreatedAt := xhsnotetrackingFields[15].Descriptor()
+	xhsnotetrackingDescCreatedAt := xhsnotetrackingFields[17].Descriptor()
 	// xhsnotetracking.DefaultCreatedAt holds the default value on creation for the created_at field.
 	xhsnotetracking.DefaultCreatedAt = xhsnotetrackingDescCreatedAt.Default.(func() time.Time)
 	// xhsnotetrackingDescUpdatedAt is the schema descriptor for updated_at field.
-	xhsnotetrackingDescUpdatedAt := xhsnotetrackingFields[16].Descriptor()
+	xhsnotetrackingDescUpdatedAt := xhsnotetrackingFields[18].Descriptor()
 	// xhsnotetracking.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	xhsnotetracking.DefaultUpdatedAt = xhsnotetrackingDescUpdatedAt.Default.(func() time.Time)
 	// xhsnotetracking.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

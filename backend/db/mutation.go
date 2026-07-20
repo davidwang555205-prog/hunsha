@@ -68098,6 +68098,8 @@ type XHSNoteSnapshotMutation struct {
 	similar_accounts       *[]types.XHSSimilarAccount
 	appendsimilar_accounts []types.XHSSimilarAccount
 	similar_summary        *string
+	link_epoch             *int
+	addlink_epoch          *int
 	created_at             *time.Time
 	clearedFields          map[string]struct{}
 	done                   bool
@@ -69344,6 +69346,62 @@ func (m *XHSNoteSnapshotMutation) ResetSimilarSummary() {
 	m.similar_summary = nil
 }
 
+// SetLinkEpoch sets the "link_epoch" field.
+func (m *XHSNoteSnapshotMutation) SetLinkEpoch(i int) {
+	m.link_epoch = &i
+	m.addlink_epoch = nil
+}
+
+// LinkEpoch returns the value of the "link_epoch" field in the mutation.
+func (m *XHSNoteSnapshotMutation) LinkEpoch() (r int, exists bool) {
+	v := m.link_epoch
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkEpoch returns the old "link_epoch" field's value of the XHSNoteSnapshot entity.
+// If the XHSNoteSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteSnapshotMutation) OldLinkEpoch(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkEpoch is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkEpoch requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkEpoch: %w", err)
+	}
+	return oldValue.LinkEpoch, nil
+}
+
+// AddLinkEpoch adds i to the "link_epoch" field.
+func (m *XHSNoteSnapshotMutation) AddLinkEpoch(i int) {
+	if m.addlink_epoch != nil {
+		*m.addlink_epoch += i
+	} else {
+		m.addlink_epoch = &i
+	}
+}
+
+// AddedLinkEpoch returns the value that was added to the "link_epoch" field in this mutation.
+func (m *XHSNoteSnapshotMutation) AddedLinkEpoch() (r int, exists bool) {
+	v := m.addlink_epoch
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLinkEpoch resets all changes to the "link_epoch" field.
+func (m *XHSNoteSnapshotMutation) ResetLinkEpoch() {
+	m.link_epoch = nil
+	m.addlink_epoch = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *XHSNoteSnapshotMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -69414,7 +69472,7 @@ func (m *XHSNoteSnapshotMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *XHSNoteSnapshotMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.tracking_id != nil {
 		fields = append(fields, xhsnotesnapshot.FieldTrackingID)
 	}
@@ -69490,6 +69548,9 @@ func (m *XHSNoteSnapshotMutation) Fields() []string {
 	if m.similar_summary != nil {
 		fields = append(fields, xhsnotesnapshot.FieldSimilarSummary)
 	}
+	if m.link_epoch != nil {
+		fields = append(fields, xhsnotesnapshot.FieldLinkEpoch)
+	}
 	if m.created_at != nil {
 		fields = append(fields, xhsnotesnapshot.FieldCreatedAt)
 	}
@@ -69551,6 +69612,8 @@ func (m *XHSNoteSnapshotMutation) Field(name string) (ent.Value, bool) {
 		return m.SimilarAccounts()
 	case xhsnotesnapshot.FieldSimilarSummary:
 		return m.SimilarSummary()
+	case xhsnotesnapshot.FieldLinkEpoch:
+		return m.LinkEpoch()
 	case xhsnotesnapshot.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -69612,6 +69675,8 @@ func (m *XHSNoteSnapshotMutation) OldField(ctx context.Context, name string) (en
 		return m.OldSimilarAccounts(ctx)
 	case xhsnotesnapshot.FieldSimilarSummary:
 		return m.OldSimilarSummary(ctx)
+	case xhsnotesnapshot.FieldLinkEpoch:
+		return m.OldLinkEpoch(ctx)
 	case xhsnotesnapshot.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -69798,6 +69863,13 @@ func (m *XHSNoteSnapshotMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSimilarSummary(v)
 		return nil
+	case xhsnotesnapshot.FieldLinkEpoch:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkEpoch(v)
+		return nil
 	case xhsnotesnapshot.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -69846,6 +69918,9 @@ func (m *XHSNoteSnapshotMutation) AddedFields() []string {
 	if m.addaccount_follows != nil {
 		fields = append(fields, xhsnotesnapshot.FieldAccountFollows)
 	}
+	if m.addlink_epoch != nil {
+		fields = append(fields, xhsnotesnapshot.FieldLinkEpoch)
+	}
 	return fields
 }
 
@@ -69876,6 +69951,8 @@ func (m *XHSNoteSnapshotMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAccountCollects()
 	case xhsnotesnapshot.FieldAccountFollows:
 		return m.AddedAccountFollows()
+	case xhsnotesnapshot.FieldLinkEpoch:
+		return m.AddedLinkEpoch()
 	}
 	return nil, false
 }
@@ -69961,6 +70038,13 @@ func (m *XHSNoteSnapshotMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddAccountFollows(v)
+		return nil
+	case xhsnotesnapshot.FieldLinkEpoch:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLinkEpoch(v)
 		return nil
 	}
 	return fmt.Errorf("unknown XHSNoteSnapshot numeric field %s", name)
@@ -70064,6 +70148,9 @@ func (m *XHSNoteSnapshotMutation) ResetField(name string) error {
 	case xhsnotesnapshot.FieldSimilarSummary:
 		m.ResetSimilarSummary()
 		return nil
+	case xhsnotesnapshot.FieldLinkEpoch:
+		m.ResetLinkEpoch()
+		return nil
 	case xhsnotesnapshot.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
@@ -70141,6 +70228,9 @@ type XHSNoteTrackingMutation struct {
 	adduser_refresh_count   *int
 	user_link_edit_count    *int
 	adduser_link_edit_count *int
+	next_refresh_at         *time.Time
+	link_epoch              *int
+	addlink_epoch           *int
 	created_at              *time.Time
 	updated_at              *time.Time
 	clearedFields           map[string]struct{}
@@ -70797,6 +70887,111 @@ func (m *XHSNoteTrackingMutation) ResetUserLinkEditCount() {
 	m.adduser_link_edit_count = nil
 }
 
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (m *XHSNoteTrackingMutation) SetNextRefreshAt(t time.Time) {
+	m.next_refresh_at = &t
+}
+
+// NextRefreshAt returns the value of the "next_refresh_at" field in the mutation.
+func (m *XHSNoteTrackingMutation) NextRefreshAt() (r time.Time, exists bool) {
+	v := m.next_refresh_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextRefreshAt returns the old "next_refresh_at" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldNextRefreshAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextRefreshAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextRefreshAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextRefreshAt: %w", err)
+	}
+	return oldValue.NextRefreshAt, nil
+}
+
+// ClearNextRefreshAt clears the value of the "next_refresh_at" field.
+func (m *XHSNoteTrackingMutation) ClearNextRefreshAt() {
+	m.next_refresh_at = nil
+	m.clearedFields[xhsnotetracking.FieldNextRefreshAt] = struct{}{}
+}
+
+// NextRefreshAtCleared returns if the "next_refresh_at" field was cleared in this mutation.
+func (m *XHSNoteTrackingMutation) NextRefreshAtCleared() bool {
+	_, ok := m.clearedFields[xhsnotetracking.FieldNextRefreshAt]
+	return ok
+}
+
+// ResetNextRefreshAt resets all changes to the "next_refresh_at" field.
+func (m *XHSNoteTrackingMutation) ResetNextRefreshAt() {
+	m.next_refresh_at = nil
+	delete(m.clearedFields, xhsnotetracking.FieldNextRefreshAt)
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (m *XHSNoteTrackingMutation) SetLinkEpoch(i int) {
+	m.link_epoch = &i
+	m.addlink_epoch = nil
+}
+
+// LinkEpoch returns the value of the "link_epoch" field in the mutation.
+func (m *XHSNoteTrackingMutation) LinkEpoch() (r int, exists bool) {
+	v := m.link_epoch
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkEpoch returns the old "link_epoch" field's value of the XHSNoteTracking entity.
+// If the XHSNoteTracking object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *XHSNoteTrackingMutation) OldLinkEpoch(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkEpoch is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkEpoch requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkEpoch: %w", err)
+	}
+	return oldValue.LinkEpoch, nil
+}
+
+// AddLinkEpoch adds i to the "link_epoch" field.
+func (m *XHSNoteTrackingMutation) AddLinkEpoch(i int) {
+	if m.addlink_epoch != nil {
+		*m.addlink_epoch += i
+	} else {
+		m.addlink_epoch = &i
+	}
+}
+
+// AddedLinkEpoch returns the value that was added to the "link_epoch" field in this mutation.
+func (m *XHSNoteTrackingMutation) AddedLinkEpoch() (r int, exists bool) {
+	v := m.addlink_epoch
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLinkEpoch resets all changes to the "link_epoch" field.
+func (m *XHSNoteTrackingMutation) ResetLinkEpoch() {
+	m.link_epoch = nil
+	m.addlink_epoch = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *XHSNoteTrackingMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -70903,7 +71098,7 @@ func (m *XHSNoteTrackingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *XHSNoteTrackingMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 18)
 	if m.task_id != nil {
 		fields = append(fields, xhsnotetracking.FieldTaskID)
 	}
@@ -70945,6 +71140,12 @@ func (m *XHSNoteTrackingMutation) Fields() []string {
 	}
 	if m.user_link_edit_count != nil {
 		fields = append(fields, xhsnotetracking.FieldUserLinkEditCount)
+	}
+	if m.next_refresh_at != nil {
+		fields = append(fields, xhsnotetracking.FieldNextRefreshAt)
+	}
+	if m.link_epoch != nil {
+		fields = append(fields, xhsnotetracking.FieldLinkEpoch)
 	}
 	if m.created_at != nil {
 		fields = append(fields, xhsnotetracking.FieldCreatedAt)
@@ -70988,6 +71189,10 @@ func (m *XHSNoteTrackingMutation) Field(name string) (ent.Value, bool) {
 		return m.UserRefreshCount()
 	case xhsnotetracking.FieldUserLinkEditCount:
 		return m.UserLinkEditCount()
+	case xhsnotetracking.FieldNextRefreshAt:
+		return m.NextRefreshAt()
+	case xhsnotetracking.FieldLinkEpoch:
+		return m.LinkEpoch()
 	case xhsnotetracking.FieldCreatedAt:
 		return m.CreatedAt()
 	case xhsnotetracking.FieldUpdatedAt:
@@ -71029,6 +71234,10 @@ func (m *XHSNoteTrackingMutation) OldField(ctx context.Context, name string) (en
 		return m.OldUserRefreshCount(ctx)
 	case xhsnotetracking.FieldUserLinkEditCount:
 		return m.OldUserLinkEditCount(ctx)
+	case xhsnotetracking.FieldNextRefreshAt:
+		return m.OldNextRefreshAt(ctx)
+	case xhsnotetracking.FieldLinkEpoch:
+		return m.OldLinkEpoch(ctx)
 	case xhsnotetracking.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case xhsnotetracking.FieldUpdatedAt:
@@ -71140,6 +71349,20 @@ func (m *XHSNoteTrackingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUserLinkEditCount(v)
 		return nil
+	case xhsnotetracking.FieldNextRefreshAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextRefreshAt(v)
+		return nil
+	case xhsnotetracking.FieldLinkEpoch:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkEpoch(v)
+		return nil
 	case xhsnotetracking.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -71168,6 +71391,9 @@ func (m *XHSNoteTrackingMutation) AddedFields() []string {
 	if m.adduser_link_edit_count != nil {
 		fields = append(fields, xhsnotetracking.FieldUserLinkEditCount)
 	}
+	if m.addlink_epoch != nil {
+		fields = append(fields, xhsnotetracking.FieldLinkEpoch)
+	}
 	return fields
 }
 
@@ -71180,6 +71406,8 @@ func (m *XHSNoteTrackingMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedUserRefreshCount()
 	case xhsnotetracking.FieldUserLinkEditCount:
 		return m.AddedUserLinkEditCount()
+	case xhsnotetracking.FieldLinkEpoch:
+		return m.AddedLinkEpoch()
 	}
 	return nil, false
 }
@@ -71203,6 +71431,13 @@ func (m *XHSNoteTrackingMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddUserLinkEditCount(v)
 		return nil
+	case xhsnotetracking.FieldLinkEpoch:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLinkEpoch(v)
+		return nil
 	}
 	return fmt.Errorf("unknown XHSNoteTracking numeric field %s", name)
 }
@@ -71210,7 +71445,11 @@ func (m *XHSNoteTrackingMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *XHSNoteTrackingMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(xhsnotetracking.FieldNextRefreshAt) {
+		fields = append(fields, xhsnotetracking.FieldNextRefreshAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -71223,6 +71462,11 @@ func (m *XHSNoteTrackingMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *XHSNoteTrackingMutation) ClearField(name string) error {
+	switch name {
+	case xhsnotetracking.FieldNextRefreshAt:
+		m.ClearNextRefreshAt()
+		return nil
+	}
 	return fmt.Errorf("unknown XHSNoteTracking nullable field %s", name)
 }
 
@@ -71271,6 +71515,12 @@ func (m *XHSNoteTrackingMutation) ResetField(name string) error {
 		return nil
 	case xhsnotetracking.FieldUserLinkEditCount:
 		m.ResetUserLinkEditCount()
+		return nil
+	case xhsnotetracking.FieldNextRefreshAt:
+		m.ResetNextRefreshAt()
+		return nil
+	case xhsnotetracking.FieldLinkEpoch:
+		m.ResetLinkEpoch()
 		return nil
 	case xhsnotetracking.FieldCreatedAt:
 		m.ResetCreatedAt()

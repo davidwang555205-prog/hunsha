@@ -48,6 +48,8 @@ func (XHSNoteSnapshot) Fields() []ent.Field {
 		field.String("account_updated_at").Default(""),
 		field.JSON("similar_accounts", []types.XHSSimilarAccount{}).Default([]types.XHSSimilarAccount{}),
 		field.String("similar_summary").Default(""),
+		// link_epoch：采集时所属链接版本，与 tracking.link_epoch 对齐，区分改链接前后快照。
+		field.Int("link_epoch").Default(1),
 		field.Time("created_at").Default(time.Now),
 	}
 }

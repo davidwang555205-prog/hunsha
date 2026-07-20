@@ -20,9 +20,28 @@ function snapshotTime(value: string) {
 }
 
 function change(current: number, previous?: number) {
-  if (previous === undefined) return "—";
+  if (previous === undefined) return "-";
   const delta = current - previous;
   return `${delta > 0 ? "+" : ""}${number.format(delta)}`;
+}
+
+function triggerLabel(trigger: XHSNoteSnapshot["trigger"]) {
+  switch (trigger) {
+    case "initial":
+      return "首次采集";
+    case "admin_refresh":
+      return "管理员刷新";
+    case "user_refresh":
+      return "用户刷新";
+    case "admin_link_edit":
+      return "管理员修改链接";
+    case "user_link_edit":
+      return "用户修改链接";
+    case "auto":
+      return "自动采集";
+    default:
+      return trigger;
+  }
 }
 
 export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelProps) {
@@ -74,7 +93,7 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
       setNote(result.note);
       setNoteURL(result.note.noteUrl);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "采集失败。");
+      setError(e instanceof Error ? e.message : "保存失败。");
     } finally {
       setSubmitting(false);
     }
@@ -118,7 +137,7 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
   if (!note) {
     return (
       <div className="space-y-3">
-        <Field label="小红书笔记链接" hint="可直接粘贴整段小红书分享文案，系统会自动识别链接并采集数据。" error={error || undefined}>
+        <Field label="小红书笔记链接" hint="可直接粘贴整段小红书分享文案，系统自动识别链接。保存后系统将自动采集数据，无需等待。" error={error || undefined}>
           <Input
             type="text"
             placeholder="https://www.xiaohongshu.com/explore/..."
@@ -128,7 +147,7 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
             disabled={submitting}
           />
         </Field>
-        <Button size="sm" onClick={submitImport} loading={submitting}>获取并保存数据</Button>
+        <Button size="sm" onClick={submitImport} loading={submitting}>保存链接</Button>
       </div>
     );
   }
@@ -140,7 +159,7 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
           {editingLink ? (
             <div className="flex min-w-[280px] flex-wrap items-center gap-2">
               <Input type="text" value={noteURL} onChange={(event) => setNoteURL(event.target.value)} disabled={submitting} />
-              <Button size="sm" onClick={updateLink} loading={submitting}>保存并采集</Button>
+              <Button size="sm" onClick={updateLink} loading={submitting}>保存链接</Button>
               <Button size="sm" variant="ghost" disabled={submitting} onClick={() => { setNoteURL(note.noteUrl); setEditingLink(false); setError(""); }}>取消</Button>
             </div>
           ) : (
@@ -150,17 +169,29 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
               </a>
               <p className="mt-1 text-xs text-text-muted">
                 {isAdmin
-                  ? "管理员可不限次数修改链接、刷新数据"
-                  : `链接已修改 ${note.userLinkEditCount}/3 次，剩余 ${note.userLinkEditsRemaining ?? 0} 次；已刷新 ${note.userRefreshCount}/7 次`}
+                  ? "管理员可不限次数修改链接、手动刷新数据"
+                  : `链接已修改 ${note.userLinkEditCount}/3 次，剩余 ${note.userLinkEditsRemaining ?? 0} 次`}
+                {note.nextRefreshAt && <span className="ml-2">· 下次自动采集：{snapshotTime(note.nextRefreshAt)}</span>}
               </p>
             </>
           )}
         </div>
-        {!editingLink && <div className="flex shrink-0 gap-2"><Button size="sm" variant="secondary" onClick={() => { setNoteURL(note.noteUrl); setEditingLink(true); setError(""); }} disabled={submitting}>修改链接</Button><Button size="sm" variant="secondary" onClick={refresh} loading={submitting}>刷新数据{!isAdmin && note.userRefreshesRemaining !== undefined ? `（剩余 ${note.userRefreshesRemaining} 次）` : ""}</Button></div>}
+        {!editingLink && (
+          <div className="flex shrink-0 gap-2">
+            <Button size="sm" variant="secondary" onClick={() => { setNoteURL(note.noteUrl); setEditingLink(true); setError(""); }} disabled={submitting}>修改链接</Button>
+            {isAdmin && <Button size="sm" variant="secondary" onClick={refresh} loading={submitting}>刷新数据</Button>}
+          </div>
+        )}
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
 
-      {latest && <LatestSnapshot snapshot={latest} />}
+      {latest ? (
+        <LatestSnapshot snapshot={latest} />
+      ) : (
+        <p className="rounded-md bg-bg/60 px-3 py-3 text-xs text-text-muted ring-1 ring-border/70">
+          链接已保存，系统正在后台自动采集数据，预计数分钟内可见。
+        </p>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-md bg-bg/60 p-3 ring-1 ring-border/70">
@@ -173,7 +204,7 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
               { name: "点赞", data: note.snapshots.map((s) => s.likes), color: "#d97706" },
               { name: "收藏", data: note.snapshots.map((s) => s.collects), color: "#7c3aed" }
             ]}
-            emptyHint="再刷新一次后展示趋势"
+            emptyHint="系统采集后展示趋势"
           />
         </div>
         <div className="rounded-md bg-bg/60 p-3 ring-1 ring-border/70">
@@ -186,13 +217,12 @@ export function XHSNotePanel({ taskId, isAdmin, initialURL = "" }: XHSNotePanelP
               { name: "总获赞", data: note.snapshots.map((s) => s.account.likes), color: "#d97706" },
               { name: "总收藏", data: note.snapshots.map((s) => s.account.collects), color: "#7c3aed" }
             ]}
-            emptyHint="再刷新一次后展示趋势"
+            emptyHint="系统采集后展示趋势"
           />
         </div>
       </div>
 
       <SnapshotHistory snapshots={note.snapshots} />
-      {latest && <SimilarAccounts snapshot={latest} />}
     </div>
   );
 }
@@ -231,30 +261,26 @@ function SnapshotHistory({ snapshots }: { snapshots: XHSNoteSnapshot[] }) {
     <div>
       <h4 className="mb-2 text-sm font-semibold text-text">采集快照</h4>
       <div className="overflow-x-auto rounded-md ring-1 ring-border/70">
-        <table className="min-w-[760px] w-full text-left text-xs">
-          <thead className="bg-bg text-text-muted"><tr><th className="px-3 py-2 font-medium">采集时间</th><th className="px-3 py-2 font-medium">触发</th><th className="px-3 py-2 font-medium">阅读变化</th><th className="px-3 py-2 font-medium">点赞变化</th><th className="px-3 py-2 font-medium">收藏变化</th><th className="px-3 py-2 font-medium">粉丝变化</th><th className="px-3 py-2 font-medium">总获赞变化</th></tr></thead>
+        <table className="min-w-[820px] w-full text-left text-xs">
+          <thead className="bg-bg text-text-muted"><tr><th className="px-3 py-2 font-medium">采集时间</th><th className="px-3 py-2 font-medium">触发</th><th className="px-3 py-2 font-medium">状态</th><th className="px-3 py-2 font-medium">阅读变化</th><th className="px-3 py-2 font-medium">点赞变化</th><th className="px-3 py-2 font-medium">收藏变化</th><th className="px-3 py-2 font-medium">粉丝变化</th><th className="px-3 py-2 font-medium">总获赞变化</th></tr></thead>
           <tbody>{snapshots.map((snapshot, index) => {
             const previous = snapshots[index - 1];
-            const trigger = snapshot.trigger === "initial" ? "首次采集" : snapshot.trigger === "admin_refresh" ? "管理员刷新" : snapshot.trigger === "user_refresh" ? "用户刷新" : snapshot.trigger === "admin_link_edit" ? "管理员修改链接" : "用户修改链接";
-            return <tr key={snapshot.id} className="border-t border-border/70"><td className="px-3 py-2 text-text-muted">{snapshotTime(snapshot.capturedAt)}</td><td className="px-3 py-2 text-text">{trigger}</td><td className="px-3 py-2 text-text">{change(snapshot.views, previous?.views)}</td><td className="px-3 py-2 text-text">{change(snapshot.likes, previous?.likes)}</td><td className="px-3 py-2 text-text">{change(snapshot.collects, previous?.collects)}</td><td className="px-3 py-2 text-text">{change(snapshot.account.fans, previous?.account.fans)}</td><td className="px-3 py-2 text-text">{change(snapshot.account.likes, previous?.account.likes)}</td></tr>;
+            const failed = snapshot.status === "failed";
+            return (
+              <tr key={snapshot.id} className="border-t border-border/70">
+                <td className="px-3 py-2 text-text-muted">{snapshotTime(snapshot.capturedAt)}</td>
+                <td className="px-3 py-2 text-text">{triggerLabel(snapshot.trigger)}</td>
+                <td className={`px-3 py-2 ${failed ? "text-danger" : "text-text-muted"}`}>{failed ? "失败" : "成功"}</td>
+                <td className="px-3 py-2 text-text">{change(snapshot.views, previous?.views)}</td>
+                <td className="px-3 py-2 text-text">{change(snapshot.likes, previous?.likes)}</td>
+                <td className="px-3 py-2 text-text">{change(snapshot.collects, previous?.collects)}</td>
+                <td className="px-3 py-2 text-text">{change(snapshot.account.fans, previous?.account.fans)}</td>
+                <td className="px-3 py-2 text-text">{change(snapshot.account.likes, previous?.account.likes)}</td>
+              </tr>
+            );
           })}</tbody>
         </table>
       </div>
     </div>
   );
-}
-
-function SimilarAccounts({ snapshot }: { snapshot: XHSNoteSnapshot }) {
-  const same = snapshot.similarAccounts.filter((account) => account.tier === "same_level");
-  const high = snapshot.similarAccounts.filter((account) => account.tier === "high_level");
-  return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-center gap-2"><h4 className="text-sm font-semibold text-text">相似账号</h4><span className="text-xs text-text-muted">{snapshot.similarSummary}</span></div>
-      <div className="grid gap-3 lg:grid-cols-2"><SimilarGroup title="同阶对标" hint="可直接参考玩法" accounts={same} /><SimilarGroup title="高阶标杆" hint="可追赶的成熟模式" accounts={high} /></div>
-    </div>
-  );
-}
-
-function SimilarGroup({ title, hint, accounts }: { title: string; hint: string; accounts: XHSNoteSnapshot["similarAccounts"] }) {
-  return <div className="rounded-md bg-bg/60 p-3 ring-1 ring-border/70"><div className="mb-2"><h5 className="text-xs font-medium text-text">{title}</h5><p className="text-xs text-text-muted">{hint}</p></div>{accounts.length === 0 ? <p className="text-xs text-text-muted">暂无匹配数据</p> : <div className="space-y-2">{accounts.map((account) => <a key={`${account.tier}-${account.rank}-${account.accountId}`} href={account.url || undefined} target="_blank" rel="noreferrer" className="block rounded-md bg-surface px-3 py-2 ring-1 ring-border/60 transition hover:bg-primary-50"><div className="flex items-center justify-between gap-2"><span className="truncate text-sm font-medium text-text">{account.nickname || "未命名账号"}</span><span className="shrink-0 text-xs text-text-muted">{number.format(account.fans)} 粉</span></div><p className="mt-1 text-xs text-text-muted">近 7 天互动 {number.format(account.interactiveCountSeven)} · 近 30 天互动 {number.format(account.interactiveCountThirty)}{account.level ? ` · ${account.level}` : ""}</p></a>)}</div>}</div>;
 }

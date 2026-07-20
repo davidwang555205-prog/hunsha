@@ -175,6 +175,11 @@ func SimilarSummary(v string) predicate.XHSNoteSnapshot {
 	return predicate.XHSNoteSnapshot(sql.FieldEQ(FieldSimilarSummary, v))
 }
 
+// LinkEpoch applies equality check predicate on the "link_epoch" field. It's identical to LinkEpochEQ.
+func LinkEpoch(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldEQ(FieldLinkEpoch, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.XHSNoteSnapshot {
 	return predicate.XHSNoteSnapshot(sql.FieldEQ(FieldCreatedAt, v))
@@ -1413,6 +1418,46 @@ func SimilarSummaryEqualFold(v string) predicate.XHSNoteSnapshot {
 // SimilarSummaryContainsFold applies the ContainsFold predicate on the "similar_summary" field.
 func SimilarSummaryContainsFold(v string) predicate.XHSNoteSnapshot {
 	return predicate.XHSNoteSnapshot(sql.FieldContainsFold(FieldSimilarSummary, v))
+}
+
+// LinkEpochEQ applies the EQ predicate on the "link_epoch" field.
+func LinkEpochEQ(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldEQ(FieldLinkEpoch, v))
+}
+
+// LinkEpochNEQ applies the NEQ predicate on the "link_epoch" field.
+func LinkEpochNEQ(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldNEQ(FieldLinkEpoch, v))
+}
+
+// LinkEpochIn applies the In predicate on the "link_epoch" field.
+func LinkEpochIn(vs ...int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldIn(FieldLinkEpoch, vs...))
+}
+
+// LinkEpochNotIn applies the NotIn predicate on the "link_epoch" field.
+func LinkEpochNotIn(vs ...int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldNotIn(FieldLinkEpoch, vs...))
+}
+
+// LinkEpochGT applies the GT predicate on the "link_epoch" field.
+func LinkEpochGT(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldGT(FieldLinkEpoch, v))
+}
+
+// LinkEpochGTE applies the GTE predicate on the "link_epoch" field.
+func LinkEpochGTE(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldGTE(FieldLinkEpoch, v))
+}
+
+// LinkEpochLT applies the LT predicate on the "link_epoch" field.
+func LinkEpochLT(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldLT(FieldLinkEpoch, v))
+}
+
+// LinkEpochLTE applies the LTE predicate on the "link_epoch" field.
+func LinkEpochLTE(v int) predicate.XHSNoteSnapshot {
+	return predicate.XHSNoteSnapshot(sql.FieldLTE(FieldLinkEpoch, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

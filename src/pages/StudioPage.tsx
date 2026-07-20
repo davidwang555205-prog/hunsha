@@ -165,6 +165,7 @@ export function StudioPage() {
   useEffect(() => {
     const engineKey = currentCategory?.engine;
     if (!engineKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCopyEnabled(true);
       return;
     }

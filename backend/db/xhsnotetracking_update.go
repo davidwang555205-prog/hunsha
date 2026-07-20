@@ -240,6 +240,47 @@ func (_u *XHSNoteTrackingUpdate) AddUserLinkEditCount(v int) *XHSNoteTrackingUpd
 	return _u
 }
 
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (_u *XHSNoteTrackingUpdate) SetNextRefreshAt(v time.Time) *XHSNoteTrackingUpdate {
+	_u.mutation.SetNextRefreshAt(v)
+	return _u
+}
+
+// SetNillableNextRefreshAt sets the "next_refresh_at" field if the given value is not nil.
+func (_u *XHSNoteTrackingUpdate) SetNillableNextRefreshAt(v *time.Time) *XHSNoteTrackingUpdate {
+	if v != nil {
+		_u.SetNextRefreshAt(*v)
+	}
+	return _u
+}
+
+// ClearNextRefreshAt clears the value of the "next_refresh_at" field.
+func (_u *XHSNoteTrackingUpdate) ClearNextRefreshAt() *XHSNoteTrackingUpdate {
+	_u.mutation.ClearNextRefreshAt()
+	return _u
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (_u *XHSNoteTrackingUpdate) SetLinkEpoch(v int) *XHSNoteTrackingUpdate {
+	_u.mutation.ResetLinkEpoch()
+	_u.mutation.SetLinkEpoch(v)
+	return _u
+}
+
+// SetNillableLinkEpoch sets the "link_epoch" field if the given value is not nil.
+func (_u *XHSNoteTrackingUpdate) SetNillableLinkEpoch(v *int) *XHSNoteTrackingUpdate {
+	if v != nil {
+		_u.SetLinkEpoch(*v)
+	}
+	return _u
+}
+
+// AddLinkEpoch adds value to the "link_epoch" field.
+func (_u *XHSNoteTrackingUpdate) AddLinkEpoch(v int) *XHSNoteTrackingUpdate {
+	_u.mutation.AddLinkEpoch(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *XHSNoteTrackingUpdate) SetCreatedAt(v time.Time) *XHSNoteTrackingUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -363,6 +404,18 @@ func (_u *XHSNoteTrackingUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.AddedUserLinkEditCount(); ok {
 		_spec.AddField(xhsnotetracking.FieldUserLinkEditCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.NextRefreshAt(); ok {
+		_spec.SetField(xhsnotetracking.FieldNextRefreshAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextRefreshAtCleared() {
+		_spec.ClearField(xhsnotetracking.FieldNextRefreshAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LinkEpoch(); ok {
+		_spec.SetField(xhsnotetracking.FieldLinkEpoch, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLinkEpoch(); ok {
+		_spec.AddField(xhsnotetracking.FieldLinkEpoch, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotetracking.FieldCreatedAt, field.TypeTime, value)
@@ -602,6 +655,47 @@ func (_u *XHSNoteTrackingUpdateOne) AddUserLinkEditCount(v int) *XHSNoteTracking
 	return _u
 }
 
+// SetNextRefreshAt sets the "next_refresh_at" field.
+func (_u *XHSNoteTrackingUpdateOne) SetNextRefreshAt(v time.Time) *XHSNoteTrackingUpdateOne {
+	_u.mutation.SetNextRefreshAt(v)
+	return _u
+}
+
+// SetNillableNextRefreshAt sets the "next_refresh_at" field if the given value is not nil.
+func (_u *XHSNoteTrackingUpdateOne) SetNillableNextRefreshAt(v *time.Time) *XHSNoteTrackingUpdateOne {
+	if v != nil {
+		_u.SetNextRefreshAt(*v)
+	}
+	return _u
+}
+
+// ClearNextRefreshAt clears the value of the "next_refresh_at" field.
+func (_u *XHSNoteTrackingUpdateOne) ClearNextRefreshAt() *XHSNoteTrackingUpdateOne {
+	_u.mutation.ClearNextRefreshAt()
+	return _u
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (_u *XHSNoteTrackingUpdateOne) SetLinkEpoch(v int) *XHSNoteTrackingUpdateOne {
+	_u.mutation.ResetLinkEpoch()
+	_u.mutation.SetLinkEpoch(v)
+	return _u
+}
+
+// SetNillableLinkEpoch sets the "link_epoch" field if the given value is not nil.
+func (_u *XHSNoteTrackingUpdateOne) SetNillableLinkEpoch(v *int) *XHSNoteTrackingUpdateOne {
+	if v != nil {
+		_u.SetLinkEpoch(*v)
+	}
+	return _u
+}
+
+// AddLinkEpoch adds value to the "link_epoch" field.
+func (_u *XHSNoteTrackingUpdateOne) AddLinkEpoch(v int) *XHSNoteTrackingUpdateOne {
+	_u.mutation.AddLinkEpoch(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *XHSNoteTrackingUpdateOne) SetCreatedAt(v time.Time) *XHSNoteTrackingUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -755,6 +849,18 @@ func (_u *XHSNoteTrackingUpdateOne) sqlSave(ctx context.Context) (_node *XHSNote
 	}
 	if value, ok := _u.mutation.AddedUserLinkEditCount(); ok {
 		_spec.AddField(xhsnotetracking.FieldUserLinkEditCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.NextRefreshAt(); ok {
+		_spec.SetField(xhsnotetracking.FieldNextRefreshAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextRefreshAtCleared() {
+		_spec.ClearField(xhsnotetracking.FieldNextRefreshAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LinkEpoch(); ok {
+		_spec.SetField(xhsnotetracking.FieldLinkEpoch, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLinkEpoch(); ok {
+		_spec.AddField(xhsnotetracking.FieldLinkEpoch, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotetracking.FieldCreatedAt, field.TypeTime, value)

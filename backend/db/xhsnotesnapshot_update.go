@@ -457,6 +457,27 @@ func (_u *XHSNoteSnapshotUpdate) SetNillableSimilarSummary(v *string) *XHSNoteSn
 	return _u
 }
 
+// SetLinkEpoch sets the "link_epoch" field.
+func (_u *XHSNoteSnapshotUpdate) SetLinkEpoch(v int) *XHSNoteSnapshotUpdate {
+	_u.mutation.ResetLinkEpoch()
+	_u.mutation.SetLinkEpoch(v)
+	return _u
+}
+
+// SetNillableLinkEpoch sets the "link_epoch" field if the given value is not nil.
+func (_u *XHSNoteSnapshotUpdate) SetNillableLinkEpoch(v *int) *XHSNoteSnapshotUpdate {
+	if v != nil {
+		_u.SetLinkEpoch(*v)
+	}
+	return _u
+}
+
+// AddLinkEpoch adds value to the "link_epoch" field.
+func (_u *XHSNoteSnapshotUpdate) AddLinkEpoch(v int) *XHSNoteSnapshotUpdate {
+	_u.mutation.AddLinkEpoch(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *XHSNoteSnapshotUpdate) SetCreatedAt(v time.Time) *XHSNoteSnapshotUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -630,6 +651,12 @@ func (_u *XHSNoteSnapshotUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.SimilarSummary(); ok {
 		_spec.SetField(xhsnotesnapshot.FieldSimilarSummary, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LinkEpoch(); ok {
+		_spec.SetField(xhsnotesnapshot.FieldLinkEpoch, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLinkEpoch(); ok {
+		_spec.AddField(xhsnotesnapshot.FieldLinkEpoch, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotesnapshot.FieldCreatedAt, field.TypeTime, value)
@@ -1081,6 +1108,27 @@ func (_u *XHSNoteSnapshotUpdateOne) SetNillableSimilarSummary(v *string) *XHSNot
 	return _u
 }
 
+// SetLinkEpoch sets the "link_epoch" field.
+func (_u *XHSNoteSnapshotUpdateOne) SetLinkEpoch(v int) *XHSNoteSnapshotUpdateOne {
+	_u.mutation.ResetLinkEpoch()
+	_u.mutation.SetLinkEpoch(v)
+	return _u
+}
+
+// SetNillableLinkEpoch sets the "link_epoch" field if the given value is not nil.
+func (_u *XHSNoteSnapshotUpdateOne) SetNillableLinkEpoch(v *int) *XHSNoteSnapshotUpdateOne {
+	if v != nil {
+		_u.SetLinkEpoch(*v)
+	}
+	return _u
+}
+
+// AddLinkEpoch adds value to the "link_epoch" field.
+func (_u *XHSNoteSnapshotUpdateOne) AddLinkEpoch(v int) *XHSNoteSnapshotUpdateOne {
+	_u.mutation.AddLinkEpoch(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *XHSNoteSnapshotUpdateOne) SetCreatedAt(v time.Time) *XHSNoteSnapshotUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -1284,6 +1332,12 @@ func (_u *XHSNoteSnapshotUpdateOne) sqlSave(ctx context.Context) (_node *XHSNote
 	}
 	if value, ok := _u.mutation.SimilarSummary(); ok {
 		_spec.SetField(xhsnotesnapshot.FieldSimilarSummary, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LinkEpoch(); ok {
+		_spec.SetField(xhsnotesnapshot.FieldLinkEpoch, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLinkEpoch(); ok {
+		_spec.AddField(xhsnotesnapshot.FieldLinkEpoch, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotesnapshot.FieldCreatedAt, field.TypeTime, value)

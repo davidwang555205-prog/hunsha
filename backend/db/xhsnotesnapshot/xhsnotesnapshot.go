@@ -65,6 +65,8 @@ const (
 	FieldSimilarAccounts = "similar_accounts"
 	// FieldSimilarSummary holds the string denoting the similar_summary field in the database.
 	FieldSimilarSummary = "similar_summary"
+	// FieldLinkEpoch holds the string denoting the link_epoch field in the database.
+	FieldLinkEpoch = "link_epoch"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// Table holds the table name of the xhsnotesnapshot in the database.
@@ -99,6 +101,7 @@ var Columns = []string{
 	FieldAccountUpdatedAt,
 	FieldSimilarAccounts,
 	FieldSimilarSummary,
+	FieldLinkEpoch,
 	FieldCreatedAt,
 }
 
@@ -157,6 +160,8 @@ var (
 	DefaultSimilarAccounts []types.XHSSimilarAccount
 	// DefaultSimilarSummary holds the default value on creation for the "similar_summary" field.
 	DefaultSimilarSummary string
+	// DefaultLinkEpoch holds the default value on creation for the "link_epoch" field.
+	DefaultLinkEpoch int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -289,6 +294,11 @@ func ByAccountUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // BySimilarSummary orders the results by the similar_summary field.
 func BySimilarSummary(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSimilarSummary, opts...).ToFunc()
+}
+
+// ByLinkEpoch orders the results by the link_epoch field.
+func ByLinkEpoch(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkEpoch, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

@@ -343,6 +343,20 @@ func (_c *XHSNoteSnapshotCreate) SetNillableSimilarSummary(v *string) *XHSNoteSn
 	return _c
 }
 
+// SetLinkEpoch sets the "link_epoch" field.
+func (_c *XHSNoteSnapshotCreate) SetLinkEpoch(v int) *XHSNoteSnapshotCreate {
+	_c.mutation.SetLinkEpoch(v)
+	return _c
+}
+
+// SetNillableLinkEpoch sets the "link_epoch" field if the given value is not nil.
+func (_c *XHSNoteSnapshotCreate) SetNillableLinkEpoch(v *int) *XHSNoteSnapshotCreate {
+	if v != nil {
+		_c.SetLinkEpoch(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *XHSNoteSnapshotCreate) SetCreatedAt(v time.Time) *XHSNoteSnapshotCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -494,6 +508,10 @@ func (_c *XHSNoteSnapshotCreate) defaults() {
 		v := xhsnotesnapshot.DefaultSimilarSummary
 		_c.mutation.SetSimilarSummary(v)
 	}
+	if _, ok := _c.mutation.LinkEpoch(); !ok {
+		v := xhsnotesnapshot.DefaultLinkEpoch
+		_c.mutation.SetLinkEpoch(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := xhsnotesnapshot.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -580,6 +598,9 @@ func (_c *XHSNoteSnapshotCreate) check() error {
 	}
 	if _, ok := _c.mutation.SimilarSummary(); !ok {
 		return &ValidationError{Name: "similar_summary", err: errors.New(`db: missing required field "XHSNoteSnapshot.similar_summary"`)}
+	}
+	if _, ok := _c.mutation.LinkEpoch(); !ok {
+		return &ValidationError{Name: "link_epoch", err: errors.New(`db: missing required field "XHSNoteSnapshot.link_epoch"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "XHSNoteSnapshot.created_at"`)}
@@ -719,6 +740,10 @@ func (_c *XHSNoteSnapshotCreate) createSpec() (*XHSNoteSnapshot, *sqlgraph.Creat
 	if value, ok := _c.mutation.SimilarSummary(); ok {
 		_spec.SetField(xhsnotesnapshot.FieldSimilarSummary, field.TypeString, value)
 		_node.SimilarSummary = value
+	}
+	if value, ok := _c.mutation.LinkEpoch(); ok {
+		_spec.SetField(xhsnotesnapshot.FieldLinkEpoch, field.TypeInt, value)
+		_node.LinkEpoch = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(xhsnotesnapshot.FieldCreatedAt, field.TypeTime, value)
@@ -1139,6 +1164,24 @@ func (u *XHSNoteSnapshotUpsert) SetSimilarSummary(v string) *XHSNoteSnapshotUpse
 // UpdateSimilarSummary sets the "similar_summary" field to the value that was provided on create.
 func (u *XHSNoteSnapshotUpsert) UpdateSimilarSummary() *XHSNoteSnapshotUpsert {
 	u.SetExcluded(xhsnotesnapshot.FieldSimilarSummary)
+	return u
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (u *XHSNoteSnapshotUpsert) SetLinkEpoch(v int) *XHSNoteSnapshotUpsert {
+	u.Set(xhsnotesnapshot.FieldLinkEpoch, v)
+	return u
+}
+
+// UpdateLinkEpoch sets the "link_epoch" field to the value that was provided on create.
+func (u *XHSNoteSnapshotUpsert) UpdateLinkEpoch() *XHSNoteSnapshotUpsert {
+	u.SetExcluded(xhsnotesnapshot.FieldLinkEpoch)
+	return u
+}
+
+// AddLinkEpoch adds v to the "link_epoch" field.
+func (u *XHSNoteSnapshotUpsert) AddLinkEpoch(v int) *XHSNoteSnapshotUpsert {
+	u.Add(xhsnotesnapshot.FieldLinkEpoch, v)
 	return u
 }
 
@@ -1626,6 +1669,27 @@ func (u *XHSNoteSnapshotUpsertOne) SetSimilarSummary(v string) *XHSNoteSnapshotU
 func (u *XHSNoteSnapshotUpsertOne) UpdateSimilarSummary() *XHSNoteSnapshotUpsertOne {
 	return u.Update(func(s *XHSNoteSnapshotUpsert) {
 		s.UpdateSimilarSummary()
+	})
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (u *XHSNoteSnapshotUpsertOne) SetLinkEpoch(v int) *XHSNoteSnapshotUpsertOne {
+	return u.Update(func(s *XHSNoteSnapshotUpsert) {
+		s.SetLinkEpoch(v)
+	})
+}
+
+// AddLinkEpoch adds v to the "link_epoch" field.
+func (u *XHSNoteSnapshotUpsertOne) AddLinkEpoch(v int) *XHSNoteSnapshotUpsertOne {
+	return u.Update(func(s *XHSNoteSnapshotUpsert) {
+		s.AddLinkEpoch(v)
+	})
+}
+
+// UpdateLinkEpoch sets the "link_epoch" field to the value that was provided on create.
+func (u *XHSNoteSnapshotUpsertOne) UpdateLinkEpoch() *XHSNoteSnapshotUpsertOne {
+	return u.Update(func(s *XHSNoteSnapshotUpsert) {
+		s.UpdateLinkEpoch()
 	})
 }
 
@@ -2282,6 +2346,27 @@ func (u *XHSNoteSnapshotUpsertBulk) SetSimilarSummary(v string) *XHSNoteSnapshot
 func (u *XHSNoteSnapshotUpsertBulk) UpdateSimilarSummary() *XHSNoteSnapshotUpsertBulk {
 	return u.Update(func(s *XHSNoteSnapshotUpsert) {
 		s.UpdateSimilarSummary()
+	})
+}
+
+// SetLinkEpoch sets the "link_epoch" field.
+func (u *XHSNoteSnapshotUpsertBulk) SetLinkEpoch(v int) *XHSNoteSnapshotUpsertBulk {
+	return u.Update(func(s *XHSNoteSnapshotUpsert) {
+		s.SetLinkEpoch(v)
+	})
+}
+
+// AddLinkEpoch adds v to the "link_epoch" field.
+func (u *XHSNoteSnapshotUpsertBulk) AddLinkEpoch(v int) *XHSNoteSnapshotUpsertBulk {
+	return u.Update(func(s *XHSNoteSnapshotUpsert) {
+		s.AddLinkEpoch(v)
+	})
+}
+
+// UpdateLinkEpoch sets the "link_epoch" field to the value that was provided on create.
+func (u *XHSNoteSnapshotUpsertBulk) UpdateLinkEpoch() *XHSNoteSnapshotUpsertBulk {
+	return u.Update(func(s *XHSNoteSnapshotUpsert) {
+		s.UpdateLinkEpoch()
 	})
 }
 

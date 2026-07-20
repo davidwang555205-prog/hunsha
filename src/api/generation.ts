@@ -77,27 +77,27 @@ export function submitFeedback(taskId: string, req: SubmitFeedbackRequest) {
   );
 }
 
-/** 首次关联已发布的小红书笔记，并立即从 Redfox 采集笔记、账号和相似账号快照。 */
+/** 首次关联已发布的小红书笔记；保存链接后系统后台自动采集（立即首次 + 1/7/15 天节奏）。 */
 export function importXHSNote(taskId: string, noteUrl: string) {
   return apiRequest<{ note: XHSNoteTracking }>(
     `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note`,
-    { method: "POST", body: JSON.stringify({ noteUrl }), timeoutMs: 45_000 }
+    { method: "POST", body: JSON.stringify({ noteUrl }) }
   );
 }
 
-/** 修改已关联的笔记链接并立即重新采集；普通用户每条记录最多修改 3 次。 */
+/** 修改已关联的笔记链接；保存后重置采集节奏重新开始，普通用户每条记录最多修改 3 次。 */
 export function updateXHSNote(taskId: string, noteUrl: string) {
   return apiRequest<{ note: XHSNoteTracking }>(
     `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note`,
-    { method: "PUT", body: JSON.stringify({ noteUrl }), timeoutMs: 45_000 }
+    { method: "PUT", body: JSON.stringify({ noteUrl }) }
   );
 }
 
-/** 刷新已关联笔记；普通用户最多 7 次，管理员不受总次数限制。 */
+/** 手动刷新已关联笔记；仅管理员可用，立即采一次且不影响自动采集节奏。 */
 export function refreshXHSNote(taskId: string) {
   return apiRequest<{ note: XHSNoteTracking }>(
     `/api/v1/generation/tasks/${encodeURIComponent(taskId)}/xhs-note/refresh`,
-    { method: "POST", timeoutMs: 45_000 }
+    { method: "POST" }
   );
 }
 
