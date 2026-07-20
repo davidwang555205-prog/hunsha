@@ -23,9 +23,23 @@ type UserUsecase interface {
 	GetUserByEmail(ctx context.Context, emails []string) ([]*User, error)
 	SendBindEmailVerification(ctx context.Context, userID uuid.UUID, req *SendBindEmailVerificationReq) error
 	VerifyBindEmail(ctx context.Context, token string) error
+
+	// SendSmsCode / Register / ResetPasswordBySms 保留一个发布周期（被新接口 SendVerificationCode /
+	// RegisterByCode / ResetPasswordByCode 替代；新逻辑支持 SMS 与 Email 双通道，SMS 不可用时降级）。
 	SendSmsCode(ctx context.Context, req *SendSmsReq) error
 	Register(ctx context.Context, req *RegisterReq) (*User, error)
 	ResetPasswordBySms(ctx context.Context, req *ResetBySmsReq) (*User, error)
+
+	// SendVerificationCode 发 6 位数字验证码（phone 或 email 之一，Selector 按可用性选通道）。
+	// 返回 Delivery 含实际 channel + 脱敏 destination；前端带回 channel 给 register/reset。
+	SendVerificationCode(ctx context.Context, req *SendVerificationCodeReq) (*VerificationDelivery, error)
+
+	// RegisterByCode 通用注册：phone 或 email + code + channel（与 SendVerificationCode 返回的 channel 一致）。
+	RegisterByCode(ctx context.Context, req *RegisterByCodeReq) (*User, error)
+
+	// ResetPasswordByCode 通用重置：phone 或 email + code + channel + 新密码。
+	// phone 重置时 fallback email 从数据库 user.Email 取（不信客户端）。
+	ResetPasswordByCode(ctx context.Context, req *ResetByCodeReq) (*User, error)
 }
 
 type UserRepo interface {
@@ -39,6 +53,14 @@ type UserRepo interface {
 	SetEmail(ctx context.Context, userID uuid.UUID, email string) error
 	GetByPhone(ctx context.Context, phone string) (*db.User, error)
 	CreateIndividual(ctx context.Context, phone, hashedPassword string) (*db.User, error)
+
+	// GetByEmailLower 大小写不敏感按 email 查单个 user（注册查重 / phone 用户 fallback 取绑定 email）。
+	// 返回 ErrNotFound 表示未找到；ErrDatabaseQuery 表示多账户匹配等异常。
+	GetByEmailLower(ctx context.Context, email string) (*db.User, error)
+
+	// CreateIndividualByContact 条件写 phone/email 创建 individual 用户。
+	// phone / email 至少一个非空；phone 与 email 都填时同时写入（用户选项 B：phone + 补 email 注册）。
+	CreateIndividualByContact(ctx context.Context, phone, email, hashedPassword string) (*db.User, error)
 }
 
 type OAuthLoginUser struct {
@@ -299,13 +321,19 @@ type VerifyBindEmailReq struct {
 }
 
 // SendSmsReq 发送短信验证码请求（注册 / 重置密码共用，scene 区分）。
+//
+// Deprecated: 由 SendVerificationCodeReq + SendVerificationCode 替代（支持 SMS + Email 双通道）。
+// 保留一个发布周期用于回滚与旧 SPA 兼容。
 type SendSmsReq struct {
 	Phone        string `json:"phone" validate:"required"`
-	Scene        string `json:"scene" validate:"required"`        // register | reset_password
+	Scene        string `json:"scene" validate:"required"` // register | reset_password
 	CaptchaToken string `json:"captcha_token"`
 }
 
 // RegisterReq 用户注册请求（手机号 + 密码 + 短信验证码）。
+//
+// Deprecated: 由 RegisterByCodeReq + RegisterByCode 替代（支持 SMS + Email 双通道）。
+// 保留一个发布周期。
 type RegisterReq struct {
 	Phone    string `json:"phone" validate:"required"`
 	Password string `json:"password" validate:"required"`
@@ -321,6 +349,9 @@ func (r *RegisterReq) Validate() error {
 }
 
 // ResetBySmsReq 短信验证码重置密码请求。
+//
+// Deprecated: 由 ResetByCodeReq + ResetPasswordByCode 替代。
+// 保留一个发布周期。
 type ResetBySmsReq struct {
 	Phone       string `json:"phone" validate:"required"`
 	SmsCode     string `json:"sms_code" validate:"required"`
@@ -331,6 +362,93 @@ type ResetBySmsReq struct {
 func (r *ResetBySmsReq) Validate() error {
 	if len(r.NewPassword) < 8 || len(r.NewPassword) > 32 {
 		return errcode.ErrPasswordLength
+	}
+	return nil
+}
+
+// ===== 新通用验证码接口（SMS / Email 双通道，Selector 选路）=====
+
+// VerificationTarget 账号标识（phone 或 email 至少一个非空；phone + email 共存是 phone 用户补 email 的过渡态）。
+type VerificationTarget struct {
+	Phone string `json:"phone,omitempty"`
+	Email string `json:"email,omitempty"`
+}
+
+// Valid 至少一个非空。
+func (t VerificationTarget) Valid() bool {
+	return t.Phone != "" || t.Email != ""
+}
+
+// NormalizePhone 规范化手机号输入（去空格/+86/前导 0），仅在 Phone 非空时有效。
+func (t VerificationTarget) NormalizePhone() string {
+	p := strings.TrimSpace(t.Phone)
+	p = strings.TrimPrefix(p, "+")
+	p = strings.TrimPrefix(p, "86")
+	p = strings.TrimLeft(p, "0")
+	return p
+}
+
+// NormalizeEmail 规范化 email（TrimSpace + ToLower），仅在 Email 非空时有效。
+func (t VerificationTarget) NormalizeEmail() string {
+	return strings.ToLower(strings.TrimSpace(t.Email))
+}
+
+// SendVerificationCodeReq 发 6 位数字验证码请求。
+type SendVerificationCodeReq struct {
+	VerificationTarget
+	Scene        string `json:"scene" validate:"required"` // register | reset_password
+	CaptchaToken string `json:"captcha_token,omitempty"`
+}
+
+// VerificationDelivery 发码响应（前端带回 channel 给 register/reset 提交）。
+type VerificationDelivery struct {
+	Channel           string `json:"channel"`            // sms | email
+	MaskedDestination string `json:"masked_destination"` // 脱敏展示
+	ExpiresInSeconds  int    `json:"expires_in_seconds"`
+	RetryAfterSeconds int    `json:"retry_after_seconds"`
+}
+
+// RegisterByCodeReq 通用注册请求（phone 或 email + code + channel）。
+// 注册时 phone + email 共存合法（用户选项 B：phone 用户补 email 收验证码后两者都写入）。
+type RegisterByCodeReq struct {
+	VerificationTarget
+	Password string `json:"password" validate:"required"`
+	Code     string `json:"code" validate:"required"`
+	Channel  string `json:"channel" validate:"required"` // sms | email
+}
+
+// Validate 校验密码长度 8-32 + phone/email 至少一个非空。
+func (r *RegisterByCodeReq) Validate() error {
+	if !r.VerificationTarget.Valid() {
+		return errcode.ErrBadRequest
+	}
+	if len(r.Password) < 8 || len(r.Password) > 32 {
+		return errcode.ErrPasswordLength
+	}
+	if r.Channel != "sms" && r.Channel != "email" {
+		return errcode.ErrBadRequest
+	}
+	return nil
+}
+
+// ResetByCodeReq 通用重置密码请求（phone 或 email + code + channel + 新密码）。
+type ResetByCodeReq struct {
+	VerificationTarget
+	Code        string `json:"code" validate:"required"`
+	Channel     string `json:"channel" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required"`
+}
+
+// Validate 校验新密码长度 8-32 + phone/email 至少一个非空 + channel 合法。
+func (r *ResetByCodeReq) Validate() error {
+	if !r.VerificationTarget.Valid() {
+		return errcode.ErrBadRequest
+	}
+	if len(r.NewPassword) < 8 || len(r.NewPassword) > 32 {
+		return errcode.ErrPasswordLength
+	}
+	if r.Channel != "sms" && r.Channel != "email" {
+		return errcode.ErrBadRequest
 	}
 	return nil
 }

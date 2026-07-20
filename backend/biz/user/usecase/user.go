@@ -20,28 +20,31 @@ import (
 	"bridal/backend/pkg/crypto"
 	"bridal/backend/pkg/cvt"
 	"bridal/backend/pkg/sms"
+	"bridal/backend/pkg/verify"
 )
 
 type UserUsecase struct {
-	repo       domain.UserRepo
-	logger     *slog.Logger
-	redis      *redis.Client
-	config     *config.Config
-	email      domain.EmailSender
-	smsCode    *sms.CodeService
-	syssetting *syssetting.Usecase
+	repo           domain.UserRepo
+	logger         *slog.Logger
+	redis          *redis.Client
+	config         *config.Config
+	email          domain.EmailSender
+	smsCode        *sms.CodeService
+	syssetting     *syssetting.Usecase
+	verifySelector *verify.Selector
 }
 
 func NewUserUsecase(i *do.Injector) (domain.UserUsecase, error) {
 	cfg := do.MustInvoke[*config.Config](i)
 	return &UserUsecase{
-		repo:       do.MustInvoke[domain.UserRepo](i),
-		logger:     do.MustInvoke[*slog.Logger](i),
-		redis:      do.MustInvoke[*redis.Client](i),
-		config:     cfg,
-		email:      do.MustInvoke[domain.EmailSender](i),
-		smsCode:    do.MustInvoke[*sms.CodeService](i),
-		syssetting: do.MustInvoke[*syssetting.Usecase](i),
+		repo:           do.MustInvoke[domain.UserRepo](i),
+		logger:         do.MustInvoke[*slog.Logger](i),
+		redis:          do.MustInvoke[*redis.Client](i),
+		config:         cfg,
+		email:          do.MustInvoke[domain.EmailSender](i),
+		smsCode:        do.MustInvoke[*sms.CodeService](i),
+		syssetting:     do.MustInvoke[*syssetting.Usecase](i),
+		verifySelector: do.MustInvoke[*verify.Selector](i),
 	}, nil
 }
 
@@ -402,4 +405,216 @@ func isPhoneValid(phone string) bool {
 		}
 	}
 	return true
+}
+
+// ===== 新通用验证码接口（SMS / Email 双通道，Selector 静态选路）=====
+
+// SendVerificationCode 发 6 位数字验证码（phone 或 email 之一，Selector 按可用性选通道）。
+// 返回 Delivery 含实际 channel + 脱敏 destination；前端带回 channel 给 register/reset 提交。
+func (u *UserUsecase) SendVerificationCode(ctx context.Context, req *domain.SendVerificationCodeReq) (*domain.VerificationDelivery, error) {
+	if !req.VerificationTarget.Valid() {
+		return nil, errcode.ErrBadRequest
+	}
+	scene := verify.Scene(req.Scene)
+	if !scene.Valid() {
+		return nil, errcode.ErrBadRequest
+	}
+
+	// 规范化 target
+	t := req.VerificationTarget
+	if t.Phone != "" {
+		t.Phone = normalizePhoneInput(t.Phone)
+		if !isPhoneValid(t.Phone) {
+			return nil, errcode.ErrPhoneInvalid
+		}
+	}
+	if t.Email != "" {
+		t.Email = t.NormalizeEmail()
+	}
+
+	// 业务前置：register 场景查 phone 重，reset 场景查 phone / email 是否存在
+	if err := u.precheckVerificationTarget(ctx, t, scene); err != nil {
+		return nil, err
+	}
+
+	// 委托给 Selector
+	d, err := u.verifySelector.SendCode(ctx, verify.Target{Phone: t.Phone, Email: t.Email}, scene)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.VerificationDelivery{
+		Channel:           string(d.Channel),
+		MaskedDestination: d.MaskedDestination,
+		ExpiresInSeconds:  d.ExpiresInSeconds,
+		RetryAfterSeconds: d.RetryAfterSeconds,
+	}, nil
+}
+
+// precheckVerificationTarget 在发码前做业务校验：
+//   - scene=register + phone 非空 + phone 已注册 → ErrPhoneTaken
+//   - scene=register + email 非空 + email 已注册 → ErrEmailTaken
+//   - scene=reset_password + phone 非空 + phone 未注册 → ErrPhoneNotFound
+//   - scene=reset_password + email 非空 + email 未注册 → ErrEmailNotBound
+// phone + email 共存时两个都查，任一不通过即返。
+func (u *UserUsecase) precheckVerificationTarget(ctx context.Context, t domain.VerificationTarget, scene verify.Scene) error {
+	switch scene {
+	case verify.SceneRegister:
+		if t.Phone != "" {
+			if existing, err := u.repo.GetByPhone(ctx, t.Phone); err != nil {
+				if !db.IsNotFound(err) {
+					return errcode.ErrDatabaseQuery.Wrap(err)
+				}
+			} else if existing != nil {
+				return errcode.ErrPhoneTaken
+			}
+		}
+		if t.Email != "" {
+			if existing, err := u.repo.GetByEmailLower(ctx, t.Email); err != nil {
+				if !db.IsNotFound(err) {
+					return errcode.ErrDatabaseQuery.Wrap(err)
+				}
+			} else if existing != nil {
+				return errcode.ErrEmailTaken
+			}
+		}
+	case verify.SceneResetPassword:
+		// 重置场景：phone / email 至少要查到一个用户
+		found := false
+		if t.Phone != "" {
+			if existing, err := u.repo.GetByPhone(ctx, t.Phone); err == nil && existing != nil {
+				found = true
+			} else if err != nil && !db.IsNotFound(err) {
+				return errcode.ErrDatabaseQuery.Wrap(err)
+			}
+		}
+		if !found && t.Email != "" {
+			if existing, err := u.repo.GetByEmailLower(ctx, t.Email); err == nil && existing != nil {
+				found = true
+			} else if err != nil && !db.IsNotFound(err) {
+				return errcode.ErrDatabaseQuery.Wrap(err)
+			}
+		}
+		if !found {
+			if t.Phone != "" {
+				return errcode.ErrPhoneNotFound
+			}
+			return errcode.ErrEmailNotBound
+		}
+	}
+	return nil
+}
+
+// RegisterByCode 通用注册：phone 或 email + code + channel（与 SendVerificationCode 返回的 channel 一致）。
+// phone + email 共存合法（用户选项 B：SMS 不可用时 phone 用户补 email 收验证码，两者都写入 user）。
+func (u *UserUsecase) RegisterByCode(ctx context.Context, req *domain.RegisterByCodeReq) (*domain.User, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	t := req.VerificationTarget
+	if t.Phone != "" {
+		t.Phone = normalizePhoneInput(t.Phone)
+		if !isPhoneValid(t.Phone) {
+			return nil, errcode.ErrPhoneInvalid
+		}
+	}
+	if t.Email != "" {
+		t.Email = t.NormalizeEmail()
+	}
+
+	// 校验验证码：按 channel 路由到对应 channel.Verify
+	destination := t.Phone
+	if req.Channel == "email" {
+		destination = t.Email
+	}
+	if err := u.verifySelector.Verify(ctx, verify.ChannelName(req.Channel), destination, verify.SceneRegister, req.Code); err != nil {
+		return nil, err
+	}
+
+	// 再次查重（防并发注册）
+	if t.Phone != "" {
+		if existing, err := u.repo.GetByPhone(ctx, t.Phone); err != nil {
+			if !db.IsNotFound(err) {
+				return nil, errcode.ErrDatabaseQuery.Wrap(err)
+			}
+		} else if existing != nil {
+			return nil, errcode.ErrPhoneTaken
+		}
+	}
+	if t.Email != "" {
+		if existing, err := u.repo.GetByEmailLower(ctx, t.Email); err != nil {
+			if !db.IsNotFound(err) {
+				return nil, errcode.ErrDatabaseQuery.Wrap(err)
+			}
+		} else if existing != nil {
+			return nil, errcode.ErrEmailTaken
+		}
+	}
+
+	hashed, err := crypto.HashPassword(req.Password)
+	if err != nil {
+		return nil, errcode.ErrPasswordHashFailed.Wrap(err)
+	}
+	usr, err := u.repo.CreateIndividualByContact(ctx, t.Phone, t.Email, hashed)
+	if err != nil {
+		return nil, errcode.ErrDatabaseOperation.Wrap(err)
+	}
+	u.logger.InfoContext(ctx, "user registered by code",
+		"phone", t.Phone, "email", t.Email, "channel", req.Channel, "user_id", usr.ID)
+	return cvt.From(usr, &domain.User{}), nil
+}
+
+// ResetPasswordByCode 通用重置：phone 或 email + code + channel + 新密码。
+// phone 重置时 fallback email 从数据库 user.Email 取（不信客户端）。
+func (u *UserUsecase) ResetPasswordByCode(ctx context.Context, req *domain.ResetByCodeReq) (*domain.User, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	t := req.VerificationTarget
+	if t.Phone != "" {
+		t.Phone = normalizePhoneInput(t.Phone)
+		if !isPhoneValid(t.Phone) {
+			return nil, errcode.ErrPhoneInvalid
+		}
+	}
+	if t.Email != "" {
+		t.Email = t.NormalizeEmail()
+	}
+
+	// 校验验证码
+	destination := t.Phone
+	if req.Channel == "email" {
+		destination = t.Email
+	}
+	if err := u.verifySelector.Verify(ctx, verify.ChannelName(req.Channel), destination, verify.SceneResetPassword, req.Code); err != nil {
+		return nil, err
+	}
+
+	// 查用户：phone 路径从 phone 查；email 路径从 email 查
+	var usr *db.User
+	var err error
+	if t.Phone != "" {
+		usr, err = u.repo.GetByPhone(ctx, t.Phone)
+	} else {
+		usr, err = u.repo.GetByEmailLower(ctx, t.Email)
+	}
+	if err != nil {
+		if db.IsNotFound(err) {
+			if t.Phone != "" {
+				return nil, errcode.ErrPhoneNotFound
+			}
+			return nil, errcode.ErrEmailNotBound
+		}
+		return nil, errcode.ErrDatabaseQuery.Wrap(err)
+	}
+	if usr.Role == consts.UserRoleEnterprise {
+		return nil, errcode.ErrEnterpriseResetPasswordDenied
+	}
+	if err := u.repo.ChangePassword(ctx, usr.ID, "", req.NewPassword, true); err != nil {
+		return nil, err
+	}
+	u.logger.InfoContext(ctx, "password reset by code",
+		"phone", t.Phone, "email", t.Email, "channel", req.Channel, "user_id", usr.ID)
+	return cvt.From(usr, &domain.User{}), nil
 }

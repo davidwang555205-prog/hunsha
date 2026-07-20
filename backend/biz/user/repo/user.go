@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -172,6 +173,13 @@ func (u *userRepo) GetByPhone(ctx context.Context, phone string) (*db.User, erro
 	return u.db.User.Query().Where(user.PhoneEQ(phone)).First(ctx)
 }
 
+// GetByEmailLower 大小写不敏感按 email 查单个 user。
+// email 必须先 TrimSpace + ToLower 后传入；返回 db.IsNotFound 表示未找到。
+// 多条匹配时 .First() 会返回其中一个；如需严格唯一，应在外层按 business 规则判断（本函数不强行 first-or-error）。
+func (u *userRepo) GetByEmailLower(ctx context.Context, email string) (*db.User, error) {
+	return u.db.User.Query().Where(user.EmailEqualFold(email)).First(ctx)
+}
+
 // CreateIndividual 创建 individual 用户（短信验证码注册）。不建团队，name 默认手机号。
 func (u *userRepo) CreateIndividual(ctx context.Context, phone, hashedPassword string) (*db.User, error) {
 	return u.db.User.Create().
@@ -182,4 +190,39 @@ func (u *userRepo) CreateIndividual(ctx context.Context, phone, hashedPassword s
 		SetStatus(consts.UserStatusActive).
 		SetRole(consts.UserRoleIndividual).
 		Save(ctx)
+}
+
+// CreateIndividualByContact 条件写 phone/email 创建 individual 用户。
+// phone / email 至少一个非空；name 优先用 email 的本地部分，其次 phone，最后 "user"。
+// 不建团队。
+func (u *userRepo) CreateIndividualByContact(ctx context.Context, phone, email, hashedPassword string) (*db.User, error) {
+	name := defaultUserName(phone, email)
+	create := u.db.User.Create().
+		SetID(uuid.New()).
+		SetName(name).
+		SetPassword(hashedPassword).
+		SetStatus(consts.UserStatusActive).
+		SetRole(consts.UserRoleIndividual)
+	if phone != "" {
+		create = create.SetPhone(phone)
+	}
+	if email != "" {
+		create = create.SetEmail(email)
+	}
+	return create.Save(ctx)
+}
+
+// defaultUserName 优先级：email 本地部分 > phone > "user"。
+func defaultUserName(phone, email string) string {
+	if email != "" {
+		at := strings.Index(email, "@")
+		if at > 0 {
+			return email[:at]
+		}
+		return email
+	}
+	if phone != "" {
+		return phone
+	}
+	return "user"
 }

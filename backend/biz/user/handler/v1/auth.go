@@ -64,10 +64,15 @@ func NewAuthHandler(i *do.Injector) (*AuthHandler, error) {
 	v1.GET("/passwords/accounts/:token", web.BindHandler(h.GetAccountInfo))
 	v1.PUT("/passwords/reset", web.BindHandler(h.ResetPassword))
 
-	// 短信验证码注册 / 短信重置密码（无需鉴权）
+	// 短信验证码注册 / 短信重置密码（无需鉴权，保留一个发布周期用于回滚 / 旧 SPA 兼容）
 	v1.POST("/sms/send", web.BindHandler(h.SendSmsCode), targetActive.TargetActive())
 	v1.POST("/register", web.BindHandler(h.Register), targetActive.TargetActive())
 	v1.PUT("/passwords/reset-by-sms", web.BindHandler(h.ResetPasswordBySms), targetActive.TargetActive())
+
+	// 通用验证码注册 / 重置（SMS + Email 双通道，SMS 不可用时降级到 Email）
+	v1.POST("/verification/send", web.BindHandler(h.SendVerificationCode), targetActive.TargetActive())
+	v1.POST("/register-by-code", web.BindHandler(h.RegisterByCode), targetActive.TargetActive())
+	v1.PUT("/passwords/reset-by-code", web.BindHandler(h.ResetPasswordByCode), targetActive.TargetActive())
 
 	// 密码登录
 	v1.POST("/password-login", web.BindHandler(h.PasswordLogin), targetActive.TargetActive())
@@ -703,4 +708,89 @@ func (h *AuthHandler) VerifyBindEmail(c *web.Context, req domain.VerifyBindEmail
 		return err
 	}
 	return c.Redirect(http.StatusFound, h.config.Server.BaseURL)
+}
+
+// ===== 通用验证码接口（SMS + Email 双通道，SMS 不可用时降级到 Email）=====
+
+// SendVerificationCode 发 6 位数字验证码（phone 或 email 之一）。返回 Delivery 含实际 channel + 脱敏 destination。
+//
+//	@Summary		发送验证码（通用：手机号或邮箱）
+//	@Description	phone 或 email 至少一个；SMS 不可用时 phone 用户补 email 走邮件通道
+//	@Tags			【用户】验证码
+//	@Accept			json
+//	@Produce		json
+//	@Param			req	body		domain.SendVerificationCodeReq	true	"发码请求"
+//	@Success		200	{object}	web.Resp{data=domain.VerificationDelivery}
+//	@Failure		400	{object}	web.Resp	"参数错误"
+//	@Failure		500	{object}	web.Resp	"服务器内部错误"
+//	@Router			/api/v1/users/verification/send [post]
+func (h *AuthHandler) SendVerificationCode(c *web.Context, req domain.SendVerificationCodeReq) error {
+	ctx := c.Request().Context()
+	if !req.VerificationTarget.Valid() {
+		return errcode.ErrBadRequest
+	}
+	if req.Scene != "register" && req.Scene != "reset_password" {
+		return errcode.ErrBadRequest
+	}
+	d, err := h.usecase.SendVerificationCode(ctx, &req)
+	if err != nil {
+		h.logger.WarnContext(ctx, "send verification code failed",
+			"phone", req.Phone, "email", req.Email, "scene", req.Scene, "error", err)
+		return err
+	}
+	return c.Success(d)
+}
+
+// RegisterByCode 通用注册：phone 或 email + code + channel。成功后写双 session 自动登录。
+//
+//	@Summary		注册（通用验证码）
+//	@Description	phone 或 email 至少一个；phone + email 共存合法（SMS 不可用时 phone 用户补 email）
+//	@Tags			【用户】注册
+//	@Accept			json
+//	@Produce		json
+//	@Param			req	body		domain.RegisterByCodeReq	true	"注册请求"
+//	@Success		200	{object}	web.Resp{data=domain.User}
+//	@Failure		400	{object}	web.Resp	"参数错误或验证码无效"
+//	@Router			/api/v1/users/register-by-code [post]
+func (h *AuthHandler) RegisterByCode(c *web.Context, req domain.RegisterByCodeReq) error {
+	ctx := c.Request().Context()
+	user, err := h.usecase.RegisterByCode(ctx, &req)
+	if err != nil {
+		h.logger.WarnContext(ctx, "register by code failed",
+			"phone", req.Phone, "email", req.Email, "error", err)
+		return err
+	}
+	// 与 SMS 注册保持一致：自动登录（写双 session）
+	if _, err := h.authMiddleware.Session.Save(c, consts.MonkeyCodeAITeamSession, user.ID, user); err != nil {
+		return err
+	}
+	if _, err := h.authMiddleware.Session.Save(c, consts.MonkeyCodeAISession, user.ID, user); err != nil {
+		return err
+	}
+	return c.Success(user)
+}
+
+// ResetPasswordByCode 通用重置密码：phone 或 email + code + channel + 新密码。成功后清双 session。
+//
+//	@Summary		重置密码（通用验证码）
+//	@Description	phone 或 email 至少一个；phone 重置时 fallback email 从数据库 user.Email 取（不信客户端）
+//	@Tags			【用户】密码重置
+//	@Accept			json
+//	@Produce		json
+//	@Param			req	body		domain.ResetByCodeReq	true	"重置请求"
+//	@Success		200	{object}	web.Resp{}
+//	@Router			/api/v1/users/passwords/reset-by-code [put]
+func (h *AuthHandler) ResetPasswordByCode(c *web.Context, req domain.ResetByCodeReq) error {
+	ctx := c.Request().Context()
+	user, err := h.usecase.ResetPasswordByCode(ctx, &req)
+	if err != nil {
+		h.logger.WarnContext(ctx, "reset password by code failed",
+			"phone", req.Phone, "email", req.Email, "error", err)
+		return err
+	}
+	_ = h.authMiddleware.Session.Trunc(ctx, consts.MonkeyCodeAITeamSession, user.ID)
+	if err := h.authMiddleware.Session.Trunc(ctx, consts.MonkeyCodeAISession, user.ID); err != nil {
+		return err
+	}
+	return c.Success(nil)
 }
