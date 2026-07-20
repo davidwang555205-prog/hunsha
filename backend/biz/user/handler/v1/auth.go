@@ -497,6 +497,11 @@ func (h *AuthHandler) SendVerificationCode(c *web.Context, req domain.SendVerifi
 	if req.Scene != "register" && req.Scene != "reset_password" {
 		return errcode.ErrBadRequest
 	}
+	// 防刷：dev 环境跳过 captcha 校验方便开发；prod 强制要求 captcha_token。
+	// 前端流程：调 /api/v1/public/captcha/challenge 拿图 → 用户填答案 → 调 /redeem 拿 captcha_token → 发码时带回。
+	if !h.config.Debug && !h.captcha.ValidateToken(ctx, req.CaptchaToken) {
+		return errcode.ErrForbidden
+	}
 	d, err := h.usecase.SendVerificationCode(ctx, &req)
 	if err != nil {
 		h.logger.WarnContext(ctx, "send verification code failed",
