@@ -20,10 +20,12 @@ import {
   VerificationErrorCode,
   errorCodeOf
 } from "../types/api";
+import { fetchCaptchaToken } from "../lib/captcha";
 import { BlurText } from "../components/motion/BlurText";
 import { GradientText } from "../components/motion/GradientText";
 import { GlassCard } from "../components/motion/GlassCard";
 import { MagneticButton } from "../components/motion/MagneticButton";
+import { CaptchaWidget } from "../components/auth/CaptchaWidget";
 import { Input } from "../components/ui/Input";
 import { Field } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
@@ -38,6 +40,8 @@ export function ForgotPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [channel, setChannel] = useState<VerificationChannel | null>(null);
   const [maskedDestination, setMaskedDestination] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetSignal, setCaptchaResetSignal] = useState(0);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,7 +69,22 @@ export function ForgotPasswordPage() {
   const handleAccountChange = (v: string) => {
     setAccount(v);
     resetDeliveryState();
+    setCaptchaToken(null);
+    setCaptchaResetSignal((s) => s + 1);
     clearMsg();
+  };
+
+  const handleCaptchaComplete = async (solutions: number[]) => {
+    clearMsg();
+    try {
+      const token = await fetchCaptchaToken(solutions);
+      setCaptchaToken(token);
+      setInfo("人机验证通过。");
+    } catch (err) {
+      setError((err as ApiError | undefined)?.message || "人机验证失败，请重试。");
+      setCaptchaToken(null);
+      setCaptchaResetSignal((s) => s + 1);
+    }
   };
 
   const handleSendCode = async () => {
@@ -75,11 +94,20 @@ export function ForgotPasswordPage() {
       setError("请输入 11 位手机号或邮箱地址。");
       return;
     }
+    if (!captchaToken) {
+      setError("请先完成人机验证。");
+      return;
+    }
     setSending(true);
     try {
       const phone = kind === "phone" ? account : undefined;
       const email = kind === "email" ? account : undefined;
-      const d = await sendVerificationCode({ phone, email, scene: "reset_password" });
+      const d = await sendVerificationCode({
+        phone,
+        email,
+        scene: "reset_password",
+        captcha_token: captchaToken
+      });
       setChannel(d.channel);
       setMaskedDestination(d.masked_destination);
       setCountdown(d.retry_after_seconds || 60);
@@ -234,6 +262,13 @@ export function ForgotPasswordPage() {
                   clearMsg();
                 }}
                 autoComplete="new-password"
+              />
+            </Field>
+
+            <Field label="人机验证" hint={captchaToken ? "✓ 已通过" : "请完成验证再获取验证码"}>
+              <CaptchaWidget
+                key={captchaResetSignal}
+                onComplete={handleCaptchaComplete}
               />
             </Field>
 

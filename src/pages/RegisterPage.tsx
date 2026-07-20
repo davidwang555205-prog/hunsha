@@ -24,10 +24,12 @@ import {
   VerificationChannel,
   errorCodeOf
 } from "../types/api";
+import { fetchCaptchaToken } from "../lib/captcha";
 import { BlurText } from "../components/motion/BlurText";
 import { GradientText } from "../components/motion/GradientText";
 import { GlassCard } from "../components/motion/GlassCard";
 import { MagneticButton } from "../components/motion/MagneticButton";
+import { CaptchaWidget } from "../components/auth/CaptchaWidget";
 import { Input } from "../components/ui/Input";
 import { Field } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
@@ -44,6 +46,8 @@ export function RegisterPage() {
   const [code, setCode] = useState("");
   const [channel, setChannel] = useState<VerificationChannel | null>(null);
   const [maskedDestination, setMaskedDestination] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetSignal, setCaptchaResetSignal] = useState(0);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,7 +82,22 @@ export function RegisterPage() {
     setAccount(v);
     // account 改变：清空所有 delivery state 防止 A 账号验证码提交到 B 账号
     resetDeliveryState();
+    setCaptchaToken(null);
+    setCaptchaResetSignal((s) => s + 1); // 触发 CaptchaWidget 重置
     clearFeedback();
+  };
+
+  const handleCaptchaComplete = async (solutions: number[]) => {
+    clearFeedback();
+    try {
+      const token = await fetchCaptchaToken(solutions);
+      setCaptchaToken(token);
+      setInfo("人机验证通过。");
+    } catch (err) {
+      setError((err as ApiError | undefined)?.message || "人机验证失败，请重试。");
+      setCaptchaToken(null);
+      setCaptchaResetSignal((s) => s + 1);
+    }
   };
 
   const handleSendCode = async () => {
@@ -99,6 +118,10 @@ export function RegisterPage() {
         return;
       }
     }
+    if (!captchaToken) {
+      setError("请先完成人机验证。");
+      return;
+    }
     setSending(true);
     try {
       const phone = kind === "phone" ? account : undefined;
@@ -106,7 +129,8 @@ export function RegisterPage() {
       const d = await sendVerificationCode({
         phone,
         email,
-        scene: "register"
+        scene: "register",
+        captcha_token: captchaToken
       });
       setChannel(d.channel);
       setMaskedDestination(d.masked_destination);
@@ -273,6 +297,13 @@ export function RegisterPage() {
                   {sending ? <Spinner size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
                 </button>
               </div>
+            </Field>
+
+            <Field label="人机验证" hint={captchaToken ? "✓ 已通过" : "请完成验证再获取验证码"}>
+              <CaptchaWidget
+                key={captchaResetSignal}
+                onComplete={handleCaptchaComplete}
+              />
             </Field>
 
             {info && !error && (
