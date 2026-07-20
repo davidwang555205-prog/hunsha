@@ -36,7 +36,7 @@ usage() {
   bridal-release.sh rollback-backend <备份名>  恢复后端二进制；不会回滚数据库 migration
   bridal-release.sh rollback-frontend <备份名> 恢复前端静态文件
 
-发布包必须由 scripts/ci/package-flow-release.sh 从同一 Codeup 仓库生成。
+发布包必须由 scripts/ci/package-flow-release.sh 从同一 GitHub 仓库生成。
 EOF
 }
 
