@@ -62,9 +62,17 @@ func sanitizeTransaction(r CreditTransactionRecord) TransactionResp {
 	return resp
 }
 
-// ListTransactions 当前用户积分明细。
-func (u *Usecase) ListTransactions(ctx context.Context, userID uuid.UUID) ([]TransactionResp, error) {
-	recs, err := u.repo.ListTransactions(ctx, userID)
+// TransactionsResp 当前用户积分明细分页响应（与 AllTransactionsResp 同构，便于前端复用）。
+type TransactionsResp struct {
+	Transactions []TransactionResp `json:"transactions"`
+	Total        int               `json:"total"`
+	Page         int               `json:"page"`
+	PageSize     int               `json:"pageSize"`
+}
+
+// ListTransactions 当前用户积分明细（分页倒序，可选 type/时间范围过滤，过滤条件由 handler 解析传入）。
+func (u *Usecase) ListTransactions(ctx context.Context, userID uuid.UUID, page, pageSize int, filter TransactionFilter) (*TransactionsResp, error) {
+	recs, total, err := u.repo.ListTransactions(ctx, userID, page, pageSize, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +80,13 @@ func (u *Usecase) ListTransactions(ctx context.Context, userID uuid.UUID) ([]Tra
 	for _, r := range recs {
 		out = append(out, sanitizeTransaction(r))
 	}
-	return out, nil
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	return &TransactionsResp{Transactions: out, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
 // AllTransactionsResp admin 全平台流水响应。

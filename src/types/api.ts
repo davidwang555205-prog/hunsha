@@ -705,7 +705,12 @@ export type CreditTransaction = {
   createdAt: string;
 };
 
-export type CreditTransactionListResponse = { transactions: CreditTransaction[] };
+export type CreditTransactionListResponse = {
+  transactions: CreditTransaction[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 
 export type AllCreditTransactionsResponse = {
   transactions: CreditTransaction[];

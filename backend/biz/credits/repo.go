@@ -37,15 +37,37 @@ type CreditTransactionRecord struct {
 	CreatedAt     time.Time
 }
 
-// ListTransactions 查用户积分明细（倒序最多 100 条）。
-func (r *Repo) ListTransactions(ctx context.Context, userID uuid.UUID) ([]CreditTransactionRecord, error) {
-	txs, err := r.db.CreditTransaction.Query().
-		Where(credittransaction.UserIDEQ(userID)).
+// ListTransactions 查用户积分明细（分页倒序，支持可选过滤）。
+// 返回 (records, total, error)，与 ListAllTransactions 同构，便于上层统一分页响应。
+func (r *Repo) ListTransactions(ctx context.Context, userID uuid.UUID, page, pageSize int, filter TransactionFilter) ([]CreditTransactionRecord, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	q := r.db.CreditTransaction.Query().Where(credittransaction.UserIDEQ(userID))
+	// filter.UserID 由调用方忽略，当前用户视角强制按 userID 过滤。
+	if filter.Type != "" {
+		q = q.Where(credittransaction.TypeEQ(filter.Type))
+	}
+	if filter.StartTime != nil {
+		q = q.Where(credittransaction.CreatedAtGTE(*filter.StartTime))
+	}
+	if filter.EndTime != nil {
+		q = q.Where(credittransaction.CreatedAtLTE(*filter.EndTime))
+	}
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	txs, err := q.
 		Order(db.Desc(credittransaction.FieldCreatedAt)).
-		Limit(100).
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
 		All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]CreditTransactionRecord, 0, len(txs))
 	for _, t := range txs {
@@ -64,7 +86,7 @@ func (r *Repo) ListTransactions(ctx context.Context, userID uuid.UUID) ([]Credit
 		}
 		out = append(out, rec)
 	}
-	return out, nil
+	return out, total, nil
 }
 
 // TransactionFilter 积分流水过滤条件（admin 用）。

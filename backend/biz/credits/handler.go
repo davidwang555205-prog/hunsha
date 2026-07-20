@@ -44,17 +44,32 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 }
 
 // ListTransactions GET /api/credits/transactions
+// 支持可选过滤：type（recharge|consume|adjust）、startTime/endTime（RFC3339）+ 分页 page/pageSize。
+// 与 admin /api/admin/credits/transactions 的过滤/分页语义一致，但当前用户视角强制按自身 userID。
 func (h *Handler) ListTransactions(c *web.Context) error {
 	user := middleware.GetUser(c)
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "登录已失效。"})
 	}
-	txs, err := h.usecase.ListTransactions(c.Request().Context(), user.ID)
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	pageSize, _ := strconv.Atoi(c.QueryParam("pageSize"))
+	filter := TransactionFilter{Type: c.QueryParam("type")}
+	if s := c.QueryParam("startTime"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			filter.StartTime = &t
+		}
+	}
+	if e := c.QueryParam("endTime"); e != "" {
+		if t, err := time.Parse(time.RFC3339, e); err == nil {
+			filter.EndTime = &t
+		}
+	}
+	resp, err := h.usecase.ListTransactions(c.Request().Context(), user.ID, page, pageSize, filter)
 	if err != nil {
 		h.logger.ErrorContext(c.Request().Context(), "list transactions failed", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "获取积分明细失败。"})
 	}
-	return c.JSON(http.StatusOK, map[string]any{"transactions": txs})
+	return c.JSON(http.StatusOK, resp)
 }
 
 // Balance GET /api/credits/balance

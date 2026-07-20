@@ -101,9 +101,17 @@ export function adjustCredits(userId: string, req: AdjustCreditsRequest) {
   });
 }
 
-/** 当前用户积分变动记录 */
-export function listCreditTransactions() {
-  return apiRequest<CreditTransactionListResponse>("/api/credits/transactions");
+/** 当前用户积分变动记录（分页 + 可选过滤：type/startTime/endTime，RFC3339） */
+export function listCreditTransactions(
+  page = 1,
+  pageSize = 20,
+  filter?: { type?: string; startTime?: string; endTime?: string }
+) {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (filter?.type) params.set("type", filter.type);
+  if (filter?.startTime) params.set("startTime", filter.startTime);
+  if (filter?.endTime) params.set("endTime", filter.endTime);
+  return apiRequest<CreditTransactionListResponse>(`/api/credits/transactions?${params.toString()}`);
 }
 
 /** admin 全平台积分流水（分页 + 过滤：userId/type/startTime/endTime） */
