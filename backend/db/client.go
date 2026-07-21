@@ -25,6 +25,7 @@ import (
 	"bridal/backend/db/category"
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
+	"bridal/backend/db/customerserviceinfo"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
@@ -118,6 +119,8 @@ type Client struct {
 	ContentEngine *ContentEngineClient
 	// CreditTransaction is the client for interacting with the CreditTransaction builders.
 	CreditTransaction *CreditTransactionClient
+	// CustomerServiceInfo is the client for interacting with the CustomerServiceInfo builders.
+	CustomerServiceInfo *CustomerServiceInfoClient
 	// GenerationImage is the client for interacting with the GenerationImage builders.
 	GenerationImage *GenerationImageClient
 	// GenerationModelInvocation is the client for interacting with the GenerationModelInvocation builders.
@@ -243,6 +246,7 @@ func (c *Client) init() {
 	c.Category = NewCategoryClient(c.config)
 	c.ContentEngine = NewContentEngineClient(c.config)
 	c.CreditTransaction = NewCreditTransactionClient(c.config)
+	c.CustomerServiceInfo = NewCustomerServiceInfoClient(c.config)
 	c.GenerationImage = NewGenerationImageClient(c.config)
 	c.GenerationModelInvocation = NewGenerationModelInvocationClient(c.config)
 	c.GenerationTask = NewGenerationTaskClient(c.config)
@@ -399,6 +403,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Category:                  NewCategoryClient(cfg),
 		ContentEngine:             NewContentEngineClient(cfg),
 		CreditTransaction:         NewCreditTransactionClient(cfg),
+		CustomerServiceInfo:       NewCustomerServiceInfoClient(cfg),
 		GenerationImage:           NewGenerationImageClient(cfg),
 		GenerationModelInvocation: NewGenerationModelInvocationClient(cfg),
 		GenerationTask:            NewGenerationTaskClient(cfg),
@@ -482,6 +487,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Category:                  NewCategoryClient(cfg),
 		ContentEngine:             NewContentEngineClient(cfg),
 		CreditTransaction:         NewCreditTransactionClient(cfg),
+		CustomerServiceInfo:       NewCustomerServiceInfoClient(cfg),
 		GenerationImage:           NewGenerationImageClient(cfg),
 		GenerationModelInvocation: NewGenerationModelInvocationClient(cfg),
 		GenerationTask:            NewGenerationTaskClient(cfg),
@@ -564,18 +570,18 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AgentPlugin, c.AgentPluginRepo, c.AgentPluginVersion, c.AgentRule,
 		c.AgentRuleVersion, c.AgentSkill, c.AgentSkillGroupBinding, c.AgentSkillRepo,
 		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.Category, c.ContentEngine,
-		c.CreditTransaction, c.GenerationImage, c.GenerationModelInvocation,
-		c.GenerationTask, c.GitBot, c.GitBotTask, c.GitBotUser, c.GitIdentity,
-		c.GitTask, c.Host, c.Image, c.MCPTool, c.MCPToolCall, c.MCPUpstream,
-		c.MCPUserToolSetting, c.Model, c.ModelApiKey, c.ModelChannel, c.ModelPricing,
-		c.NotifyChannel, c.NotifySendLog, c.NotifySubscription, c.Project,
-		c.ProjectCollaborator, c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment,
-		c.ProjectTask, c.SystemSetting, c.Task, c.TaskModelSwitch, c.TaskUsageStat,
-		c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive, c.TeamGroup,
-		c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream, c.TeamGroupMember,
-		c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember, c.TeamModel,
-		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine, c.XHSNoteSnapshot,
-		c.XHSNoteTracking,
+		c.CreditTransaction, c.CustomerServiceInfo, c.GenerationImage,
+		c.GenerationModelInvocation, c.GenerationTask, c.GitBot, c.GitBotTask,
+		c.GitBotUser, c.GitIdentity, c.GitTask, c.Host, c.Image, c.MCPTool,
+		c.MCPToolCall, c.MCPUpstream, c.MCPUserToolSetting, c.Model, c.ModelApiKey,
+		c.ModelChannel, c.ModelPricing, c.NotifyChannel, c.NotifySendLog,
+		c.NotifySubscription, c.Project, c.ProjectCollaborator, c.ProjectGitBot,
+		c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask, c.SystemSetting, c.Task,
+		c.TaskModelSwitch, c.TaskUsageStat, c.TaskVirtualMachine, c.Team,
+		c.TeamExtensionImageArchive, c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage,
+		c.TeamGroupMCPUpstream, c.TeamGroupMember, c.TeamGroupModel, c.TeamHost,
+		c.TeamImage, c.TeamMember, c.TeamModel, c.TeamOIDCConfig, c.User,
+		c.UserIdentity, c.VirtualMachine, c.XHSNoteSnapshot, c.XHSNoteTracking,
 	} {
 		n.Use(hooks...)
 	}
@@ -588,18 +594,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AgentPlugin, c.AgentPluginRepo, c.AgentPluginVersion, c.AgentRule,
 		c.AgentRuleVersion, c.AgentSkill, c.AgentSkillGroupBinding, c.AgentSkillRepo,
 		c.AgentSkillVersion, c.AgentSyncJob, c.Audit, c.Category, c.ContentEngine,
-		c.CreditTransaction, c.GenerationImage, c.GenerationModelInvocation,
-		c.GenerationTask, c.GitBot, c.GitBotTask, c.GitBotUser, c.GitIdentity,
-		c.GitTask, c.Host, c.Image, c.MCPTool, c.MCPToolCall, c.MCPUpstream,
-		c.MCPUserToolSetting, c.Model, c.ModelApiKey, c.ModelChannel, c.ModelPricing,
-		c.NotifyChannel, c.NotifySendLog, c.NotifySubscription, c.Project,
-		c.ProjectCollaborator, c.ProjectGitBot, c.ProjectIssue, c.ProjectIssueComment,
-		c.ProjectTask, c.SystemSetting, c.Task, c.TaskModelSwitch, c.TaskUsageStat,
-		c.TaskVirtualMachine, c.Team, c.TeamExtensionImageArchive, c.TeamGroup,
-		c.TeamGroupHost, c.TeamGroupImage, c.TeamGroupMCPUpstream, c.TeamGroupMember,
-		c.TeamGroupModel, c.TeamHost, c.TeamImage, c.TeamMember, c.TeamModel,
-		c.TeamOIDCConfig, c.User, c.UserIdentity, c.VirtualMachine, c.XHSNoteSnapshot,
-		c.XHSNoteTracking,
+		c.CreditTransaction, c.CustomerServiceInfo, c.GenerationImage,
+		c.GenerationModelInvocation, c.GenerationTask, c.GitBot, c.GitBotTask,
+		c.GitBotUser, c.GitIdentity, c.GitTask, c.Host, c.Image, c.MCPTool,
+		c.MCPToolCall, c.MCPUpstream, c.MCPUserToolSetting, c.Model, c.ModelApiKey,
+		c.ModelChannel, c.ModelPricing, c.NotifyChannel, c.NotifySendLog,
+		c.NotifySubscription, c.Project, c.ProjectCollaborator, c.ProjectGitBot,
+		c.ProjectIssue, c.ProjectIssueComment, c.ProjectTask, c.SystemSetting, c.Task,
+		c.TaskModelSwitch, c.TaskUsageStat, c.TaskVirtualMachine, c.Team,
+		c.TeamExtensionImageArchive, c.TeamGroup, c.TeamGroupHost, c.TeamGroupImage,
+		c.TeamGroupMCPUpstream, c.TeamGroupMember, c.TeamGroupModel, c.TeamHost,
+		c.TeamImage, c.TeamMember, c.TeamModel, c.TeamOIDCConfig, c.User,
+		c.UserIdentity, c.VirtualMachine, c.XHSNoteSnapshot, c.XHSNoteTracking,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -636,6 +642,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ContentEngine.mutate(ctx, m)
 	case *CreditTransactionMutation:
 		return c.CreditTransaction.mutate(ctx, m)
+	case *CustomerServiceInfoMutation:
+		return c.CustomerServiceInfo.mutate(ctx, m)
 	case *GenerationImageMutation:
 		return c.GenerationImage.mutate(ctx, m)
 	case *GenerationModelInvocationMutation:
@@ -2808,6 +2816,139 @@ func (c *CreditTransactionClient) mutate(ctx context.Context, m *CreditTransacti
 		return (&CreditTransactionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("db: unknown CreditTransaction mutation op: %q", m.Op())
+	}
+}
+
+// CustomerServiceInfoClient is a client for the CustomerServiceInfo schema.
+type CustomerServiceInfoClient struct {
+	config
+}
+
+// NewCustomerServiceInfoClient returns a client for the CustomerServiceInfo from the given config.
+func NewCustomerServiceInfoClient(c config) *CustomerServiceInfoClient {
+	return &CustomerServiceInfoClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `customerserviceinfo.Hooks(f(g(h())))`.
+func (c *CustomerServiceInfoClient) Use(hooks ...Hook) {
+	c.hooks.CustomerServiceInfo = append(c.hooks.CustomerServiceInfo, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `customerserviceinfo.Intercept(f(g(h())))`.
+func (c *CustomerServiceInfoClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CustomerServiceInfo = append(c.inters.CustomerServiceInfo, interceptors...)
+}
+
+// Create returns a builder for creating a CustomerServiceInfo entity.
+func (c *CustomerServiceInfoClient) Create() *CustomerServiceInfoCreate {
+	mutation := newCustomerServiceInfoMutation(c.config, OpCreate)
+	return &CustomerServiceInfoCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CustomerServiceInfo entities.
+func (c *CustomerServiceInfoClient) CreateBulk(builders ...*CustomerServiceInfoCreate) *CustomerServiceInfoCreateBulk {
+	return &CustomerServiceInfoCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CustomerServiceInfoClient) MapCreateBulk(slice any, setFunc func(*CustomerServiceInfoCreate, int)) *CustomerServiceInfoCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CustomerServiceInfoCreateBulk{err: fmt.Errorf("calling to CustomerServiceInfoClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CustomerServiceInfoCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CustomerServiceInfoCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CustomerServiceInfo.
+func (c *CustomerServiceInfoClient) Update() *CustomerServiceInfoUpdate {
+	mutation := newCustomerServiceInfoMutation(c.config, OpUpdate)
+	return &CustomerServiceInfoUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CustomerServiceInfoClient) UpdateOne(_m *CustomerServiceInfo) *CustomerServiceInfoUpdateOne {
+	mutation := newCustomerServiceInfoMutation(c.config, OpUpdateOne, withCustomerServiceInfo(_m))
+	return &CustomerServiceInfoUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CustomerServiceInfoClient) UpdateOneID(id uuid.UUID) *CustomerServiceInfoUpdateOne {
+	mutation := newCustomerServiceInfoMutation(c.config, OpUpdateOne, withCustomerServiceInfoID(id))
+	return &CustomerServiceInfoUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CustomerServiceInfo.
+func (c *CustomerServiceInfoClient) Delete() *CustomerServiceInfoDelete {
+	mutation := newCustomerServiceInfoMutation(c.config, OpDelete)
+	return &CustomerServiceInfoDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CustomerServiceInfoClient) DeleteOne(_m *CustomerServiceInfo) *CustomerServiceInfoDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CustomerServiceInfoClient) DeleteOneID(id uuid.UUID) *CustomerServiceInfoDeleteOne {
+	builder := c.Delete().Where(customerserviceinfo.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CustomerServiceInfoDeleteOne{builder}
+}
+
+// Query returns a query builder for CustomerServiceInfo.
+func (c *CustomerServiceInfoClient) Query() *CustomerServiceInfoQuery {
+	return &CustomerServiceInfoQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCustomerServiceInfo},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CustomerServiceInfo entity by its id.
+func (c *CustomerServiceInfoClient) Get(ctx context.Context, id uuid.UUID) (*CustomerServiceInfo, error) {
+	return c.Query().Where(customerserviceinfo.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CustomerServiceInfoClient) GetX(ctx context.Context, id uuid.UUID) *CustomerServiceInfo {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CustomerServiceInfoClient) Hooks() []Hook {
+	return c.hooks.CustomerServiceInfo
+}
+
+// Interceptors returns the client interceptors.
+func (c *CustomerServiceInfoClient) Interceptors() []Interceptor {
+	return c.inters.CustomerServiceInfo
+}
+
+func (c *CustomerServiceInfoClient) mutate(ctx context.Context, m *CustomerServiceInfoMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CustomerServiceInfoCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CustomerServiceInfoUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CustomerServiceInfoUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CustomerServiceInfoDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown CustomerServiceInfo mutation op: %q", m.Op())
 	}
 }
 
@@ -12115,31 +12256,32 @@ type (
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
 		AgentSkill, AgentSkillGroupBinding, AgentSkillRepo, AgentSkillVersion,
 		AgentSyncJob, Audit, Category, ContentEngine, CreditTransaction,
-		GenerationImage, GenerationModelInvocation, GenerationTask, GitBot, GitBotTask,
-		GitBotUser, GitIdentity, GitTask, Host, Image, MCPTool, MCPToolCall,
-		MCPUpstream, MCPUserToolSetting, Model, ModelApiKey, ModelChannel,
-		ModelPricing, NotifyChannel, NotifySendLog, NotifySubscription, Project,
-		ProjectCollaborator, ProjectGitBot, ProjectIssue, ProjectIssueComment,
-		ProjectTask, SystemSetting, Task, TaskModelSwitch, TaskUsageStat,
-		TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup, TeamGroupHost,
-		TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember, TeamGroupModel,
-		TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig, User, UserIdentity,
-		VirtualMachine, XHSNoteSnapshot, XHSNoteTracking []ent.Hook
+		CustomerServiceInfo, GenerationImage, GenerationModelInvocation,
+		GenerationTask, GitBot, GitBotTask, GitBotUser, GitIdentity, GitTask, Host,
+		Image, MCPTool, MCPToolCall, MCPUpstream, MCPUserToolSetting, Model,
+		ModelApiKey, ModelChannel, ModelPricing, NotifyChannel, NotifySendLog,
+		NotifySubscription, Project, ProjectCollaborator, ProjectGitBot, ProjectIssue,
+		ProjectIssueComment, ProjectTask, SystemSetting, Task, TaskModelSwitch,
+		TaskUsageStat, TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup,
+		TeamGroupHost, TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember,
+		TeamGroupModel, TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig,
+		User, UserIdentity, VirtualMachine, XHSNoteSnapshot, XHSNoteTracking []ent.Hook
 	}
 	inters struct {
 		AgentPlugin, AgentPluginRepo, AgentPluginVersion, AgentRule, AgentRuleVersion,
 		AgentSkill, AgentSkillGroupBinding, AgentSkillRepo, AgentSkillVersion,
 		AgentSyncJob, Audit, Category, ContentEngine, CreditTransaction,
-		GenerationImage, GenerationModelInvocation, GenerationTask, GitBot, GitBotTask,
-		GitBotUser, GitIdentity, GitTask, Host, Image, MCPTool, MCPToolCall,
-		MCPUpstream, MCPUserToolSetting, Model, ModelApiKey, ModelChannel,
-		ModelPricing, NotifyChannel, NotifySendLog, NotifySubscription, Project,
-		ProjectCollaborator, ProjectGitBot, ProjectIssue, ProjectIssueComment,
-		ProjectTask, SystemSetting, Task, TaskModelSwitch, TaskUsageStat,
-		TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup, TeamGroupHost,
-		TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember, TeamGroupModel,
-		TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig, User, UserIdentity,
-		VirtualMachine, XHSNoteSnapshot, XHSNoteTracking []ent.Interceptor
+		CustomerServiceInfo, GenerationImage, GenerationModelInvocation,
+		GenerationTask, GitBot, GitBotTask, GitBotUser, GitIdentity, GitTask, Host,
+		Image, MCPTool, MCPToolCall, MCPUpstream, MCPUserToolSetting, Model,
+		ModelApiKey, ModelChannel, ModelPricing, NotifyChannel, NotifySendLog,
+		NotifySubscription, Project, ProjectCollaborator, ProjectGitBot, ProjectIssue,
+		ProjectIssueComment, ProjectTask, SystemSetting, Task, TaskModelSwitch,
+		TaskUsageStat, TaskVirtualMachine, Team, TeamExtensionImageArchive, TeamGroup,
+		TeamGroupHost, TeamGroupImage, TeamGroupMCPUpstream, TeamGroupMember,
+		TeamGroupModel, TeamHost, TeamImage, TeamMember, TeamModel, TeamOIDCConfig,
+		User, UserIdentity, VirtualMachine, XHSNoteSnapshot,
+		XHSNoteTracking []ent.Interceptor
 	}
 )
 

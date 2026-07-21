@@ -46,7 +46,11 @@ import type {
   UpdateSettingRequest,
   UpdateSettingResponse,
   UpdateUserRequest,
-  UpdateUserResponse
+  UpdateUserResponse,
+  CustomerService,
+  CustomerServiceListResponse,
+  CustomerServiceCreateRequest,
+  CustomerServiceUpdateRequest
 } from "../types/api";
 import type { PromptParams, ProductCategory } from "../types";
 import type { FashionSeedingContent, FashionSeedingDailySlot, FashionSeedingTopic } from "../utils/fashionSeeding";
@@ -240,6 +244,51 @@ export function updateSmtpSettings(req: SmtpSettingsUpdateRequest) {
   return apiRequest<{ smtp: SmtpSettings }>("/api/admin/settings/smtp", {
     method: "PUT",
     body: JSON.stringify(req)
+  });
+}
+
+// ===== 客服信息 =====
+
+/** 公开客服列表（登录用户，仅生效） */
+export function listCustomerServicePublic() {
+  return apiRequest<CustomerServiceListResponse>("/api/customer-service");
+}
+
+/** 管理后台客服列表（含禁用） */
+export function listCustomerServiceAdmin() {
+  return apiRequest<CustomerServiceListResponse>("/api/admin/customer-service");
+}
+
+/** 创建客服 */
+export function createCustomerService(req: CustomerServiceCreateRequest) {
+  return apiRequest<{ customerService: CustomerService }>("/api/admin/customer-service", {
+    method: "POST",
+    body: JSON.stringify(req)
+  });
+}
+
+/** 更新客服 */
+export function updateCustomerService(id: string, req: CustomerServiceUpdateRequest) {
+  return apiRequest<{ customerService: CustomerService }>(`/api/admin/customer-service/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(req)
+  });
+}
+
+/** 删除客服 */
+export function deleteCustomerService(id: string) {
+  return apiRequest<{ ok: boolean }>(`/api/admin/customer-service/${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+}
+
+/** 上传客服微信二维码，返回可访问 URL（/api/v1/generation/images/{filename}），存入 customerService.qrcodeUrl */
+export function uploadCustomerServiceQrcode(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  return apiRequest<{ url: string }>("/api/admin/customer-service/upload-qrcode", {
+    method: "POST",
+    body: form
   });
 }
 

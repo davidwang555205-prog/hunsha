@@ -18,6 +18,7 @@ import (
 	"bridal/backend/db/category"
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
+	"bridal/backend/db/customerserviceinfo"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
@@ -449,6 +450,46 @@ func init() {
 	credittransactionDescID := credittransactionFields[0].Descriptor()
 	// credittransaction.DefaultID holds the default value on creation for the id field.
 	credittransaction.DefaultID = credittransactionDescID.Default.(func() uuid.UUID)
+	customerserviceinfoFields := schema.CustomerServiceInfo{}.Fields()
+	_ = customerserviceinfoFields
+	// customerserviceinfoDescNickname is the schema descriptor for nickname field.
+	customerserviceinfoDescNickname := customerserviceinfoFields[1].Descriptor()
+	// customerserviceinfo.DefaultNickname holds the default value on creation for the nickname field.
+	customerserviceinfo.DefaultNickname = customerserviceinfoDescNickname.Default.(string)
+	// customerserviceinfoDescPhone is the schema descriptor for phone field.
+	customerserviceinfoDescPhone := customerserviceinfoFields[2].Descriptor()
+	// customerserviceinfo.DefaultPhone holds the default value on creation for the phone field.
+	customerserviceinfo.DefaultPhone = customerserviceinfoDescPhone.Default.(string)
+	// customerserviceinfoDescWechatID is the schema descriptor for wechat_id field.
+	customerserviceinfoDescWechatID := customerserviceinfoFields[3].Descriptor()
+	// customerserviceinfo.DefaultWechatID holds the default value on creation for the wechat_id field.
+	customerserviceinfo.DefaultWechatID = customerserviceinfoDescWechatID.Default.(string)
+	// customerserviceinfoDescQrcodeURL is the schema descriptor for qrcode_url field.
+	customerserviceinfoDescQrcodeURL := customerserviceinfoFields[4].Descriptor()
+	// customerserviceinfo.DefaultQrcodeURL holds the default value on creation for the qrcode_url field.
+	customerserviceinfo.DefaultQrcodeURL = customerserviceinfoDescQrcodeURL.Default.(string)
+	// customerserviceinfoDescSortOrder is the schema descriptor for sort_order field.
+	customerserviceinfoDescSortOrder := customerserviceinfoFields[5].Descriptor()
+	// customerserviceinfo.DefaultSortOrder holds the default value on creation for the sort_order field.
+	customerserviceinfo.DefaultSortOrder = customerserviceinfoDescSortOrder.Default.(int)
+	// customerserviceinfoDescIsEnabled is the schema descriptor for is_enabled field.
+	customerserviceinfoDescIsEnabled := customerserviceinfoFields[6].Descriptor()
+	// customerserviceinfo.DefaultIsEnabled holds the default value on creation for the is_enabled field.
+	customerserviceinfo.DefaultIsEnabled = customerserviceinfoDescIsEnabled.Default.(bool)
+	// customerserviceinfoDescCreatedAt is the schema descriptor for created_at field.
+	customerserviceinfoDescCreatedAt := customerserviceinfoFields[7].Descriptor()
+	// customerserviceinfo.DefaultCreatedAt holds the default value on creation for the created_at field.
+	customerserviceinfo.DefaultCreatedAt = customerserviceinfoDescCreatedAt.Default.(func() time.Time)
+	// customerserviceinfoDescUpdatedAt is the schema descriptor for updated_at field.
+	customerserviceinfoDescUpdatedAt := customerserviceinfoFields[8].Descriptor()
+	// customerserviceinfo.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	customerserviceinfo.DefaultUpdatedAt = customerserviceinfoDescUpdatedAt.Default.(func() time.Time)
+	// customerserviceinfo.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	customerserviceinfo.UpdateDefaultUpdatedAt = customerserviceinfoDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// customerserviceinfoDescID is the schema descriptor for id field.
+	customerserviceinfoDescID := customerserviceinfoFields[0].Descriptor()
+	// customerserviceinfo.DefaultID holds the default value on creation for the id field.
+	customerserviceinfo.DefaultID = customerserviceinfoDescID.Default.(func() uuid.UUID)
 	generationimageFields := schema.GenerationImage{}.Fields()
 	_ = generationimageFields
 	// generationimageDescName is the schema descriptor for name field.

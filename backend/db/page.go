@@ -207,6 +207,20 @@ func (_m *CreditTransactionQuery) Page(ctx context.Context, page, size int) ([]*
 	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
 }
 
+func (_m *CustomerServiceInfoQuery) Page(ctx context.Context, page, size int) ([]*CustomerServiceInfo, *PageInfo, error) {
+	cnt, err := _m.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	offset := size * (page - 1)
+	rs, err := _m.Offset(offset).Limit(size).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	has := (page * size) < cnt
+	return rs, &PageInfo{HasNextPage: has, TotalCount: int64(cnt)}, nil
+}
+
 func (_m *GenerationImageQuery) Page(ctx context.Context, page, size int) ([]*GenerationImage, *PageInfo, error) {
 	cnt, err := _m.Count(ctx)
 	if err != nil {

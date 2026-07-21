@@ -32,6 +32,17 @@ export function HomeIcon(props: IconProps) {
   );
 }
 
+export function CustomerServiceIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 11a6 6 0 0112 0" />
+      <rect x="3" y="10.5" width="3" height="5" rx="1.4" />
+      <rect x="14" y="10.5" width="3" height="5" rx="1.4" />
+      <path d="M15 15.4a3 3 0 01-3 2.3H10.6" />
+    </Svg>
+  );
+}
+
 export function SparklesIcon(props: IconProps) {
   return (
     <Svg {...props}>

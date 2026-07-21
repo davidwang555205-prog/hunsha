@@ -7,6 +7,7 @@ import (
 	"bridal/backend/biz/categories"
 	"bridal/backend/biz/channels"
 	"bridal/backend/biz/credits"
+	"bridal/backend/biz/customerservice"
 	"bridal/backend/biz/engines"
 	"bridal/backend/biz/generation"
 	"bridal/backend/biz/llmproxy"
@@ -61,6 +62,7 @@ func RegisterBridal(i *do.Injector) error {
 	// bridal 模型线路 / 内容类目 / 内容引擎（管理后台配置，生图按 channel 调用，工具首页按类目展示）。
 	channels.ProvideChannels(i)
 	categories.ProvideCategories(i)
+	customerservice.ProvideCustomerService(i)
 	engines.ProvideEngines(i)
 	return nil
 }
@@ -90,5 +92,6 @@ func InvokeBridal(i *do.Injector) {
 	// 模型线路 / 类目 / 内容引擎模块路由挂载 + seed 默认数据。
 	channels.InvokeChannels(i)
 	categories.InvokeCategories(i)
+	customerservice.InvokeCustomerService(i)
 	engines.InvokeEngines(i)
 }

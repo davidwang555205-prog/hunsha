@@ -176,6 +176,18 @@ func (f CreditTransactionFunc) Mutate(ctx context.Context, m db.Mutation) (db.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.CreditTransactionMutation", m)
 }
 
+// The CustomerServiceInfoFunc type is an adapter to allow the use of ordinary
+// function as CustomerServiceInfo mutator.
+type CustomerServiceInfoFunc func(context.Context, *db.CustomerServiceInfoMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CustomerServiceInfoFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.CustomerServiceInfoMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.CustomerServiceInfoMutation", m)
+}
+
 // The GenerationImageFunc type is an adapter to allow the use of ordinary
 // function as GenerationImage mutator.
 type GenerationImageFunc func(context.Context, *db.GenerationImageMutation) (db.Value, error)

@@ -48,6 +48,9 @@ type ContentEngine func(*sql.Selector)
 // CreditTransaction is the predicate function for credittransaction builders.
 type CreditTransaction func(*sql.Selector)
 
+// CustomerServiceInfo is the predicate function for customerserviceinfo builders.
+type CustomerServiceInfo func(*sql.Selector)
+
 // GenerationImage is the predicate function for generationimage builders.
 type GenerationImage func(*sql.Selector)
 

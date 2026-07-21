@@ -5,8 +5,10 @@
  * 具体进度完全交给右侧 ImageGenerationGrid 的逐张卡片呈现。
  * 进行中可取消；失败可重试；完成展示结果。
  */
+import { useState } from "react";
 import { Button } from "../ui/Button";
 import { FeedbackAlert } from "../ui/FeedbackAlert";
+import { ContactServiceModal } from "./ContactServiceModal";
 import { describeGenerationFailure, type GenerationFeedback } from "../../lib/generationFeedback";
 import type { GenerationTask } from "../../types/api";
 
@@ -48,6 +50,7 @@ export function TaskProgressCard({
   retryCount = 0,
   maxRetry = 3
 }: TaskProgressCardProps) {
+  const [csOpen, setCsOpen] = useState(false);
   if (stage === "idle") return null;
 
   const isActive = stage === "queued" || stage === "processing";
@@ -100,10 +103,19 @@ export function TaskProgressCard({
       </div>
 
       {/* 错误详情 */}
-      {failure && <FeedbackAlert feedback={failure} className="mt-3" />}
+      {failure && (
+        <FeedbackAlert
+          feedback={failure}
+          className="mt-3"
+          onAction={failure.action === "contact-service" ? () => setCsOpen(true) : undefined}
+        />
+      )}
       {stage === "failed" && retryExhausted && (
         <p className="mt-2 text-xs text-danger">已重试 {maxRetry} 次仍未成功，请点击「新任务」重新开始。</p>
       )}
+
+      {/* 积分不足时引导联系客服充值 */}
+      <ContactServiceModal open={csOpen} onClose={() => setCsOpen(false)} />
     </div>
   );
 }

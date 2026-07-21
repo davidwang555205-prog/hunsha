@@ -405,6 +405,43 @@ export type SmtpSettingsUpdateRequest = {
   tls: boolean;
 };
 
+// ===== 客服信息（管理后台系统配置 + 用户端顶栏客服入口） =====
+
+/** 客服信息（对应后端 CustomerServiceResp / customer_service_infos 表） */
+export type CustomerService = {
+  id: string;
+  nickname: string;
+  phone: string;
+  wechatId: string;
+  qrcodeUrl: string;
+  sortOrder: number;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CustomerServiceListResponse = { customerService: CustomerService[] };
+
+/** 创建客服请求 */
+export type CustomerServiceCreateRequest = {
+  nickname: string;
+  phone?: string;
+  wechatId?: string;
+  qrcodeUrl?: string;
+  sortOrder?: number;
+  isEnabled?: boolean;
+};
+
+/** 更新客服请求（所有字段可选，nil=不改） */
+export type CustomerServiceUpdateRequest = {
+  nickname?: string;
+  phone?: string;
+  wechatId?: string;
+  qrcodeUrl?: string;
+  sortOrder?: number;
+  isEnabled?: boolean;
+};
+
 /** team 成员角色（consts/team.go:6-7） */
 export type TeamMemberRole = "admin" | "user";
 

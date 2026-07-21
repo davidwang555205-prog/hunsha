@@ -17,6 +17,7 @@ import (
 	"bridal/backend/db/category"
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
+	"bridal/backend/db/customerserviceinfo"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
@@ -150,6 +151,7 @@ func checkColumn(t, c string) error {
 			category.Table:                  category.ValidColumn,
 			contentengine.Table:             contentengine.ValidColumn,
 			credittransaction.Table:         credittransaction.ValidColumn,
+			customerserviceinfo.Table:       customerserviceinfo.ValidColumn,
 			generationimage.Table:           generationimage.ValidColumn,
 			generationmodelinvocation.Table: generationmodelinvocation.ValidColumn,
 			generationtask.Table:            generationtask.ValidColumn,

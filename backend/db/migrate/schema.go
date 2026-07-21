@@ -485,6 +485,31 @@ var (
 			},
 		},
 	}
+	// CustomerServiceInfosColumns holds the columns for the "customer_service_infos" table.
+	CustomerServiceInfosColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "nickname", Type: field.TypeString, Default: ""},
+		{Name: "phone", Type: field.TypeString, Default: ""},
+		{Name: "wechat_id", Type: field.TypeString, Default: ""},
+		{Name: "qrcode_url", Type: field.TypeString, Default: ""},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "is_enabled", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// CustomerServiceInfosTable holds the schema information for the "customer_service_infos" table.
+	CustomerServiceInfosTable = &schema.Table{
+		Name:       "customer_service_infos",
+		Columns:    CustomerServiceInfosColumns,
+		PrimaryKey: []*schema.Column{CustomerServiceInfosColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "customerserviceinfo_is_enabled_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{CustomerServiceInfosColumns[6], CustomerServiceInfosColumns[5]},
+			},
+		},
+	}
 	// GenerationImagesColumns holds the columns for the "generation_images" table.
 	GenerationImagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
@@ -2350,6 +2375,7 @@ var (
 		CategoriesTable,
 		ContentEnginesTable,
 		CreditTransactionsTable,
+		CustomerServiceInfosTable,
 		GenerationImagesTable,
 		GenerationModelInvocationsTable,
 		GenerationTasksTable,
@@ -2453,6 +2479,9 @@ func init() {
 	}
 	CreditTransactionsTable.Annotation = &entsql.Annotation{
 		Table: "credit_transactions",
+	}
+	CustomerServiceInfosTable.Annotation = &entsql.Annotation{
+		Table: "customer_service_infos",
 	}
 	GenerationImagesTable.ForeignKeys[0].RefTable = GenerationTasksTable
 	GenerationImagesTable.Annotation = &entsql.Annotation{

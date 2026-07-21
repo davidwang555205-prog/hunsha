@@ -42,6 +42,8 @@ type Tx struct {
 	ContentEngine *ContentEngineClient
 	// CreditTransaction is the client for interacting with the CreditTransaction builders.
 	CreditTransaction *CreditTransactionClient
+	// CustomerServiceInfo is the client for interacting with the CustomerServiceInfo builders.
+	CustomerServiceInfo *CustomerServiceInfoClient
 	// GenerationImage is the client for interacting with the GenerationImage builders.
 	GenerationImage *GenerationImageClient
 	// GenerationModelInvocation is the client for interacting with the GenerationModelInvocation builders.
@@ -287,6 +289,7 @@ func (tx *Tx) init() {
 	tx.Category = NewCategoryClient(tx.config)
 	tx.ContentEngine = NewContentEngineClient(tx.config)
 	tx.CreditTransaction = NewCreditTransactionClient(tx.config)
+	tx.CustomerServiceInfo = NewCustomerServiceInfoClient(tx.config)
 	tx.GenerationImage = NewGenerationImageClient(tx.config)
 	tx.GenerationModelInvocation = NewGenerationModelInvocationClient(tx.config)
 	tx.GenerationTask = NewGenerationTaskClient(tx.config)

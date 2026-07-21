@@ -2,11 +2,17 @@ import { describeGenerationFailure } from "./generationFeedback";
 import { describe, expect, it } from "vitest";
 
 describe("describeGenerationFailure", () => {
-  it("将积分不足转为可行动的用户提示", () => {
+  it("将积分不足转为可行动的用户提示并标记联系客服", () => {
     expect(describeGenerationFailure(Object.assign(new Error("积分余额不足。当前余额 1，本次需要 3 积分。"), { statusCode: 402 }))).toEqual({
       title: "积分不足",
-      message: "当前积分不足以完成本次生成，请联系管理员充值后重试。"
+      message: "当前积分不足以完成本次生成，请联系客服充值后重试。",
+      action: "contact-service"
     });
+  });
+
+  it("非积分不足的错误不带 contact-service 动作标记", () => {
+    const feedback = describeGenerationFailure("WalaAPI 上游负载已饱和，已自动重试 3 次仍未成功。");
+    expect(feedback.action).toBeUndefined();
   });
 
   it("将模型线路 404 转为线路不可用提示", () => {

@@ -21,6 +21,7 @@ import (
 	"bridal/backend/db/category"
 	"bridal/backend/db/contentengine"
 	"bridal/backend/db/credittransaction"
+	"bridal/backend/db/customerserviceinfo"
 	"bridal/backend/db/generationimage"
 	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
@@ -508,6 +509,33 @@ func (f TraverseCreditTransaction) Traverse(ctx context.Context, q db.Query) err
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *db.CreditTransactionQuery", q)
+}
+
+// The CustomerServiceInfoFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CustomerServiceInfoFunc func(context.Context, *db.CustomerServiceInfoQuery) (db.Value, error)
+
+// Query calls f(ctx, q).
+func (f CustomerServiceInfoFunc) Query(ctx context.Context, q db.Query) (db.Value, error) {
+	if q, ok := q.(*db.CustomerServiceInfoQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *db.CustomerServiceInfoQuery", q)
+}
+
+// The TraverseCustomerServiceInfo type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseCustomerServiceInfo func(context.Context, *db.CustomerServiceInfoQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseCustomerServiceInfo) Intercept(next db.Querier) db.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseCustomerServiceInfo) Traverse(ctx context.Context, q db.Query) error {
+	if q, ok := q.(*db.CustomerServiceInfoQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *db.CustomerServiceInfoQuery", q)
 }
 
 // The GenerationImageFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1891,6 +1919,8 @@ func NewQuery(q db.Query) (Query, error) {
 		return &query[*db.ContentEngineQuery, predicate.ContentEngine, contentengine.OrderOption]{typ: db.TypeContentEngine, tq: q}, nil
 	case *db.CreditTransactionQuery:
 		return &query[*db.CreditTransactionQuery, predicate.CreditTransaction, credittransaction.OrderOption]{typ: db.TypeCreditTransaction, tq: q}, nil
+	case *db.CustomerServiceInfoQuery:
+		return &query[*db.CustomerServiceInfoQuery, predicate.CustomerServiceInfo, customerserviceinfo.OrderOption]{typ: db.TypeCustomerServiceInfo, tq: q}, nil
 	case *db.GenerationImageQuery:
 		return &query[*db.GenerationImageQuery, predicate.GenerationImage, generationimage.OrderOption]{typ: db.TypeGenerationImage, tq: q}, nil
 	case *db.GenerationModelInvocationQuery:

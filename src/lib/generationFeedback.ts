@@ -3,6 +3,8 @@ import type { ApiError } from "../types/api";
 export type GenerationFeedback = {
   title: string;
   message: string;
+  /** 可选动作标记：前端据此在提示下渲染对应操作入口（如积分不足时引导联系客服充值）。 */
+  action?: "contact-service";
 };
 
 const fallbackFeedback: GenerationFeedback = {
@@ -17,7 +19,11 @@ export function describeGenerationFailure(error: unknown): GenerationFeedback {
   const raw = error instanceof Error ? error.message.trim() : typeof error === "string" ? error.trim() : "";
 
   if (statusCode === 402 || raw.includes("积分余额不足")) {
-    return { title: "积分不足", message: "当前积分不足以完成本次生成，请联系管理员充值后重试。" };
+    return {
+      title: "积分不足",
+      message: "当前积分不足以完成本次生成，请联系客服充值后重试。",
+      action: "contact-service"
+    };
   }
   if (raw.includes("今日生成图片额度不足")) {
     return { title: "今日额度已用完", message: "今日可生成图片额度不足，请明天再试或联系管理员调整额度。" };

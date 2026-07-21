@@ -11,19 +11,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationContext";
-import { listCreditTransactions } from "../../api/admin";
+import { listCreditTransactions, listCustomerServicePublic } from "../../api/admin";
 import { getCreditBalance } from "../../api/credits";
 import { Button } from "../ui/Button";
-import type { CreditTransaction } from "../../types/api";
+import { Modal } from "../ui/Modal";
+import { CustomerServiceIcon } from "../icons";
+import type { CreditTransaction, CustomerService } from "../../types/api";
 import logo from "../../assets/logo.png";
 
-type PopoverKey = "credits" | "notify" | "avatar" | null;
+type PopoverKey = "credits" | "notify" | "service" | "avatar" | null;
 
 export function AppHeader() {
   const { user, refreshUser, logout, isAdmin } = useAuth();
   const { notifications, unreadCount, markRead, markAllRead, clear } = useNotifications();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState<PopoverKey>(null);
+  const [csList, setCsList] = useState<CustomerService[]>([]);
+  const [csLoaded, setCsLoaded] = useState(false);
+  const [selectedCs, setSelectedCs] = useState<CustomerService | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
 
@@ -49,6 +54,19 @@ export function AppHeader() {
   }, [openPopover]);
 
   const toggle = (key: PopoverKey) => setOpenPopover((cur) => (cur === key ? null : key));
+
+  // 首次打开客服弹窗时拉取生效客服列表（登录用户可见）
+  const loadCustomerServices = () => {
+    if (csLoaded) return;
+    listCustomerServicePublic()
+      .then((r) => {
+        setCsList(r.customerService);
+        setCsLoaded(true);
+      })
+      .catch(() => {
+        setCsLoaded(true);
+      });
+  };
 
   const goto = (path: string) => {
     setOpenPopover(null);
@@ -155,6 +173,53 @@ export function AppHeader() {
             )}
           </div>
 
+          {/* 客服：通知 icon 后入口，下拉列出生效客服，点击弹详情 Modal */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                loadCustomerServices();
+                toggle("service");
+              }}
+              className="relative flex items-center rounded-full p-2 text-text-muted transition duration-fast ease-out hover:bg-bg hover:text-text"
+              aria-label="客服"
+            >
+              <CustomerServiceIcon size={20} />
+            </button>
+            {openPopover === "service" && (
+              <div className="absolute right-0 top-full z-popover mt-2 w-80 overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
+                <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                  <span className="text-sm font-medium text-text">联系客服</span>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {csList.length === 0 ? (
+                    <p className="py-10 text-center text-xs text-text-subtle">暂无在线客服</p>
+                  ) : (
+                    csList.map((cs) => (
+                      <button
+                        key={cs.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCs(cs);
+                          setOpenPopover(null);
+                        }}
+                        className="flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 text-left transition hover:bg-bg last:border-0"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
+                          <CustomerServiceIcon size={18} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-text">{cs.nickname}</span>
+                          {cs.wechatId && <span className="block truncate text-xs text-text-muted">微信号：{cs.wechatId}</span>}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 头像：弹窗（用户信息 + 管理后台[admin] + 退出登录） */}
           <div className="relative">
             <button
@@ -215,6 +280,47 @@ export function AppHeader() {
           </div>
         </div>
       </header>
+
+      {/* 客服详情对话框 */}
+      {selectedCs && (
+        <Modal open={!!selectedCs} onClose={() => setSelectedCs(null)} title={selectedCs.nickname} size="sm">
+          <div className="flex flex-col items-center gap-3 py-2">
+            {selectedCs.qrcodeUrl ? (
+              <img
+                src={selectedCs.qrcodeUrl}
+                alt={`${selectedCs.nickname} 微信二维码`}
+                className="h-44 w-44 rounded-lg border border-border object-cover"
+              />
+            ) : (
+              <p className="text-sm text-text-subtle">暂未上传微信二维码</p>
+            )}
+            <p className="text-xs text-text-muted">微信扫一扫，添加客服咨询</p>
+            <div className="w-full space-y-2 pt-1 text-sm">
+              {selectedCs.phone && (
+                <div className="flex items-center justify-between rounded-md bg-bg px-3 py-2">
+                  <span className="text-text-muted">电话</span>
+                  <span className="font-medium text-text">{selectedCs.phone}</span>
+                </div>
+              )}
+              {selectedCs.wechatId && (
+                <div className="flex items-center justify-between gap-2 rounded-md bg-bg px-3 py-2">
+                  <span className="text-text-muted">微信号</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-medium text-text">{selectedCs.wechatId}</span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => void navigator.clipboard?.writeText(selectedCs.wechatId)}
+                    >
+                      复制
+                    </Button>
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* 点击外部关闭弹窗（z-dropdown 低于 header z-header） */}
       {openPopover && <div className="fixed inset-0 z-dropdown" onClick={() => setOpenPopover(null)} />}
