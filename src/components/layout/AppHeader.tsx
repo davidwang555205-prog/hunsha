@@ -289,7 +289,7 @@ export function AppHeader() {
               <img
                 src={selectedCs.qrcodeUrl}
                 alt={`${selectedCs.nickname} 微信二维码`}
-                className="h-44 w-44 rounded-lg border border-border object-cover"
+                className="max-h-72 max-w-full rounded-lg border border-border object-contain"
               />
             ) : (
               <p className="text-sm text-text-subtle">暂未上传微信二维码</p>

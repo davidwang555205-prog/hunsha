@@ -34,6 +34,7 @@ import {
   labelClass
 } from "../studio/constants";
 import { ReferenceImageUploader } from "../components/ReferenceImageUploader";
+import { CustomerServicePanel } from "../components/studio/CustomerServicePanel";
 import { TaskProgressCard } from "../components/studio/TaskProgressCard";
 import { ImageGenerationGrid } from "../components/studio/ImageGenerationGrid";
 import { ReadOnlyReferenceImages } from "../components/studio/ReadOnlyReferenceImages";
@@ -299,6 +300,8 @@ export function StudioPage() {
       const req = await buildTaskRequest();
       if (!req) return;
       // 二次确认：先弹窗展示本次提交内容与积分消耗，用户确认后再真正提交。
+      // 弹窗前刷新余额，确保弹窗内积分预检用的是最新值（生成消耗后 session 快照不更新）。
+      void refresh();
       setPendingTaskReq(req);
       setShowConfirmGenerate(true);
     } catch (err) {
@@ -311,6 +314,8 @@ export function StudioPage() {
     if (confirmingRef.current) return;
     const req = pendingTaskReq;
     if (!req) return;
+    // 兜底：弹窗打开期间余额可能被其他操作消耗，不足时拦下由弹窗内引导充值
+    if ((user?.credits ?? 0) < imageCount) return;
     confirmingRef.current = true;
     setShowConfirmGenerate(false);
     try {
@@ -334,12 +339,16 @@ export function StudioPage() {
 
   // 单张重试：点失败/取消子图的「重试」-> 弹窗确认 -> gen.retryImage
   const handleRetryImageClick = (imageNumber: number, name: string) => {
+    // 重试也消耗积分（1 分），弹窗前刷新余额保证预检准确
+    void refresh();
     setRetryImageTarget({ imageNumber, name });
     setShowRetryImageConfirm(true);
   };
   const confirmRetryImage = async () => {
     if (!retryImageTarget) return;
     if (taskRetryCount >= maxTaskRetry) return;
+    // 兜底：余额不足 1 积分时不提交，由弹窗内引导充值
+    if ((user?.credits ?? 0) < 1) return;
     const { imageNumber } = retryImageTarget;
     setShowRetryImageConfirm(false);
     setRetryImageTarget(null);
@@ -385,6 +394,10 @@ export function StudioPage() {
   };
 
   const sizeLabel = imageSizeOptions.find((option) => option.value === imageSize)?.label ?? imageSize;
+  // 积分预检：确认弹窗内余额不足本次消耗时，禁用提交并内嵌客服信息引导充值
+  const currentCredits = user?.credits ?? 0;
+  const creditsInsufficient = currentCredits < imageCount;
+  const retryCreditsInsufficient = currentCredits < 1;
   const hasAnySuccess = gen.subTaskStatus.some((s) => s.status === "success");
   // 失败任务分流：全部失败 -> 整任务重试；至少 1 张成功 -> 单张重试失败子图
   const allFailed = gen.stage === "failed" && !hasAnySuccess;
@@ -648,7 +661,7 @@ export function StudioPage() {
         )}
       </Modal>
 
-      {/* 提交生图二次确认：展示本次内容与积分消耗，确认后才提交任务 */}
+      {/* 提交生图二次确认：展示本次内容与积分消耗，确认后才提交任务；余额不足时内嵌客服充值引导 */}
       <Modal
         open={showConfirmGenerate}
         onClose={cancelConfirmGenerate}
@@ -659,7 +672,7 @@ export function StudioPage() {
             <Button variant="secondary" size="sm" onClick={cancelConfirmGenerate} disabled={gen.isSubmitting}>
               取消
             </Button>
-            <Button variant="primary" size="sm" onClick={confirmGenerate} loading={gen.isSubmitting}>
+            <Button variant="primary" size="sm" onClick={confirmGenerate} loading={gen.isSubmitting} disabled={creditsInsufficient}>
               确认生成
             </Button>
           </>
@@ -695,12 +708,22 @@ export function StudioPage() {
             </div>
             <div className="mt-1 flex items-baseline justify-between gap-3">
               <span className="text-sm text-text-muted">当前余额</span>
-              <span className="text-sm font-medium text-text">{user?.credits ?? 0} 积分</span>
+              <span className={`text-sm font-medium ${creditsInsufficient ? "text-danger" : "text-text"}`}>{currentCredits} 积分</span>
             </div>
           </div>
-          <p className="text-xs leading-5 text-text-muted">
-            每张图片约需 90 秒生成；仅成功生成的图片扣除积分，失败不扣。提交后可在右侧查看逐张进度，期间可离开页面，任务会在后台继续。
-          </p>
+          {creditsInsufficient ? (
+            <div className="rounded-lg border border-danger/30 bg-danger/5 p-3">
+              <p className="text-sm font-medium text-danger">
+                积分不足：本次需 {imageCount} 积分，当前仅剩 {currentCredits} 积分，还差 {imageCount - currentCredits} 积分。
+              </p>
+              <p className="mt-1 text-xs leading-5 text-text-muted">请联系客服充值积分后，再回来继续本次任务。</p>
+              <CustomerServicePanel />
+            </div>
+          ) : (
+            <p className="text-xs leading-5 text-text-muted">
+              每张图片约需 90 秒生成；仅成功生成的图片扣除积分，失败不扣。提交后可在右侧查看逐张进度，期间可离开页面，任务会在后台继续。
+            </p>
+          )}
         </div>
       </Modal>
 
@@ -715,7 +738,7 @@ export function StudioPage() {
             <Button variant="secondary" size="sm" onClick={cancelRetryImage} disabled={gen.isRetrying}>
               取消
             </Button>
-            <Button variant="primary" size="sm" onClick={confirmRetryImage} loading={gen.isRetrying}>
+            <Button variant="primary" size="sm" onClick={confirmRetryImage} loading={gen.isRetrying} disabled={retryCreditsInsufficient}>
               确认重试
             </Button>
           </>
@@ -734,12 +757,20 @@ export function StudioPage() {
               </div>
               <div className="mt-1 flex items-baseline justify-between gap-3">
                 <span className="text-sm text-text-muted">当前余额</span>
-                <span className="text-sm font-medium text-text">{user?.credits ?? 0} 积分</span>
+                <span className={`text-sm font-medium ${retryCreditsInsufficient ? "text-danger" : "text-text"}`}>{currentCredits} 积分</span>
               </div>
             </div>
-            <p className="text-xs leading-5 text-text-muted">
-              将基于原任务参考图与已成功图重新生成这一张，保持人物/场景一致。仅成功生成的图片扣分，失败不扣。生成期间可离开页面，任务会在后台继续。
-            </p>
+            {retryCreditsInsufficient ? (
+              <div className="rounded-lg border border-danger/30 bg-danger/5 p-3">
+                <p className="text-sm font-medium text-danger">积分不足：重试需 1 积分，当前余额为 0。</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">请联系客服充值积分后，再回来继续本次任务。</p>
+                <CustomerServicePanel />
+              </div>
+            ) : (
+              <p className="text-xs leading-5 text-text-muted">
+                将基于原任务参考图与已成功图重新生成这一张，保持人物/场景一致。仅成功生成的图片扣分，失败不扣。生成期间可离开页面，任务会在后台继续。
+              </p>
+            )}
           </div>
         )}
       </Modal>
