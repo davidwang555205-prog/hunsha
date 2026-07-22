@@ -207,6 +207,65 @@ func (m *Manager) AutoCreateOIDCMember(ctx context.Context, teamID uuid.UUID, ex
 	return nil, fmt.Errorf("OIDC member creation not supported in bridal")
 }
 
+// EnsureUserInAdminTeam 把指定用户加入 admin team（enterprise 用户所在的团队）。
+// bridal 单租户：自助注册的 individual 用户默认没有 team_member 记录，管理后台看不到；
+// 注册成功后调用本方法将其加入 admin team，role=user，并加入默认分组。
+func (m *Manager) EnsureUserInAdminTeam(ctx context.Context, userID uuid.UUID) error {
+	return entx.WithTx2(ctx, m.db, func(tx *db.Tx) error {
+		// 定位 admin team：任意 enterprise 用户作为 admin 的 team。
+		adminMember, err := tx.TeamMember.Query().
+			Where(teammember.HasUserWith(user.RoleEQ(consts.UserRoleEnterprise))).
+			First(ctx)
+		if err != nil {
+			if db.IsNotFound(err) {
+				return fmt.Errorf("admin team not found")
+			}
+			return err
+		}
+		teamID := adminMember.TeamID
+
+		exists, err := tx.TeamMember.Query().
+			Where(teammember.TeamIDEQ(teamID), teammember.UserIDEQ(userID)).
+			Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return nil
+		}
+
+		if _, err := tx.TeamMember.Create().
+			SetID(uuid.New()).
+			SetTeamID(teamID).
+			SetUserID(userID).
+			SetRole(consts.TeamMemberRoleUser).
+			Save(ctx); err != nil {
+			return err
+		}
+
+		gid, err := ensureDefaultGroup(ctx, tx, teamID)
+		if err != nil {
+			return err
+		}
+		gmExists, err := tx.TeamGroupMember.Query().
+			Where(teamgroupmember.GroupIDEQ(gid), teamgroupmember.UserIDEQ(userID)).
+			Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !gmExists {
+			if err := tx.TeamGroupMember.Create().
+				SetID(uuid.New()).
+				SetGroupID(gid).
+				SetUserID(userID).
+				Exec(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // ensureDefaultGroup 查询/创建团队默认分组，返回分组 ID。与 team/repo.ensureDefaultTeamGroupTx 等价。
 func ensureDefaultGroup(ctx context.Context, tx *db.Tx, teamID uuid.UUID) (uuid.UUID, error) {
 	g, err := tx.TeamGroup.Query().Where(teamgroup.TeamIDEQ(teamID), teamgroup.NameEQ(defaultTeamGroupName)).First(ctx)

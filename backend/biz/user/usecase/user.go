@@ -24,27 +24,29 @@ import (
 )
 
 type UserUsecase struct {
-	repo           domain.UserRepo
-	logger         *slog.Logger
-	redis          *redis.Client
-	config         *config.Config
-	email          domain.EmailSender
-	smsCode        *sms.CodeService
-	syssetting     *syssetting.Usecase
-	verifySelector *verify.Selector
+	repo            domain.UserRepo
+	memberManager   domain.MemberManager
+	logger          *slog.Logger
+	redis           *redis.Client
+	config          *config.Config
+	email           domain.EmailSender
+	smsCode         *sms.CodeService
+	syssetting      *syssetting.Usecase
+	verifySelector  *verify.Selector
 }
 
 func NewUserUsecase(i *do.Injector) (domain.UserUsecase, error) {
 	cfg := do.MustInvoke[*config.Config](i)
 	return &UserUsecase{
-		repo:           do.MustInvoke[domain.UserRepo](i),
-		logger:         do.MustInvoke[*slog.Logger](i),
-		redis:          do.MustInvoke[*redis.Client](i),
-		config:         cfg,
-		email:          do.MustInvoke[domain.EmailSender](i),
-		smsCode:        do.MustInvoke[*sms.CodeService](i),
-		syssetting:     do.MustInvoke[*syssetting.Usecase](i),
-		verifySelector: do.MustInvoke[*verify.Selector](i),
+		repo:            do.MustInvoke[domain.UserRepo](i),
+		memberManager:   do.MustInvoke[domain.MemberManager](i),
+		logger:          do.MustInvoke[*slog.Logger](i),
+		redis:           do.MustInvoke[*redis.Client](i),
+		config:          cfg,
+		email:           do.MustInvoke[domain.EmailSender](i),
+		smsCode:         do.MustInvoke[*sms.CodeService](i),
+		syssetting:      do.MustInvoke[*syssetting.Usecase](i),
+		verifySelector:  do.MustInvoke[*verify.Selector](i),
 	}, nil
 }
 
@@ -406,6 +408,13 @@ func (u *UserUsecase) RegisterByCode(ctx context.Context, req *domain.RegisterBy
 	usr, err := u.repo.CreateIndividualByContact(ctx, t.Phone, t.Email, hashed)
 	if err != nil {
 		return nil, errcode.ErrDatabaseOperation.Wrap(err)
+	}
+	// bridal：自助注册的 individual 用户默认不在任何团队，管理后台看不到；
+	// 将其加入 admin team，使其出现在 /admin/users 等列表中。
+	if err := u.memberManager.EnsureUserInAdminTeam(ctx, usr.ID); err != nil {
+		u.logger.ErrorContext(ctx, "ensure individual user in admin team failed",
+			"user_id", usr.ID, "error", err)
+		// 不阻塞注册成功返回，避免用户无法登录；后台可见性问题可后续补偿。
 	}
 	u.logger.InfoContext(ctx, "user registered by code",
 		"phone", t.Phone, "email", t.Email, "channel", req.Channel, "user_id", usr.ID)

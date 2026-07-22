@@ -18,6 +18,8 @@ type MemberManager interface {
 	AddUserWithPassword(ctx context.Context, teamUser *TeamUser, req *AddTeamUserReq) (*AddTeamUserWithPasswordResp, error)
 	AddAdmin(ctx context.Context, teamUser *TeamUser, req *AddTeamAdminReq) (*AddTeamAdminResp, error)
 	AutoCreateOIDCMember(ctx context.Context, teamID uuid.UUID, external *OIDCExternalUser) (*User, error)
+	// EnsureUserInAdminTeam 把指定用户加入 admin team（bridal 单租户场景：自助注册 individual 用户需要能被管理后台看到）。
+	EnsureUserInAdminTeam(ctx context.Context, userID uuid.UUID) error
 }
 
 // TeamGroupUserUsecase 团队分组成员业务逻辑接口
