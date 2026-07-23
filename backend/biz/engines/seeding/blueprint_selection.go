@@ -20,6 +20,15 @@ func selectBlueprints(blueprints []XhsImageBlueprint, rule BlueprintSelectionRul
 	if rule.Strategy == "selfieContrastSilhouetteSamplingWithFaceVisibleFirst" {
 		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, false)
 	}
+	// v3.7.0 策略名：抽样算法与 v3.6.0 完全一致（复用 selectContrastSilhouetteBlueprints），
+	// 仅 prompt 层追加批次内动作区分约束（imagePrompt JSON 的 negativeLine +
+	// seeding JSON description 的英文 UPPER ACTION）。相同 batchSeed 复现与 v3.6.0 一致。
+	if rule.Strategy == "contrastSilhouetteAngleAwareWithBatchDistinction" {
+		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, true)
+	}
+	if rule.Strategy == "selfieContrastSilhouetteWithBatchDistinction" {
+		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, false)
+	}
 	if rule.Strategy != "familySampling" && rule.Strategy != "familySamplingWithRequiredFirst" {
 		return blueprints
 	}

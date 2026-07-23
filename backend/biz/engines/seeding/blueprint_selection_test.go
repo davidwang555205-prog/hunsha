@@ -374,3 +374,124 @@ func TestSelectBlueprintsContrastSilhouetteFallback(t *testing.T) {
 		}
 	}
 }
+
+// TestSelectBlueprintsV370BatchDistinction 对齐 mjs v3.7.0
+// contrastSilhouetteAngleAwareWithBatchDistinction：抽样算法与 v3.6.0 完全一致，
+// 仅策略名变更（prompt 层追加批次动作区分约束，不影响抽样）。验证新策略名分支
+// 行为：确定性复现、首图 F01-F03 露脸、批次内 band/expression/family 不重复、
+// angleAware 上半身动作约束、count=5 覆盖 F01-F05+S01-S05、count 非 3/5 降级、前缀过滤。
+func TestSelectBlueprintsV370BatchDistinction(t *testing.T) {
+	blueprints := buildContrastSilhouettePool("FTE", 1)
+	blueprints = append(blueprints, XhsImageBlueprint{Name: "OTHER-001｜F01-正面｜S01-轮廓｜U01-动作｜V01-支撑｜E01-表情"})
+	rule := BlueprintSelectionRule{
+		Strategy:           "contrastSilhouetteAngleAwareWithBatchDistinction",
+		RequiredNamePrefix: "FTE-",
+	}
+
+	a := selectBlueprints(blueprints, rule, 3, "v370-seed")
+	b := selectBlueprints(blueprints, rule, 3, "v370-seed")
+	if len(a) != 3 || len(b) != 3 {
+		t.Fatalf("want 3 blueprints, got %d / %d", len(a), len(b))
+	}
+	for i := range a {
+		if a[i].Name != b[i].Name {
+			t.Fatalf("same seed must be deterministic: %s != %s", a[i].Name, b[i].Name)
+		}
+	}
+
+	if !isFaceVisibleFirstCandidate(a[0].Name) {
+		t.Fatalf("first image must be face-visible (F01-F03), got %s", a[0].Name)
+	}
+
+	bands := map[string]bool{}
+	expressions := map[string]bool{}
+	families := map[string]bool{}
+	for _, bp := range a {
+		if !strings.HasPrefix(bp.Name, "FTE-") {
+			t.Fatalf("non-pool blueprint leaked: %s", bp.Name)
+		}
+		fb := angleBand(bp.Name)
+		eb := expressionGroup(bp.Name)
+		sf := silhouetteFamily(bp.Name)
+		if bands[fb] {
+			t.Fatalf("angle band duplicated within batch: %s", fb)
+		}
+		if expressions[eb] {
+			t.Fatalf("expression group duplicated within batch: %s", eb)
+		}
+		if families[sf] {
+			t.Fatalf("silhouette family duplicated within batch: %s", sf)
+		}
+		bands[fb] = true
+		expressions[eb] = true
+		families[sf] = true
+	}
+	for _, bp := range a[1:] {
+		if !isAngleCompatibleUpperAction(bp.Name) {
+			t.Fatalf("angleAware violation (non-first): %s", bp.Name)
+		}
+	}
+
+	c := selectBlueprints(blueprints, rule, 5, "v370-5")
+	if len(c) != 5 {
+		t.Fatalf("want 5 blueprints, got %d", len(c))
+	}
+	bands5 := map[string]bool{}
+	families5 := map[string]bool{}
+	for _, bp := range c {
+		bands5[angleBand(bp.Name)] = true
+		families5[silhouetteFamily(bp.Name)] = true
+	}
+	if len(bands5) != 5 {
+		t.Fatalf("5-count batch must cover F01-F05, got %v", bands5)
+	}
+	if len(families5) != 5 {
+		t.Fatalf("5-count batch must cover S01-S05, got %v", families5)
+	}
+
+	d := selectBlueprints(blueprints, rule, 4, "seed")
+	if len(d) != len(blueprints) {
+		t.Fatalf("unsupported count must fall back to original order, got %d", len(d))
+	}
+}
+
+// TestV370StrategyAliasEquivalence 验证 v3.7.0 新策略名与 v3.6.0 旧策略名在相同
+// 输入下输出完全一致（CHANGELOG：抽样逻辑与 v3.6.0 完全一致，仅策略名变更）。
+// 保护新策略名下不被偷偷替换算法。
+func TestV370StrategyAliasEquivalence(t *testing.T) {
+	fte := buildContrastSilhouettePool("FTE", 1)
+	oldAngle := BlueprintSelectionRule{Strategy: "contrastSilhouetteAngleAwareSamplingWithFaceVisibleFirst", RequiredNamePrefix: "FTE-"}
+	newAngle := BlueprintSelectionRule{Strategy: "contrastSilhouetteAngleAwareWithBatchDistinction", RequiredNamePrefix: "FTE-"}
+	for _, seed := range []string{"alias-1", "alias-2", "alias-3", "中文种子-试纱"} {
+		for _, count := range []int{3, 5} {
+			o := selectBlueprints(fte, oldAngle, count, seed)
+			n := selectBlueprints(fte, newAngle, count, seed)
+			if len(o) != len(n) {
+				t.Fatalf("seed=%s count=%d len mismatch: %d vs %d", seed, count, len(o), len(n))
+			}
+			for i := range o {
+				if o[i].Name != n[i].Name {
+					t.Fatalf("seed=%s count=%d alias mismatch: %s vs %s", seed, count, o[i].Name, n[i].Name)
+				}
+			}
+		}
+	}
+
+	pms := buildContrastSilhouettePool("PMS", 1)
+	oldSelfie := BlueprintSelectionRule{Strategy: "selfieContrastSilhouetteSamplingWithFaceVisibleFirst", RequiredNamePrefix: "PMS-"}
+	newSelfie := BlueprintSelectionRule{Strategy: "selfieContrastSilhouetteWithBatchDistinction", RequiredNamePrefix: "PMS-"}
+	for _, seed := range []string{"selfie-1", "selfie-2", "自拍种子"} {
+		for _, count := range []int{3, 5} {
+			o := selectBlueprints(pms, oldSelfie, count, seed)
+			n := selectBlueprints(pms, newSelfie, count, seed)
+			if len(o) != len(n) {
+				t.Fatalf("selfie seed=%s count=%d len mismatch: %d vs %d", seed, count, len(o), len(n))
+			}
+			for i := range o {
+				if o[i].Name != n[i].Name {
+					t.Fatalf("selfie seed=%s count=%d alias mismatch: %s vs %s", seed, count, o[i].Name, n[i].Name)
+				}
+			}
+		}
+	}
+}
