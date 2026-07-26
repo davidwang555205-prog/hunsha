@@ -272,7 +272,7 @@ func buildPhoneSeriesShotLine(ctx SeriesContext) string {
 		"This viewpoint is unique to frame " + intToStr(index+1) + "; do not reuse the viewpoint assigned to another frame, and do not combine multiple viewpoints in one image."
 }
 
-// buildSeriesContinuityLine 图组连续性行（与 Node 一致）。
+// buildSeriesContinuityLine 图组连续性行（与 Node 一致，v3.8.0 起非首张人物图追加"连续性参考图不是姿态参考"指令，见 MJS-CHANGELOG-v3.8.0）。
 func buildSeriesContinuityLine(p Params, ctx SeriesContext, a *Assets) string {
 	total := ctx.Total
 	if total <= 1 {
@@ -292,7 +292,8 @@ func buildSeriesContinuityLine(p Params, ctx SeriesContext, a *Assets) string {
 	if index == leadPersonIndex {
 		return sharedSceneLine + " Establish the one model identity used by the full series: one clearly identifiable woman with fixed facial structure, age, skin tone, hairstyle, hair color, and body proportions."
 	}
-	return sharedSceneLine + " The supplied continuity image is a strict identity and location reference. Show the exact same woman, not a similar-looking replacement: identical facial structure, age, skin tone, hairstyle, hair color, and body proportions."
+	return sharedSceneLine + " The supplied continuity image is a strict identity and location reference. Show the exact same woman, not a similar-looking replacement: identical facial structure, age, skin tone, hairstyle, hair color, and body proportions. " +
+		"The continuity image is only an identity, garment color, and scene position reference, never a pose reference: do not copy its pose, body orientation, limb positions, or framing. Follow the assigned shot for this frame and create a different pose and composition from the continuity image."
 }
 
 // GeneratePrompt 拼装完整 prompt，1:1 对应 Node generatePrompt（prompt.mjs:373-402）。
