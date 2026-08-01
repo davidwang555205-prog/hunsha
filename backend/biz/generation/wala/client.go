@@ -319,9 +319,11 @@ func (c *Client) callSeedream(ctx context.Context, req Request, size string) (st
 //   - image 是否接受 base64 data-url（当前复用 4.0 的 fileToDataURL）；若 5.0 只接受 http URL，
 //     需把参考图上传对象存储换 presigned URL 再传入。
 //   - response_format=url 返回的 URL 是否临时（若临时，需下载存 MinIO，或改 response_format=b64_json）。
-//   - size 档位映射（当前透传 req.Size，空降级 "2K"）；若 5.0 不接受比例字符串需按模型映射档位。
+//   - size 已修复（真机 400 "must be WIDTHxHEIGHT or preset"）：比例经 aspectToResolution 转
+//     WIDTHxHEIGHT（3:4->1152x1536），未知降级 "2K"；若 5.0 对分辨率数值有白名单，按返回 supported list 再调。
 func (c *Client) callSeedream5(ctx context.Context, req Request, size string) (status int, bodyText string, err error) {
-	sz := size
+	// 5.0 不接受比例(3:4)，要 WIDTHxHEIGHT 或 preset：比例转分辨率（aspectToResolution），未知降级 "2K"。
+	sz := aspectToResolution(size)
 	if sz == "" {
 		sz = "2K"
 	}
@@ -598,11 +600,12 @@ func IsRetryable(status int, bodyText string) bool {
 }
 
 // IsFallbackable 判断是否应切换到下一条模型线路。
-// 404（接口不存在）切线路；可重试错误（429/5xx/负载饱和）也切。其余（含 400 user error，
+// 404（接口不存在）/403（TOS 拦截或 key 失效）切线路--OpenRouter 平台 TOS 审核非 OpenAI 原生，
+// 降级到官方 openai 直连可能避开；可重试错误（429/5xx/负载饱和）也切。其余（含 400 user error，
 // 如 "Invalid image file or mode for image"）不切--官方明确 user-correctable 错误不应自动
 // 重试/降级，需改 prompt 或输入图；且 fallback 到同为 OpenAI 的线路必同样失败，降级只白烧 token。
 func IsFallbackable(status int, bodyText string) bool {
-	return status == http.StatusNotFound || IsRetryable(status, bodyText)
+	return status == http.StatusNotFound || status == http.StatusForbidden || IsRetryable(status, bodyText)
 }
 
 // retryDelay 与 Node retryDelayMs 一致：min(30s, 4s*2^(attempt-1))。
