@@ -39,7 +39,9 @@ backend/server
 
 # 本地生成的缓存与构建辅助产物
 /.cache/
+.codegraph/
 /progress-active.png
 
 # docs 目录整体不入库（需求文档/备忘录/本地 json/权威 md 一律本地保留，已跟踪文件停止跟踪）
 /docs/
+build/
