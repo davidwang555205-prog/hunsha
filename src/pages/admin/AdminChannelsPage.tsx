@@ -7,9 +7,9 @@
  * - 删除（默认线路不可删）
  */
 import { useEffect, useState } from "react";
-import { listChannels, createChannel, updateChannel, deleteChannel } from "../../api/admin";
+import { listChannels, createChannel, updateChannel, deleteChannel, listModelCatalog } from "../../api/admin";
 import { isUnauthorizedError } from "../../types/api";
-import type { Channel } from "../../types/api";
+import type { Channel, ModelSpec } from "../../types/api";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
@@ -32,25 +32,97 @@ type ChannelDraft = {
   requestTimeoutSeconds: string;
 };
 
+// ProtocolPreset 按协议预填的官方默认配置：新建线路时用户只需填 API Key，其余按协议自动带入可调。
+type ProtocolPreset = {
+  name: string;
+  apiBaseUrl: string;
+  modelId: string;
+  supportedSizes: string;
+  defaultQuality: string;
+  requestTimeoutSeconds: string;
+};
+
+// protocolOptions 调用协议下拉 + 各协议官方端点/默认模型预填。base_url 末尾不带斜杠，
+// 子路径（/images、/images/generations、/v1beta/models/...:generateContent）由 wala/client.go 按协议拼接。
+const protocolOptions: { value: string; label: string; preset: ProtocolPreset }[] = [
+  {
+    value: "openai",
+    label: "OpenAI 兼容（官方 / WalaAPI）",
+    preset: {
+      name: "OpenAI GPT Image-2",
+      apiBaseUrl: "https://api.openai.com/v1",
+      modelId: "gpt-image-2",
+      supportedSizes: "1152x1536,1024x1024",
+      defaultQuality: "medium",
+      requestTimeoutSeconds: "240"
+    }
+  },
+  {
+    value: "openrouter",
+    label: "OpenRouter（/images + input_references）",
+    preset: {
+      name: "OpenRouter GPT Image-2",
+      apiBaseUrl: "https://openrouter.ai/api/v1",
+      modelId: "gpt-image-2",
+      supportedSizes: "1152x1536,1024x1024",
+      defaultQuality: "medium",
+      requestTimeoutSeconds: "240"
+    }
+  },
+  {
+    value: "seedream",
+    label: "Seedream（字节方舟 ark /images/generations）",
+    preset: {
+      name: "Seedream 4.0（豆包）",
+      apiBaseUrl: "https://ark.cn-beijing.volces.com/api/v3",
+      modelId: "doubao-seedream-4-0-250828",
+      supportedSizes: "3:4,1:1,4:3",
+      defaultQuality: "medium",
+      requestTimeoutSeconds: "180"
+    }
+  },
+  {
+    value: "gemini",
+    label: "Gemini（Google 官方 generateContent）",
+    preset: {
+      name: "Banana（Nano Banana）",
+      apiBaseUrl: "https://generativelanguage.googleapis.com",
+      modelId: "gemini-2.5-flash-image-preview",
+      supportedSizes: "3:4,1:1,4:3",
+      defaultQuality: "medium",
+      requestTimeoutSeconds: "180"
+    }
+  }
+];
+
+const presetFor = (protocol: string): ProtocolPreset =>
+  protocolOptions.find((o) => o.value === protocol)?.preset ?? protocolOptions[0].preset;
+
+// apiBaseUrlHint 按协议提示官方端点写法，避免尾斜杠/多余子路径致拼接错（openrouter 双重路径 404 坑）。
+const apiBaseUrlHint = (protocol: string): string => {
+  switch (protocol) {
+    case "openai":
+      return "官方填 https://api.openai.com/v1；WalaAPI 填 https://walaapi.net/v1（不带 /images）";
+    case "openrouter":
+      return "https://openrouter.ai/api/v1（不带 /images，否则双重路径 404）";
+    case "seedream":
+      return "字节方舟 ark：https://ark.cn-beijing.volces.com/api/v3";
+    case "gemini":
+      return "https://generativelanguage.googleapis.com（不带 /v1beta，由协议拼接）";
+    default:
+      return "末尾不带斜杠，子路径由协议自动拼接";
+  }
+};
+
 const emptyDraft: ChannelDraft = {
-  name: "",
-  apiBaseUrl: "",
+  ...presetFor("openai"),
   apiKey: "",
   protocol: "openai",
-  modelId: "gpt-image-2",
-  supportedSizes: "1152x1536,1024x1024",
-  defaultQuality: "medium",
   isEnabled: true,
   isDefault: false,
   sortOrder: "0",
-  maxConcurrency: "1",
-  requestTimeoutSeconds: "0"
+  maxConcurrency: "1"
 };
-
-const protocolOptions = [
-  { value: "openai", label: "OpenAI 兼容（官方 / WalaAPI）" },
-  { value: "openrouter", label: "OpenRouter（/images + input_references）" }
-];
 
 export function AdminChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -60,6 +132,7 @@ export function AdminChannelsPage() {
   const [draft, setDraft] = useState<ChannelDraft>(emptyDraft);
   const [busy, setBusy] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [catalog, setCatalog] = useState<ModelSpec[]>([]);
 
   const fetchChannels = async () => {
     setIsLoading(true);
@@ -76,6 +149,14 @@ export function AdminChannelsPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchChannels();
+  }, []);
+
+  useEffect(() => {
+    listModelCatalog()
+      .then((r) => setCatalog(r.models))
+      .catch(() => {
+        /* catalog 加载失败不阻塞：datalist 空，模型 ID 仍可自由输入 */
+      });
   }, []);
 
   const startEdit = (ch: Channel) => {
@@ -174,23 +255,58 @@ export function AdminChannelsPage() {
           </>
         }
       >
+        {!editingId && (
+          <div className="mb-3 rounded-md bg-bg px-3 py-2 text-xs text-text-muted ring-1 ring-border">
+            已按所选协议预填官方默认配置（名称 / 地址 / 模型 / 尺寸 / 超时），通常只需填写 API Key，其余可按需调整。
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="名称">
             <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="WalaAPI GPT Image-2" />
           </Field>
           <Field label="调用协议">
-            <select className={inputClass} value={draft.protocol} onChange={(e) => setDraft({ ...draft, protocol: e.target.value })}>
+            <select className={inputClass} value={draft.protocol} onChange={(e) => {
+              const protocol = e.target.value;
+              // 新建态：切协议连带刷新官方端点/默认模型/尺寸/超时；编辑态只换协议，不动已配字段
+              setDraft(editingId ? { ...draft, protocol } : { ...draft, ...presetFor(protocol), protocol });
+            }}>
               {protocolOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </Field>
           <Field label="API Base URL">
             <Input value={draft.apiBaseUrl} onChange={(e) => setDraft({ ...draft, apiBaseUrl: e.target.value })} />
+            <span className="mt-1 block text-xs text-text-muted">{apiBaseUrlHint(draft.protocol)}</span>
           </Field>
           <Field label="API Key">
             <Input type="password" value={draft.apiKey} onChange={(e) => setDraft({ ...draft, apiKey: e.target.value })} placeholder={editingId ? "留空不改" : "sk-..."} />
           </Field>
           <Field label="模型 ID">
-            <Input value={draft.modelId} onChange={(e) => setDraft({ ...draft, modelId: e.target.value })} />
+            <Input
+              list="model-catalog-options"
+              value={draft.modelId}
+              onChange={(e) => {
+                const value = e.target.value;
+                const spec = catalog.find((m) => m.id === value);
+                if (!spec) {
+                  setDraft({ ...draft, modelId: value });
+                  return;
+                }
+                const protocol = spec.defaultProtocol;
+                // 新建态：选模型连带刷新协议配套默认值（名称取模型展示名）；编辑态只换 modelId + 协议
+                setDraft(
+                  editingId
+                    ? { ...draft, modelId: value, protocol }
+                    : { ...draft, ...presetFor(protocol), protocol, modelId: value, name: spec.name }
+                );
+              }}
+            />
+            <datalist id="model-catalog-options">
+              {catalog.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </datalist>
+            {(() => {
+              const spec = catalog.find((m) => m.id === draft.modelId);
+              return spec ? <span className="mt-1 block text-xs text-text-muted">{spec.description}</span> : null;
+            })()}
           </Field>
           <Field label="支持尺寸（逗号分隔）">
             <Input value={draft.supportedSizes} onChange={(e) => setDraft({ ...draft, supportedSizes: e.target.value })} />

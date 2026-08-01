@@ -630,6 +630,16 @@ export type CreateChannelRequest = {
 
 export type UpdateChannelRequest = Partial<Omit<CreateChannelRequest, "id">>;
 
+/** 模型清单条目（前端「模型线路」下拉数据源，后端硬编码元数据，不含密钥/地址） */
+export type ModelSpec = {
+  id: string;
+  name: string;
+  defaultProtocol: string;
+  description: string;
+};
+
+export type ModelCatalogResponse = { models: ModelSpec[] };
+
 /** 内容类目 */
 export type Category = {
   id: string;

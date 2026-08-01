@@ -34,6 +34,7 @@ import type {
   EngineListResponse,
   EngineSummaryListResponse,
   MemberListResponse,
+  ModelCatalogResponse,
   ResetPasswordResponse,
   SettingsListResponse,
   SmsSettings,
@@ -162,6 +163,11 @@ export function deleteChannel(channelId: string) {
   return apiRequest<{ ok: boolean }>(`/api/admin/channels/${encodeURIComponent(channelId)}`, {
     method: "DELETE"
   });
+}
+
+/** 模型清单（admin 配线路时下拉选择，后端硬编码元数据） */
+export function listModelCatalog() {
+  return apiRequest<ModelCatalogResponse>("/api/admin/models/catalog");
 }
 
 // ===== 类目 =====
