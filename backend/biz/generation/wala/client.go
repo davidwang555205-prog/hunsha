@@ -312,15 +312,17 @@ func (c *Client) callSeedream(ctx context.Context, req Request, size string) (st
 	return c.doRequest(ctx, httpReq)
 }
 
-// callSeedream5 协议 C'（字节方舟豆包 Seedream 5.0 Pro）：与 4.0 同走 POST /images/generations（json），
-// 但 API 参数差异：response_format=url（4.0 b64_json）、size 档位（4.0 比例）、stream=false、watermark=true。
-//
-// ⚠️ 待真机确认（真机 400 后针对性调整）：
-//   - image 是否接受 base64 data-url（当前复用 4.0 的 fileToDataURL）；若 5.0 只接受 http URL，
-//     需把参考图上传对象存储换 presigned URL 再传入。
-//   - response_format=url 返回的 URL 是否临时（若临时，需下载存 MinIO，或改 response_format=b64_json）。
-//   - size 已修复（真机 400 "must be WIDTHxHEIGHT or preset"）：比例经 aspectToResolution 转
-//     WIDTHxHEIGHT（3:4->1152x1536），未知降级 "2K"；若 5.0 对分辨率数值有白名单，按返回 supported list 再调。
+// callSeedream5 协议 C'（字节方舟豆包 Seedream 5.0 Pro）：与 4.0 同走 POST /images/generations（json）。
+// 官方文档（https://www.volcengine.com/docs/82379/1541523）确认的 5.0 pro 差异与约束：
+//   - response_format=b64_json：url 形式返回的下载链接仅 24h 有效，而 saveGeneratedImages 对
+//     remote URL 不落 MinIO（历史图 24h 后全失效），故与 4.0 对齐用 b64_json 本地存储。
+//   - size 方式2 宽高像素：总像素 [921600, 4624220] + 宽高比 [1/16,16] 双约束（方式1 档位 1K/1.5K/2K
+//     需 prompt 自然语言描述比例，不适合确定性引擎）；比例经 aspectToResolution 转 WIDTHxHEIGHT，未知降级 "2K"。
+//   - watermark=false（默认 true 会在右下角加"AI 生成"水印）。
+//   - 不支持 sequential_image_generation（单图）/stream/tools 联网搜索（仅 lite/4.5/4.0），不传这些字段。
+//   - 参考图：base64 data-url 已真机验证（2026-08-02 img1 200），格式 jpeg/png/webp/bmp/tiff/gif/heic/heif，
+//     单张 ≤30MB、总像素 ≤6000x6000，5.0 pro 最多 10 张（4.0/4.5/lite 14 张）。
+//   - prompt 官方建议 ≤300 汉字/600 英文单词（超出是建议非硬限制，本引擎长 prompt 为既有资产未改）。
 func (c *Client) callSeedream5(ctx context.Context, req Request, size string) (status int, bodyText string, err error) {
 	// 5.0 不接受比例(3:4)，要 WIDTHxHEIGHT 或 preset：比例转分辨率（aspectToResolution），未知降级 "2K"。
 	sz := aspectToResolution(size)
@@ -331,9 +333,8 @@ func (c *Client) callSeedream5(ctx context.Context, req Request, size string) (s
 		"model":           c.imageModel,
 		"prompt":          req.Prompt,
 		"size":            sz,
-		"response_format": "url",
-		"stream":          false,
-		"watermark":       true,
+		"response_format": "b64_json", // url 链接仅 24h 有效且不落 MinIO，b64 走本地存储
+		"watermark":       false,      // true 会在右下角加"AI 生成"水印（默认值），与 4.0 对齐关闭
 	}
 	if len(req.Files) > 0 {
 		imgs := make([]string, 0, len(req.Files))
