@@ -174,7 +174,7 @@ func TestCallWithFallback_LogsChannelAttemptDetails(t *testing.T) {
 	var output bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&output, nil))
 
-	_, _, _, err := u.callWithFallbackLogged(context.Background(), logger, []channelClient{{client: c1, name: "primary"}, {client: c2, name: "backup"}}, wala.Request{}, nil)
+	_, _, _, err := u.callWithFallbackLogged(context.Background(), logger, []channelClient{{client: c1, name: "primary"}, {client: c2, name: "backup"}}, wala.Request{}, nil, nil)
 	if err != nil {
 		t.Fatalf("备用线路成功时不应出错，得 %v", err)
 	}
@@ -199,7 +199,7 @@ func TestCallWithFallback_PersistsOneAuditRecordPerActualAttempt(t *testing.T) {
 	user := &domain.User{ID: uuid.New(), Username: "audit-user", Email: "audit@example.com"}
 	files := []wala.FileInput{{Name: "dress.png", Type: "image/png", Size: 3, Data: []byte("png"), SourceURL: "/api/v1/generation/images/ref.png", ReferenceKind: "product"}}
 
-	_, _, _, err := u.callWithFallbackLogged(context.Background(), nil, []channelClient{{client: caller, name: "primary", modelID: "gpt-image-2", apiBaseURL: "https://example.test/v1", protocol: "openai"}}, wala.Request{Prompt: "make a dress", Files: files, Size: "3:4", Quality: "high"}, &invocationMeta{taskID: uuid.New(), generationImageID: "image-1", imageNumber: 1, user: user})
+	_, _, _, err := u.callWithFallbackLogged(context.Background(), nil, []channelClient{{client: caller, name: "primary", modelID: "gpt-image-2", apiBaseURL: "https://example.test/v1", protocol: "openai"}}, wala.Request{Prompt: "make a dress", Files: files, Size: "3:4", Quality: "high"}, nil, &invocationMeta{taskID: uuid.New(), generationImageID: "image-1", imageNumber: 1, user: user})
 	if err == nil {
 		t.Fatal("唯一候选 503 应返回失败")
 	}

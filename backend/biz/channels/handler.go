@@ -20,6 +20,7 @@ import (
 //   POST   /api/admin/channels      创建线路（admin）
 //   PATCH  /api/admin/channels/:id  更新线路（admin）
 //   DELETE /api/admin/channels/:id  删除线路（admin）
+//   GET    /api/admin/models/catalog  模型清单（admin，前端下拉元数据，硬编码）
 type Handler struct {
 	usecase *Usecase
 	logger  *slog.Logger
@@ -40,6 +41,7 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	w.Echo().POST("/api/admin/channels", h.create, authM, adminM)
 	w.Echo().PATCH("/api/admin/channels/:id", h.update, authM, adminM)
 	w.Echo().DELETE("/api/admin/channels/:id", h.remove, authM, adminM)
+	w.Echo().GET("/api/admin/models/catalog", h.listCatalog, authM, adminM)
 	return h, nil
 }
 
@@ -50,6 +52,11 @@ func (h *Handler) listPublic(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "获取线路列表失败。"})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"channels": out})
+}
+
+// listCatalog 返回模型清单（前端「模型线路」下拉数据源，硬编码元数据，不含密钥/地址）。
+func (h *Handler) listCatalog(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]any{"models": ModelCatalog})
 }
 
 func (h *Handler) listAdmin(c echo.Context) error {

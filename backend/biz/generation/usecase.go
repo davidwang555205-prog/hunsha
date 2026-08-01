@@ -566,7 +566,10 @@ func (u *Usecase) saveGeneratedImages(ctx context.Context, recordID string, imag
 }
 
 // promptPlan 单张图的 prompt 计划。
+// ir 为模型无关的 CanonicalPrompt，降级时 callWithFallbackLogged 按各线路 modelID 重新 Render 方言；
+// prompt 为 image2 渲染结果（兜底 + promptHash 用），与旧 GeneratePrompt 逐字节一致。
 type promptPlan struct {
+	ir             *prompt.CanonicalPrompt
 	prompt         string
 	includesPerson bool
 	name           string
@@ -732,7 +735,9 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 			LeadPersonIndex: leadPersonIndex,
 			LeadPhoneIndex:  leadPhoneIndex,
 		}
-		pr := prompt.GeneratePrompt(p, sctx, imageAssets)
+		input := prompt.ResolvePromptInput(p)
+		ir := prompt.Compile(input, sctx, imageAssets)
+		pr := (&prompt.Image2Adapter{}).Render(ir).Prompt
 		name := strings.TrimSpace(p.GeneratedImageName)
 		if name == "" {
 			name = fmt.Sprintf("图片 %d", i+1)
@@ -744,6 +749,7 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 			name = fmt.Sprintf("图片 %d", i+1)
 		}
 		plans[i] = promptPlan{
+			ir:             ir,
 			prompt:         pr,
 			includesPerson: personTypes[p.ImageType] && p.ModelChoice != "不指定人物，仅产品静物",
 			name:           name,

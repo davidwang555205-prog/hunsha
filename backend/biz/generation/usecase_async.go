@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"bridal/backend/biz/channels"
+	"bridal/backend/biz/generation/prompt"
 	"bridal/backend/biz/generation/wala"
 	"bridal/backend/domain"
 	"bridal/backend/ent/types"
@@ -459,14 +460,14 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 
 // callWithFallback 是无任务上下文调用入口，主要供测试使用。
 func (u *Usecase) callWithFallback(ctx context.Context, candidates []channelClient, req wala.Request) (status int, bodyText string, used channelClient, err error) {
-	return u.callWithFallbackLogged(ctx, u.logger, candidates, req, nil)
+	return u.callWithFallbackLogged(ctx, u.logger, candidates, req, nil, nil)
 }
 
 // callWithFallbackLogged 按候选线路链顺序调用。重试预算由整个候选链共享：
 // 每个非末尾线路只拿一次机会，最后线路拿剩余预算；因此可重试失败会尽早切换，
 // 但整个任务仍保留 WalaImageRetryAttempts 次恢复机会。
 // 不可重试错误（如普通 400 参数错误）直接返回，不切线路。每个线路尝试均记统计和结构化日志。
-func (u *Usecase) callWithFallbackLogged(ctx context.Context, logger *slog.Logger, candidates []channelClient, req wala.Request, meta *invocationMeta) (status int, bodyText string, used channelClient, err error) {
+func (u *Usecase) callWithFallbackLogged(ctx context.Context, logger *slog.Logger, candidates []channelClient, req wala.Request, ir *prompt.CanonicalPrompt, meta *invocationMeta) (status int, bodyText string, used channelClient, err error) {
 	var lastErr error
 	var lastStatus int
 	var lastBody string
@@ -489,12 +490,17 @@ func (u *Usecase) callWithFallbackLogged(ctx context.Context, logger *slog.Logge
 				"attempt_budget", attempts,
 			)
 		}
+		// 按该线路 modelID 重新渲染方言提示词（ir 非 nil 时覆盖 req.Prompt）；ir nil 时用 req 原 Prompt（兼容测试/无 ir 入口）。
+		reqCandidate := req
+		if ir != nil {
+			reqCandidate.Prompt = prompt.SelectAdapter(c.modelID).Render(ir).Prompt
+		}
 		start := time.Now()
-		observer := u.modelInvocationObserver(logger, c, i+1, len(candidates), attempts, req, meta)
+		observer := u.modelInvocationObserver(logger, c, i+1, len(candidates), attempts, reqCandidate, meta)
 		if observed, ok := c.client.(observedWalaCaller); ok {
-			status, bodyText, err = observed.CallWithAttemptsObserved(ctx, req, attempts, observer)
+			status, bodyText, err = observed.CallWithAttemptsObserved(ctx, reqCandidate, attempts, observer)
 		} else {
-			status, bodyText, err = c.client.CallWithAttempts(ctx, req, attempts)
+			status, bodyText, err = c.client.CallWithAttempts(ctx, reqCandidate, attempts)
 		}
 		latency := int(time.Since(start).Milliseconds())
 
@@ -773,11 +779,11 @@ func (u *Usecase) generateOne(
 	_ = u.repo.UpdateSubTaskImage(ctx, imageID, "processing", "", "", "", 0)
 	imageLogger := u.logger.With("task", taskID, "image_number", promptIndex+1)
 	status, bodyText, _, err := u.callWithFallbackLogged(ctx, imageLogger, candidates, wala.Request{
-		Prompt:  pl.prompt,
+		Prompt:  pl.prompt, // ir 兜底（ir 非 nil 时按线路 ModelID 渲染方言覆盖）
 		Files:   requestFiles,
 		Size:    size,
 		Quality: quality,
-	}, &invocationMeta{taskID: taskID, generationImageID: imageID, imageNumber: promptIndex + 1, user: user})
+	}, pl.ir, &invocationMeta{taskID: taskID, generationImageID: imageID, imageNumber: promptIndex + 1, user: user})
 	latency := int(time.Since(imgStart).Milliseconds())
 
 	if err != nil {

@@ -161,10 +161,20 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 		size = "3:4"
 	}
 
-	if c.protocol == "openrouter" {
+	switch c.protocol {
+	case "openrouter":
 		return c.callOpenRouter(ctx, req, resolvedQuality, size)
+	case "seedream":
+		// 5.0 Pro（modelID 含 5-0-pro）API 参数与 4.0 不同，走 callSeedream5；其余走 callSeedream。
+		if strings.Contains(c.imageModel, "5-0-pro") {
+			return c.callSeedream5(ctx, req, size)
+		}
+		return c.callSeedream(ctx, req, size)
+	case "gemini":
+		return c.callGemini(ctx, req)
+	default:
+		return c.callOpenAI(ctx, req, resolvedQuality, size)
 	}
-	return c.callOpenAI(ctx, req, resolvedQuality, size)
 }
 
 // callOpenAI 协议 A（OpenAI Images API 兼容：官方 OpenAI / WalaAPI）：
@@ -272,6 +282,173 @@ func (c *Client) callOpenRouter(ctx context.Context, req Request, quality, size 
 	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 	httpReq.Header.Set("Content-Type", "application/json")
 	return c.doRequest(ctx, httpReq)
+}
+
+// callSeedream 协议 C（字节方舟 Seedream）：POST /images/generations（json），OpenAI 兼容。
+// 参考图走 image: [data-url]（base64），size 传比例（3:4），response_format=b64_json，watermark=false。
+// 响应 {data:[{b64_json}]} 复用 ExtractGeneratedImages。无独立 negative 字段，拼进 prompt（adapter 层）。
+func (c *Client) callSeedream(ctx context.Context, req Request, size string) (status int, bodyText string, err error) {
+	body := map[string]any{
+		"model":           c.imageModel,
+		"prompt":          req.Prompt,
+		"size":            mapSeedreamSize(size),
+		"response_format": "b64_json",
+		"watermark":       false,
+	}
+	if len(req.Files) > 0 {
+		imgs := make([]string, 0, len(req.Files))
+		for _, f := range req.Files {
+			imgs = append(imgs, fileToDataURL(f))
+		}
+		body["image"] = imgs
+	}
+	b, _ := json.Marshal(body)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiBaseURL+"/images/generations", bytes.NewReader(b))
+	if err != nil {
+		return 0, "", err
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+	return c.doRequest(ctx, httpReq)
+}
+
+// callSeedream5 协议 C'（字节方舟豆包 Seedream 5.0 Pro）：与 4.0 同走 POST /images/generations（json），
+// 但 API 参数差异：response_format=url（4.0 b64_json）、size 档位（4.0 比例）、stream=false、watermark=true。
+//
+// ⚠️ 待真机确认（真机 400 后针对性调整）：
+//   - image 是否接受 base64 data-url（当前复用 4.0 的 fileToDataURL）；若 5.0 只接受 http URL，
+//     需把参考图上传对象存储换 presigned URL 再传入。
+//   - response_format=url 返回的 URL 是否临时（若临时，需下载存 MinIO，或改 response_format=b64_json）。
+//   - size 档位映射（当前透传 req.Size，空降级 "2K"）；若 5.0 不接受比例字符串需按模型映射档位。
+func (c *Client) callSeedream5(ctx context.Context, req Request, size string) (status int, bodyText string, err error) {
+	sz := size
+	if sz == "" {
+		sz = "2K"
+	}
+	body := map[string]any{
+		"model":           c.imageModel,
+		"prompt":          req.Prompt,
+		"size":            sz,
+		"response_format": "url",
+		"stream":          false,
+		"watermark":       true,
+	}
+	if len(req.Files) > 0 {
+		imgs := make([]string, 0, len(req.Files))
+		for _, f := range req.Files {
+			imgs = append(imgs, fileToDataURL(f))
+		}
+		body["image"] = imgs
+	}
+	b, _ := json.Marshal(body)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiBaseURL+"/images/generations", bytes.NewReader(b))
+	if err != nil {
+		return 0, "", err
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+	return c.doRequest(ctx, httpReq)
+}
+
+// callGemini 协议 D（Google Gemini / Nano Banana 官方）：POST /v1beta/models/{model}:generateContent。
+// 鉴权 header x-goog-api-key（非 Bearer）。参考图走 contents.parts[].inline_data，文本指令在参考图之后。
+// aspect ratio 写进 prompt 文本（无独立字段）。响应 candidates[].content.parts[].inline_data.data，
+// 与 ExtractGeneratedImages 不兼容，callGemini 内部标准化为 {data:[{b64_json}]} 供上层统一解析。
+func (c *Client) callGemini(ctx context.Context, req Request) (status int, bodyText string, err error) {
+	prompt := req.Prompt
+	if ar := toAspectRatio(req.Size); ar != "" {
+		if prompt != "" {
+			prompt += "\n"
+		}
+		prompt += "Aspect ratio: " + ar + "."
+	}
+	parts := []map[string]any{}
+	for _, f := range req.Files {
+		mime := f.Type
+		if mime == "" {
+			mime = "image/png"
+		}
+		parts = append(parts, map[string]any{
+			"inline_data": map[string]any{"mime_type": mime, "data": base64.StdEncoding.EncodeToString(f.Data)},
+		})
+	}
+	parts = append(parts, map[string]any{"text": prompt})
+	body := map[string]any{"contents": []map[string]any{{"parts": parts}}}
+	b, _ := json.Marshal(body)
+	endpoint := c.apiBaseURL + "/v1beta/models/" + c.imageModel + ":generateContent"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(b))
+	if err != nil {
+		return 0, "", err
+	}
+	httpReq.Header.Set("x-goog-api-key", c.apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+	status, rawBody, err := c.doRequest(ctx, httpReq)
+	if err != nil {
+		return status, rawBody, err
+	}
+	if status >= 400 {
+		return status, rawBody, nil // 错误响应原样返回，上层 ExtractErrorMessage 解析
+	}
+	// 成功：标准化为 OpenAI 兼容 {data:[{b64_json}]}，上层 ExtractGeneratedImages 统一解析
+	images := extractGeminiImages(ParseJSONBody(rawBody))
+	if len(images) == 0 {
+		return status, rawBody, nil // 无图，原样返回让上层报"未返回图片"
+	}
+	data := make([]map[string]any, 0, len(images))
+	for _, img := range images {
+		data = append(data, map[string]any{"b64_json": img.B64})
+	}
+	wrapped, _ := json.Marshal(map[string]any{"data": data})
+	return status, string(wrapped), nil
+}
+
+// mapSeedreamSize size 映射到 Seedream 支持的尺寸：比例(3:4)/分辨率档(1K/2K/4K)/显式像素 均原样透传；
+// 空降级 "3:4"。Seedream 原生支持比例字符串，不像 openai 需转分辨率。
+func mapSeedreamSize(size string) string {
+	if size == "" {
+		return "3:4"
+	}
+	return size
+}
+
+// extractGeminiImages 解析 Gemini generateContent 响应：candidates[].content.parts[].inline_data.data。
+// 只取 inline_data part（响应可能含 text part 混合），与 ExtractGeneratedImages 结构不兼容。
+func extractGeminiImages(payload map[string]any) []GeneratedImage {
+	out := []GeneratedImage{}
+	candidates, ok := payload["candidates"].([]any)
+	if !ok {
+		return out
+	}
+	for _, cand := range candidates {
+		candMap, ok := cand.(map[string]any)
+		if !ok {
+			continue
+		}
+		content, ok := candMap["content"].(map[string]any)
+		if !ok {
+			continue
+		}
+		parts, ok := content["parts"].([]any)
+		if !ok {
+			continue
+		}
+		for _, p := range parts {
+			partMap, ok := p.(map[string]any)
+			if !ok {
+				continue
+			}
+			inline, ok := partMap["inline_data"].(map[string]any)
+			if !ok {
+				continue
+			}
+			data, _ := inline["data"].(string)
+			if data == "" {
+				continue
+			}
+			out = append(out, GeneratedImage{B64: data})
+		}
+	}
+	return out
 }
 
 // doRequest 发送已构造的请求，读响应，ctx 超时转 504。

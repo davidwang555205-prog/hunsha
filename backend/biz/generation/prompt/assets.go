@@ -34,9 +34,9 @@ var categoryLines = map[string]string{
 
 // bridalStyleLines 婚纱款式（9 个 key）。
 var bridalStyleLines = map[string]string{
-	"极简缎面婚纱":   "minimal satin bridal gown, clean structure, soft luster, calm sculptural drape",
-	"法式蕾丝婚纱":   "French lace bridal gown, delicate lace pattern, romantic but restrained texture",
-	"A-line 婚纱":  "A-line bridal gown, balanced waistline, graceful skirt volume, timeless proportion",
+	"极简缎面婚纱":    "minimal satin bridal gown, clean structure, soft luster, calm sculptural drape",
+	"法式蕾丝婚纱":    "French lace bridal gown, delicate lace pattern, romantic but restrained texture",
+	"A-line 婚纱": "A-line bridal gown, balanced waistline, graceful skirt volume, timeless proportion",
 	"鱼尾婚纱":      "mermaid bridal gown, elegant body-skimming line, controlled flare, refined contour",
 	"公主裙婚纱":     "princess bridal gown, fuller skirt volume, soft ceremonial mood, not theatrical",
 	"轻婚纱":       "light bridal gown, airy fabric, relaxed ceremony mood, easy and natural movement",
@@ -60,50 +60,50 @@ var dressStyleLines = map[string]string{
 
 // imageTypeLines 图片类型（6 个 key）。
 var imageTypeLines = map[string]string{
-	"产品上身图":         "Image type: worn product image with the garment clearly visible on the body.",
-	"对镜穿搭图":         "Image type: refined mirror outfit image with a real-camera look and clean proportions.",
-	"生活场景图":         "Image type: lifestyle scene image, natural and believable rather than staged.",
-	"非产品氛围图":        "Image type: non-product atmosphere image. The garment does not need to appear; focus on the brand mood, location, materials, light, and emotional context.",
-	"拍摄花絮 / 材质图":     "Image type: behind-the-scenes or material image. Emphasize fabric close-up, lace, satin, veil, hanger, dress rack, mood board, hands arranging fabric, and tactile studio details.",
-	"产品静物图":         "Image type: product still life. Emphasize fabric close-up, lace, satin, veil, hanger, dress rack, mood board, refined styling props, and accurate garment structure.",
+	"产品上身图":      "Image type: worn product image with the garment clearly visible on the body.",
+	"对镜穿搭图":      "Image type: refined mirror outfit image with a real-camera look and clean proportions.",
+	"生活场景图":      "Image type: lifestyle scene image, natural and believable rather than staged.",
+	"非产品氛围图":     "Image type: non-product atmosphere image. The garment does not need to appear; focus on the brand mood, location, materials, light, and emotional context.",
+	"拍摄花絮 / 材质图": "Image type: behind-the-scenes or material image. Emphasize fabric close-up, lace, satin, veil, hanger, dress rack, mood board, hands arranging fabric, and tactile studio details.",
+	"产品静物图":      "Image type: product still life. Emphasize fabric close-up, lace, satin, veil, hanger, dress rack, mood board, refined styling props, and accurate garment structure.",
 }
 
 // sceneLines 场景（24 个 key）。
 var sceneLines = map[string]string{
-	"试纱间":      "Scene: an elegant fitting room with a full-length mirror, garment rack, soft curtains, and calm bridal appointment mood.",
-	"婚纱店橱窗":    "Scene: a premium bridal boutique window display with dress forms, gentle reflections, and quiet street daylight.",
-	"酒店套房晨光":   "Scene: a hotel suite in morning light with linen, quiet furniture, and a private pre-ceremony feeling.",
-	"婚礼前化妆间":   "Scene: a pre-wedding makeup room with refined beauty tools, veil details, garment hanging nearby, and soft anticipation.",
-	"草坪婚礼":     "Scene: an outdoor lawn wedding setting with natural greenery, soft daylight, and understated ceremony details.",
-	"教堂门口":     "Scene: outside a chapel or ceremonial entrance with pale stone texture, natural daylight, and a composed bridal mood.",
-	"海边旅拍":     "Scene: seaside bridal travel shoot with gentle wind, soft horizon, refined movement, and low-saturation coastal tones.",
-	"登记照":      "Scene: registry photo mood with clean wall, simple bouquet, neat styling, and intimate documentation feeling.",
-	"订婚宴":      "Scene: engagement dinner setting with warm table light, flowers, glassware, and quiet celebratory atmosphere.",
-	"晚宴礼服":     "Scene: formal dinner or evening event setting with warm hotel lighting, polished interior, and restrained glamour.",
-	"入户镜前":     "Scene: entryway mirror outfit image with natural home light, clean floor line, and believable daily styling.",
-	"咖啡馆":      "Scene: quiet cafe with daylight, warm wood or stone surface, and relaxed feminine daily mood.",
-	"艺术馆":      "Scene: art gallery with clean walls, soft museum light, negative space, and refined city mood.",
-	"花店":       "Scene: flower shop with fresh stems, soft color notes, and a natural romantic daily atmosphere.",
-	"城市街角":     "Scene: calm city street corner with warm grey architecture, low visual clutter, and real walking rhythm.",
-	"通勤写字楼":    "Scene: office district or lobby with polished architecture, weekday composure, and practical elegance.",
-	"酒店门口":     "Scene: hotel entrance with warm stone, doorway depth, quiet travel or dinner mood, and refined service atmosphere.",
-	"度假海边":     "Scene: tasteful seaside resort setting with natural light, pale sand or terrace, and relaxed dress movement.",
-	"晚餐约会":     "Scene: dinner date setting with warm interior light, table detail, and mature feminine elegance.",
-	"电梯镜拍":     "Scene: elevator mirror image with clean metal reflection, simple composition, and controlled proportions.",
-	"衣帽间":      "Scene: wardrobe or dressing corner with garment rack, hanger, folded fabrics, and organized premium details.",
-	"窗边阅读":     "Scene: window-side reading corner with daylight, calm furniture, fabric movement, and quiet personal mood.",
-	"材质工作台":    "Scene: material worktable with fabric swatches, lace samples, satin, veil, hanger, sketch notes, and mood board.",
+	"试纱间":    "Scene: an elegant fitting room with a full-length mirror, garment rack, soft curtains, and calm bridal appointment mood.",
+	"婚纱店橱窗":  "Scene: a premium bridal boutique window display with dress forms, gentle reflections, and quiet street daylight.",
+	"酒店套房晨光": "Scene: a hotel suite in morning light with linen, quiet furniture, and a private pre-ceremony feeling.",
+	"婚礼前化妆间": "Scene: a pre-wedding makeup room with refined beauty tools, veil details, garment hanging nearby, and soft anticipation.",
+	"草坪婚礼":   "Scene: an outdoor lawn wedding setting with natural greenery, soft daylight, and understated ceremony details.",
+	"教堂门口":   "Scene: outside a chapel or ceremonial entrance with pale stone texture, natural daylight, and a composed bridal mood.",
+	"海边旅拍":   "Scene: seaside bridal travel shoot with gentle wind, soft horizon, refined movement, and low-saturation coastal tones.",
+	"登记照":    "Scene: registry photo mood with clean wall, simple bouquet, neat styling, and intimate documentation feeling.",
+	"订婚宴":    "Scene: engagement dinner setting with warm table light, flowers, glassware, and quiet celebratory atmosphere.",
+	"晚宴礼服":   "Scene: formal dinner or evening event setting with warm hotel lighting, polished interior, and restrained glamour.",
+	"入户镜前":   "Scene: entryway mirror outfit image with natural home light, clean floor line, and believable daily styling.",
+	"咖啡馆":    "Scene: quiet cafe with daylight, warm wood or stone surface, and relaxed feminine daily mood.",
+	"艺术馆":    "Scene: art gallery with clean walls, soft museum light, negative space, and refined city mood.",
+	"花店":     "Scene: flower shop with fresh stems, soft color notes, and a natural romantic daily atmosphere.",
+	"城市街角":   "Scene: calm city street corner with warm grey architecture, low visual clutter, and real walking rhythm.",
+	"通勤写字楼":  "Scene: office district or lobby with polished architecture, weekday composure, and practical elegance.",
+	"酒店门口":   "Scene: hotel entrance with warm stone, doorway depth, quiet travel or dinner mood, and refined service atmosphere.",
+	"度假海边":   "Scene: tasteful seaside resort setting with natural light, pale sand or terrace, and relaxed dress movement.",
+	"晚餐约会":   "Scene: dinner date setting with warm interior light, table detail, and mature feminine elegance.",
+	"电梯镜拍":   "Scene: elevator mirror image with clean metal reflection, simple composition, and controlled proportions.",
+	"衣帽间":    "Scene: wardrobe or dressing corner with garment rack, hanger, folded fabrics, and organized premium details.",
+	"窗边阅读":   "Scene: window-side reading corner with daylight, calm furniture, fabric movement, and quiet personal mood.",
+	"材质工作台":  "Scene: material worktable with fabric swatches, lace samples, satin, veil, hanger, sketch notes, and mood board.",
 }
 
 // modelLines 模特（7 个 key，注意 en-dash U+2013）。
 var modelLines = map[string]string{
-	"亚洲新娘感模特 25–35":      "Model: an Asian bridal model aged 25-35, graceful, natural, calm, with believable body proportions.",
-	"高级婚纱店真实试纱客户":      "Model: a real premium bridal boutique fitting client, natural posture, emotionally present, not commercial-model exaggerated.",
-	"轻熟风裙装模特 28–40":      "Model: a mature refined womenswear model aged 28-40, relaxed, composed, modern Chinese / Asian fashion mood.",
-	"度假裙装自然模特":         "Model: a natural vacation dress model with relaxed movement, healthy proportions, and soft daylight mood.",
-	"通勤裙装城市女性":         "Model: an urban commuter woman with polished daily styling, practical elegance, and grounded real-life posture.",
-	"晚宴礼服气质模特":         "Model: an elegant evening gown model with refined posture, restrained glamour, and tasteful formal mood.",
-	"不指定人物，仅产品静物":      "No full person required. Focus on the garment, fabric, display, hanger, dress rack, surface styling, and material accuracy.",
+	"亚洲新娘感模特 25–35": "Model: an Asian bridal model aged 25-35, graceful, natural, calm, with believable body proportions.",
+	"高级婚纱店真实试纱客户":   "Model: a real premium bridal boutique fitting client, natural posture, emotionally present, not commercial-model exaggerated.",
+	"轻熟风裙装模特 28–40": "Model: a mature refined womenswear model aged 28-40, relaxed, composed, modern Chinese / Asian fashion mood.",
+	"度假裙装自然模特":      "Model: a natural vacation dress model with relaxed movement, healthy proportions, and soft daylight mood.",
+	"通勤裙装城市女性":      "Model: an urban commuter woman with polished daily styling, practical elegance, and grounded real-life posture.",
+	"晚宴礼服气质模特":      "Model: an elegant evening gown model with refined posture, restrained glamour, and tasteful formal mood.",
+	"不指定人物，仅产品静物":   "No full person required. Focus on the garment, fabric, display, hanger, dress rack, surface styling, and material accuracy.",
 }
 
 // seasonLines 季节（4 个 key）。
@@ -116,13 +116,13 @@ var seasonLines = map[string]string{
 
 // lightLines 光线（7 个 key）。
 var lightLines = map[string]string{
-	"自动匹配":     "Lighting: automatically match the scene with soft daylight or refined warm interior light.",
-	"清晨自然光":    "Lighting: early morning natural light, gentle, breathable, and flattering.",
-	"午后柔光":     "Lighting: soft afternoon light, low contrast, clean fabric detail.",
-	"傍晚金色光":    "Lighting: muted golden hour light, warm but not orange, elegant and natural.",
-	"室内窗边光":    "Lighting: indoor window-side light with soft shadows and visible fabric texture.",
-	"酒店暖光":     "Lighting: warm hotel light, premium and intimate, while preserving dress details.",
-	"婚礼现场自然光":  "Lighting: natural wedding-site light, realistic, emotional, and not over-staged.",
+	"自动匹配":    "Lighting: automatically match the scene with soft daylight or refined warm interior light.",
+	"清晨自然光":   "Lighting: early morning natural light, gentle, breathable, and flattering.",
+	"午后柔光":    "Lighting: soft afternoon light, low contrast, clean fabric detail.",
+	"傍晚金色光":   "Lighting: muted golden hour light, warm but not orange, elegant and natural.",
+	"室内窗边光":   "Lighting: indoor window-side light with soft shadows and visible fabric texture.",
+	"酒店暖光":    "Lighting: warm hotel light, premium and intimate, while preserving dress details.",
+	"婚礼现场自然光": "Lighting: natural wedding-site light, realistic, emotional, and not over-staged.",
 }
 
 // KeywordProfile 关键词档案 {PromptLine, NegativeLine}（8 个，导出供 JSON 反序列化配置覆盖）。
@@ -168,22 +168,22 @@ var bridalImageKeywordProfiles = map[string]KeywordProfile{
 
 // bridalScenesByImageType 婚纱场景按图片类型（6 个，完整列表）。
 var bridalScenesByImageType = map[string][]string{
-	"产品上身图":         {"试纱间", "婚纱店橱窗", "酒店套房晨光", "婚礼前化妆间", "草坪婚礼", "教堂门口", "海边旅拍", "登记照", "订婚宴", "晚宴礼服"},
-	"对镜穿搭图":         {"试纱间", "酒店套房晨光", "婚礼前化妆间", "晚宴礼服"},
-	"生活场景图":         {"试纱间", "婚纱店橱窗", "酒店套房晨光", "婚礼前化妆间", "草坪婚礼", "教堂门口", "海边旅拍", "登记照", "订婚宴", "晚宴礼服"},
-	"非产品氛围图":        {"试纱间", "婚纱店橱窗", "酒店套房晨光", "婚礼前化妆间", "草坪婚礼", "教堂门口", "海边旅拍", "订婚宴", "材质工作台"},
-	"拍摄花絮 / 材质图":     {"试纱间", "婚纱店橱窗", "婚礼前化妆间", "材质工作台"},
-	"产品静物图":         {"婚纱店橱窗", "酒店套房晨光", "试纱间", "材质工作台"},
+	"产品上身图":      {"试纱间", "婚纱店橱窗", "酒店套房晨光", "婚礼前化妆间", "草坪婚礼", "教堂门口", "海边旅拍", "登记照", "订婚宴", "晚宴礼服"},
+	"对镜穿搭图":      {"试纱间", "酒店套房晨光", "婚礼前化妆间", "晚宴礼服"},
+	"生活场景图":      {"试纱间", "婚纱店橱窗", "酒店套房晨光", "婚礼前化妆间", "草坪婚礼", "教堂门口", "海边旅拍", "登记照", "订婚宴", "晚宴礼服"},
+	"非产品氛围图":     {"试纱间", "婚纱店橱窗", "酒店套房晨光", "婚礼前化妆间", "草坪婚礼", "教堂门口", "海边旅拍", "订婚宴", "材质工作台"},
+	"拍摄花絮 / 材质图": {"试纱间", "婚纱店橱窗", "婚礼前化妆间", "材质工作台"},
+	"产品静物图":      {"婚纱店橱窗", "酒店套房晨光", "试纱间", "材质工作台"},
 }
 
 // dressScenesByImageType 裙装场景按图片类型（6 个，完整列表）。
 var dressScenesByImageType = map[string][]string{
-	"产品上身图":     {"入户镜前", "咖啡馆", "艺术馆", "花店", "城市街角", "通勤写字楼", "酒店门口", "度假海边", "晚餐约会", "窗边阅读"},
-	"对镜穿搭图":     {"入户镜前", "电梯镜拍", "衣帽间", "酒店门口"},
-	"生活场景图":     {"咖啡馆", "艺术馆", "花店", "城市街角", "通勤写字楼", "酒店门口", "度假海边", "晚餐约会", "窗边阅读"},
-	"非产品氛围图":    {"咖啡馆", "艺术馆", "花店", "城市街角", "酒店门口", "度假海边", "窗边阅读"},
+	"产品上身图":      {"入户镜前", "咖啡馆", "艺术馆", "花店", "城市街角", "通勤写字楼", "酒店门口", "度假海边", "晚餐约会", "窗边阅读"},
+	"对镜穿搭图":      {"入户镜前", "电梯镜拍", "衣帽间", "酒店门口"},
+	"生活场景图":      {"咖啡馆", "艺术馆", "花店", "城市街角", "通勤写字楼", "酒店门口", "度假海边", "晚餐约会", "窗边阅读"},
+	"非产品氛围图":     {"咖啡馆", "艺术馆", "花店", "城市街角", "酒店门口", "度假海边", "窗边阅读"},
 	"拍摄花絮 / 材质图": {"衣帽间", "窗边阅读", "材质工作台"},
-	"产品静物图":     {"衣帽间", "窗边阅读", "材质工作台", "花店"},
+	"产品静物图":      {"衣帽间", "窗边阅读", "材质工作台", "花店"},
 }
 
 // bridalReferenceDetails 婚纱参考细节（14 项）。
@@ -248,6 +248,15 @@ type Assets struct {
 	BridalReferenceDetails     []string                  `json:"bridalReferenceDetails"`
 	DressReferenceDetails      []string                  `json:"dressReferenceDetails"`
 	NegativeRules              []string                  `json:"negativeRules"`
+	// 女鞋/女装类目（v1.0.0 平行字段，靠 content_engines.config.imagePrompt 覆盖）。
+	ShoeImageKeywordProfiles    map[string]KeywordProfile `json:"shoeImageKeywordProfiles"`
+	GarmentImageKeywordProfiles map[string]KeywordProfile `json:"garmentImageKeywordProfiles"`
+	ShoeScenesByImageType       map[string][]string       `json:"shoeScenesByImageType"`
+	GarmentScenesByImageType    map[string][]string       `json:"garmentScenesByImageType"`
+	ShoeReferenceDetails        []string                  `json:"shoeReferenceDetails"`
+	GarmentReferenceDetails     []string                  `json:"garmentReferenceDetails"`
+	ShoeStyleLines              map[string]string         `json:"shoeStyleLines"`
+	GarmentStyleLines           map[string]string         `json:"garmentStyleLines"`
 }
 
 // DefaultAssets 代码默认素材（引用上方包级 var，1:1 迁移自 server/prompt.mjs）。
@@ -325,6 +334,30 @@ func MergeAssets(cfg *Assets) *Assets {
 	}
 	if len(cfg.NegativeRules) > 0 {
 		a.NegativeRules = cfg.NegativeRules
+	}
+	if len(cfg.ShoeImageKeywordProfiles) > 0 {
+		a.ShoeImageKeywordProfiles = cfg.ShoeImageKeywordProfiles
+	}
+	if len(cfg.GarmentImageKeywordProfiles) > 0 {
+		a.GarmentImageKeywordProfiles = cfg.GarmentImageKeywordProfiles
+	}
+	if len(cfg.ShoeScenesByImageType) > 0 {
+		a.ShoeScenesByImageType = cfg.ShoeScenesByImageType
+	}
+	if len(cfg.GarmentScenesByImageType) > 0 {
+		a.GarmentScenesByImageType = cfg.GarmentScenesByImageType
+	}
+	if len(cfg.ShoeReferenceDetails) > 0 {
+		a.ShoeReferenceDetails = cfg.ShoeReferenceDetails
+	}
+	if len(cfg.GarmentReferenceDetails) > 0 {
+		a.GarmentReferenceDetails = cfg.GarmentReferenceDetails
+	}
+	if len(cfg.ShoeStyleLines) > 0 {
+		a.ShoeStyleLines = cfg.ShoeStyleLines
+	}
+	if len(cfg.GarmentStyleLines) > 0 {
+		a.GarmentStyleLines = cfg.GarmentStyleLines
 	}
 	return &a
 }
