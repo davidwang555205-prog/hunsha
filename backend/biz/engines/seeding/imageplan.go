@@ -328,6 +328,21 @@ func buildDisplayImageName(index int, imageType, _ string) string {
 	return fmt.Sprintf("图%d-%s", index+1, brief)
 }
 
+// reCjkIdeograph 匹配 CJK 表意文字（与 prompt 层 hasCjkText 同一区间 U+3400–U+9FFF）。
+var reCjkIdeograph = regexp.MustCompile(`[\x{3400}-\x{9FFF}]+`)
+
+// stripCjkFromBlueprintRequirement 净化蓝图 extraRequirement 为纯英文。
+// 业务方蓝图在 "SILHOUETTE FAMILY — S01: <中文轮廓名>." 处携带中文家族名；原样进入 params
+// 会触发 prompt 层 hasCjkText 规则把整条 Additional visual requirement 丢弃（v3.9.0 起逐帧
+// 分镜指令/防复刻锁因此全部丢失、图组雷同）。中文家族名与紧随的英文 UPPER ACTION 语义重复，
+// 剔除 CJK 字符并清理残留标点即可保住全部分镜指令。prompt 层整行丢弃保护不变（用户手填中文
+// 仍被拦截）。
+func stripCjkFromBlueprintRequirement(s string) string {
+	s = reCjkIdeograph.ReplaceAllString(s, "")
+	s = strings.ReplaceAll(s, ": .", ".")
+	return strings.Join(strings.Fields(s), " ")
+}
+
 // getBridalImageDrafts TS :2711-2772
 func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSeed string) []ImageDraft {
 	if profile, ok := assets.XiaohongshuBridalContentProfiles[topic]; ok && len(profile.ImageBlueprints) > 0 {
@@ -340,7 +355,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 				Description:            bp.Description,
 				ImageType:              bp.ImageType,
 				ScenePreference:        bp.ScenePreference,
-				ExtraRequirement:       bp.ExtraRequirement,
+				ExtraRequirement:       stripCjkFromBlueprintRequirement(bp.ExtraRequirement),
 				BridalKeywordProfileID: bp.KeywordProfileID,
 			})
 		}
