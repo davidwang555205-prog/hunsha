@@ -380,9 +380,14 @@ func buildSeriesPhoneContinuityLine(ctx SeriesContext) string {
 		"Use the supplied continuity image as the strict phone reference. Preserve the identical back color, case material and edge color, lens count, lens size, triangular camera arrangement, flash position, dimensions, and lack of accessories. Never substitute a similar phone or redesign it."
 }
 
-// buildPhoneSeriesShotLine 手机系列镜头行（与 Node 一致）。
-func buildPhoneSeriesShotLine(ctx SeriesContext) string {
+// buildPhoneSeriesShotLine 手机系列镜头行（与 Node 一致；v3.9.0 起 PMS 帧不输出，见 prompt3.9.0.mjs）。
+func buildPhoneSeriesShotLine(ctx SeriesContext, isPhoneMirrorSelfie bool) string {
 	if ctx.LeadPhoneIndex < 0 {
+		return ""
+	}
+	// PMS blueprints already carry the authoritative angle and full-length selfie
+	// instruction. A generic series shot plan would override those assignments.
+	if isPhoneMirrorSelfie {
 		return ""
 	}
 	index := ctx.Index
@@ -394,7 +399,8 @@ func buildPhoneSeriesShotLine(ctx SeriesContext) string {
 		"This viewpoint is unique to frame " + intToStr(index+1) + "; do not reuse the viewpoint assigned to another frame, and do not combine multiple viewpoints in one image."
 }
 
-// buildSeriesContinuityLine 图组连续性行（与 Node 一致，v3.8.0 起非首张人物图追加"连续性参考图不是姿态参考"指令，见 MJS-CHANGELOG-v3.8.0）。
+// buildSeriesContinuityLine 图组连续性行（与 Node 一致，v3.9.0 起非首张人物图采用 prompt3.9.0.mjs 强化版
+// "连续性参考图仅为身份/服装颜色/位置参考，不是姿态/机身角度/取景参考"指令，见 MJS-CHANGELOG-v3.9.0）。
 // D6（§16.4.6 IdentityLock 闭环）：identityLock 非空时（仅 brand_model 路径，由 resolver 填充）追加到身份句，
 // 强化系列内身份一致；legacy/preset/custom 路径 identityLock 为空 -> 不改变现有行为（婚纱 golden 逐字节不变）。
 func buildSeriesContinuityLine(p Params, ctx SeriesContext, a *Assets, identityLock string) string {
@@ -422,8 +428,7 @@ func buildSeriesContinuityLine(p Params, ctx SeriesContext, a *Assets, identityL
 	if index == leadPersonIndex {
 		return sharedSceneLine + " Establish the one model identity used by the full series: one clearly identifiable woman with fixed facial structure, age, skin tone, hairstyle, hair color, and body proportions." + lockLine
 	}
-	return sharedSceneLine + " The supplied continuity image is a strict identity and location reference. Show the exact same woman, not a similar-looking replacement: identical facial structure, age, skin tone, hairstyle, hair color, and body proportions. " +
-		"The continuity image is only an identity, garment color, and scene position reference, never a pose reference: do not copy its pose, body orientation, limb positions, or framing. Follow the assigned shot for this frame and create a different pose and composition from the continuity image." + lockLine
+	return sharedSceneLine + " The supplied continuity image is a strict identity, garment color, and location reference ONLY — it is NOT a pose, body angle, or camera framing reference. The assigned camera viewpoint and body action for THIS image are authoritative and may differ significantly in camera distance, body angle, arm position, head direction, and composition framing. Do not copy the body angle, arm position, hand silhouette, head direction, or camera distance from the continuity reference. Show the exact same woman, not a similar-looking replacement: identical facial structure, age, skin tone, hairstyle, hair color, and body proportions." + lockLine
 }
 
 // Compile 产 CanonicalPrompt IR（纯函数、确定性）。原有 20 段拼装逻辑搬进这里填 IR 字段，
@@ -558,7 +563,7 @@ func Compile(input ResolvedPromptInput, ctx SeriesContext, assets *Assets) *Cano
 	}
 	phoneMirror := buildPhoneMirrorCompositionLine(p, a)
 	seriesPhoneContinuity := buildSeriesPhoneContinuityLine(ctx)
-	phoneShot := buildPhoneSeriesShotLine(ctx)
+	phoneShot := buildPhoneSeriesShotLine(ctx, p.BridalKeywordProfileID == "phoneMirrorSelfieFitting")
 	if nonProductAtmosphere {
 		phoneMirror = ""
 		seriesPhoneContinuity = ""
