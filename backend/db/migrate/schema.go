@@ -1154,6 +1154,7 @@ var (
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "max_concurrency", Type: field.TypeInt, Default: 1},
 		{Name: "request_timeout_ms", Type: field.TypeInt, Default: 0},
+		{Name: "proxy_url", Type: field.TypeString, Default: ""},
 		{Name: "total_requests", Type: field.TypeInt, Default: 0},
 		{Name: "success_requests", Type: field.TypeInt, Default: 0},
 		{Name: "failed_requests", Type: field.TypeInt, Default: 0},

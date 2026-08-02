@@ -605,6 +605,8 @@ export type Channel = {
   /** 单次上游请求超时；0 表示使用系统兼容默认值。 */
   requestTimeoutMs: number;
   apiKey?: string;
+  /** 该线路前向代理（http(s):// 或 socks5://），空/缺省 = 直连；仅 admin 列表返回。 */
+  proxyUrl?: string;
   stats?: ChannelStats | null;
   createdAt: string;
   updatedAt: string;
@@ -626,6 +628,8 @@ export type CreateChannelRequest = {
   sortOrder?: number;
   maxConcurrency?: number;
   requestTimeoutMs?: number;
+  /** 前向代理地址（可选）；仅该线路生图请求走此代理，留空直连。 */
+  proxyUrl?: string;
 };
 
 export type UpdateChannelRequest = Partial<Omit<CreateChannelRequest, "id">>;

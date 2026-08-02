@@ -30,3 +30,37 @@ func TestValidateRequestTimeoutMs(t *testing.T) {
 }
 
 func intPtr(v int) *int { return &v }
+
+func TestValidateProxyURL(t *testing.T) {
+	cases := []struct {
+		name    string
+		value   *string
+		want    string
+		wantErr bool
+	}{
+		{name: "未配置直连", value: nil, want: ""},
+		{name: "空串直连", value: strPtr(""), want: ""},
+		{name: "空白直连", value: strPtr("   "), want: ""},
+		{name: "http 代理", value: strPtr("http://127.0.0.1:7890"), want: "http://127.0.0.1:7890"},
+		{name: "socks5 代理", value: strPtr("socks5://127.0.0.1:1080"), want: "socks5://127.0.0.1:1080"},
+		{name: "去首尾空白", value: strPtr("  http://127.0.0.1:7890  "), want: "http://127.0.0.1:7890"},
+		{name: "缺协议拒绝", value: strPtr("127.0.0.1:7890"), wantErr: true},
+		{name: "非法协议拒绝", value: strPtr("ftp://127.0.0.1:7890"), wantErr: true},
+		{name: "缺主机拒绝", value: strPtr("http://"), wantErr: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := validateProxyURL(tc.value)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("err=%v，wantErr=%v", err, tc.wantErr)
+			}
+			if got != tc.want {
+				t.Fatalf("got=%q，want=%q", got, tc.want)
+			}
+		})
+	}
+}
+
+func strPtr(v string) *string { return &v }
+

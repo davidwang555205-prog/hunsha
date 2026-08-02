@@ -40,6 +40,9 @@ func (ModelChannel) Fields() []ent.Field {
 		field.Int("max_concurrency").Default(1),                       // 单次生图任务内并发段最大并发度（1=逐张串行生成）
 		// RequestTimeoutMs 为该线路单次上游请求超时；0 时兼容使用 bridal.wala_image_timeout_ms。
 		field.Int("request_timeout_ms").Default(0),
+		// ProxyURL 该线路生图请求走的前向代理（http:// 或 socks5://）；空 = 直连。
+		// 仅该线路的上游调用与生成图回源下载走代理，其余业务流量不受影响。
+		field.String("proxy_url").Default(""),
 		// 稳定性统计（累计，原子累加）：runTask 每张图调用 wala 后 IncStats 更新
 		field.Int("total_requests").Default(0),   // 累计请求次数
 		field.Int("success_requests").Default(0), // 成功次数

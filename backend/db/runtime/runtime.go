@@ -1204,28 +1204,32 @@ func init() {
 	modelchannelDescRequestTimeoutMs := modelchannelFields[12].Descriptor()
 	// modelchannel.DefaultRequestTimeoutMs holds the default value on creation for the request_timeout_ms field.
 	modelchannel.DefaultRequestTimeoutMs = modelchannelDescRequestTimeoutMs.Default.(int)
+	// modelchannelDescProxyURL is the schema descriptor for proxy_url field.
+	modelchannelDescProxyURL := modelchannelFields[13].Descriptor()
+	// modelchannel.DefaultProxyURL holds the default value on creation for the proxy_url field.
+	modelchannel.DefaultProxyURL = modelchannelDescProxyURL.Default.(string)
 	// modelchannelDescTotalRequests is the schema descriptor for total_requests field.
-	modelchannelDescTotalRequests := modelchannelFields[13].Descriptor()
+	modelchannelDescTotalRequests := modelchannelFields[14].Descriptor()
 	// modelchannel.DefaultTotalRequests holds the default value on creation for the total_requests field.
 	modelchannel.DefaultTotalRequests = modelchannelDescTotalRequests.Default.(int)
 	// modelchannelDescSuccessRequests is the schema descriptor for success_requests field.
-	modelchannelDescSuccessRequests := modelchannelFields[14].Descriptor()
+	modelchannelDescSuccessRequests := modelchannelFields[15].Descriptor()
 	// modelchannel.DefaultSuccessRequests holds the default value on creation for the success_requests field.
 	modelchannel.DefaultSuccessRequests = modelchannelDescSuccessRequests.Default.(int)
 	// modelchannelDescFailedRequests is the schema descriptor for failed_requests field.
-	modelchannelDescFailedRequests := modelchannelFields[15].Descriptor()
+	modelchannelDescFailedRequests := modelchannelFields[16].Descriptor()
 	// modelchannel.DefaultFailedRequests holds the default value on creation for the failed_requests field.
 	modelchannel.DefaultFailedRequests = modelchannelDescFailedRequests.Default.(int)
 	// modelchannelDescTotalLatencyMs is the schema descriptor for total_latency_ms field.
-	modelchannelDescTotalLatencyMs := modelchannelFields[16].Descriptor()
+	modelchannelDescTotalLatencyMs := modelchannelFields[17].Descriptor()
 	// modelchannel.DefaultTotalLatencyMs holds the default value on creation for the total_latency_ms field.
 	modelchannel.DefaultTotalLatencyMs = modelchannelDescTotalLatencyMs.Default.(int)
 	// modelchannelDescCreatedAt is the schema descriptor for created_at field.
-	modelchannelDescCreatedAt := modelchannelFields[17].Descriptor()
+	modelchannelDescCreatedAt := modelchannelFields[18].Descriptor()
 	// modelchannel.DefaultCreatedAt holds the default value on creation for the created_at field.
 	modelchannel.DefaultCreatedAt = modelchannelDescCreatedAt.Default.(func() time.Time)
 	// modelchannelDescUpdatedAt is the schema descriptor for updated_at field.
-	modelchannelDescUpdatedAt := modelchannelFields[18].Descriptor()
+	modelchannelDescUpdatedAt := modelchannelFields[19].Descriptor()
 	// modelchannel.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	modelchannel.DefaultUpdatedAt = modelchannelDescUpdatedAt.Default.(func() time.Time)
 	// modelchannel.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

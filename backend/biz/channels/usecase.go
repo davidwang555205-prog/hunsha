@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,7 +52,8 @@ type ChannelResp struct {
 	SortOrder        int           `json:"sortOrder"`
 	MaxConcurrency   int           `json:"maxConcurrency"`   // 单次任务内并发段最大并发度（1=逐张串行）
 	RequestTimeoutMs int           `json:"requestTimeoutMs"` // 单次上游请求超时；0=使用全局兼容值
-	APIKey           string        `json:"apiKey,omitempty"` // 仅 admin 列表返
+	APIKey           string        `json:"apiKey,omitempty"`   // 仅 admin 列表返
+	ProxyURL         string        `json:"proxyUrl,omitempty"` // 仅 admin 列表返；该线路前向代理，空=直连
 	Stats            *ChannelStats `json:"stats,omitempty"`  // 本轮 nil
 	CreatedAt        string        `json:"createdAt"`
 	UpdatedAt        string        `json:"updatedAt"`
@@ -75,6 +78,7 @@ func sanitize(c ChannelRecord, includeAPIKey bool) ChannelResp {
 	}
 	if includeAPIKey {
 		resp.APIKey = c.APIKey
+		resp.ProxyURL = c.ProxyURL
 	}
 	if resp.SupportedSizes == nil {
 		resp.SupportedSizes = []string{}
@@ -136,6 +140,7 @@ type CreateReq struct {
 	SortOrder        *int     `json:"sortOrder,omitempty"`
 	MaxConcurrency   *int     `json:"maxConcurrency,omitempty"`
 	RequestTimeoutMs *int     `json:"requestTimeoutMs,omitempty"`
+	ProxyURL         *string  `json:"proxyUrl,omitempty"` // 前向代理地址；空/省略=直连
 }
 
 // Create 创建线路。
@@ -172,6 +177,10 @@ func (u *Usecase) Create(ctx context.Context, req CreateReq) (*ChannelResp, erro
 	if err != nil {
 		return nil, err
 	}
+	proxyURL, err := validateProxyURL(req.ProxyURL)
+	if err != nil {
+		return nil, err
+	}
 	if isDefault {
 		if err := u.repo.ClearDefault(ctx); err != nil {
 			return nil, err
@@ -190,6 +199,7 @@ func (u *Usecase) Create(ctx context.Context, req CreateReq) (*ChannelResp, erro
 		SortOrder:        sortOrder,
 		MaxConcurrency:   maxConcurrency,
 		RequestTimeoutMs: requestTimeoutMs,
+		ProxyURL:         proxyURL,
 	})
 	if err != nil {
 		return nil, err
@@ -212,6 +222,7 @@ type UpdateReq struct {
 	SortOrder        *int      `json:"sortOrder,omitempty"`
 	MaxConcurrency   *int      `json:"maxConcurrency,omitempty"`
 	RequestTimeoutMs *int      `json:"requestTimeoutMs,omitempty"`
+	ProxyURL         *string   `json:"proxyUrl,omitempty"`
 }
 
 // Update 更新线路。
@@ -234,6 +245,14 @@ func (u *Usecase) Update(ctx context.Context, id uuid.UUID, req UpdateReq) (*Cha
 		}
 		requestTimeoutMs = &v
 	}
+	var proxyURL *string
+	if req.ProxyURL != nil {
+		v, err := validateProxyURL(req.ProxyURL)
+		if err != nil {
+			return nil, err
+		}
+		proxyURL = &v
+	}
 	rec, err := u.repo.Update(ctx, id, UpdateInput{
 		Name:             req.Name,
 		APIBaseURL:       req.APIBaseURL,
@@ -247,6 +266,7 @@ func (u *Usecase) Update(ctx context.Context, id uuid.UUID, req UpdateReq) (*Cha
 		SortOrder:        req.SortOrder,
 		MaxConcurrency:   maxConcurrency,
 		RequestTimeoutMs: requestTimeoutMs,
+		ProxyURL:         proxyURL,
 	})
 	if err != nil {
 		return nil, err
@@ -314,4 +334,26 @@ func validateRequestTimeoutMs(v *int) (int, error) {
 		return 0, fmt.Errorf("单次请求超时需为 0，或 30000-600000 毫秒")
 	}
 	return *v, nil
+}
+
+// validateProxyURL 校验线路前向代理地址。nil/空 = 直连；非空必须是 http(s):// 或
+// socks5(h):// 的合法 URL（Go http.Transport.Proxy 支持的形态），防误填导致整线路上游失败。
+func validateProxyURL(v *string) (string, error) {
+	if v == nil {
+		return "", nil
+	}
+	s := strings.TrimSpace(*v)
+	if s == "" {
+		return "", nil
+	}
+	u, err := url.Parse(s)
+	if err != nil || u.Host == "" {
+		return "", fmt.Errorf("代理地址格式无效，示例 http://127.0.0.1:7890 或 socks5://127.0.0.1:1080")
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https", "socks5", "socks5h":
+	default:
+		return "", fmt.Errorf("代理协议仅支持 http/https/socks5/socks5h")
+	}
+	return s, nil
 }

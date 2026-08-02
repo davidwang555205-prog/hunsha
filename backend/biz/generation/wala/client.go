@@ -12,6 +12,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -40,6 +41,26 @@ type Config struct {
 	RetryAttempts  int
 	DefaultQuality string // low/medium/high/auto
 	Protocol       string // openai | openrouter，空默认 openai。openai 走 /images/edits+generations，openrouter 走 /images+input_references
+	// ProxyURL 前向代理（http(s):// 或 socks5(h)://），空 = 直连。
+	// 仅该线路的上游请求走代理；无效地址静默降级直连（线路校验层已挡格式错误）。
+	ProxyURL string
+}
+
+// NewHTTPClient 构造带超时的 http.Client；proxyURL 非空且合法时挂 Transport.Proxy，否则直连。
+// 导出给上层（图组连续性回源下载）复用，保证代理行为与上游调用一致。
+func NewHTTPClient(proxyURL string, timeout time.Duration) *http.Client {
+	client := &http.Client{Timeout: timeout}
+	if proxyURL == "" {
+		return client
+	}
+	if u, err := url.Parse(proxyURL); err == nil && u.Host != "" {
+		if tr, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport := tr.Clone()
+			transport.Proxy = http.ProxyURL(u)
+			client.Transport = transport
+		}
+	}
+	return client
 }
 
 // NewClient 创建客户端。
@@ -65,7 +86,7 @@ func NewClient(cfg Config) *Client {
 		protocol = "openai"
 	}
 	return &Client{
-		httpClient:     &http.Client{Timeout: cfg.Timeout * 2}, // 留余量，实际用 ctx 控制
+		httpClient:     NewHTTPClient(cfg.ProxyURL, cfg.Timeout*2), // 留余量，实际用 ctx 控制
 		apiKey:         cfg.APIKey,
 		apiBaseURL:     cfg.APIBaseURL,
 		imageModel:     cfg.ImageModel,

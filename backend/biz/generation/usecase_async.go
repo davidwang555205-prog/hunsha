@@ -287,6 +287,7 @@ type channelClient struct {
 	apiBaseURL     string
 	protocol       string
 	modelID        string
+	proxyURL       string // 该线路前向代理；空 = 直连（连续性回源下载同用）
 	trackStats     bool
 	maxConcurrency int // 用户级并发度（=该线路 max_concurrency），控制该用户跨任务同时生成的图片数
 }
@@ -411,12 +412,14 @@ func (u *Usecase) buildCandidates(ctx context.Context, channelID uuid.UUID) []ch
 				RetryAttempts:  u.cfg.Bridal.WalaImageRetryAttempts,
 				DefaultQuality: chQuality,
 				Protocol:       ch.Protocol,
+				ProxyURL:       ch.ProxyURL,
 			}),
 			id:             ch.ID,
 			name:           ch.Name,
 			apiBaseURL:     ch.APIBaseURL,
 			protocol:       ch.Protocol,
 			modelID:        chModelID,
+			proxyURL:       ch.ProxyURL,
 			trackStats:     true,
 			maxConcurrency: chMC,
 		})
@@ -687,6 +690,7 @@ type generateOneResult struct {
 	success   bool
 	image     *ImageRecord        // 成功时的图
 	generated wala.GeneratedImage // 成功时的原图（首张建 sceneRef/identityRef 用）
+	used      channelClient       // 实际出图的线路（连续性回源下载复用其代理）
 	latencyMs int
 	errMsg    string
 	cancelled bool
@@ -778,7 +782,7 @@ func (u *Usecase) generateOne(
 	imgStart := time.Now()
 	_ = u.repo.UpdateSubTaskImage(ctx, imageID, "processing", "", "", "", 0)
 	imageLogger := u.logger.With("task", taskID, "image_number", promptIndex+1)
-	status, bodyText, _, err := u.callWithFallbackLogged(ctx, imageLogger, candidates, wala.Request{
+	status, bodyText, used, err := u.callWithFallbackLogged(ctx, imageLogger, candidates, wala.Request{
 		Prompt:  pl.prompt, // ir 兜底（ir 非 nil 时按线路 ModelID 渲染方言覆盖）
 		Files:   requestFiles,
 		Size:    size,
@@ -837,7 +841,7 @@ func (u *Usecase) generateOne(
 		mu.(*sync.Mutex).Unlock()
 	}
 
-	return generateOneResult{index: promptIndex, success: true, image: &saved[0], generated: generated[0], latencyMs: latency}
+	return generateOneResult{index: promptIndex, success: true, image: &saved[0], generated: generated[0], latencyMs: latency, used: used}
 }
 
 // runTask worker goroutine：首张串行建连续性参考图 + 后续并发，更新子图状态。
@@ -915,7 +919,7 @@ func (u *Usecase) runTask(
 		if len(plans) > 1 {
 			// 场景参考图：首张成功图回传（未传场景图时，避免双场景权威）
 			if sceneFile == nil && sceneRef == nil {
-				ref, err := u.generatedImageToReferenceFile(r.generated, taskIDStr, "场景")
+				ref, err := u.generatedImageToReferenceFile(r.generated, taskIDStr, "场景", continuityDownloadClient(r.used.proxyURL))
 				if err != nil {
 					msg := err.Error()
 					if we, ok := err.(*wala.Error); ok {
@@ -935,7 +939,7 @@ func (u *Usecase) runTask(
 				if sceneRef != nil {
 					identityRef = sceneRef
 				} else {
-					ref, err := u.generatedImageToReferenceFile(r.generated, taskIDStr, "人物")
+					ref, err := u.generatedImageToReferenceFile(r.generated, taskIDStr, "人物", continuityDownloadClient(r.used.proxyURL))
 					if err != nil {
 						msg := err.Error()
 						if we, ok := err.(*wala.Error); ok {

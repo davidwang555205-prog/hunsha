@@ -43,6 +43,8 @@ type ModelChannel struct {
 	MaxConcurrency int `json:"max_concurrency,omitempty"`
 	// RequestTimeoutMs holds the value of the "request_timeout_ms" field.
 	RequestTimeoutMs int `json:"request_timeout_ms,omitempty"`
+	// ProxyURL holds the value of the "proxy_url" field.
+	ProxyURL string `json:"proxy_url,omitempty"`
 	// TotalRequests holds the value of the "total_requests" field.
 	TotalRequests int `json:"total_requests,omitempty"`
 	// SuccessRequests holds the value of the "success_requests" field.
@@ -69,7 +71,7 @@ func (*ModelChannel) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case modelchannel.FieldSortOrder, modelchannel.FieldMaxConcurrency, modelchannel.FieldRequestTimeoutMs, modelchannel.FieldTotalRequests, modelchannel.FieldSuccessRequests, modelchannel.FieldFailedRequests, modelchannel.FieldTotalLatencyMs:
 			values[i] = new(sql.NullInt64)
-		case modelchannel.FieldName, modelchannel.FieldAPIBaseURL, modelchannel.FieldAPIKey, modelchannel.FieldProtocol, modelchannel.FieldModelID, modelchannel.FieldDefaultQuality:
+		case modelchannel.FieldName, modelchannel.FieldAPIBaseURL, modelchannel.FieldAPIKey, modelchannel.FieldProtocol, modelchannel.FieldModelID, modelchannel.FieldDefaultQuality, modelchannel.FieldProxyURL:
 			values[i] = new(sql.NullString)
 		case modelchannel.FieldCreatedAt, modelchannel.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -169,6 +171,12 @@ func (_m *ModelChannel) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field request_timeout_ms", values[i])
 			} else if value.Valid {
 				_m.RequestTimeoutMs = int(value.Int64)
+			}
+		case modelchannel.FieldProxyURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field proxy_url", values[i])
+			} else if value.Valid {
+				_m.ProxyURL = value.String
 			}
 		case modelchannel.FieldTotalRequests:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -277,6 +285,9 @@ func (_m *ModelChannel) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("request_timeout_ms=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequestTimeoutMs))
+	builder.WriteString(", ")
+	builder.WriteString("proxy_url=")
+	builder.WriteString(_m.ProxyURL)
 	builder.WriteString(", ")
 	builder.WriteString("total_requests=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TotalRequests))

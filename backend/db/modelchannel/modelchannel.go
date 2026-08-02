@@ -38,6 +38,8 @@ const (
 	FieldMaxConcurrency = "max_concurrency"
 	// FieldRequestTimeoutMs holds the string denoting the request_timeout_ms field in the database.
 	FieldRequestTimeoutMs = "request_timeout_ms"
+	// FieldProxyURL holds the string denoting the proxy_url field in the database.
+	FieldProxyURL = "proxy_url"
 	// FieldTotalRequests holds the string denoting the total_requests field in the database.
 	FieldTotalRequests = "total_requests"
 	// FieldSuccessRequests holds the string denoting the success_requests field in the database.
@@ -69,6 +71,7 @@ var Columns = []string{
 	FieldSortOrder,
 	FieldMaxConcurrency,
 	FieldRequestTimeoutMs,
+	FieldProxyURL,
 	FieldTotalRequests,
 	FieldSuccessRequests,
 	FieldFailedRequests,
@@ -112,6 +115,8 @@ var (
 	DefaultMaxConcurrency int
 	// DefaultRequestTimeoutMs holds the default value on creation for the "request_timeout_ms" field.
 	DefaultRequestTimeoutMs int
+	// DefaultProxyURL holds the default value on creation for the "proxy_url" field.
+	DefaultProxyURL string
 	// DefaultTotalRequests holds the default value on creation for the "total_requests" field.
 	DefaultTotalRequests int
 	// DefaultSuccessRequests holds the default value on creation for the "success_requests" field.
@@ -191,6 +196,11 @@ func ByMaxConcurrency(opts ...sql.OrderTermOption) OrderOption {
 // ByRequestTimeoutMs orders the results by the request_timeout_ms field.
 func ByRequestTimeoutMs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRequestTimeoutMs, opts...).ToFunc()
+}
+
+// ByProxyURL orders the results by the proxy_url field.
+func ByProxyURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProxyURL, opts...).ToFunc()
 }
 
 // ByTotalRequests orders the results by the total_requests field.

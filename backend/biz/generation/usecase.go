@@ -456,9 +456,19 @@ func (u *Usecase) urlToWalaFile(ctx context.Context, url, name string) (wala.Fil
 	return toWalaFile(FileInput{Name: name, DataURL: dataURL})
 }
 
+// continuityDownloadClient 连续性回源下载 client：出图线路配了代理则走同一代理，否则 nil（退化为直连）。
+func continuityDownloadClient(proxyURL string) *http.Client {
+	if proxyURL == "" {
+		return nil
+	}
+	return wala.NewHTTPClient(proxyURL, 60*time.Second)
+}
+
 // generatedImageToReferenceFile 与 Node generatedImageToReferenceFile 一致：
 // 把首张成功图转后续参考图（b64 或 url），限 20MB。
-func (u *Usecase) generatedImageToReferenceFile(img wala.GeneratedImage, recordID string, referenceKind string) (wala.FileInput, error) {
+// dl 为可选下载 client：出图线路配了前向代理时，上游 URL 回源下载必须走同一代理
+//（否则被墙上游首图能生成、连续性回源必挂）；nil 保持 http.Get 直连。
+func (u *Usecase) generatedImageToReferenceFile(img wala.GeneratedImage, recordID string, referenceKind string, dl *http.Client) (wala.FileInput, error) {
 	contentType := "image/png"
 	var buffer []byte
 
@@ -479,7 +489,13 @@ func (u *Usecase) generatedImageToReferenceFile(img wala.GeneratedImage, recordI
 			buffer = b
 		}
 	} else if img.URL != "" {
-		resp, err := http.Get(img.URL)
+		var resp *http.Response
+		var err error
+		if dl != nil {
+			resp, err = dl.Get(img.URL)
+		} else {
+			resp, err = http.Get(img.URL)
+		}
 		if err != nil {
 			return wala.FileInput{}, wala.NewError(502, fmt.Sprintf("无法读取首张%s参考图，图组连续性生成已停止。", referenceKind))
 		}

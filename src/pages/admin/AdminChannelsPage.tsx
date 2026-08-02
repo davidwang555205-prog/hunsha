@@ -30,6 +30,7 @@ type ChannelDraft = {
   sortOrder: string;
   maxConcurrency: string;
   requestTimeoutSeconds: string;
+  proxyUrl: string;
 };
 
 // ProtocolPreset 按协议预填的官方默认配置：新建线路时用户只需填 API Key，其余按协议自动带入可调。
@@ -121,7 +122,8 @@ const emptyDraft: ChannelDraft = {
   isEnabled: true,
   isDefault: false,
   sortOrder: "0",
-  maxConcurrency: "1"
+  maxConcurrency: "1",
+  proxyUrl: ""
 };
 
 export function AdminChannelsPage() {
@@ -173,7 +175,8 @@ export function AdminChannelsPage() {
       isDefault: ch.isDefault,
       sortOrder: String(ch.sortOrder),
       maxConcurrency: String(ch.maxConcurrency ?? 1),
-      requestTimeoutSeconds: ch.requestTimeoutMs > 0 ? String(ch.requestTimeoutMs / 1000) : "0"
+      requestTimeoutSeconds: ch.requestTimeoutMs > 0 ? String(ch.requestTimeoutMs / 1000) : "0",
+      proxyUrl: ch.proxyUrl ?? ""
     });
     setShowCreate(false);
   };
@@ -200,7 +203,8 @@ export function AdminChannelsPage() {
         isDefault: draft.isDefault,
         sortOrder: Number(draft.sortOrder) || 0,
         maxConcurrency: Number(draft.maxConcurrency) || 1,
-        requestTimeoutMs: Math.round((Number(draft.requestTimeoutSeconds) || 0) * 1000)
+        requestTimeoutMs: Math.round((Number(draft.requestTimeoutSeconds) || 0) * 1000),
+        proxyUrl: draft.proxyUrl.trim()
       };
       if (editingId) {
         await updateChannel(editingId, body);
@@ -327,6 +331,10 @@ export function AdminChannelsPage() {
             <Input type="number" min="0" max="600" value={draft.requestTimeoutSeconds} onChange={(e) => setDraft({ ...draft, requestTimeoutSeconds: e.target.value })} />
             <span className="mt-1 block text-xs text-text-muted">0=继承系统兼容值；建议 OpenRouter 240 秒、WalaAPI 420 秒</span>
           </Field>
+          <Field label="代理地址（可选）">
+            <Input value={draft.proxyUrl} onChange={(e) => setDraft({ ...draft, proxyUrl: e.target.value })} placeholder="http://127.0.0.1:7890" />
+            <span className="mt-1 block text-xs text-text-muted">仅该线路生图请求与生成图回源下载走此代理，留空直连</span>
+          </Field>
           <Field label="启用">
             <label className="flex items-center gap-2 pt-2.5">
               <input type="checkbox" checked={draft.isEnabled} onChange={(e) => setDraft({ ...draft, isEnabled: e.target.checked })} />
@@ -365,7 +373,7 @@ export function AdminChannelsPage() {
               {channels.map((ch) => (
                 <tr key={ch.id} className="border-b border-border/50 hover:bg-bg">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-text">{ch.name}{ch.isDefault && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">默认</span>}</div>
+                    <div className="font-medium text-text">{ch.name}{ch.isDefault && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">默认</span>}{ch.proxyUrl && <span className="ml-2 rounded-full bg-warning/10 px-2 py-0.5 text-xs text-warning">代理</span>}</div>
                     <div className="text-xs text-text-muted">{ch.apiBaseUrl}</div>
                   </td>
                   <td className="px-4 py-3 text-text-muted">{ch.protocol || "openai"}</td>

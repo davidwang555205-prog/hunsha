@@ -184,6 +184,20 @@ func (_c *ModelChannelCreate) SetNillableRequestTimeoutMs(v *int) *ModelChannelC
 	return _c
 }
 
+// SetProxyURL sets the "proxy_url" field.
+func (_c *ModelChannelCreate) SetProxyURL(v string) *ModelChannelCreate {
+	_c.mutation.SetProxyURL(v)
+	return _c
+}
+
+// SetNillableProxyURL sets the "proxy_url" field if the given value is not nil.
+func (_c *ModelChannelCreate) SetNillableProxyURL(v *string) *ModelChannelCreate {
+	if v != nil {
+		_c.SetProxyURL(*v)
+	}
+	return _c
+}
+
 // SetTotalRequests sets the "total_requests" field.
 func (_c *ModelChannelCreate) SetTotalRequests(v int) *ModelChannelCreate {
 	_c.mutation.SetTotalRequests(v)
@@ -365,6 +379,10 @@ func (_c *ModelChannelCreate) defaults() {
 		v := modelchannel.DefaultRequestTimeoutMs
 		_c.mutation.SetRequestTimeoutMs(v)
 	}
+	if _, ok := _c.mutation.ProxyURL(); !ok {
+		v := modelchannel.DefaultProxyURL
+		_c.mutation.SetProxyURL(v)
+	}
 	if _, ok := _c.mutation.TotalRequests(); !ok {
 		v := modelchannel.DefaultTotalRequests
 		_c.mutation.SetTotalRequests(v)
@@ -432,6 +450,9 @@ func (_c *ModelChannelCreate) check() error {
 	}
 	if _, ok := _c.mutation.RequestTimeoutMs(); !ok {
 		return &ValidationError{Name: "request_timeout_ms", err: errors.New(`db: missing required field "ModelChannel.request_timeout_ms"`)}
+	}
+	if _, ok := _c.mutation.ProxyURL(); !ok {
+		return &ValidationError{Name: "proxy_url", err: errors.New(`db: missing required field "ModelChannel.proxy_url"`)}
 	}
 	if _, ok := _c.mutation.TotalRequests(); !ok {
 		return &ValidationError{Name: "total_requests", err: errors.New(`db: missing required field "ModelChannel.total_requests"`)}
@@ -534,6 +555,10 @@ func (_c *ModelChannelCreate) createSpec() (*ModelChannel, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.RequestTimeoutMs(); ok {
 		_spec.SetField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
 		_node.RequestTimeoutMs = value
+	}
+	if value, ok := _c.mutation.ProxyURL(); ok {
+		_spec.SetField(modelchannel.FieldProxyURL, field.TypeString, value)
+		_node.ProxyURL = value
 	}
 	if value, ok := _c.mutation.TotalRequests(); ok {
 		_spec.SetField(modelchannel.FieldTotalRequests, field.TypeInt, value)
@@ -770,6 +795,18 @@ func (u *ModelChannelUpsert) UpdateRequestTimeoutMs() *ModelChannelUpsert {
 // AddRequestTimeoutMs adds v to the "request_timeout_ms" field.
 func (u *ModelChannelUpsert) AddRequestTimeoutMs(v int) *ModelChannelUpsert {
 	u.Add(modelchannel.FieldRequestTimeoutMs, v)
+	return u
+}
+
+// SetProxyURL sets the "proxy_url" field.
+func (u *ModelChannelUpsert) SetProxyURL(v string) *ModelChannelUpsert {
+	u.Set(modelchannel.FieldProxyURL, v)
+	return u
+}
+
+// UpdateProxyURL sets the "proxy_url" field to the value that was provided on create.
+func (u *ModelChannelUpsert) UpdateProxyURL() *ModelChannelUpsert {
+	u.SetExcluded(modelchannel.FieldProxyURL)
 	return u
 }
 
@@ -1103,6 +1140,20 @@ func (u *ModelChannelUpsertOne) AddRequestTimeoutMs(v int) *ModelChannelUpsertOn
 func (u *ModelChannelUpsertOne) UpdateRequestTimeoutMs() *ModelChannelUpsertOne {
 	return u.Update(func(s *ModelChannelUpsert) {
 		s.UpdateRequestTimeoutMs()
+	})
+}
+
+// SetProxyURL sets the "proxy_url" field.
+func (u *ModelChannelUpsertOne) SetProxyURL(v string) *ModelChannelUpsertOne {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.SetProxyURL(v)
+	})
+}
+
+// UpdateProxyURL sets the "proxy_url" field to the value that was provided on create.
+func (u *ModelChannelUpsertOne) UpdateProxyURL() *ModelChannelUpsertOne {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.UpdateProxyURL()
 	})
 }
 
@@ -1619,6 +1670,20 @@ func (u *ModelChannelUpsertBulk) AddRequestTimeoutMs(v int) *ModelChannelUpsertB
 func (u *ModelChannelUpsertBulk) UpdateRequestTimeoutMs() *ModelChannelUpsertBulk {
 	return u.Update(func(s *ModelChannelUpsert) {
 		s.UpdateRequestTimeoutMs()
+	})
+}
+
+// SetProxyURL sets the "proxy_url" field.
+func (u *ModelChannelUpsertBulk) SetProxyURL(v string) *ModelChannelUpsertBulk {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.SetProxyURL(v)
+	})
+}
+
+// UpdateProxyURL sets the "proxy_url" field to the value that was provided on create.
+func (u *ModelChannelUpsertBulk) UpdateProxyURL() *ModelChannelUpsertBulk {
+	return u.Update(func(s *ModelChannelUpsert) {
+		s.UpdateProxyURL()
 	})
 }
 

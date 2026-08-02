@@ -217,6 +217,20 @@ func (_u *ModelChannelUpdate) AddRequestTimeoutMs(v int) *ModelChannelUpdate {
 	return _u
 }
 
+// SetProxyURL sets the "proxy_url" field.
+func (_u *ModelChannelUpdate) SetProxyURL(v string) *ModelChannelUpdate {
+	_u.mutation.SetProxyURL(v)
+	return _u
+}
+
+// SetNillableProxyURL sets the "proxy_url" field if the given value is not nil.
+func (_u *ModelChannelUpdate) SetNillableProxyURL(v *string) *ModelChannelUpdate {
+	if v != nil {
+		_u.SetProxyURL(*v)
+	}
+	return _u
+}
+
 // SetTotalRequests sets the "total_requests" field.
 func (_u *ModelChannelUpdate) SetTotalRequests(v int) *ModelChannelUpdate {
 	_u.mutation.ResetTotalRequests()
@@ -426,6 +440,9 @@ func (_u *ModelChannelUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.AddedRequestTimeoutMs(); ok {
 		_spec.AddField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ProxyURL(); ok {
+		_spec.SetField(modelchannel.FieldProxyURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.TotalRequests(); ok {
 		_spec.SetField(modelchannel.FieldTotalRequests, field.TypeInt, value)
@@ -663,6 +680,20 @@ func (_u *ModelChannelUpdateOne) SetNillableRequestTimeoutMs(v *int) *ModelChann
 // AddRequestTimeoutMs adds value to the "request_timeout_ms" field.
 func (_u *ModelChannelUpdateOne) AddRequestTimeoutMs(v int) *ModelChannelUpdateOne {
 	_u.mutation.AddRequestTimeoutMs(v)
+	return _u
+}
+
+// SetProxyURL sets the "proxy_url" field.
+func (_u *ModelChannelUpdateOne) SetProxyURL(v string) *ModelChannelUpdateOne {
+	_u.mutation.SetProxyURL(v)
+	return _u
+}
+
+// SetNillableProxyURL sets the "proxy_url" field if the given value is not nil.
+func (_u *ModelChannelUpdateOne) SetNillableProxyURL(v *string) *ModelChannelUpdateOne {
+	if v != nil {
+		_u.SetProxyURL(*v)
+	}
 	return _u
 }
 
@@ -905,6 +936,9 @@ func (_u *ModelChannelUpdateOne) sqlSave(ctx context.Context) (_node *ModelChann
 	}
 	if value, ok := _u.mutation.AddedRequestTimeoutMs(); ok {
 		_spec.AddField(modelchannel.FieldRequestTimeoutMs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ProxyURL(); ok {
+		_spec.SetField(modelchannel.FieldProxyURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.TotalRequests(); ok {
 		_spec.SetField(modelchannel.FieldTotalRequests, field.TypeInt, value)

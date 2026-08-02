@@ -35923,6 +35923,7 @@ type ModelChannelMutation struct {
 	addmax_concurrency    *int
 	request_timeout_ms    *int
 	addrequest_timeout_ms *int
+	proxy_url             *string
 	total_requests        *int
 	addtotal_requests     *int
 	success_requests      *int
@@ -36550,6 +36551,42 @@ func (m *ModelChannelMutation) ResetRequestTimeoutMs() {
 	m.addrequest_timeout_ms = nil
 }
 
+// SetProxyURL sets the "proxy_url" field.
+func (m *ModelChannelMutation) SetProxyURL(s string) {
+	m.proxy_url = &s
+}
+
+// ProxyURL returns the value of the "proxy_url" field in the mutation.
+func (m *ModelChannelMutation) ProxyURL() (r string, exists bool) {
+	v := m.proxy_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProxyURL returns the old "proxy_url" field's value of the ModelChannel entity.
+// If the ModelChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelChannelMutation) OldProxyURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProxyURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProxyURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProxyURL: %w", err)
+	}
+	return oldValue.ProxyURL, nil
+}
+
+// ResetProxyURL resets all changes to the "proxy_url" field.
+func (m *ModelChannelMutation) ResetProxyURL() {
+	m.proxy_url = nil
+}
+
 // SetTotalRequests sets the "total_requests" field.
 func (m *ModelChannelMutation) SetTotalRequests(i int) {
 	m.total_requests = &i
@@ -36880,7 +36917,7 @@ func (m *ModelChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModelChannelMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.name != nil {
 		fields = append(fields, modelchannel.FieldName)
 	}
@@ -36916,6 +36953,9 @@ func (m *ModelChannelMutation) Fields() []string {
 	}
 	if m.request_timeout_ms != nil {
 		fields = append(fields, modelchannel.FieldRequestTimeoutMs)
+	}
+	if m.proxy_url != nil {
+		fields = append(fields, modelchannel.FieldProxyURL)
 	}
 	if m.total_requests != nil {
 		fields = append(fields, modelchannel.FieldTotalRequests)
@@ -36967,6 +37007,8 @@ func (m *ModelChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.MaxConcurrency()
 	case modelchannel.FieldRequestTimeoutMs:
 		return m.RequestTimeoutMs()
+	case modelchannel.FieldProxyURL:
+		return m.ProxyURL()
 	case modelchannel.FieldTotalRequests:
 		return m.TotalRequests()
 	case modelchannel.FieldSuccessRequests:
@@ -37012,6 +37054,8 @@ func (m *ModelChannelMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldMaxConcurrency(ctx)
 	case modelchannel.FieldRequestTimeoutMs:
 		return m.OldRequestTimeoutMs(ctx)
+	case modelchannel.FieldProxyURL:
+		return m.OldProxyURL(ctx)
 	case modelchannel.FieldTotalRequests:
 		return m.OldTotalRequests(ctx)
 	case modelchannel.FieldSuccessRequests:
@@ -37116,6 +37160,13 @@ func (m *ModelChannelMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRequestTimeoutMs(v)
+		return nil
+	case modelchannel.FieldProxyURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProxyURL(v)
 		return nil
 	case modelchannel.FieldTotalRequests:
 		v, ok := value.(int)
@@ -37330,6 +37381,9 @@ func (m *ModelChannelMutation) ResetField(name string) error {
 		return nil
 	case modelchannel.FieldRequestTimeoutMs:
 		m.ResetRequestTimeoutMs()
+		return nil
+	case modelchannel.FieldProxyURL:
+		m.ResetProxyURL()
 		return nil
 	case modelchannel.FieldTotalRequests:
 		m.ResetTotalRequests()

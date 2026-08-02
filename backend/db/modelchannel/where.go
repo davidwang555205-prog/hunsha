@@ -110,6 +110,11 @@ func RequestTimeoutMs(v int) predicate.ModelChannel {
 	return predicate.ModelChannel(sql.FieldEQ(FieldRequestTimeoutMs, v))
 }
 
+// ProxyURL applies equality check predicate on the "proxy_url" field. It's identical to ProxyURLEQ.
+func ProxyURL(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldEQ(FieldProxyURL, v))
+}
+
 // TotalRequests applies equality check predicate on the "total_requests" field. It's identical to TotalRequestsEQ.
 func TotalRequests(v int) predicate.ModelChannel {
 	return predicate.ModelChannel(sql.FieldEQ(FieldTotalRequests, v))
@@ -668,6 +673,71 @@ func RequestTimeoutMsLT(v int) predicate.ModelChannel {
 // RequestTimeoutMsLTE applies the LTE predicate on the "request_timeout_ms" field.
 func RequestTimeoutMsLTE(v int) predicate.ModelChannel {
 	return predicate.ModelChannel(sql.FieldLTE(FieldRequestTimeoutMs, v))
+}
+
+// ProxyURLEQ applies the EQ predicate on the "proxy_url" field.
+func ProxyURLEQ(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldEQ(FieldProxyURL, v))
+}
+
+// ProxyURLNEQ applies the NEQ predicate on the "proxy_url" field.
+func ProxyURLNEQ(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldNEQ(FieldProxyURL, v))
+}
+
+// ProxyURLIn applies the In predicate on the "proxy_url" field.
+func ProxyURLIn(vs ...string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldIn(FieldProxyURL, vs...))
+}
+
+// ProxyURLNotIn applies the NotIn predicate on the "proxy_url" field.
+func ProxyURLNotIn(vs ...string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldNotIn(FieldProxyURL, vs...))
+}
+
+// ProxyURLGT applies the GT predicate on the "proxy_url" field.
+func ProxyURLGT(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldGT(FieldProxyURL, v))
+}
+
+// ProxyURLGTE applies the GTE predicate on the "proxy_url" field.
+func ProxyURLGTE(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldGTE(FieldProxyURL, v))
+}
+
+// ProxyURLLT applies the LT predicate on the "proxy_url" field.
+func ProxyURLLT(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldLT(FieldProxyURL, v))
+}
+
+// ProxyURLLTE applies the LTE predicate on the "proxy_url" field.
+func ProxyURLLTE(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldLTE(FieldProxyURL, v))
+}
+
+// ProxyURLContains applies the Contains predicate on the "proxy_url" field.
+func ProxyURLContains(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldContains(FieldProxyURL, v))
+}
+
+// ProxyURLHasPrefix applies the HasPrefix predicate on the "proxy_url" field.
+func ProxyURLHasPrefix(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldHasPrefix(FieldProxyURL, v))
+}
+
+// ProxyURLHasSuffix applies the HasSuffix predicate on the "proxy_url" field.
+func ProxyURLHasSuffix(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldHasSuffix(FieldProxyURL, v))
+}
+
+// ProxyURLEqualFold applies the EqualFold predicate on the "proxy_url" field.
+func ProxyURLEqualFold(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldEqualFold(FieldProxyURL, v))
+}
+
+// ProxyURLContainsFold applies the ContainsFold predicate on the "proxy_url" field.
+func ProxyURLContainsFold(v string) predicate.ModelChannel {
+	return predicate.ModelChannel(sql.FieldContainsFold(FieldProxyURL, v))
 }
 
 // TotalRequestsEQ applies the EQ predicate on the "total_requests" field.

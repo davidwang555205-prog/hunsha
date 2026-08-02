@@ -40,6 +40,8 @@ type ChannelRecord struct {
 	SortOrder        int
 	MaxConcurrency   int
 	RequestTimeoutMs int
+	// ProxyURL 该线路前向代理（http(s):// 或 socks5(h)://）；空 = 直连
+	ProxyURL string
 	// 稳定性统计（累计，原子累加）
 	TotalRequests   int
 	SuccessRequests int
@@ -64,6 +66,7 @@ func toRecord(c *db.ModelChannel) ChannelRecord {
 		SortOrder:        c.SortOrder,
 		MaxConcurrency:   c.MaxConcurrency,
 		RequestTimeoutMs: c.RequestTimeoutMs,
+		ProxyURL:         c.ProxyURL,
 		TotalRequests:    c.TotalRequests,
 		SuccessRequests:  c.SuccessRequests,
 		FailedRequests:   c.FailedRequests,
@@ -144,6 +147,7 @@ type CreateInput struct {
 	SortOrder        int
 	MaxConcurrency   int
 	RequestTimeoutMs int
+	ProxyURL         string
 }
 
 func (r *Repo) Create(ctx context.Context, in CreateInput) (*ChannelRecord, error) {
@@ -169,6 +173,7 @@ func (r *Repo) Create(ctx context.Context, in CreateInput) (*ChannelRecord, erro
 		SetSortOrder(in.SortOrder).
 		SetMaxConcurrency(in.MaxConcurrency).
 		SetRequestTimeoutMs(in.RequestTimeoutMs).
+		SetProxyURL(in.ProxyURL).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -191,6 +196,7 @@ type UpdateInput struct {
 	SortOrder        *int
 	MaxConcurrency   *int
 	RequestTimeoutMs *int
+	ProxyURL         *string
 }
 
 func (r *Repo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (*ChannelRecord, error) {
@@ -230,6 +236,9 @@ func (r *Repo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (*Chann
 	}
 	if in.RequestTimeoutMs != nil {
 		q = q.SetRequestTimeoutMs(*in.RequestTimeoutMs)
+	}
+	if in.ProxyURL != nil {
+		q = q.SetProxyURL(*in.ProxyURL)
 	}
 	c, err := q.Save(ctx)
 	if err != nil {

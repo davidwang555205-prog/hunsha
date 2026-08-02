@@ -3,9 +3,13 @@ package generation
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -224,6 +228,82 @@ func TestBuildCandidates_UsesPerChannelRequestTimeout(t *testing.T) {
 		})
 	}
 }
+
+// 线路 proxy_url 必须同时透传到 wala.Config（上游请求走代理）和 channelClient.proxyURL（连续性回源下载用）；
+// 未配线路的 proxyURL 为空（直连）。
+func TestBuildCandidates_PassesProxyURL(t *testing.T) {
+	proxied := testChannel(uuid.New())
+	proxied.ProxyURL = "http://127.0.0.1:7890"
+	proxied.SortOrder = 0
+	direct := testChannel(uuid.New())
+	direct.SortOrder = 1
+
+	caller := &fakeCaller{name: "A"}
+	u := newTestUsecase(newFakeRepo(), &fakeCredits{}, &fakeChannels{configs: []channels.ChannelRecord{proxied, direct}}, caller)
+	got := map[string]wala.Config{}
+	u.newClient = func(cfg wala.Config) walaCaller {
+		got[cfg.APIKey] = cfg
+		return caller
+	}
+	proxied.APIKey, direct.APIKey = "k-proxied", "k-direct"
+	u.channels = &fakeChannels{configs: []channels.ChannelRecord{proxied, direct}}
+
+	candidates := u.buildCandidates(context.Background(), uuid.Nil)
+	if len(candidates) != 2 {
+		t.Fatalf("候选线路数应为 2，得 %d", len(candidates))
+	}
+	if got["k-proxied"].ProxyURL != "http://127.0.0.1:7890" {
+		t.Fatalf("proxied 线路 wala.Config.ProxyURL 透传错误，得 %q", got["k-proxied"].ProxyURL)
+	}
+	if got["k-direct"].ProxyURL != "" {
+		t.Fatalf("direct 线路 wala.Config.ProxyURL 应为空，得 %q", got["k-direct"].ProxyURL)
+	}
+	if candidates[0].proxyURL != "http://127.0.0.1:7890" || candidates[1].proxyURL != "" {
+		t.Fatalf("channelClient.proxyURL 透传错误，得 %q / %q", candidates[0].proxyURL, candidates[1].proxyURL)
+	}
+}
+
+// continuityDownloadClient：线路配代理返回非 nil client，未配返回 nil（退化为 http.Get 直连）。
+func TestContinuityDownloadClient(t *testing.T) {
+	if continuityDownloadClient("") != nil {
+		t.Fatal("空 proxyURL 应返回 nil")
+	}
+	if continuityDownloadClient("http://127.0.0.1:7890") == nil {
+		t.Fatal("配了 proxyURL 应返回代理 client")
+	}
+}
+
+// generatedImageToReferenceFile 传 dl 时上游 URL 回源下载必须经 dl（而非全局 http.Get）。
+func TestGeneratedImageToReferenceFile_UsesCustomDownloader(t *testing.T) {
+	pngBytes, _ := base64.StdEncoding.DecodeString(testPNG)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write(pngBytes)
+	}))
+	defer srv.Close()
+
+	var dlHits int32
+	dl := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		atomic.AddInt32(&dlHits, 1)
+		return http.DefaultTransport.RoundTrip(r)
+	})}
+
+	u := &Usecase{}
+	ref, err := u.generatedImageToReferenceFile(wala.GeneratedImage{URL: srv.URL + "/img.png"}, "rec-1", "场景", dl)
+	if err != nil {
+		t.Fatalf("应成功，得 %v", err)
+	}
+	if len(ref.Data) == 0 {
+		t.Fatal("参考图数据不应为空")
+	}
+	if atomic.LoadInt32(&dlHits) == 0 {
+		t.Fatal("传了 dl 但下载未走 dl")
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 // 场景1：3 图全成功。验证首张串行 + 后续并发（耗时显著 < 串行）、积分扣 3、状态 completed。
 func TestRunTask_Concurrent(t *testing.T) {
