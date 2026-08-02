@@ -28,12 +28,13 @@ func newTestClient(t *testing.T, baseURL, protocol, model string) *Client {
 // mockImageServer 启一个 mock 图像服务器，按路径返回不同响应。
 // modelsResp 为 /images/models 的返回体（nil 则不特殊处理）；record 记录收到的请求。
 type mockRecorder struct {
-	path   string
-	method string
-	ct     string
-	body   string
-	values map[string][]string // multipart value 字段
-	files  map[string][]string // multipart file 字段名 -> 文件名列表
+	path    string
+	method  string
+	ct      string
+	body    string
+	values  map[string][]string // multipart value 字段
+	files   map[string][]string // multipart file 字段名 -> 文件名列表
+	fileCTs map[string][]string // multipart file 字段名 -> part Content-Type 列表
 }
 
 func newMockImageServer(t *testing.T, modelsResp string) (*httptest.Server, *mockRecorder) {
@@ -47,9 +48,11 @@ func newMockImageServer(t *testing.T, modelsResp string) (*httptest.Server, *moc
 			_ = r.ParseMultipartForm(10 << 20)
 			rec.values = r.MultipartForm.Value
 			rec.files = map[string][]string{}
+			rec.fileCTs = map[string][]string{}
 			for name := range r.MultipartForm.File {
 				for _, f := range r.MultipartForm.File[name] {
 					rec.files[name] = append(rec.files[name], f.Filename)
+					rec.fileCTs[name] = append(rec.fileCTs[name], f.Header.Get("Content-Type"))
 				}
 			}
 		} else {
@@ -91,6 +94,10 @@ func TestCallOpenAI_EditsMultipart(t *testing.T) {
 	}
 	if len(rec.files["image[]"]) != 1 || rec.files["image[]"][0] != "a.png" {
 		t.Fatalf("应有 image[] 文件字段，得 %v", rec.files)
+	}
+	// 官方 OpenAI 严格校验 part mimetype（octet-stream 直接 400），必须带真实图片类型
+	if len(rec.fileCTs["image[]"]) != 1 || rec.fileCTs["image[]"][0] != "image/png" {
+		t.Fatalf("image[] part Content-Type 应 image/png，得 %v", rec.fileCTs)
 	}
 	if rec.values["size"][0] != "1152x1536" {
 		t.Fatalf("应传 size=1152x1536，得 %v", rec.values["size"])

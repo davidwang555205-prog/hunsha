@@ -12,6 +12,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"strconv"
 	"strings"
@@ -198,6 +199,9 @@ func (c *Client) Call(ctx context.Context, req Request) (status int, bodyText st
 	}
 }
 
+// multipartQuoteEscaper 与 mime/multipart 标准库内部转义一致（反斜杠 + 双引号）。
+var multipartQuoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
 // callOpenAI 协议 A（OpenAI Images API 兼容：官方 OpenAI / WalaAPI）：
 // 有参考图 multipart POST /images/edits（字段 image[] 多值）；无参考图 json POST /images/generations。传 size。
 func (c *Client) callOpenAI(ctx context.Context, req Request, quality, size string) (status int, bodyText string, err error) {
@@ -212,7 +216,18 @@ func (c *Client) callOpenAI(ctx context.Context, req Request, quality, size stri
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 		for _, f := range req.Files {
-			part, err := writer.CreateFormFile("image[]", f.Name)
+			// 不能用 CreateFormFile：它恒写 application/octet-stream，官方 OpenAI 严格校验
+			// mimetype 直接 400（WalaAPI 宽松才没暴露）。CreatePart 显式带 Content-Type，
+			// f.Type 经 toWalaFile 校验必为 jpeg/png/webp，兜底 image/png。
+			mime := f.Type
+			if mime == "" {
+				mime = "image/png"
+			}
+			h := make(textproto.MIMEHeader)
+			h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+				multipartQuoteEscaper.Replace("image[]"), multipartQuoteEscaper.Replace(f.Name)))
+			h.Set("Content-Type", mime)
+			part, err := writer.CreatePart(h)
 			if err != nil {
 				return 0, "", err
 			}
