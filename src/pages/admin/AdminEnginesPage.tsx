@@ -9,7 +9,7 @@
  * config.imagePrompt 存生图提示词素材，运行时 prompt.MergeAssets 字段级整体替换默认。
  * 两个 JSON 进弹窗即预填当前生效值（默认 + 覆盖合并），保存全量写回 { seeding, imagePrompt }。
  */
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   listAllEngines,
   getEngine,
@@ -83,6 +83,14 @@ function toSummary(engine: ContentEngine): ContentEngineSummary {
   return summary;
 }
 
+/** JSON 美化阈值：超过则紧凑序列化。bridalv2 visualPlan 约 5MB，indent 2 美化后
+ * ~10MB 字符串塞进受控 Textarea 渲染压力极大（编辑弹窗 JSON 偶发空白的根因）。 */
+const PRETTY_LIMIT = 1_000_000;
+function stringifyForEditor(v: unknown): string {
+  const compact = JSON.stringify(v);
+  return compact.length > PRETTY_LIMIT ? compact : JSON.stringify(v, null, 2);
+}
+
 export function AdminEnginesPage() {
   // SWR：先渲染 sessionStorage 缓存，再后台 revalidate
   const [engines, setEngines] = useState<ContentEngineSummary[]>(() => readEnginesCache() ?? []);
@@ -100,6 +108,27 @@ export function AdminEnginesPage() {
   const [copyEnabled, setCopyEnabled] = useState(true);
   // 「给大模型的说明」文本：后端生成（策略白名单动态同步），不再前端硬编码
   const [promptHelps, setPromptHelps] = useState<{ seeding: string; imagePrompt: string } | null>(null);
+  // 编辑弹窗详情加载中：加载完成前禁用保存，防止把"{}"初始值误存覆盖 5MB config
+  const [detailLoading, setDetailLoading] = useState(false);
+  // 大 config 懒序列化：原始对象存 ref，点开对应 tab 才 stringify 进编辑框；
+  // 保存时未访问过的 tab 直接用 ref 原对象（文本框里的"{}"只是未序列化的占位）
+  const seedingSource = useRef<unknown>(undefined);
+  const promptSource = useRef<unknown>(undefined);
+  const [seedingMaterialized, setSeedingMaterialized] = useState(true);
+  const [promptMaterialized, setPromptMaterialized] = useState(true);
+
+  /** 切换 tab：目标 tab 首次打开时把源对象序列化进编辑框（大 JSON 紧凑格式） */
+  const switchTab = (tab: TabKey) => {
+    if (tab === "seeding" && !seedingMaterialized) {
+      setSeedingJson(stringifyForEditor(seedingSource.current));
+      setSeedingMaterialized(true);
+    }
+    if (tab === "prompt" && !promptMaterialized) {
+      setImagePromptJson(stringifyForEditor(promptSource.current));
+      setPromptMaterialized(true);
+    }
+    setActiveTab(tab);
+  };
 
   const fetchEngines = async () => {
     // 有缓存时后台 revalidate，不再切 isLoading 防止闪烁
@@ -126,7 +155,9 @@ export function AdminEnginesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 拉默认素材 + 引擎 config，初始化两个 JSON 编辑框（均显示当前生效值）
+  // 拉默认素材 + 引擎 config，初始化两个 JSON 的数据源（均当前生效值）。
+  // 大 config（bridalv2 visualPlan ~5MB）不立即序列化：存 ref 源对象 + materialized=false，
+  // 点开对应 tab 才 stringify（switchTab），避免弹窗打开时 ~10MB 文本渲染卡死/空白。
   // - seeding：deepMerge(代码默认, config.seeding) 深度合并生效值
   // - imagePrompt：getPromptOptions 返回的 MergeAssets 合并生效值（config 为空即代码默认 16 项）
   const initFormAssets = async (key: string, config: Record<string, unknown> | undefined) => {
@@ -134,8 +165,10 @@ export function AdminEnginesPage() {
     if (v2?.artifacts?.visualPlan && v2.artifacts.imagePrompt) {
       setUseV2(true);
       setCopyEnabled(v2.capabilities?.copyEnabled ?? true);
-      setSeedingJson(JSON.stringify(v2.artifacts.visualPlan, null, 2));
-      setImagePromptJson(JSON.stringify(v2.artifacts.imagePrompt, null, 2));
+      seedingSource.current = v2.artifacts.visualPlan;
+      promptSource.current = v2.artifacts.imagePrompt;
+      setSeedingMaterialized(false);
+      setPromptMaterialized(false);
       setActiveTab("basic");
       return;
     }
@@ -151,8 +184,10 @@ export function AdminEnginesPage() {
     ]);
     const seeding = (config?.seeding as Record<string, unknown> | undefined) ?? {};
     const merged = assets ? deepMerge(assets, seeding) : (seeding as unknown as DefaultAssets);
-    setSeedingJson(JSON.stringify(merged, null, 2));
-    setImagePromptJson(JSON.stringify(promptAssets ?? {}, null, 2));
+    seedingSource.current = merged;
+    promptSource.current = promptAssets ?? {};
+    setSeedingMaterialized(false);
+    setPromptMaterialized(false);
     setActiveTab("basic");
   };
 
@@ -166,6 +201,7 @@ export function AdminEnginesPage() {
       isEnabled: e.isEnabled
     });
     setShowCreate(false);
+    setDetailLoading(true);
     // 列表行无 config（精简响应），编辑弹窗需单独拉完整引擎回填
     void (async () => {
       try {
@@ -173,6 +209,8 @@ export function AdminEnginesPage() {
         await initFormAssets(engine.key, engine.config);
       } catch (err) {
         if (!isUnauthorizedError(err)) setMessage(err instanceof Error ? err.message : "加载引擎详情失败。");
+      } finally {
+        setDetailLoading(false);
       }
     })();
   };
@@ -185,6 +223,10 @@ export function AdminEnginesPage() {
     setCopyEnabled(false);
     setSeedingJson("{}");
     setImagePromptJson("{}");
+    seedingSource.current = undefined;
+    promptSource.current = undefined;
+    setSeedingMaterialized(true);
+    setPromptMaterialized(true);
     setActiveTab("basic");
   };
 
@@ -194,26 +236,40 @@ export function AdminEnginesPage() {
     setDraft(emptyDraft);
     setSeedingJson("{}");
     setImagePromptJson("{}");
+    seedingSource.current = undefined;
+    promptSource.current = undefined;
+    setSeedingMaterialized(true);
+    setPromptMaterialized(true);
     setUseV2(false);
     setCopyEnabled(true);
   };
 
   const handleSave = async () => {
+    // 未访问过的 tab 文本框还是"{}"占位，直接用 ref 里的源对象（防误存空配置）；
+    // 访问过的 tab 以文本框内容为准（用户可能改过/上传过）
     let seeding: Record<string, unknown>;
-    try {
-      seeding = JSON.parse(seedingJson || "{}");
-    } catch {
-      setMessage("内容引擎素材 JSON 格式不正确，请检查。");
-      setActiveTab("seeding");
-      return;
+    if (seedingMaterialized) {
+      try {
+        seeding = JSON.parse(seedingJson || "{}");
+      } catch {
+        setMessage("内容引擎素材 JSON 格式不正确，请检查。");
+        setActiveTab("seeding");
+        return;
+      }
+    } else {
+      seeding = (seedingSource.current ?? {}) as Record<string, unknown>;
     }
     let imagePrompt: Record<string, unknown>;
-    try {
-      imagePrompt = JSON.parse(imagePromptJson || "{}");
-    } catch {
-      setMessage("生图提示词 JSON 格式不正确，请检查。");
-      setActiveTab("prompt");
-      return;
+    if (promptMaterialized) {
+      try {
+        imagePrompt = JSON.parse(imagePromptJson || "{}");
+      } catch {
+        setMessage("生图提示词 JSON 格式不正确，请检查。");
+        setActiveTab("prompt");
+        return;
+      }
+    } else {
+      imagePrompt = (promptSource.current ?? {}) as Record<string, unknown>;
     }
     const config: Record<string, unknown> = useV2
       ? { engineV2: { apiVersion: "content-engine/v2", capabilities: { copyEnabled }, artifacts: { visualPlan: seeding, imagePrompt } } }
@@ -321,7 +377,7 @@ export function AdminEnginesPage() {
         footer={
           <>
             <Button variant="ghost" size="sm" onClick={closeModal}>取消</Button>
-            <Button variant="primary" size="sm" onClick={handleSave} loading={busy} disabled={!draft.key || !draft.name}>保存</Button>
+            <Button variant="primary" size="sm" onClick={handleSave} loading={busy} disabled={detailLoading || !draft.key || !draft.name}>保存</Button>
           </>
         }
       >
@@ -330,13 +386,18 @@ export function AdminEnginesPage() {
           <Segmented
             options={TAB_LABELS.map(({ key, label }) => ({ value: key, label }))}
             value={activeTab}
-            onChange={(v) => setActiveTab(v)}
+            onChange={(v) => switchTab(v)}
             size="sm"
           />
         </div>
 
+        {/* 详情加载中：config 可达 5MB，加载完成前不渲染编辑区，防止把"{}"占位误当内容 */}
+        {detailLoading && (
+          <div className="py-10 text-center text-sm text-text-muted">正在加载引擎配置（大配置需几秒钟）…</div>
+        )}
+
         {/* 基础信息 */}
-        {activeTab === "basic" && (
+        {!detailLoading && activeTab === "basic" && (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="引擎标识（key）">
               <Input value={draft.key} onChange={(e) => setDraft({ ...draft, key: e.target.value })} placeholder="bridal" disabled={!!editingId} />
@@ -380,7 +441,7 @@ export function AdminEnginesPage() {
         )}
 
         {/* 内容引擎素材（config.seeding，深度合并） */}
-        {activeTab === "seeding" && (
+        {!detailLoading && activeTab === "seeding" && (
           <div className="space-y-3">
             <Field label={useV2 ? "内容引擎素材（V2 visualPlan，主题/文案/图片蓝图）" : "内容引擎素材（config.seeding，主题与内容；bridalTopics / dressTopics 决定工作台主题）"}>
               <JsonEditorField
@@ -396,7 +457,7 @@ export function AdminEnginesPage() {
         )}
 
         {/* 生图提示词（config.imagePrompt，字段级整体替换） */}
-        {activeTab === "prompt" && (
+        {!detailLoading && activeTab === "prompt" && (
           <div className="space-y-3">
             <Field label="生图提示词（config.imagePrompt，字段级整体替换：配某字段则整体替换默认，未配降级默认）">
               <JsonEditorField
