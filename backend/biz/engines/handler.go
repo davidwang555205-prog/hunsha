@@ -26,6 +26,7 @@ import (
 //	PATCH  /api/admin/engines/:id             更新引擎（admin）
 //	DELETE /api/admin/engines/:id             删除引擎（admin）
 //	GET    /api/admin/engines/default-assets  默认素材（admin，供编辑弹窗显示当前生效值）
+//	GET    /api/admin/engines/prompt-helps    「给大模型的说明」文本（admin，后端生成，策略白名单动态同步）
 type Handler struct {
 	usecase *Usecase
 	logger  *slog.Logger
@@ -48,6 +49,7 @@ func NewHandler(i *do.Injector) (*Handler, error) {
 	w.Echo().GET("/api/engines/:key/prompt-options", h.promptOptions, authM)
 	w.Echo().GET("/api/admin/engines", h.listAdmin, authM, adminM)
 	w.Echo().GET("/api/admin/engines/default-assets", h.defaultAssets, authM, adminM)
+	w.Echo().GET("/api/admin/engines/prompt-helps", h.promptHelps, authM, adminM)
 	w.Echo().GET("/api/admin/engines/:id", h.getByID, authM, adminM)
 	w.Echo().POST("/api/admin/engines", h.create, authM, adminM)
 	w.Echo().PATCH("/api/admin/engines/:id", h.update, authM, adminM)
@@ -121,6 +123,16 @@ func (h *Handler) defaultAssets(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "获取默认素材失败。"})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"assets": out})
+}
+
+// promptHelps GET /api/admin/engines/prompt-helps：返回两段「给大模型的说明」文本。
+// 后端生成（prompthelp.go），策略白名单动态拼自 seeding 单一事实源——Go 新增策略
+// 分支即自动出现在说明里，前端不再硬编码（此前硬编码清单连续漏同步 4 个新策略）。
+func (h *Handler) promptHelps(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]any{
+		"seeding":     SeedingPromptHelp(),
+		"imagePrompt": ImagePromptHelp(),
+	})
 }
 
 // promptOptions GET /api/engines/:key/prompt-options：返回当前生效的 imagePrompt 素材，

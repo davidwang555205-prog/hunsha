@@ -338,6 +338,11 @@ export function getDefaultAssets() {
   return apiRequest<{ assets: DefaultAssets }>("/api/admin/engines/default-assets");
 }
 
+/** 「给大模型的说明」文本（admin，后端生成：策略白名单动态同步，前端不再硬编码） */
+export function getEnginePromptHelps() {
+  return apiRequest<{ seeding: string; imagePrompt: string }>("/api/admin/engines/prompt-helps");
+}
+
 export function createEngine(req: CreateEngineRequest) {
   return apiRequest<{ engine: ContentEngine }>("/api/admin/engines", {
     method: "POST",

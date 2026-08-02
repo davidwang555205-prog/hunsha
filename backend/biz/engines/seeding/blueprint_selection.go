@@ -2,8 +2,52 @@ package seeding
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 )
+
+// blueprintSelector 单一策略的抽样实现签名。
+type blueprintSelector func(blueprints []XhsImageBlueprint, rule BlueprintSelectionRule, count int, batchSeed string) []XhsImageBlueprint
+
+// blueprintSelectors 策略白名单（单一事实源）：selectBlueprints 分发与 admin
+// 「给大模型的说明」文本（biz/engines prompt-helps）共用。新增策略必须在此登记实现；
+// 未登记的策略名静默退回返回全部蓝图（生图链路不中断，但抽样失效）。
+// v3.7.0 的两个 WithBatchDistinction 策略名：抽样算法与 v3.6.0 完全一致（复用
+// selectContrastSilhouetteBlueprints），仅 prompt 层追加批次内动作区分约束
+// （imagePrompt JSON 的 negativeLine + seeding JSON description 的英文 UPPER ACTION）。
+var blueprintSelectors = map[string]blueprintSelector{
+	"familySampling": func(b []XhsImageBlueprint, _ BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectFamilyBlueprints(b, "", c, s)
+	},
+	"familySamplingWithRequiredFirst": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectFamilyBlueprints(b, r.RequiredNamePrefix, c, s)
+	},
+	"angleBandExpressionSamplingWithFaceVisibleFirst": selectAngleExpressionDiverseBlueprints,
+	"contrastSilhouetteAngleAwareSamplingWithFaceVisibleFirst": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectContrastSilhouetteBlueprints(b, r, c, s, true)
+	},
+	"selfieContrastSilhouetteSamplingWithFaceVisibleFirst": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectContrastSilhouetteBlueprints(b, r, c, s, false)
+	},
+	"contrastSilhouetteAngleAwareWithBatchDistinction": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectContrastSilhouetteBlueprints(b, r, c, s, true)
+	},
+	"selfieContrastSilhouetteWithBatchDistinction": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectContrastSilhouetteBlueprints(b, r, c, s, false)
+	},
+}
+
+// BlueprintStrategyNames 平台支持的蓝图抽样策略名（含 fixed），排序返回。
+// admin 说明文本由此生成，保证说明与白名单永远一致。
+func BlueprintStrategyNames() []string {
+	names := make([]string, 0, len(blueprintSelectors)+1)
+	names = append(names, "fixed")
+	for name := range blueprintSelectors {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
 
 // selectBlueprints 是通用、确定性的图组选择器。业务只在 JSON 中声明策略和固定首图，
 // 不上传或执行业务 JavaScript。family 名称取蓝图 name 中“｜”后的 F01/F02…标记。
@@ -11,32 +55,20 @@ func selectBlueprints(blueprints []XhsImageBlueprint, rule BlueprintSelectionRul
 	if len(blueprints) <= count || rule.Strategy == "" || rule.Strategy == "fixed" {
 		return blueprints
 	}
-	if rule.Strategy == "angleBandExpressionSamplingWithFaceVisibleFirst" {
-		return selectAngleExpressionDiverseBlueprints(blueprints, rule, count, batchSeed)
+	if sel, ok := blueprintSelectors[rule.Strategy]; ok {
+		return sel(blueprints, rule, count, batchSeed)
 	}
-	if rule.Strategy == "contrastSilhouetteAngleAwareSamplingWithFaceVisibleFirst" {
-		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, true)
-	}
-	if rule.Strategy == "selfieContrastSilhouetteSamplingWithFaceVisibleFirst" {
-		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, false)
-	}
-	// v3.7.0 策略名：抽样算法与 v3.6.0 完全一致（复用 selectContrastSilhouetteBlueprints），
-	// 仅 prompt 层追加批次内动作区分约束（imagePrompt JSON 的 negativeLine +
-	// seeding JSON description 的英文 UPPER ACTION）。相同 batchSeed 复现与 v3.6.0 一致。
-	if rule.Strategy == "contrastSilhouetteAngleAwareWithBatchDistinction" {
-		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, true)
-	}
-	if rule.Strategy == "selfieContrastSilhouetteWithBatchDistinction" {
-		return selectContrastSilhouetteBlueprints(blueprints, rule, count, batchSeed, false)
-	}
-	if rule.Strategy != "familySampling" && rule.Strategy != "familySamplingWithRequiredFirst" {
-		return blueprints
-	}
+	return blueprints
+}
+
+// selectFamilyBlueprints familySampling / familySamplingWithRequiredFirst 的实现。
+// requiredNamePrefix 非空时先匹配固定首图，匹配不到退回返回全部蓝图。
+func selectFamilyBlueprints(blueprints []XhsImageBlueprint, requiredNamePrefix string, count int, batchSeed string) []XhsImageBlueprint {
 	required := XhsImageBlueprint{}
 	hasRequired := false
-	if rule.Strategy == "familySamplingWithRequiredFirst" {
+	if requiredNamePrefix != "" {
 		for _, bp := range blueprints {
-			if strings.HasPrefix(bp.Name, rule.RequiredNamePrefix) {
+			if strings.HasPrefix(bp.Name, requiredNamePrefix) {
 				required, hasRequired = bp, true
 				break
 			}
