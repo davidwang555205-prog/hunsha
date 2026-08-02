@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/google/uuid"
 
 	"bridal/backend/biz/channels"
+	"bridal/backend/biz/generation/prompt"
 	"bridal/backend/biz/generation/wala"
 	"bridal/backend/config"
 	"bridal/backend/domain"
@@ -41,11 +43,18 @@ type fakeRepo struct {
 	cancelled       bool
 	categoryEngine  *CategoryEngine
 	taskRecord      *TaskRecord // GetTask 返回（单张重试测试用）
+	activeTasks     int         // CountActiveTasks 返回值
+	createdTask     bool        // CreateTask 是否被调用
 }
 
 func newFakeRepo() *fakeRepo { return &fakeRepo{subTasks: map[string]string{}} }
 
-func (r *fakeRepo) CreateTask(context.Context, TaskRecord, []string) error  { return nil }
+func (r *fakeRepo) CreateTask(context.Context, TaskRecord, []string) error {
+	r.mu.Lock()
+	r.createdTask = true
+	r.mu.Unlock()
+	return nil
+}
 func (r *fakeRepo) GetTask(context.Context, uuid.UUID) (*TaskRecord, error) { return r.taskRecord, nil }
 func (r *fakeRepo) SetTaskStarted(context.Context, uuid.UUID) error {
 	r.mu.Lock()
@@ -82,7 +91,11 @@ func (r *fakeRepo) SetCompletedCount(_ context.Context, _ uuid.UUID, count int) 
 }
 func (r *fakeRepo) IsTaskCancelled(context.Context, uuid.UUID) (bool, error) { return r.cancelled, nil }
 func (r *fakeRepo) CancelTask(context.Context, uuid.UUID) error              { return nil }
-func (r *fakeRepo) CountActiveTasks(context.Context, uuid.UUID) (int, error) { return 0, nil }
+func (r *fakeRepo) CountActiveTasks(context.Context, uuid.UUID) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.activeTasks, nil
+}
 func (r *fakeRepo) CountImagesForDate(context.Context, uuid.UUID, string) (int, error) {
 	return 0, nil
 }
@@ -513,5 +526,137 @@ func TestRunTask_ParallelFail(t *testing.T) {
 	}
 	if caller.callCount() != 3 {
 		t.Errorf("wala 应调 3 次（首张+并发 2），得 %d", caller.callCount())
+	}
+}
+
+// --- Generate 用户异步任务数上限测试 ---
+
+func testDataURLImage() FileInput {
+	return FileInput{
+		Name:    "prod.png",
+		Type:    "image/png",
+		Size:    100,
+		DataURL: "data:image/png;base64," + testPNG,
+	}
+}
+
+func testGenerateReq() GenerateReq {
+	return GenerateReq{
+		Title: "测试标题",
+		Body:  "测试正文内容。",
+		Tags:  []string{"标签1", "标签2"},
+		PromptParamsList: []prompt.Params{
+			{
+				ProductCategory: "婚纱 / 礼服",
+				ImageType:       "产品上身图",
+				ModelChoice:     "亚洲新娘感模特 25–35",
+				Season:          "春",
+				ScenePreference: "自动匹配",
+				LightPreference: "自动匹配",
+			},
+		},
+		ProductReferenceImages: []FileInput{
+			testDataURLImage(), testDataURLImage(), testDataURLImage(), testDataURLImage(),
+		},
+	}
+}
+
+func TestGenerate_ActiveTaskLimitBlocksUser(t *testing.T) {
+	repo := newFakeRepo()
+	repo.activeTasks = 5
+	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u.engines = nil // 跳过内容引擎加载，确保只测限流
+	user := &domain.User{
+		ID:              uuid.New(),
+		Role:            "subaccount",
+		Credits:         10,
+		DailyImageLimit: 20,
+		MaxActiveTasks:  5,
+	}
+
+	_, err := u.Generate(context.Background(), user, testGenerateReq())
+	if err == nil {
+		t.Fatal("应返回限流错误，实际为 nil")
+	}
+	walaErr, ok := err.(*wala.Error)
+	if !ok {
+		t.Fatalf("错误类型应为 *wala.Error，得 %T", err)
+	}
+	if walaErr.StatusCode != 429 {
+		t.Fatalf("状态码应为 429，得 %d", walaErr.StatusCode)
+	}
+	if !strings.Contains(walaErr.Message, "进行中任务已达上限") {
+		t.Fatalf("错误信息应包含'进行中任务已达上限'，得 %q", walaErr.Message)
+	}
+}
+
+func TestGenerate_ActiveTaskLimitUsesMaxActiveTasks(t *testing.T) {
+	repo := newFakeRepo()
+	repo.activeTasks = 3
+	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u.engines = nil
+	user := &domain.User{
+		ID:              uuid.New(),
+		Role:            "subaccount",
+		Credits:         10,
+		DailyImageLimit: 20,
+		MaxActiveTasks:  2,
+	}
+
+	_, err := u.Generate(context.Background(), user, testGenerateReq())
+	if err == nil {
+		t.Fatal("应返回限流错误，实际为 nil")
+	}
+	walaErr, ok := err.(*wala.Error)
+	if !ok || walaErr.StatusCode != 429 {
+		t.Fatalf("期望 429 *wala.Error，得 %T %v", err, err)
+	}
+	if !strings.Contains(walaErr.Message, "上限（2 个）") {
+		t.Fatalf("应使用用户自定义上限 2，错误信息=%q", walaErr.Message)
+	}
+}
+
+func TestGenerate_ActiveTaskLimitAllowsBelowLimit(t *testing.T) {
+	repo := newFakeRepo()
+	repo.activeTasks = 4
+	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u.engines = nil
+	user := &domain.User{
+		ID:              uuid.New(),
+		Role:            "subaccount",
+		Credits:         10,
+		DailyImageLimit: 20,
+		MaxActiveTasks:  5,
+	}
+
+	_, err := u.Generate(context.Background(), user, testGenerateReq())
+	if err == nil {
+		t.Fatal("应继续执行到引擎加载阶段并返回错误，实际为 nil")
+	}
+	walaErr, ok := err.(*wala.Error)
+	if ok && walaErr.StatusCode == 429 {
+		t.Fatalf("不应被限流，实际被限流: %q", walaErr.Message)
+	}
+}
+
+func TestGenerate_ActiveTaskLimitSkippedForAdmin(t *testing.T) {
+	repo := newFakeRepo()
+	repo.activeTasks = 100
+	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u.engines = nil
+	user := &domain.User{
+		ID:             uuid.New(),
+		Role:           "admin",
+		Credits:        0,
+		MaxActiveTasks: 5,
+	}
+
+	_, err := u.Generate(context.Background(), user, testGenerateReq())
+	if err == nil {
+		t.Fatal("应继续执行到引擎加载阶段并返回错误，实际为 nil")
+	}
+	walaErr, ok := err.(*wala.Error)
+	if ok && walaErr.StatusCode == 429 {
+		t.Fatalf("admin 不应被限流，实际被限流: %q", walaErr.Message)
 	}
 }

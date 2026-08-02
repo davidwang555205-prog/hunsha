@@ -7,6 +7,11 @@
  * navItems / navTitle / showBackToSite 由调用方（AppShell / AdminLayout）传入，
  * 消除两套布局壳的重复结构（DRY）。
  *
+ * NavItem 支持 children（可选）：有则渲染为可折叠二级分组
+ *   - 展开态：分组头点击 toggle，子项缩进 + 左竖线，任一子项 active 时分组头高亮
+ *   - 收起态：分组头纯图标，hover 弹出 flyout 子项面板
+ *   - 当前路由命中某子项的分组默认展开；路由变化时自动展开命中组（不强制收起其他组）
+ *
  * 点击即时高亮：pendingPath 本地态（点击瞬间置为目标 path，URL 变化后清空）。
  * 懒加载 chunk 期间旧路由仍在，原生 isActive 不会立即变，这里补一拍交互反馈。
  */
@@ -24,6 +29,8 @@ export type NavItem = {
   label: string;
   icon: ReactNode;
   end?: boolean;
+  /** 存在则渲染为可折叠分组，其元素为二级菜单项 */
+  children?: NavItem[];
 };
 
 type BaseLayoutProps = {
@@ -38,8 +45,12 @@ type BaseLayoutProps = {
 const navClass = (active: boolean, collapsed: boolean) =>
   `group relative flex items-center rounded-md transition duration-fast ease-out ${
     collapsed ? "justify-center px-0 py-2" : "gap-2.5 px-3 py-2"
-  } text-sm font-medium ${
-    active ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-text"
+  } text-sm ${active ? "bg-primary/10 font-medium text-primary" : "font-normal text-text-muted hover:bg-bg hover:text-text"}`;
+
+/** 二级菜单子项 className（展开态缩进列表 / 收起态 flyout 面板共用）：字色比一级更淡以区分层级 */
+const childNavClass = (active: boolean) =>
+  `flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition duration-fast ease-out ${
+    active ? "bg-primary/10 font-medium text-primary" : "font-normal text-text-subtle hover:bg-bg hover:text-text"
   }`;
 
 function Tooltip({ label }: { label: string }) {
@@ -48,6 +59,14 @@ function Tooltip({ label }: { label: string }) {
       {label}
     </span>
   );
+}
+
+/** 当前路由命中的分组 label（子项 to === pathname），无则 null */
+function findHitGroupLabel(navItems: NavItem[], pathname: string): string | null {
+  for (const item of navItems) {
+    if (item.children?.some((c) => c.to === pathname)) return item.label;
+  }
+  return null;
 }
 
 export function BaseLayout({ navItems, navTitle, showBackToSite, children }: BaseLayoutProps) {
@@ -70,6 +89,29 @@ export function BaseLayout({ navItems, navTitle, showBackToSite, children }: Bas
   const pendingPath = highlight.pendingPath;
   const setPendingPath = (path: string | null) =>
     setHighlight((cur) => ({ pendingPath: path, lastPathname: cur.lastPathname }));
+
+  // 二级分组展开状态：初始展开当前路由命中组；路由变化时自动展开命中组（保留用户对其余组的手动收起）
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    const label = findHitGroupLabel(navItems, location.pathname);
+    return label ? new Set([label]) : new Set();
+  });
+  const [lastGroupPath, setLastGroupPath] = useState(location.pathname);
+  if (lastGroupPath !== location.pathname) {
+    setLastGroupPath(location.pathname);
+    const label = findHitGroupLabel(navItems, location.pathname);
+    setOpenGroups((prev) => {
+      if (!label || prev.has(label)) return prev;
+      return new Set(prev).add(label);
+    });
+  }
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!pendingPath) return;
@@ -119,19 +161,31 @@ export function BaseLayout({ navItems, navTitle, showBackToSite, children }: Bas
           {navTitle && !collapsed && (
             <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-text-subtle">{navTitle}</p>
           )}
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={() => setPendingPath(item.to)}
-              className={({ isActive }) => navClass(pendingPath === item.to || isActive, collapsed)}
-            >
-              <span className="shrink-0">{item.icon}</span>
-              {!collapsed && <span className="truncate">{item.label}</span>}
-              {collapsed && <Tooltip label={item.label} />}
-            </NavLink>
-          ))}
+          {navItems.map((item) =>
+            item.children ? (
+              <NavGroup
+                key={item.label}
+                item={item}
+                collapsed={collapsed}
+                open={openGroups.has(item.label)}
+                onToggle={toggleGroup}
+                pendingPath={pendingPath}
+                setPendingPath={setPendingPath}
+              />
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={() => setPendingPath(item.to)}
+                className={({ isActive }) => navClass(pendingPath === item.to || isActive, collapsed)}
+              >
+                <span className="shrink-0">{item.icon}</span>
+                {!collapsed && <span className="truncate">{item.label}</span>}
+                {collapsed && <Tooltip label={item.label} />}
+              </NavLink>
+            )
+          )}
 
           {/* 返回主站（outlined 按钮，区别于上方纯文字导航） */}
           {showBackToSite && (
@@ -158,6 +212,101 @@ export function BaseLayout({ navItems, navTitle, showBackToSite, children }: Bas
           <div className={isStudioWorkspace ? "h-[calc(100vh-3.5rem)]" : "mx-auto max-w-6xl"}>{children}</div>
         </main>
       </div>
+    </div>
+  );
+}
+
+/**
+ * NavGroup -- 可折叠二级分组
+ * 展开态：分组头（图标 + 标题 + chevron）点击 toggle，子项缩进带左竖线
+ * 收起态：分组头纯图标，hover 弹出 flyout 面板（absolute 定位在 aside 右侧）
+ */
+function NavGroup({
+  item,
+  collapsed,
+  open,
+  onToggle,
+  pendingPath,
+  setPendingPath
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  open: boolean;
+  onToggle: (label: string) => void;
+  pendingPath: string | null;
+  setPendingPath: (path: string | null) => void;
+}) {
+  const location = useLocation();
+  const childActive = item.children!.some((c) => c.to === location.pathname);
+
+  if (collapsed) {
+    return (
+      <div className="group relative">
+        <button
+          type="button"
+          onClick={() => onToggle(item.label)}
+          className={`flex w-full items-center justify-center rounded-md px-0 py-2 text-sm transition duration-fast ease-out ${
+            childActive ? "bg-primary/10 font-medium text-primary" : "font-normal text-text-muted hover:bg-bg hover:text-text"
+          }`}
+          aria-expanded={open}
+          aria-label={item.label}
+        >
+          <span className="shrink-0">{item.icon}</span>
+        </button>
+        {/* flyout：hover 弹出子项面板，aside 无 overflow-hidden 不会被裁剪 */}
+        <div className="pointer-events-none absolute left-full top-0 ml-2 z-dropdown w-44 rounded-lg border border-border bg-surface p-1.5 opacity-0 shadow-lg transition duration-fast ease-out group-hover:pointer-events-auto group-hover:opacity-100">
+          <p className="px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-text-subtle">{item.label}</p>
+          {item.children!.map((c) => (
+            <NavLink
+              key={c.to}
+              to={c.to}
+              end={c.end}
+              onClick={() => setPendingPath(c.to)}
+              className={({ isActive }) => childNavClass(pendingPath === c.to || isActive)}
+            >
+              <span className="shrink-0">{c.icon}</span>
+              <span className="truncate">{c.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => onToggle(item.label)}
+        className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition duration-fast ease-out ${
+          childActive ? "text-primary" : "text-text-muted hover:bg-bg hover:text-text"
+        }`}
+        aria-expanded={open}
+      >
+        <span className="shrink-0">{item.icon}</span>
+        <span className="truncate">{item.label}</span>
+        <span
+          className={`ml-auto shrink-0 text-text-subtle transition-transform duration-base ease-out ${open ? "-rotate-90" : ""}`}
+        >
+          <ChevronLeftIcon size={16} />
+        </span>
+      </button>
+      {open && (
+        <div className="mt-1 flex flex-col gap-1 pl-3">
+          {item.children!.map((c) => (
+            <NavLink
+              key={c.to}
+              to={c.to}
+              end={c.end}
+              onClick={() => setPendingPath(c.to)}
+              className={({ isActive }) => childNavClass(pendingPath === c.to || isActive)}
+            >
+              <span className="shrink-0">{c.icon}</span>
+              <span className="truncate">{c.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

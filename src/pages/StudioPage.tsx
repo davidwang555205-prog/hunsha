@@ -16,13 +16,12 @@ import { getEngineCapabilities, getEngineTopicOptions } from "../api/engines";
 import { copyText as copyToClipboard } from "../lib/clipboard";
 import { downloadImages } from "../lib/download";
 import { fileToDataUrl } from "../lib/file";
-import { firstTitle } from "../lib/titles";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 import { useCategory } from "../context/CategoryContext";
 import { useNotifications } from "../context/NotificationContext";
 import { useTaskGeneration } from "../hooks/useTaskGeneration";
-import { describeGenerationFailure } from "../lib/generationFeedback";
 import type { CreateTaskRequest } from "../types/api";
 import {
   defaultImageQuality,
@@ -43,9 +42,6 @@ import { FeedbackAlert } from "../components/ui/FeedbackAlert";
 import { Modal } from "../components/ui/Modal";
 import { StarBorder } from "../components/motion";
 import { GenerationLoadingState } from "../components/studio/GenerationLoadingState";
-
-const lastTaskStorageKey = "bridal-content-studio-last-task";
-const viewedTasksKey = "bridal-content-studio-viewed-tasks";
 
 // contentPreview 加载中/失败的空默认（任务②阶段5：contentPreview 从后端 API 异步获取）
 const emptyContent = {
@@ -68,7 +64,6 @@ export function StudioPage() {
   const { currentCategory } = useCategory();
   const gen = useTaskGeneration();
   const { addNotification } = useNotifications();
-  const [showUnviewedPrompt, setShowUnviewedPrompt] = useState(false);
   const reportedFeedbackRef = useRef("");
 
   // 生图参数：尺寸用户可选（生图设置面板），其余内置
@@ -94,50 +89,12 @@ export function StudioPage() {
   const [taskRetryCount, setTaskRetryCount] = useState(0);
   // 确认弹窗防重入：消除「关闭弹窗→setIsSubmitting 生效」毫秒级窗口内的重复提交
   const confirmingRef = useRef(false);
+  // 开始新任务二次确认弹窗（进行中时点击，不取消后台任务）
+  const [showNewTaskConfirm, setShowNewTaskConfirm] = useState(false);
   const [sceneFile, setSceneFile] = useState<File | null>(null);
   const [productFiles, setProductFiles] = useState<File[]>([]);
   const [showContentPreview, setShowContentPreview] = useState(false);
   const [copyEnabled, setCopyEnabled] = useState(true);
-
-  // 进入页面：恢复上次任务进度（任务在后端继续，重新进入可拉回状态）
-  useEffect(() => {
-    const lastId = window.localStorage.getItem(lastTaskStorageKey);
-    if (lastId) {
-      void gen.resume(lastId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 任务终态：写本地通知 + 未查看成功任务弹窗提示 + 刷新积分余额/历史
-  useEffect(() => {
-    if (!gen.task || !gen.task.id) return;
-    // 终态刷新：生成消耗积分后 header 余额实时更新（refresh 并发拉 /status + history，refreshUser 更新 user.credits）
-    if (gen.stage === "completed" || gen.stage === "failed") {
-      void refresh();
-    }
-    const viewed = JSON.parse(window.localStorage.getItem(viewedTasksKey) || "[]") as string[];
-    if (gen.stage === "completed") {
-      addNotification({
-        type: "success",
-        title: "生成完成",
-        body: `「${firstTitle(gen.task.title)}」已生成 ${gen.task.resultImages?.length ?? 0} 张图`,
-        taskId: gen.task.id,
-      });
-      if (!viewed.includes(gen.task.id)) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setShowUnviewedPrompt(true);
-      }
-    } else if (gen.stage === "failed") {
-      const feedback = describeGenerationFailure(gen.task.error);
-      addNotification({
-        type: "failed",
-        title: feedback.title,
-        body: feedback.message,
-        taskId: gen.task.id,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gen.stage, gen.task?.id]);
 
   // 提交阶段在创建任务前就失败时没有 taskId，单独写一条通知；ref 防止同一错误因重渲染重复提示。
   useEffect(() => {
@@ -321,8 +278,7 @@ export function StudioPage() {
     try {
       const taskId = await gen.submit(req);
       if (taskId) {
-        window.localStorage.setItem(lastTaskStorageKey, taskId);
-        setContentMessage("已加入生成队列，结果区将逐张显示生成进度。");
+        setContentMessage("已提交生成任务，可离开页面，在历史记录中查看进度。");
       }
     } catch (err) {
       gen.reportError(err);
@@ -374,23 +330,33 @@ export function StudioPage() {
     await handleGenerate();
   };
 
+  const navigate = useNavigate();
+
   const handleDismiss = () => {
     gen.reset();
     setTaskRetryCount(0);
     setShowRetryImageConfirm(false);
     setRetryImageTarget(null);
-    window.localStorage.removeItem(lastTaskStorageKey);
     void refresh();
   };
 
-  const handleViewLastTask = () => {
-    if (!gen.task) return;
-    const viewed = JSON.parse(window.localStorage.getItem(viewedTasksKey) || "[]") as string[];
-    if (!viewed.includes(gen.task.id)) {
-      viewed.push(gen.task.id);
-      window.localStorage.setItem(viewedTasksKey, JSON.stringify(viewed));
-    }
-    setShowUnviewedPrompt(false);
+  const handleStartNewTask = () => {
+    setShowNewTaskConfirm(true);
+  };
+
+  const confirmStartNewTask = () => {
+    gen.reset();
+    setTaskRetryCount(0);
+    setShowNewTaskConfirm(false);
+  };
+
+  const cancelStartNewTask = () => {
+    setShowNewTaskConfirm(false);
+  };
+
+  const goToHistory = () => {
+    setShowNewTaskConfirm(false);
+    navigate("/history");
   };
 
   const sizeLabel = imageSizeOptions.find((option) => option.value === imageSize)?.label ?? imageSize;
@@ -503,14 +469,26 @@ export function StudioPage() {
           </div>
 
           <div className="shrink-0 border-t border-border bg-surface p-4">
-            <StarBorder
-              type="button"
-              disabled={gen.isActive || gen.isSubmitting || productFiles.length < 4 || contentTopicOptions.length === 0 || loadedTopicOptionsKey !== engineTopicOptionsKey || contentPreview.images.length === 0}
-              onClick={handleGenerate}
-              className="w-full"
-            >
-              {gen.isSubmitting ? "正在建立任务..." : `开始生成 ${imageCount} 张图片`}
-            </StarBorder>
+            {gen.isActive ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={handleStartNewTask}
+              >
+                开始新任务
+              </Button>
+            ) : (
+              <StarBorder
+                type="button"
+                disabled={gen.isActive || gen.isSubmitting || productFiles.length < 4 || contentTopicOptions.length === 0 || loadedTopicOptionsKey !== engineTopicOptionsKey || contentPreview.images.length === 0}
+                onClick={handleGenerate}
+                className="w-full"
+              >
+                {gen.isSubmitting ? "正在建立任务..." : `开始生成 ${imageCount} 张图片`}
+              </StarBorder>
+            )}
             {productFiles.length < 4 && <p className="mt-2 text-xs text-danger">还需上传至少 4 张婚纱产品图（当前 {productFiles.length} 张）。</p>}
             {gen.error && !gen.task && <FeedbackAlert feedback={gen.error} className="mt-3" />}
             {contentMessage && <p className="mt-2 text-xs leading-5 text-text-muted">{contentMessage}</p>}
@@ -637,30 +615,6 @@ export function StudioPage() {
         </div>}
       </Modal>
 
-      {/* 历史未查看成功任务提示弹窗（统一 Modal，Portal 到 body） */}
-      <Modal
-        open={showUnviewedPrompt && !!gen.task}
-        onClose={() => setShowUnviewedPrompt(false)}
-        title="上次生成已完成"
-        size="sm"
-        footer={
-          <>
-            <Button variant="secondary" size="sm" onClick={() => setShowUnviewedPrompt(false)}>
-              忽略
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleViewLastTask}>
-              查看
-            </Button>
-          </>
-        }
-      >
-        {gen.task && (
-          <p className="text-sm text-text-muted">
-            「{firstTitle(gen.task.title)}」已生成 {gen.task.resultImages?.length ?? 0} 张图，是否查看结果？
-          </p>
-        )}
-      </Modal>
-
       {/* 提交生图二次确认：展示本次内容与积分消耗，确认后才提交任务；余额不足时内嵌客服充值引导 */}
       <Modal
         open={showConfirmGenerate}
@@ -773,6 +727,30 @@ export function StudioPage() {
             )}
           </div>
         )}
+      </Modal>
+      {/* 开始新任务二次确认：进行中时点击，不取消后台任务，清空结果区保留素材与内容预览 */}
+      <Modal
+        open={showNewTaskConfirm}
+        onClose={cancelStartNewTask}
+        title="开始新任务"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={cancelStartNewTask}>
+              取消
+            </Button>
+            <Button variant="secondary" size="sm" onClick={goToHistory}>
+              前往历史记录
+            </Button>
+            <Button variant="primary" size="sm" onClick={confirmStartNewTask}>
+              确认开始新任务
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm leading-6 text-text">
+          当前任务仍在后台运行，进度与结果可在历史记录中查看。开始新任务将清空当前结果区，不影响后台任务。
+        </p>
       </Modal>
     </>
   );

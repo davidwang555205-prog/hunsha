@@ -60,11 +60,12 @@ func (m *Manager) addUsersWithPassword(ctx context.Context, teamUser *domain.Tea
 		return nil, fmt.Errorf("团队不存在")
 	}
 	limit := domain.NormalizeDailyImageLimit(req.DailyImageLimit, domain.DefaultDailyImageLimit)
+	maxActive := domain.NormalizeMaxActiveTasks(req.MaxActiveTasks, domain.DefaultMaxActiveTasks)
 
 	users := make([]*domain.TeamUser, 0, len(req.Phones))
 	passwords := make([]*domain.TeamUserPassword, 0, len(req.Phones))
 	for _, phone := range req.Phones {
-		tu, pwd, err := m.createSubAccount(ctx, teamID, phone, req.GroupID, limit)
+		tu, pwd, err := m.createSubAccount(ctx, teamID, phone, req.GroupID, limit, maxActive)
 		if err != nil {
 			m.logger.ErrorContext(ctx, "create subaccount failed", "phone", phone, "error", err)
 			continue
@@ -77,7 +78,7 @@ func (m *Manager) addUsersWithPassword(ctx context.Context, teamUser *domain.Tea
 
 // createSubAccount 建 subaccount 用户 + TeamMember(user) + TeamGroupMember，返回 TeamUser + 明文密码。
 // 手机号唯一：已被任何用户占用则报错（phone 部分唯一索引）。
-func (m *Manager) createSubAccount(ctx context.Context, teamID uuid.UUID, phone string, groupID uuid.UUID, dailyLimit int) (*domain.TeamUser, string, error) {
+func (m *Manager) createSubAccount(ctx context.Context, teamID uuid.UUID, phone string, groupID uuid.UUID, dailyLimit, maxActive int) (*domain.TeamUser, string, error) {
 	pwd := random.String(16)
 	hashed, err := crypto.HashPassword(pwd)
 	if err != nil {
@@ -100,6 +101,7 @@ func (m *Manager) createSubAccount(ctx context.Context, teamID uuid.UUID, phone 
 			SetPassword(hashed).
 			SetRole(consts.UserRoleSubAccount).
 			SetDailyImageLimit(dailyLimit).
+			SetMaxActiveTasks(maxActive).
 			SetMustChangePassword(true).
 			Save(ctx)
 		if err != nil {
@@ -164,8 +166,9 @@ func (m *Manager) AddAdmin(ctx context.Context, teamUser *domain.TeamUser, req *
 	if err != nil {
 		return nil, err
 	}
-	// enterprise 不受限（HasUnlimitedImageGeneration 看 role），DailyImageLimit 仅存档。
+	// enterprise 不受限（HasUnlimitedImageGeneration 看 role），DailyImageLimit / MaxActiveTasks 仅存档。
 	dailyLimit := domain.NormalizeDailyImageLimit(req.DailyImageLimit, domain.DefaultDailyImageLimit)
+	maxActive := domain.NormalizeMaxActiveTasks(req.MaxActiveTasks, domain.DefaultMaxActiveTasks)
 	var adminUser *domain.TeamUser
 	err = entx.WithTx2(ctx, m.db, func(tx *db.Tx) error {
 		u, err := tx.User.Create().
@@ -176,6 +179,7 @@ func (m *Manager) AddAdmin(ctx context.Context, teamUser *domain.TeamUser, req *
 			SetPassword(hashed).
 			SetRole(consts.UserRoleEnterprise).
 			SetDailyImageLimit(dailyLimit).
+			SetMaxActiveTasks(maxActive).
 			SetMustChangePassword(true).
 			Save(ctx)
 		if err != nil {

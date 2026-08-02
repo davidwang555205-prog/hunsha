@@ -39,6 +39,8 @@ const (
 	FieldDisplayName = "display_name"
 	// FieldDailyImageLimit holds the string denoting the daily_image_limit field in the database.
 	FieldDailyImageLimit = "daily_image_limit"
+	// FieldMaxActiveTasks holds the string denoting the max_active_tasks field in the database.
+	FieldMaxActiveTasks = "max_active_tasks"
 	// FieldCredits holds the string denoting the credits field in the database.
 	FieldCredits = "credits"
 	// FieldVisibleCategoryIds holds the string denoting the visible_category_ids field in the database.
@@ -257,6 +259,7 @@ var Columns = []string{
 	FieldUsername,
 	FieldDisplayName,
 	FieldDailyImageLimit,
+	FieldMaxActiveTasks,
 	FieldCredits,
 	FieldVisibleCategoryIds,
 	FieldPasswordSalt,
@@ -305,6 +308,10 @@ var (
 	DefaultDailyImageLimit int
 	// DailyImageLimitValidator is a validator for the "daily_image_limit" field. It is called by the builders before save.
 	DailyImageLimitValidator func(int) error
+	// DefaultMaxActiveTasks holds the default value on creation for the "max_active_tasks" field.
+	DefaultMaxActiveTasks int
+	// MaxActiveTasksValidator is a validator for the "max_active_tasks" field. It is called by the builders before save.
+	MaxActiveTasksValidator func(int) error
 	// DefaultCredits holds the default value on creation for the "credits" field.
 	DefaultCredits int
 	// DefaultMustChangePassword holds the default value on creation for the "must_change_password" field.
@@ -378,6 +385,11 @@ func ByDisplayName(opts ...sql.OrderTermOption) OrderOption {
 // ByDailyImageLimit orders the results by the daily_image_limit field.
 func ByDailyImageLimit(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDailyImageLimit, opts...).ToFunc()
+}
+
+// ByMaxActiveTasks orders the results by the max_active_tasks field.
+func ByMaxActiveTasks(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMaxActiveTasks, opts...).ToFunc()
 }
 
 // ByCredits orders the results by the credits field.

@@ -159,6 +159,10 @@ type SanitizedTask struct {
 	ChannelID          *string             `json:"channelId"`
 	ChannelName        string              `json:"channelName"`
 	DurationMs         int                 `json:"durationMs"`
+	TotalCount         int                 `json:"totalCount"`
+	CompletedCount     int                 `json:"completedCount"`
+	SubTaskStatus      []SubTaskStatusItem `json:"subTaskStatus"`
+	EstimatedSeconds   int                 `json:"estimatedSeconds"`
 }
 
 // dbStatusToHistory DB 任务状态 -> 前端历史状态（completed -> success，对齐 HistoryRecord 契约）。
@@ -170,6 +174,7 @@ func dbStatusToHistory(s string) string {
 }
 
 // historyStatusToDB 前端历史状态 -> DB 任务状态（success -> completed，用于筛选）。
+// queued/processing 为进行中状态，原样透传。
 func historyStatusToDB(s string) string {
 	if s == "success" {
 		return "completed"
@@ -195,6 +200,10 @@ func sanitize(rec TaskRecord) SanitizedTask {
 	if prompts == nil {
 		prompts = []string{}
 	}
+	subTaskStatus := rec.SubTaskStatus
+	if subTaskStatus == nil {
+		subTaskStatus = []SubTaskStatusItem{}
+	}
 	out := SanitizedTask{
 		ID:                 rec.ID.String(),
 		UserID:             rec.UserID.String(),
@@ -214,6 +223,10 @@ func sanitize(rec TaskRecord) SanitizedTask {
 		Error:              rec.Error,
 		UploadedImageCount: rec.UploadedImageCount,
 		ChannelName:        rec.ChannelName,
+		TotalCount:         rec.TotalCount,
+		CompletedCount:     rec.CompletedCount,
+		SubTaskStatus:      subTaskStatus,
+		EstimatedSeconds:   rec.EstimatedSeconds,
 	}
 	if rec.StartedAt != nil && rec.CompletedAt != nil && rec.CompletedAt.After(*rec.StartedAt) {
 		out.DurationMs = int(rec.CompletedAt.Sub(*rec.StartedAt).Milliseconds())
@@ -705,7 +718,21 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		}
 	}
 
-	// 5. 前置计算：leadPersonIndex / leadPhoneIndex / 共享场景/模特
+	// 5. 用户异步任务数上限校验（admin 不限量；并发下允许轻微超限，与每日额度同语义）
+	if !user.HasUnlimitedImageGeneration() {
+		activeCount, err := u.repo.CountActiveTasks(ctx, user.ID)
+		if err != nil {
+			u.logger.ErrorContext(ctx, "count active tasks failed", "error", err)
+		} else {
+			limit := domain.NormalizeMaxActiveTasks(user.MaxActiveTasks, domain.DefaultMaxActiveTasks)
+			if activeCount >= limit {
+				return nil, wala.NewError(429, fmt.Sprintf(
+					"进行中任务已达上限（%d 个）。可在历史记录查看进度，完成后再提交新任务。", limit))
+			}
+		}
+	}
+
+	// 6. 前置计算：leadPersonIndex / leadPhoneIndex / 共享场景/模特
 	personTypes := map[string]bool{"产品上身图": true, "对镜穿搭图": true, "生活场景图": true}
 	leadPersonIndex := -1
 	leadPhoneIndex := -1
@@ -907,11 +934,13 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 // ListHistory /api/v1/generation/history，支持分页 + 状态/时间筛选。
 // 复用 ListTasksPaged（查 generation_tasks），结果序列化为 SanitizedTask（HistoryRecord 契约）。
 func (u *Usecase) ListHistory(ctx context.Context, user *domain.User, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID, categoryID uuid.UUID) ([]SanitizedTask, int, error) {
-	recs, total, err := u.repo.ListTasksPaged(ctx, user.ID, user.HasUnlimitedImageGeneration(), page, pageSize, historyStatusToDB(status), startTime, endTime, taskID, filterUserID, categoryID, true)
+	isAdmin := user.HasUnlimitedImageGeneration()
+	// 用户端历史列表包含进行中任务；admin 后台保持仅终态，避免把大量进行中的任务混入管理视图。
+	finishedOnly := isAdmin
+	recs, total, err := u.repo.ListTasksPaged(ctx, user.ID, isAdmin, page, pageSize, historyStatusToDB(status), startTime, endTime, taskID, filterUserID, categoryID, finishedOnly)
 	if err != nil {
 		return nil, 0, err
 	}
-	isAdmin := user.HasUnlimitedImageGeneration()
 	out := make([]SanitizedTask, 0, len(recs))
 	for _, r := range recs {
 		s := u.SanitizeHistory(r)

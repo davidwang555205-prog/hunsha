@@ -34,8 +34,9 @@ const rangeOptions: { key: RangeKey; label: string }[] = [
   { key: "custom", label: "自定义" }
 ];
 
-const statusOptions: { value: "" | "success" | "failed"; label: string }[] = [
+const statusOptions: { value: "" | "processing" | "success" | "failed"; label: string }[] = [
   { value: "", label: "全部状态" },
+  { value: "processing", label: "进行中" },
   { value: "success", label: "成功" },
   { value: "failed", label: "失败" }
 ];
@@ -115,6 +116,14 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // 进行中任务自动轮询：列表存在 queued/processing 记录时 3s 刷新一次，无 active 即停；卸载清理。
+  useEffect(() => {
+    const hasActive = records.some((r) => r.status === "queued" || r.status === "processing");
+    if (!hasActive) return;
+    const timer = window.setInterval(() => void refresh(), 3000);
+    return () => window.clearInterval(timer);
+  }, [records, refresh]);
+
   const [message, setMessage] = useState("");
   const [range, setRange] = useState<RangeKey>("all");
   const [customStart, setCustomStart] = useState("");
@@ -135,7 +144,7 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
     const cid = categoryId !== undefined ? categoryId : selectedCategoryId;
     setFilter({
       ...dates,
-      status: (status || undefined) as "success" | "failed" | undefined,
+      status: (status || undefined) as "processing" | "success" | "failed" | undefined,
       q: q || undefined,
       userId: uid || undefined,
       categoryId: cid || undefined
@@ -145,20 +154,20 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
   // adminMode 用户筛选
   const handleUserChange = (userId: string) => {
     setSelectedUserId(userId);
-    const currentStatus = (query.status || "") as "" | "success" | "failed";
+    const currentStatus = (query.status || "") as "" | "processing" | "success" | "failed";
     applyFilter(range, currentStatus, searchInput, undefined, undefined, userId);
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
-    const currentStatus = (query.status || "") as "" | "success" | "failed";
+    const currentStatus = (query.status || "") as "" | "processing" | "success" | "failed";
     applyFilter(range, currentStatus, searchInput, undefined, undefined, undefined, categoryId);
   };
 
   const handleSearchInput = (value: string) => {
     setSearchInput(value);
     if (searchTimer) clearTimeout(searchTimer);
-    const currentStatus = (query.status || "") as "" | "success" | "failed";
+    const currentStatus = (query.status || "") as "" | "processing" | "success" | "failed";
     const t = setTimeout(() => applyFilter(range, currentStatus, value), 500);
     setSearchTimer(t);
   };
@@ -172,7 +181,7 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
       return;
     }
     setRange(next);
-    const currentStatus = (query.status || "") as "" | "success" | "failed";
+    const currentStatus = (query.status || "") as "" | "processing" | "success" | "failed";
     applyFilter(next, currentStatus, searchInput);
   };
 
@@ -181,12 +190,12 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
     setCustomStart(tempStart);
     setCustomEnd(tempEnd);
     setRange("custom");
-    const currentStatus = (query.status || "") as "" | "success" | "failed";
+    const currentStatus = (query.status || "") as "" | "processing" | "success" | "failed";
     applyFilter("custom", currentStatus, searchInput, tempStart, tempEnd);
     setShowCustomModal(false);
   };
 
-  const handleStatusChange = (status: "" | "success" | "failed") => {
+  const handleStatusChange = (status: "" | "processing" | "success" | "failed") => {
     applyFilter(range, status, searchInput);
   };
 
@@ -295,7 +304,7 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
                 setCustomStart("");
                 setCustomEnd("");
                 setRange("all");
-                const currentStatus = (query.status || "") as "" | "success" | "failed";
+                const currentStatus = (query.status || "") as "" | "processing" | "success" | "failed";
                 applyFilter("all", currentStatus, searchInput);
               }}
             >

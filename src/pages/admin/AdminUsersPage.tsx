@@ -44,16 +44,18 @@ export function AdminUsersPage() {
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
 
-  // 创建表单（team：手机号批量 + dailyImageLimit）
+  // 创建表单（team：手机号批量 + dailyImageLimit + maxActiveTasks）
   const [nu, setNu] = useState({
     phones: "",
-    dailyImageLimit: "20"
+    dailyImageLimit: "20",
+    maxActiveTasks: "5"
   });
 
-  // 编辑表单（仅 name/dailyImageLimit；停用启用走列表行开关，积分走独立弹窗）
+  // 编辑表单（name/dailyImageLimit/maxActiveTasks；停用启用走列表行开关，积分走独立弹窗）
   const [ed, setEd] = useState({
     name: "",
     dailyImageLimit: "20",
+    maxActiveTasks: "5",
     visibleCategoryIds: [] as string[]
   });
 
@@ -102,6 +104,7 @@ export function AdminUsersPage() {
     setEd({
       name: m.user.displayName || m.user.name || "",
       dailyImageLimit: String(m.user.dailyImageLimit ?? 0),
+      maxActiveTasks: String(m.user.maxActiveTasks ?? 5),
       visibleCategoryIds: m.user.visibleCategoryIds ?? []
     });
     setResetResult(null);
@@ -122,9 +125,10 @@ export function AdminUsersPage() {
     try {
       const payload = await createUser({
         phones,
-        dailyImageLimit: Math.max(0, Math.floor(Number(nu.dailyImageLimit) || 0))
+        dailyImageLimit: Math.max(0, Math.floor(Number(nu.dailyImageLimit) || 0)),
+        maxActiveTasks: Math.max(0, Math.floor(Number(nu.maxActiveTasks) || 0))
       });
-      setNu({ phones: "", dailyImageLimit: "20" });
+      setNu({ phones: "", dailyImageLimit: "20", maxActiveTasks: "5" });
       setShowCreate(false);
       setCreatedPasswords(payload.passwords);
       setMessage(`已创建 ${payload.users.length} 个成员，请复制保存初始密码。`);
@@ -144,6 +148,7 @@ export function AdminUsersPage() {
       const payload = await updateUser(editing.user.id, {
         name: ed.name || undefined,
         dailyImageLimit: ed.dailyImageLimit !== "" ? Math.max(0, Math.floor(Number(ed.dailyImageLimit))) : undefined,
+        maxActiveTasks: ed.maxActiveTasks !== "" ? Math.max(0, Math.floor(Number(ed.maxActiveTasks))) : undefined,
         visibleCategoryIds: ed.visibleCategoryIds
       });
       setEditing(null);
@@ -385,6 +390,9 @@ export function AdminUsersPage() {
           <Field label="每日生图上限（enterprise/admin 不受限，此值对 subaccount 生效）">
             <Input type="number" value={nu.dailyImageLimit} onChange={(e) => setNu({ ...nu, dailyImageLimit: e.target.value })} />
           </Field>
+          <Field label="异步任务上限（enterprise/admin 不受限，此值对 subaccount 生效）">
+            <Input type="number" value={nu.maxActiveTasks} onChange={(e) => setNu({ ...nu, maxActiveTasks: e.target.value })} />
+          </Field>
           <p className="text-xs text-text-muted">创建后后端生成随机初始密码，仅在弹窗中显示一次，请及时复制保存。成员首登需修改初始密码。</p>
         </div>
       </Modal>
@@ -435,6 +443,7 @@ export function AdminUsersPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="显示名"><Input value={ed.name} onChange={(e) => setEd({ ...ed, name: e.target.value })} /></Field>
               <Field label="每日限制"><Input type="number" value={ed.dailyImageLimit} onChange={(e) => setEd({ ...ed, dailyImageLimit: e.target.value })} /></Field>
+              <Field label="异步任务上限"><Input type="number" value={ed.maxActiveTasks} onChange={(e) => setEd({ ...ed, maxActiveTasks: e.target.value })} /></Field>
             </div>
             <Field label="可见类目">
               <div className="rounded-md border border-border bg-bg/50 p-3">

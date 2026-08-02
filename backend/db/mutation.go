@@ -62109,6 +62109,8 @@ type UserMutation struct {
 	display_name                  *string
 	daily_image_limit             *int
 	adddaily_image_limit          *int
+	max_active_tasks              *int
+	addmax_active_tasks           *int
 	credits                       *int
 	addcredits                    *int
 	visible_category_ids          *[]uuid.UUID
@@ -62833,6 +62835,62 @@ func (m *UserMutation) AddedDailyImageLimit() (r int, exists bool) {
 func (m *UserMutation) ResetDailyImageLimit() {
 	m.daily_image_limit = nil
 	m.adddaily_image_limit = nil
+}
+
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (m *UserMutation) SetMaxActiveTasks(i int) {
+	m.max_active_tasks = &i
+	m.addmax_active_tasks = nil
+}
+
+// MaxActiveTasks returns the value of the "max_active_tasks" field in the mutation.
+func (m *UserMutation) MaxActiveTasks() (r int, exists bool) {
+	v := m.max_active_tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxActiveTasks returns the old "max_active_tasks" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldMaxActiveTasks(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxActiveTasks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxActiveTasks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxActiveTasks: %w", err)
+	}
+	return oldValue.MaxActiveTasks, nil
+}
+
+// AddMaxActiveTasks adds i to the "max_active_tasks" field.
+func (m *UserMutation) AddMaxActiveTasks(i int) {
+	if m.addmax_active_tasks != nil {
+		*m.addmax_active_tasks += i
+	} else {
+		m.addmax_active_tasks = &i
+	}
+}
+
+// AddedMaxActiveTasks returns the value that was added to the "max_active_tasks" field in this mutation.
+func (m *UserMutation) AddedMaxActiveTasks() (r int, exists bool) {
+	v := m.addmax_active_tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxActiveTasks resets all changes to the "max_active_tasks" field.
+func (m *UserMutation) ResetMaxActiveTasks() {
+	m.max_active_tasks = nil
+	m.addmax_active_tasks = nil
 }
 
 // SetCredits sets the "credits" field.
@@ -64379,7 +64437,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 21)
 	if m.deleted_at != nil {
 		fields = append(fields, user.FieldDeletedAt)
 	}
@@ -64415,6 +64473,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.daily_image_limit != nil {
 		fields = append(fields, user.FieldDailyImageLimit)
+	}
+	if m.max_active_tasks != nil {
+		fields = append(fields, user.FieldMaxActiveTasks)
 	}
 	if m.credits != nil {
 		fields = append(fields, user.FieldCredits)
@@ -64472,6 +64533,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.DisplayName()
 	case user.FieldDailyImageLimit:
 		return m.DailyImageLimit()
+	case user.FieldMaxActiveTasks:
+		return m.MaxActiveTasks()
 	case user.FieldCredits:
 		return m.Credits()
 	case user.FieldVisibleCategoryIds:
@@ -64521,6 +64584,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDisplayName(ctx)
 	case user.FieldDailyImageLimit:
 		return m.OldDailyImageLimit(ctx)
+	case user.FieldMaxActiveTasks:
+		return m.OldMaxActiveTasks(ctx)
 	case user.FieldCredits:
 		return m.OldCredits(ctx)
 	case user.FieldVisibleCategoryIds:
@@ -64630,6 +64695,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDailyImageLimit(v)
 		return nil
+	case user.FieldMaxActiveTasks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxActiveTasks(v)
+		return nil
 	case user.FieldCredits:
 		v, ok := value.(int)
 		if !ok {
@@ -64697,6 +64769,9 @@ func (m *UserMutation) AddedFields() []string {
 	if m.adddaily_image_limit != nil {
 		fields = append(fields, user.FieldDailyImageLimit)
 	}
+	if m.addmax_active_tasks != nil {
+		fields = append(fields, user.FieldMaxActiveTasks)
+	}
 	if m.addcredits != nil {
 		fields = append(fields, user.FieldCredits)
 	}
@@ -64710,6 +64785,8 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldDailyImageLimit:
 		return m.AddedDailyImageLimit()
+	case user.FieldMaxActiveTasks:
+		return m.AddedMaxActiveTasks()
 	case user.FieldCredits:
 		return m.AddedCredits()
 	}
@@ -64727,6 +64804,13 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDailyImageLimit(v)
+		return nil
+	case user.FieldMaxActiveTasks:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxActiveTasks(v)
 		return nil
 	case user.FieldCredits:
 		v, ok := value.(int)
@@ -64866,6 +64950,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldDailyImageLimit:
 		m.ResetDailyImageLimit()
+		return nil
+	case user.FieldMaxActiveTasks:
+		m.ResetMaxActiveTasks()
 		return nil
 	case user.FieldCredits:
 		m.ResetCredits()

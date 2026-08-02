@@ -8,9 +8,11 @@ import type { ReactNode } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { BaseLayout, type NavItem } from "./BaseLayout";
 import { HomeIcon, SparklesIcon, ClockIcon, ShieldIcon } from "../icons";
+import { useActiveTaskWatcher } from "../../hooks/useActiveTaskWatcher";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { isAdmin } = useAuth();
+  useActiveTaskWatcher();
   const navItems: NavItem[] = [
     { to: "/", label: "工具首页", icon: <HomeIcon size={18} />, end: true },
     { to: "/studio", label: "内容生成", icon: <SparklesIcon size={18} /> },

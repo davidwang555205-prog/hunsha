@@ -261,6 +261,27 @@ func (_u *UserUpdate) AddDailyImageLimit(v int) *UserUpdate {
 	return _u
 }
 
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (_u *UserUpdate) SetMaxActiveTasks(v int) *UserUpdate {
+	_u.mutation.ResetMaxActiveTasks()
+	_u.mutation.SetMaxActiveTasks(v)
+	return _u
+}
+
+// SetNillableMaxActiveTasks sets the "max_active_tasks" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableMaxActiveTasks(v *int) *UserUpdate {
+	if v != nil {
+		_u.SetMaxActiveTasks(*v)
+	}
+	return _u
+}
+
+// AddMaxActiveTasks adds value to the "max_active_tasks" field.
+func (_u *UserUpdate) AddMaxActiveTasks(v int) *UserUpdate {
+	_u.mutation.AddMaxActiveTasks(v)
+	return _u
+}
+
 // SetCredits sets the "credits" field.
 func (_u *UserUpdate) SetCredits(v int) *UserUpdate {
 	_u.mutation.ResetCredits()
@@ -1209,6 +1230,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.MaxActiveTasks(); ok {
+		if err := user.MaxActiveTasksValidator(v); err != nil {
+			return &ValidationError{Name: "max_active_tasks", err: fmt.Errorf(`db: validator failed for field "User.max_active_tasks": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1289,6 +1315,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedDailyImageLimit(); ok {
 		_spec.AddField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MaxActiveTasks(); ok {
+		_spec.SetField(user.FieldMaxActiveTasks, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxActiveTasks(); ok {
+		_spec.AddField(user.FieldMaxActiveTasks, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Credits(); ok {
 		_spec.SetField(user.FieldCredits, field.TypeInt, value)
@@ -2555,6 +2587,27 @@ func (_u *UserUpdateOne) AddDailyImageLimit(v int) *UserUpdateOne {
 	return _u
 }
 
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (_u *UserUpdateOne) SetMaxActiveTasks(v int) *UserUpdateOne {
+	_u.mutation.ResetMaxActiveTasks()
+	_u.mutation.SetMaxActiveTasks(v)
+	return _u
+}
+
+// SetNillableMaxActiveTasks sets the "max_active_tasks" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableMaxActiveTasks(v *int) *UserUpdateOne {
+	if v != nil {
+		_u.SetMaxActiveTasks(*v)
+	}
+	return _u
+}
+
+// AddMaxActiveTasks adds value to the "max_active_tasks" field.
+func (_u *UserUpdateOne) AddMaxActiveTasks(v int) *UserUpdateOne {
+	_u.mutation.AddMaxActiveTasks(v)
+	return _u
+}
+
 // SetCredits sets the "credits" field.
 func (_u *UserUpdateOne) SetCredits(v int) *UserUpdateOne {
 	_u.mutation.ResetCredits()
@@ -3516,6 +3569,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.MaxActiveTasks(); ok {
+		if err := user.MaxActiveTasksValidator(v); err != nil {
+			return &ValidationError{Name: "max_active_tasks", err: fmt.Errorf(`db: validator failed for field "User.max_active_tasks": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -3613,6 +3671,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedDailyImageLimit(); ok {
 		_spec.AddField(user.FieldDailyImageLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MaxActiveTasks(); ok {
+		_spec.SetField(user.FieldMaxActiveTasks, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxActiveTasks(); ok {
+		_spec.AddField(user.FieldMaxActiveTasks, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Credits(); ok {
 		_spec.SetField(user.FieldCredits, field.TypeInt, value)

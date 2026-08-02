@@ -181,6 +181,20 @@ func (_c *UserCreate) SetNillableDailyImageLimit(v *int) *UserCreate {
 	return _c
 }
 
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (_c *UserCreate) SetMaxActiveTasks(v int) *UserCreate {
+	_c.mutation.SetMaxActiveTasks(v)
+	return _c
+}
+
+// SetNillableMaxActiveTasks sets the "max_active_tasks" field if the given value is not nil.
+func (_c *UserCreate) SetNillableMaxActiveTasks(v *int) *UserCreate {
+	if v != nil {
+		_c.SetMaxActiveTasks(*v)
+	}
+	return _c
+}
+
 // SetCredits sets the "credits" field.
 func (_c *UserCreate) SetCredits(v int) *UserCreate {
 	_c.mutation.SetCredits(v)
@@ -651,6 +665,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultDailyImageLimit
 		_c.mutation.SetDailyImageLimit(v)
 	}
+	if _, ok := _c.mutation.MaxActiveTasks(); !ok {
+		v := user.DefaultMaxActiveTasks
+		_c.mutation.SetMaxActiveTasks(v)
+	}
 	if _, ok := _c.mutation.Credits(); !ok {
 		v := user.DefaultCredits
 		_c.mutation.SetCredits(v)
@@ -701,6 +719,14 @@ func (_c *UserCreate) check() error {
 	if v, ok := _c.mutation.DailyImageLimit(); ok {
 		if err := user.DailyImageLimitValidator(v); err != nil {
 			return &ValidationError{Name: "daily_image_limit", err: fmt.Errorf(`db: validator failed for field "User.daily_image_limit": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.MaxActiveTasks(); !ok {
+		return &ValidationError{Name: "max_active_tasks", err: errors.New(`db: missing required field "User.max_active_tasks"`)}
+	}
+	if v, ok := _c.mutation.MaxActiveTasks(); ok {
+		if err := user.MaxActiveTasksValidator(v); err != nil {
+			return &ValidationError{Name: "max_active_tasks", err: fmt.Errorf(`db: validator failed for field "User.max_active_tasks": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Credits(); !ok {
@@ -798,6 +824,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DailyImageLimit(); ok {
 		_spec.SetField(user.FieldDailyImageLimit, field.TypeInt, value)
 		_node.DailyImageLimit = value
+	}
+	if value, ok := _c.mutation.MaxActiveTasks(); ok {
+		_spec.SetField(user.FieldMaxActiveTasks, field.TypeInt, value)
+		_node.MaxActiveTasks = value
 	}
 	if value, ok := _c.mutation.Credits(); ok {
 		_spec.SetField(user.FieldCredits, field.TypeInt, value)
@@ -1426,6 +1456,24 @@ func (u *UserUpsert) AddDailyImageLimit(v int) *UserUpsert {
 	return u
 }
 
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (u *UserUpsert) SetMaxActiveTasks(v int) *UserUpsert {
+	u.Set(user.FieldMaxActiveTasks, v)
+	return u
+}
+
+// UpdateMaxActiveTasks sets the "max_active_tasks" field to the value that was provided on create.
+func (u *UserUpsert) UpdateMaxActiveTasks() *UserUpsert {
+	u.SetExcluded(user.FieldMaxActiveTasks)
+	return u
+}
+
+// AddMaxActiveTasks adds v to the "max_active_tasks" field.
+func (u *UserUpsert) AddMaxActiveTasks(v int) *UserUpsert {
+	u.Add(user.FieldMaxActiveTasks, v)
+	return u
+}
+
 // SetCredits sets the "credits" field.
 func (u *UserUpsert) SetCredits(v int) *UserUpsert {
 	u.Set(user.FieldCredits, v)
@@ -1821,6 +1869,27 @@ func (u *UserUpsertOne) AddDailyImageLimit(v int) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateDailyImageLimit() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateDailyImageLimit()
+	})
+}
+
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (u *UserUpsertOne) SetMaxActiveTasks(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetMaxActiveTasks(v)
+	})
+}
+
+// AddMaxActiveTasks adds v to the "max_active_tasks" field.
+func (u *UserUpsertOne) AddMaxActiveTasks(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddMaxActiveTasks(v)
+	})
+}
+
+// UpdateMaxActiveTasks sets the "max_active_tasks" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateMaxActiveTasks() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateMaxActiveTasks()
 	})
 }
 
@@ -2407,6 +2476,27 @@ func (u *UserUpsertBulk) AddDailyImageLimit(v int) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateDailyImageLimit() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateDailyImageLimit()
+	})
+}
+
+// SetMaxActiveTasks sets the "max_active_tasks" field.
+func (u *UserUpsertBulk) SetMaxActiveTasks(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetMaxActiveTasks(v)
+	})
+}
+
+// AddMaxActiveTasks adds v to the "max_active_tasks" field.
+func (u *UserUpsertBulk) AddMaxActiveTasks(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddMaxActiveTasks(v)
+	})
+}
+
+// UpdateMaxActiveTasks sets the "max_active_tasks" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateMaxActiveTasks() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateMaxActiveTasks()
 	})
 }
 

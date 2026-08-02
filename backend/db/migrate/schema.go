@@ -2173,6 +2173,7 @@ var (
 		{Name: "username", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "display_name", Type: field.TypeString, Nullable: true},
 		{Name: "daily_image_limit", Type: field.TypeInt, Default: 20},
+		{Name: "max_active_tasks", Type: field.TypeInt, Default: 5},
 		{Name: "credits", Type: field.TypeInt, Default: 0},
 		{Name: "visible_category_ids", Type: field.TypeJSON, Nullable: true},
 		{Name: "password_salt", Type: field.TypeString, Nullable: true},

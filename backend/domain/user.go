@@ -127,6 +127,7 @@ type User struct {
 	Username           string      `json:"username"`
 	DisplayName        string      `json:"displayName"`
 	DailyImageLimit    int         `json:"dailyImageLimit"`
+	MaxActiveTasks     int         `json:"maxActiveTasks"`
 	Credits            int         `json:"credits"`
 	VisibleCategoryIDs []uuid.UUID `json:"visibleCategoryIds"`
 	// bridal 短信注册 / 初始密码
@@ -157,6 +158,7 @@ func (u *User) From(src *db.User) *User {
 	u.Username = src.Username
 	u.DisplayName = src.DisplayName
 	u.DailyImageLimit = src.DailyImageLimit
+	u.MaxActiveTasks = src.MaxActiveTasks
 	u.Credits = src.Credits
 	u.VisibleCategoryIDs = src.VisibleCategoryIds
 	u.Phone = src.Phone
@@ -172,8 +174,10 @@ func (u *User) From(src *db.User) *User {
 
 // bridal 每日生图额度常量（与 Node maxDailyImageLimit/defaultDailyImageLimit 一致）。
 const (
-	MaxDailyImageLimit     = 1000
-	DefaultDailyImageLimit = 20
+	MaxDailyImageLimit       = 1000
+	DefaultDailyImageLimit   = 20
+	MaxMaxActiveTasks        = 100
+	DefaultMaxActiveTasks    = 5
 )
 
 // HasUnlimitedImageGeneration bridal 业务：团队所有者(enterprise)与系统管理员(admin)
@@ -190,6 +194,21 @@ func NormalizeDailyImageLimit(value, fallback int) int {
 	}
 	if value > MaxDailyImageLimit {
 		return MaxDailyImageLimit
+	}
+	return value
+}
+
+// NormalizeMaxActiveTasks 用户异步生图任务数上限规范化：
+// 0 表示使用默认；负值返回 fallback；否则限制在 [0, 100]。
+func NormalizeMaxActiveTasks(value, fallback int) int {
+	if value < 0 {
+		return fallback
+	}
+	if value == 0 {
+		return DefaultMaxActiveTasks
+	}
+	if value > MaxMaxActiveTasks {
+		return MaxMaxActiveTasks
 	}
 	return value
 }

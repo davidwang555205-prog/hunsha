@@ -25,6 +25,7 @@ export type ApiUser = {
   username: string;
   displayName: string;
   dailyImageLimit: number;
+  maxActiveTasks: number;
   credits: number;
   /** 空数组表示可见全部启用类目；非空时仅能看到所列类目。 */
   visibleCategoryIds: string[];
@@ -64,7 +65,7 @@ export type HistoryRecord = {
   userId: string;
   username: string;
   createdAt: string;
-  status: "success" | "failed";
+  status: "queued" | "processing" | "success" | "failed";
   model: string;
   mode: string;
   title: string;
@@ -87,6 +88,14 @@ export type HistoryRecord = {
   prompts?: string[];
   /** 小红书发布反馈，null=未反馈 */
   feedback?: TaskFeedback | null;
+  /** 总子图数（进行中/终态任务均有）。 */
+  totalCount: number;
+  /** 已完成子图数（含失败），用于进度条。 */
+  completedCount: number;
+  /** 子图状态快照（进行中任务返回，终态可能为空）。 */
+  subTaskStatus?: SubTaskStatus[];
+  /** 整组预估耗时（秒），旧记录可能为 0。 */
+  estimatedSeconds: number;
 };
 
 /** 小红书发布反馈（对应后端 types.TaskFeedback） */
@@ -469,6 +478,7 @@ export type TeamUserPassword = { account: string; password: string };
 export type CreateUserRequest = {
   phones: string[];
   dailyImageLimit: number;
+  maxActiveTasks: number;
 };
 
 /** 创号响应 = Resp.data，含初始密码 */
@@ -482,6 +492,7 @@ export type UpdateUserRequest = {
   name?: string;
   is_blocked?: boolean;
   dailyImageLimit?: number;
+  maxActiveTasks?: number;
   credits?: number;
   visibleCategoryIds?: string[];
 };
@@ -793,7 +804,7 @@ export type HistoryPagedResponse = {
 export type HistoryQuery = {
   page?: number;
   pageSize?: number;
-  status?: "success" | "failed";
+  status?: "queued" | "processing" | "success" | "failed";
   startTime?: string;
   endTime?: string;
   q?: string;

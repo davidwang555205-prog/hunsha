@@ -288,6 +288,7 @@ type AddTeamUserReq struct {
 	Phones          []string  `json:"phones" validate:"required"`           // 手机号列表
 	GroupID         uuid.UUID `json:"group_id" validate:"omitempty"`        // 团队组ID
 	DailyImageLimit int       `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：批量成员每日生图额度（0 用默认）
+	MaxActiveTasks  int       `json:"maxActiveTasks" validate:"omitempty"`  // bridal 扩展：批量成员异步生图任务数上限（0 用默认）
 }
 
 type AddTeamUserWithPasswordReq struct {
@@ -325,6 +326,7 @@ type AddTeamAdminReq struct {
 	Name            string `json:"name" validate:"required"`   // 姓名
 	Password        string `json:"-" swaggerignore:"true"`
 	DailyImageLimit int    `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：admin 不受限，此值仅存档
+	MaxActiveTasks  int    `json:"maxActiveTasks" validate:"omitempty"`  // bridal 扩展：admin 不受限，此值仅存档
 }
 
 // AddTeamAdminResp 创建团队管理员响应
@@ -383,6 +385,7 @@ type UpdateTeamUserReq struct {
 	Name               *string      `json:"name" validate:"omitempty"`
 	IsBlocked          *bool        `json:"is_blocked" validate:"omitempty"`
 	DailyImageLimit    *int         `json:"dailyImageLimit" validate:"omitempty"` // bridal 扩展：每日生图额度
+	MaxActiveTasks     *int         `json:"maxActiveTasks" validate:"omitempty"`  // bridal 扩展：异步生图任务数上限
 	Credits            *int         `json:"credits" validate:"omitempty"`         // bridal 扩展：积分余额
 	VisibleCategoryIDs *[]uuid.UUID `json:"visibleCategoryIds"`                   // 空数组=全部，非空=仅这些类目
 }

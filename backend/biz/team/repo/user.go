@@ -299,6 +299,9 @@ func (r *TeamGroupUserRepo) UpdateUser(ctx context.Context, userID uuid.UUID, re
 	if req.DailyImageLimit != nil {
 		update = update.SetDailyImageLimit(*req.DailyImageLimit)
 	}
+	if req.MaxActiveTasks != nil {
+		update = update.SetMaxActiveTasks(*req.MaxActiveTasks)
+	}
 	if req.Credits != nil {
 		update = update.SetCredits(*req.Credits)
 	}

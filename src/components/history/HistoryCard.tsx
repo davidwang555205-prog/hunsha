@@ -35,6 +35,16 @@ function formatDuration(durationMs?: number) {
   return `耗时 ${minutes} 分 ${seconds} 秒`;
 }
 
+const isActiveStatus = (status: string) => status === "queued" || status === "processing";
+
+function formatRemainingSeconds(completed: number, total: number, estimatedSeconds: number): string {
+  if (total <= 0 || estimatedSeconds <= 0) return "预计剩余时间计算中";
+  if (completed >= total) return "即将完成";
+  const remaining = Math.max(0, estimatedSeconds * (1 - completed / total));
+  if (remaining < 60) return `预计剩余 ${Math.ceil(remaining)} 秒`;
+  return `预计剩余 ${Math.ceil(remaining / 60)} 分钟`;
+}
+
 export function HistoryCard({ record, categoryName, showGenerationMeta = false, onOpenDetail, onOpenXHS, onMessage }: HistoryCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -82,6 +92,9 @@ export function HistoryCard({ record, categoryName, showGenerationMeta = false, 
   const hasCopy = Boolean(record.body.trim() || record.tags.length > 0);
   const categoryLabel = categoryName ?? (record.categoryId ? "已删除类目" : "未分类");
 
+  const active = isActiveStatus(record.status);
+  const progress = record.totalCount > 0 ? (record.completedCount / record.totalCount) * 100 : 0;
+
   return (
     <SpotlightCard className="rounded-lg bg-surface p-4 ring-1 ring-border" radius={220}>
       <div className="grid items-center gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)_auto]">
@@ -118,16 +131,33 @@ export function HistoryCard({ record, categoryName, showGenerationMeta = false, 
             <Badge variant="primary">{categoryLabel}</Badge>
             <Badge>{formatDate(record.createdAt)}</Badge>
             {record.username && <Badge>{record.username}</Badge>}
-            {record.status === "success" ? (
+            {active ? (
+              <Badge variant="primary">进行中</Badge>
+            ) : record.status === "success" ? (
               <Badge variant="success">成功</Badge>
             ) : (
               <Badge variant="danger">失败</Badge>
             )}
             <Badge>{hasCopy ? "图文内容" : "仅生成图片"}</Badge>
           </div>
-          <p className="text-sm text-text-muted">
-            {record.status === "failed" ? record.error || "本次生成失败" : `已生成 ${record.images.length} 张图片`}
-          </p>
+          {active ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-text-muted">
+                <span>生成进度 {record.completedCount}/{record.totalCount}</span>
+                <span>{formatRemainingSeconds(record.completedCount, record.totalCount, record.estimatedSeconds)}</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                  style={{ width: `${Math.min(100, progress)}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">
+              {record.status === "failed" ? record.error || "本次生成失败" : `已生成 ${record.images.length} 张图片`}
+            </p>
+          )}
           {showGenerationMeta && (
             <p className="text-xs text-text-muted">
               线路：{record.channelName || "未记录线路"} · 模型：{record.model || "未记录模型"} · {formatDuration(record.durationMs)}

@@ -44,6 +44,8 @@ type User struct {
 	DisplayName string `json:"display_name,omitempty"`
 	// DailyImageLimit holds the value of the "daily_image_limit" field.
 	DailyImageLimit int `json:"daily_image_limit,omitempty"`
+	// MaxActiveTasks holds the value of the "max_active_tasks" field.
+	MaxActiveTasks int `json:"max_active_tasks,omitempty"`
 	// Credits holds the value of the "credits" field.
 	Credits int `json:"credits,omitempty"`
 	// VisibleCategoryIds holds the value of the "visible_category_ids" field.
@@ -313,7 +315,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case user.FieldIsBlocked, user.FieldMustChangePassword:
 			values[i] = new(sql.NullBool)
-		case user.FieldDailyImageLimit, user.FieldCredits:
+		case user.FieldDailyImageLimit, user.FieldMaxActiveTasks, user.FieldCredits:
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldEmail, user.FieldAvatarURL, user.FieldPassword, user.FieldRole, user.FieldStatus, user.FieldUsername, user.FieldDisplayName, user.FieldPasswordSalt, user.FieldPasswordHash, user.FieldPhone:
 			values[i] = new(sql.NullString)
@@ -415,6 +417,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field daily_image_limit", values[i])
 			} else if value.Valid {
 				_m.DailyImageLimit = int(value.Int64)
+			}
+		case user.FieldMaxActiveTasks:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_active_tasks", values[i])
+			} else if value.Valid {
+				_m.MaxActiveTasks = int(value.Int64)
 			}
 		case user.FieldCredits:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -642,6 +650,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("daily_image_limit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DailyImageLimit))
+	builder.WriteString(", ")
+	builder.WriteString("max_active_tasks=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MaxActiveTasks))
 	builder.WriteString(", ")
 	builder.WriteString("credits=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Credits))

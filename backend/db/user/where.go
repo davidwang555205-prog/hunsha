@@ -114,6 +114,11 @@ func DailyImageLimit(v int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldDailyImageLimit, v))
 }
 
+// MaxActiveTasks applies equality check predicate on the "max_active_tasks" field. It's identical to MaxActiveTasksEQ.
+func MaxActiveTasks(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldMaxActiveTasks, v))
+}
+
 // Credits applies equality check predicate on the "credits" field. It's identical to CreditsEQ.
 func Credits(v int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCredits, v))
@@ -865,6 +870,46 @@ func DailyImageLimitLT(v int) predicate.User {
 // DailyImageLimitLTE applies the LTE predicate on the "daily_image_limit" field.
 func DailyImageLimitLTE(v int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldDailyImageLimit, v))
+}
+
+// MaxActiveTasksEQ applies the EQ predicate on the "max_active_tasks" field.
+func MaxActiveTasksEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldMaxActiveTasks, v))
+}
+
+// MaxActiveTasksNEQ applies the NEQ predicate on the "max_active_tasks" field.
+func MaxActiveTasksNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldMaxActiveTasks, v))
+}
+
+// MaxActiveTasksIn applies the In predicate on the "max_active_tasks" field.
+func MaxActiveTasksIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldMaxActiveTasks, vs...))
+}
+
+// MaxActiveTasksNotIn applies the NotIn predicate on the "max_active_tasks" field.
+func MaxActiveTasksNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldMaxActiveTasks, vs...))
+}
+
+// MaxActiveTasksGT applies the GT predicate on the "max_active_tasks" field.
+func MaxActiveTasksGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldMaxActiveTasks, v))
+}
+
+// MaxActiveTasksGTE applies the GTE predicate on the "max_active_tasks" field.
+func MaxActiveTasksGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldMaxActiveTasks, v))
+}
+
+// MaxActiveTasksLT applies the LT predicate on the "max_active_tasks" field.
+func MaxActiveTasksLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldMaxActiveTasks, v))
+}
+
+// MaxActiveTasksLTE applies the LTE predicate on the "max_active_tasks" field.
+func MaxActiveTasksLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldMaxActiveTasks, v))
 }
 
 // CreditsEQ applies the EQ predicate on the "credits" field.
