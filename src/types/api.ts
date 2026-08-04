@@ -96,6 +96,20 @@ export type HistoryRecord = {
   subTaskStatus?: SubTaskStatus[];
   /** 整组预估耗时（秒），旧记录可能为 0。 */
   estimatedSeconds: number;
+  /** 小红书最新快照摘要（null=未关联笔记，卡片内联展示避免逐条请求） */
+  xhsLatest?: XHSLatestSummary | null;
+};
+
+/** 小红书最新快照摘要（对应后端 generation.XHSLatestSummary）。
+ * hasNote=true 已关联笔记；capturedAt 空表示有链接但尚未采集到快照（等待采集）。 */
+export type XHSLatestSummary = {
+  hasNote: boolean;
+  capturedAt?: string;
+  views: number;
+  likes: number;
+  collects: number;
+  comments: number;
+  shares: number;
 };
 
 /** 小红书发布反馈（对应后端 types.TaskFeedback） */

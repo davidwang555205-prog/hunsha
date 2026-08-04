@@ -19,16 +19,19 @@ import { downloadImage, normalizeImageDisplayName } from "../../lib/download";
 import { copyText } from "../../lib/clipboard";
 import { XHSNotePanel } from "./XHSNotePanel";
 import { ModelInvocationTimeline } from "./ModelInvocationTimeline";
-import type { HistoryRecord } from "../../types/api";
+import { getTask } from "../../api/generation";
+import type { GenerationTask, HistoryRecord, SubTaskStatus } from "../../types/api";
 
 type HistoryDetailDrawerProps = {
   record: HistoryRecord | null;
   onClose: () => void;
   /** 管理员视角：展示给大模型的提示词（用户侧不展示） */
   isAdmin?: boolean;
+  /** 进行中任务转终态时回调，父组件刷新该 record（抽屉自动切到结果视图） */
+  onTaskFinished?: (taskId: string) => void;
 };
 
-export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailDrawerProps) {
+export function HistoryDetailDrawer({ record, onClose, isAdmin, onTaskFinished }: HistoryDetailDrawerProps) {
   // 图片预览索引（-1 关闭）；生成图、参考图各一组
   const [genPreview, setGenPreview] = useState(-1);
   const [refPreview, setRefPreview] = useState(-1);
@@ -81,7 +84,13 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
               <div className="flex flex-wrap items-center gap-2">
                 <Badge>{formatDate(record.createdAt)}</Badge>
                 {record.username && <Badge>{record.username}</Badge>}
-                {record.status === "success" ? <Badge variant="success">成功</Badge> : <Badge variant="danger">失败</Badge>}
+                {record.status === "success" ? (
+                  <Badge variant="success">成功</Badge>
+                ) : record.status === "queued" || record.status === "processing" ? (
+                  <Badge variant="primary">{record.status === "queued" ? "排队中" : "进行中"}</Badge>
+                ) : (
+                  <Badge variant="danger">失败</Badge>
+                )}
                 <Badge variant="primary">{record.topic}</Badge>
               </div>
               <button
@@ -92,6 +101,13 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
                 关闭
               </button>
             </div>
+
+            {/* 进行中任务：轮询展示子图逐张进度 */}
+            {(record.status === "processing" || record.status === "queued") && (
+              <div className="mt-4">
+                <TaskProgressPanel taskId={record.id} onFinished={onTaskFinished} />
+              </div>
+            )}
 
             {/* 生成图：仅成功时渲染，避免失败任务显示破裂图 */}
             {record.status === "success" && record.images.length > 0 && (
@@ -250,5 +266,84 @@ export function HistoryDetailDrawer({ record, onClose, isAdmin }: HistoryDetailD
       )}
     </AnimatePresence>,
     document.body
+  );
+}
+
+// TaskProgressPanel 进行中任务进度面板：2s 轮询 getTask，展示总进度 + 子图逐张状态。
+// 任务转终态时通知父组件刷新 record（抽屉自动切到结果视图）。
+function TaskProgressPanel({ taskId, onFinished }: { taskId: string; onFinished?: (taskId: string) => void }) {
+  const [task, setTask] = useState<GenerationTask | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const resp = await getTask(taskId);
+        if (cancelled) return;
+        setTask(resp.task);
+        if (resp.task.status === "completed" || resp.task.status === "failed" || resp.task.status === "cancelled") {
+          onFinished?.(taskId);
+        }
+      } catch {
+        // 轮询失败静默，下个 tick 重试
+      }
+    };
+    void poll();
+    const timer = window.setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
+
+  if (!task) return <p className="text-sm text-text-muted">正在读取任务进度…</p>;
+
+  const completed = task.completedCount ?? 0;
+  const total = task.totalCount ?? 0;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const statusLabel: Record<SubTaskStatus["status"], string> = {
+    pending: "等待中",
+    processing: "生成中",
+    success: "已完成",
+    failed: "失败",
+    cancelled: "已取消",
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-text">生成进度</h3>
+        <div className="flex items-center gap-3 text-xs text-text-muted">
+          <span>{completed}/{total} 张</span>
+          <span>{pct}%</span>
+          {task.estimatedSeconds ? <span>· 预估 {task.estimatedSeconds}s</span> : null}
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg ring-1 ring-border">
+          <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {task.subTaskStatus.map((sub) => (
+          <div key={sub.index} className="rounded-md bg-bg p-2 text-xs ring-1 ring-border/70">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-text-muted">图 {sub.index + 1}</span>
+              <span className={
+                sub.status === "success" ? "text-success" :
+                sub.status === "failed" || sub.status === "cancelled" ? "text-danger" :
+                "text-warning"
+              }>{statusLabel[sub.status]}</span>
+            </div>
+            {sub.status === "success" && sub.image ? (
+              <img className="aspect-[3/4] w-full rounded object-cover" src={sub.image.thumbUrl ?? sub.image.url} alt={`子图 ${sub.index + 1}`} loading="lazy" />
+            ) : (
+              <div className="flex aspect-[3/4] items-center justify-center rounded bg-surface text-text-subtle">
+                {sub.status === "processing" ? <span className="animate-pulse">…</span> : "—"}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

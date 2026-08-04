@@ -5,7 +5,7 @@
  * + 状态筛选（全部/成功/失败）+ 搜索（标题/正文/标签）。
  * 自定义时间范围用日期选择器，传 startTime/endTime（RFC3339）给后端。
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useHistoryPaged } from "../hooks/useHistoryPaged";
 import { listHistoryPaged } from "../api/generation";
@@ -78,6 +78,14 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
   const { query, records, total, totalPages, isLoading, error, setPage, setFilter, setPageSize, refresh } = useHistoryPaged();
   const { categories: visibleCategories } = useCategory();
   const [detail, setDetail] = useState<HistoryRecord | null>(null);
+  // 进行中任务在抽屉里转终态后：单查该记录刷新 record，抽屉自动切到结果视图；同时刷新列表
+  const refreshDetail = useCallback((taskId: string) => {
+    void listHistoryPaged({ taskId, pageSize: 1 })
+      .then((r) => {
+        if (r.history.length > 0) setDetail(r.history[0]);
+      })
+      .catch(() => {});
+  }, []);
   const [xhsRecord, setXhsRecord] = useState<HistoryRecord | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [members, setMembers] = useState<TeamMemberInfo[]>([]);
@@ -381,6 +389,7 @@ export function HistoryPage({ adminMode = false }: { adminMode?: boolean } = {})
         record={detail}
         onClose={() => setDetail(null)}
         isAdmin={adminMode}
+        onTaskFinished={refreshDetail}
       />
       <Modal open={!!xhsRecord} onClose={() => setXhsRecord(null)} title="小红书发布数据" size="xl">
         {xhsRecord && <XHSNotePanel key={xhsRecord.id} taskId={xhsRecord.id} isAdmin={adminMode} initialURL={xhsRecord.feedback?.noteUrl} />}

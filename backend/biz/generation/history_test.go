@@ -112,7 +112,7 @@ func TestListHistoryIncludesActiveTasksForUser(t *testing.T) {
 	}
 }
 
-func TestListHistoryKeepsFinishedOnlyForAdmin(t *testing.T) {
+func TestListHistoryIncludesActiveTasksForAdmin(t *testing.T) {
 	userID := uuid.New()
 	admin := &domain.User{ID: userID, Role: "enterprise"}
 	repo := &historyFakeRepo{}
@@ -121,8 +121,8 @@ func TestListHistoryKeepsFinishedOnlyForAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListHistory error: %v", err)
 	}
-	if !repo.gotFinishedOnly {
-		t.Fatalf("admin ListHistory finishedOnly=false，行为应保持不变")
+	if repo.gotFinishedOnly {
+		t.Fatalf("admin ListHistory 应包含进行中任务（finishedOnly=false）")
 	}
 }
 

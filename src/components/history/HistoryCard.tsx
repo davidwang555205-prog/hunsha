@@ -97,7 +97,7 @@ export function HistoryCard({ record, categoryName, showGenerationMeta = false, 
 
   return (
     <SpotlightCard className="rounded-lg bg-surface p-4 ring-1 ring-border" radius={220}>
-      <div className="grid items-center gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)_auto]">
+      <div className="grid items-center gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)_200px_auto]">
         {/* 历史列表始终只展示紧凑图片带；正文和标签留给详情抽屉。 */}
         <button type="button" onClick={() => onOpenDetail(record)} className="text-left">
           {record.status === "success" && record.images.length > 0 ? (
@@ -164,6 +164,9 @@ export function HistoryCard({ record, categoryName, showGenerationMeta = false, 
             </p>
           )}
         </button>
+
+        {/* 小红书最新数据摘要（按钮前独立列）：有快照显指标，有链接无快照显等待采集，无链接显等待填写 */}
+        <XHSSummary record={record} onOpenXHS={onOpenXHS} />
 
         {/* 复制/下载聚合下拉（portal 到 body，避免被 SpotlightCard 层叠上下文遮挡） */}
         <div className="flex flex-row gap-2 lg:flex-col">
@@ -233,5 +236,40 @@ export function HistoryCard({ record, categoryName, showGenerationMeta = false, 
         </div>
       </div>
     </SpotlightCard>
+  );
+}
+
+// XHSSummary 卡片内联小红书最新数据摘要（按钮前独立列）。
+// 有快照显指标；有链接无快照显"等待采集"；无链接显"等待填写笔记链接"（点击打开 XHSNotePanel）。
+function XHSSummary({ record, onOpenXHS }: { record: HistoryRecord; onOpenXHS?: (record: HistoryRecord) => void }) {
+  const xhs = record.xhsLatest;
+  if (!xhs || !xhs.hasNote) {
+    return (
+      <button type="button" onClick={() => onOpenXHS?.(record)} className="min-w-0 text-left text-xs leading-5 text-text-muted transition hover:text-primary">
+        等待填写
+        <br />
+        小红书笔记链接
+      </button>
+    );
+  }
+  if (!xhs.capturedAt) {
+    return (
+      <div className="min-w-0 text-xs leading-5 text-text-muted">
+        等待采集
+        <br />
+        （后台采集中）
+      </div>
+    );
+  }
+  return (
+    <button type="button" onClick={() => onOpenXHS?.(record)} className="block min-w-0 text-left">
+      <div className="text-xs text-text-muted">小红书最新</div>
+      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text">
+        <span>阅读 {xhs.views.toLocaleString("zh-CN")}</span>
+        <span>点赞 {xhs.likes.toLocaleString("zh-CN")}</span>
+        <span>收藏 {xhs.collects.toLocaleString("zh-CN")}</span>
+        <span>评论 {xhs.comments.toLocaleString("zh-CN")}</span>
+      </div>
+    </button>
   );
 }

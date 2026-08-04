@@ -163,6 +163,19 @@ type SanitizedTask struct {
 	CompletedCount     int                 `json:"completedCount"`
 	SubTaskStatus      []SubTaskStatusItem `json:"subTaskStatus"`
 	EstimatedSeconds   int                 `json:"estimatedSeconds"`
+	XHSLatest          *XHSLatestSummary   `json:"xhsLatest"` // 小红书最新快照摘要（nil=未关联笔记）
+}
+
+// XHSLatestSummary 小红书最新快照摘要（历史列表内联展示，避免卡片逐条请求）。
+// HasNote=true 表示已关联笔记；CapturedAt 空表示有链接但尚未采集到快照（等待采集）。
+type XHSLatestSummary struct {
+	HasNote    bool   `json:"hasNote"`
+	CapturedAt string `json:"capturedAt"`
+	Views      int    `json:"views"`
+	Likes      int    `json:"likes"`
+	Collects   int    `json:"collects"`
+	Comments   int    `json:"comments"`
+	Shares     int    `json:"shares"`
 }
 
 // dbStatusToHistory DB 任务状态 -> 前端历史状态（completed -> success，对齐 HistoryRecord 契约）。
@@ -293,6 +306,7 @@ func rewriteImageURLs(store taskStore, imgs []ImageRecord) {
 // SanitizeHistory 序列化历史记录 + 图片 URL 转换（ListHistory/SubmitFeedback 用）。
 func (u *Usecase) SanitizeHistory(rec TaskRecord) SanitizedTask {
 	s := sanitize(rec)
+	s.XHSLatest = rec.XHSLatest
 	rewriteImageURLs(u.store, s.Images)
 	rewriteImageURLs(u.store, s.ReferenceImages)
 	return s
@@ -935,9 +949,8 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 // 复用 ListTasksPaged（查 generation_tasks），结果序列化为 SanitizedTask（HistoryRecord 契约）。
 func (u *Usecase) ListHistory(ctx context.Context, user *domain.User, page, pageSize int, status string, startTime, endTime *time.Time, taskID, filterUserID, categoryID uuid.UUID) ([]SanitizedTask, int, error) {
 	isAdmin := user.HasUnlimitedImageGeneration()
-	// 用户端历史列表包含进行中任务；admin 后台保持仅终态，避免把大量进行中的任务混入管理视图。
-	finishedOnly := isAdmin
-	recs, total, err := u.repo.ListTasksPaged(ctx, user.ID, isAdmin, page, pageSize, historyStatusToDB(status), startTime, endTime, taskID, filterUserID, categoryID, finishedOnly)
+	// 用户端与 admin 历史页均包含进行中任务（queued/processing），前端历史页统一展示进度。
+	recs, total, err := u.repo.ListTasksPaged(ctx, user.ID, isAdmin, page, pageSize, historyStatusToDB(status), startTime, endTime, taskID, filterUserID, categoryID, false)
 	if err != nil {
 		return nil, 0, err
 	}

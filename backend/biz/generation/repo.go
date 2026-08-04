@@ -98,6 +98,7 @@ type TaskRecord struct {
 	StartedAt        *time.Time          // 开始处理时间
 	CompletedAt      *time.Time          // 完成时间
 	SubTaskStatus    []SubTaskStatusItem // 逐张状态（GetTask 时组装）
+	XHSLatest        *XHSLatestSummary   // 小红书最新快照摘要（ListHistory 批量查询填充，nil=未关联笔记）
 }
 
 // InsertTask 写入生图任务 + 关联图片（事务）。

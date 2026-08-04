@@ -12,6 +12,8 @@ import (
 	"bridal/backend/db/generationmodelinvocation"
 	"bridal/backend/db/generationtask"
 	"bridal/backend/db/modelchannel"
+	"bridal/backend/db/xhsnotesnapshot"
+	"bridal/backend/db/xhsnotetracking"
 	"bridal/backend/ent/types"
 )
 
@@ -270,6 +272,10 @@ func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin boo
 			Source:      img.Source,
 		})
 	}
+	xhsLatestMap, err := r.batchXHSLatest(ctx, taskIDs)
+	if err != nil {
+		return nil, 0, err
+	}
 	out := make([]TaskRecord, 0, len(tasks))
 	for _, t := range tasks {
 		rec := taskToRecord(t)
@@ -286,9 +292,76 @@ func (r *Repo) ListTasksPaged(ctx context.Context, userID uuid.UUID, isAdmin boo
 		if rec.Images == nil {
 			rec.Images = []ImageRecord{}
 		}
+		rec.XHSLatest = xhsLatestMap[t.ID]
 		out = append(out, rec)
 	}
 	return out, total, nil
+}
+
+// batchXHSLatest 批量查每个 task 的小红书最新快照摘要，供历史列表内联展示（避免卡片逐条请求）。
+// 返回 taskID -> XHSLatestSummary。无 tracking 的 task 不在 map 中（nil=未关联笔记，前端显示"等待填写链接"）。
+// 有 tracking 无快照 -> HasNote=true + 空指标（"等待采集"）；有快照 -> 填最新一条指标（优先 success）。
+func (r *Repo) batchXHSLatest(ctx context.Context, taskIDs []uuid.UUID) (map[uuid.UUID]*XHSLatestSummary, error) {
+	out := make(map[uuid.UUID]*XHSLatestSummary)
+	if len(taskIDs) == 0 {
+		return out, nil
+	}
+	trackings, err := r.db.XHSNoteTracking.Query().Where(xhsnotetracking.TaskIDIn(taskIDs...)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(trackings) == 0 {
+		return out, nil
+	}
+	trackingIDs := make([]uuid.UUID, 0, len(trackings))
+	trackingByTask := make(map[uuid.UUID]*db.XHSNoteTracking, len(trackings))
+	trackingByID := make(map[uuid.UUID]*db.XHSNoteTracking, len(trackings))
+	for _, t := range trackings {
+		trackingIDs = append(trackingIDs, t.ID)
+		trackingByTask[t.TaskID] = t
+		trackingByID[t.ID] = t
+	}
+	// sequence desc 遍历，取每个 tracking 当前 link_epoch 的最新一条（优先 success，否则任意状态）
+	snapshots, err := r.db.XHSNoteSnapshot.Query().
+		Where(xhsnotesnapshot.TrackingIDIn(trackingIDs...)).
+		Order(db.Desc(xhsnotesnapshot.FieldSequence)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	successByTracking := make(map[uuid.UUID]*db.XHSNoteSnapshot, len(trackings))
+	anyByTracking := make(map[uuid.UUID]*db.XHSNoteSnapshot, len(trackings))
+	for _, s := range snapshots {
+		t := trackingByID[s.TrackingID]
+		if t == nil || s.LinkEpoch != t.LinkEpoch {
+			continue
+		}
+		if _, ok := anyByTracking[s.TrackingID]; !ok {
+			anyByTracking[s.TrackingID] = s // sequence desc 首条=最新
+		}
+		if s.Status == "success" {
+			if _, ok := successByTracking[s.TrackingID]; !ok {
+				successByTracking[s.TrackingID] = s
+			}
+		}
+	}
+	for taskID, t := range trackingByTask {
+		summary := &XHSLatestSummary{HasNote: true}
+		latest := successByTracking[t.ID]
+		if latest == nil {
+			latest = anyByTracking[t.ID]
+		}
+		if latest != nil {
+			summary.CapturedAt = latest.CapturedAt.Format(time.RFC3339)
+			summary.Views = latest.Views
+			summary.Likes = latest.Likes
+			summary.Collects = latest.Collects
+			summary.Comments = latest.Comments
+			summary.Shares = latest.Shares
+		}
+		out[taskID] = summary
+	}
+	return out, nil
 }
 
 // CancelTask 置 cancelled（worker 检测 ctx 取消后调）。
