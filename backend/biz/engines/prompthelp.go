@@ -54,7 +54,7 @@ const seedingPromptHelpTemplate = `你是「内容引擎素材 JSON」编辑助�
 - 字段名与嵌套结构必须与上面定义完全一致，改字段名或结构会导致后端解析失败。
 - 主题由 bridalTopics / dressTopics 定义，不再受前后端枚举限制。新增、改名、删除主题时，先改对应数组，再同步修改 topicCopyKits、xiaohongshuTopicOverrides、*MainSceneByTopic、englishVisualAlignmentByTopic 等以主题名为 key 的内容素材。
 - 主题数组不能写空，主题名不能有首尾空格或重复项。主题没有专属素材时仍会使用品类默认变体银行和通用配图模板。
-- blueprintSelection.strategy 仅可为：{{STRATEGY_LIST}}。其中 contrastSilhouetteAngleAwareWithBatchDistinction 是非自拍多视角主题当前用策略，selfieContrastSilhouetteWithBatchDistinction 是自拍主题当前用策略。**策略名不在此列表会静默退回"返回全部蓝图"，无报错**，填错等于抽样失效。familySampling 按蓝图 name 中“｜”后的 F01/F02…视角族群去重抽样；familySamplingWithRequiredFirst 还必须提供 requiredNamePrefix，且该前缀能匹配本主题的一条蓝图。
+- blueprintSelection.strategy 仅可为：{{STRATEGY_LIST}}。其中 contrastSilhouetteMaxVisualDistance 是非自拍多视角主题当前用策略（v3.10.0 起 count=3 选最大视觉距离三元组），selfieContrastSilhouetteMaxVisualDistance 是自拍主题当前用策略；旧策略名 contrastSilhouetteAngleAwareWithBatchDistinction / selfieContrastSilhouetteWithBatchDistinction（v3.7.0）仍向后兼容。**策略名不在此列表会静默退回"返回全部蓝图"，无报错**，填错等于抽样失效。familySampling 按蓝图 name 中“｜”后的 F01/F02…视角族群去重抽样；familySamplingWithRequiredFirst 还必须提供 requiredNamePrefix，且该前缀能匹配本主题的一条蓝图。
 - 蓝图 extraRequirement 会拼进英文生图 prompt（逐帧分镜指令：ANGLE/UPPER ACTION/POSE PRIORITY/BATCH DIFFERENCE LOCK）。**平台会自动剔除其中的中文字符**（如轮廓家族中文名"双臂垂直轮廓"会被剥掉，仅留 S01 编号）——中文内容到不了模型，所以该字段直接写英文，不要依赖中文表达任何指令。
 - 非主题的图片类型/场景 map 可按既有结构补充 key，但必须同时补齐其引用关系。
 
