@@ -35,9 +35,9 @@ var blueprintSelectors = map[string]blueprintSelector{
 	"selfieContrastSilhouetteWithBatchDistinction": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastSilhouetteBlueprints(b, r, c, s, false)
 	},
-	// v3.10.0 起的两个 MaxVisualDistance 策略：count=3 改用最大视觉距离三元组
-	// 穷举选择（chooseMaxDistanceTriple），与 v3.6.0/v3.7.0 随机抽取算法不同，
-	// 随机数消耗顺序也不同，必须独立分支，不得复用旧函数。
+	// v3.10.0 引入、当前对齐 mjs v3.10.1 的两个 MaxVisualDistance 策略：count=3 改用
+	// 最大视觉距离三元组穷举选择（chooseMaxDistanceTriple），与 v3.6.0/v3.7.0 随机抽取
+	// 算法不同，随机数消耗顺序也不同，必须独立分支，不得复用旧函数。
 	"contrastSilhouetteMaxVisualDistance": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastMaxVisualDistanceBlueprints(b, r, c, s, true)
 	},
@@ -440,7 +440,7 @@ func selectContrastSilhouetteBlueprints(blueprints []XhsImageBlueprint, rule Blu
 	return append([]XhsImageBlueprint{first}, secondary...)
 }
 
-// threeImageAngleSets 是 v3.10.0 审核过的 3 张角度带组合（每组从 F01-F05 取 3 个，
+// threeImageAngleSets 是 mjs v3.10.1 审核的 3 张角度带组合（每组从 F01-F05 取 3 个，
 // 且必含 F01/F02/F03 之一作为首图候选）。count=3 时按 seed 从中抽一组。
 // 对齐 mjs viewpoint-sampling v3.10.1 的 THREE_IMAGE_ANGLE_SETS。
 var threeImageAngleSets = [][]string{
@@ -704,5 +704,12 @@ func selectContrastMaxVisualDistanceBlueprints(blueprints []XhsImageBlueprint, r
 	tail := make([]XhsImageBlueprint, len(selected)-1)
 	copy(tail, selected[1:])
 	shuffleBlueprints(tail, random)
-	return append([]XhsImageBlueprint{selected[0]}, tail...)
+	result := append([]XhsImageBlueprint{selected[0]}, tail...)
+	// mjs 的自拍断言在导出入口外层，对 count=3/5 均生效（selectSelfieContrastSilhouetteBlueprints
+	// 包裹 selectContrast 返回值）。count=5 时 band/家族/表情天然全不同，断言恒真；
+	// 保留此断言与 mjs 结构 1:1，防未来 count 泛化后漏检。
+	if !angleAware && !selfieBatchIsDistinct(result) {
+		return blueprints
+	}
+	return result
 }
