@@ -35,6 +35,15 @@ var blueprintSelectors = map[string]blueprintSelector{
 	"selfieContrastSilhouetteWithBatchDistinction": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastSilhouetteBlueprints(b, r, c, s, false)
 	},
+	// v3.10.0 起的两个 MaxVisualDistance 策略：count=3 改用最大视觉距离三元组
+	// 穷举选择（chooseMaxDistanceTriple），与 v3.6.0/v3.7.0 随机抽取算法不同，
+	// 随机数消耗顺序也不同，必须独立分支，不得复用旧函数。
+	"contrastSilhouetteMaxVisualDistance": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectContrastMaxVisualDistanceBlueprints(b, r, c, s, true)
+	},
+	"selfieContrastSilhouetteMaxVisualDistance": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
+		return selectContrastMaxVisualDistanceBlueprints(b, r, c, s, false)
+	},
 }
 
 // BlueprintStrategyNames 平台支持的蓝图抽样策略名（含 fixed），排序返回。
@@ -429,4 +438,271 @@ func selectContrastSilhouetteBlueprints(blueprints []XhsImageBlueprint, rule Blu
 
 	shuffleBlueprints(secondary, random)
 	return append([]XhsImageBlueprint{first}, secondary...)
+}
+
+// threeImageAngleSets 是 v3.10.0 审核过的 3 张角度带组合（每组从 F01-F05 取 3 个，
+// 且必含 F01/F02/F03 之一作为首图候选）。count=3 时按 seed 从中抽一组。
+// 对齐 mjs viewpoint-sampling v3.10.1 的 THREE_IMAGE_ANGLE_SETS。
+var threeImageAngleSets = [][]string{
+	{"F01", "F02", "F05"},
+	{"F01", "F03", "F04"},
+	{"F02", "F03", "F05"},
+	{"F02", "F04", "F05"},
+	{"F03", "F04", "F05"},
+}
+
+// anglePosition 角度带映射到机位数值（用于视觉距离计算）。
+// 对齐 mjs viewpoint-sampling v3.10.1 的 ANGLE_POSITION。
+var anglePosition = map[string]int{
+	"F01": 0, "F02": -1, "F03": 1, "F04": -2, "F05": 2,
+}
+
+// upperMotionClass 上半身动作映射到动作大类（用于视觉距离计算）。
+// 对齐 mjs viewpoint-sampling v3.10.1 的 UPPER_MOTION_CLASS。
+var upperMotionClass = map[string]string{
+	"U01": "low", "U02": "low",
+	"U03": "bent", "U04": "bent",
+	"U05": "lateral", "U06": "lateral",
+	"U07": "double", "U08": "double",
+	"U09": "crossed", "U10": "crossed",
+}
+
+// visualDistance 计算两张蓝图的视觉距离（越大越不相似）。
+// angleGap 取机位差绝对值并封顶 3；轮廓家族不同 +4，上半身动作大类不同 +3，
+// 上半身动作不同 +2，支撑变体不同 +2，微表情组不同 +1。
+// 对齐 mjs viewpoint-sampling v3.10.1 的 visualDistance。
+func visualDistance(left, right string) int {
+	angleGap := anglePosition[angleBand(left)] - anglePosition[angleBand(right)]
+	if angleGap < 0 {
+		angleGap = -angleGap
+	}
+	if angleGap > 3 {
+		angleGap = 3
+	}
+	dist := angleGap * 3
+	if silhouetteFamily(left) != silhouetteFamily(right) {
+		dist += 4
+	}
+	if upperMotionClass[upperBodyGroup(left)] != upperMotionClass[upperBodyGroup(right)] {
+		dist += 3
+	}
+	if upperBodyGroup(left) != upperBodyGroup(right) {
+		dist += 2
+	}
+	if supportVariant(left) != supportVariant(right) {
+		dist += 2
+	}
+	if expressionGroup(left) != expressionGroup(right) {
+		dist += 1
+	}
+	return dist
+}
+
+// chooseMaxDistanceTriple 从三个候选组中穷举所有三元组，选「最小成对视觉距离最大
+// （并列时总和最大）」的三元组。每组先按 random 洗牌（消耗随机数顺序与 mjs 一致：
+// 组 0 -> 组 1 -> 组 2 各洗一次），穷举过程不消耗随机数。
+// 对齐 mjs viewpoint-sampling v3.10.1 的 chooseMaxDistanceTriple。
+func chooseMaxDistanceTriple(groups [][]XhsImageBlueprint, random func() float64) []XhsImageBlueprint {
+	shuffled := make([][]XhsImageBlueprint, len(groups))
+	for i, g := range groups {
+		shuffled[i] = make([]XhsImageBlueprint, len(g))
+		copy(shuffled[i], g)
+		shuffleBlueprints(shuffled[i], random)
+	}
+	var best []XhsImageBlueprint
+	bestMinimum := -1
+	bestTotal := -1
+	for _, first := range shuffled[0] {
+		for _, second := range shuffled[1] {
+			for _, third := range shuffled[2] {
+				d12 := visualDistance(first.Name, second.Name)
+				d13 := visualDistance(first.Name, third.Name)
+				d23 := visualDistance(second.Name, third.Name)
+				minimum := d12
+				if d13 < minimum {
+					minimum = d13
+				}
+				if d23 < minimum {
+					minimum = d23
+				}
+				total := d12 + d13 + d23
+				if minimum > bestMinimum || (minimum == bestMinimum && total > bestTotal) {
+					best = []XhsImageBlueprint{first, second, third}
+					bestMinimum = minimum
+					bestTotal = total
+				}
+			}
+		}
+	}
+	return best
+}
+
+// selfieBatchIsDistinct 自拍批次四维不重复断言：批次内任意两条的
+// (angleBand, silhouetteFamily, upperBodyGroup, expressionGroup) 四元组均不同，
+// 且第 3 张与第 1 张在任一维度都不重复。mjs 命中即 throw；Go 侧不抛错，返回 false
+// 由调用方降级（正常 JSON 数据不触发，chooseMaxDistanceTriple 已倾向选最大距离）。
+// 对齐 mjs viewpoint-sampling v3.10.1 的 assertDistinctSelfieBatch。
+func selfieBatchIsDistinct(batch []XhsImageBlueprint) bool {
+	if len(batch) < 3 {
+		return true
+	}
+	seen := make(map[string]bool, len(batch))
+	for _, item := range batch {
+		key := angleBand(item.Name) + "|" + silhouetteFamily(item.Name) + "|" +
+			upperBodyGroup(item.Name) + "|" + expressionGroup(item.Name)
+		if seen[key] {
+			return false
+		}
+		seen[key] = true
+	}
+	return angleBand(batch[0].Name) != angleBand(batch[2].Name) &&
+		silhouetteFamily(batch[0].Name) != silhouetteFamily(batch[2].Name) &&
+		upperBodyGroup(batch[0].Name) != upperBodyGroup(batch[2].Name) &&
+		expressionGroup(batch[0].Name) != expressionGroup(batch[2].Name)
+}
+
+// selectContrastMaxVisualDistanceBlueprints 实现 mjs viewpoint-sampling v3.10.1 的
+// contrastSilhouetteMaxVisualDistance（非自拍，angleAware=true）与
+// selfieContrastSilhouetteMaxVisualDistance（自拍，angleAware=false）策略。
+//
+// 与 v3.6.0/v3.7.0 的 WithBatchDistinction 核心差异：count=3 时不再随机抽取首图与
+// 次图，而是按审核过的 5 组角度带组合（threeImageAngleSets）确定三张角度带，穷举
+// 三组候选的所有三元组，选「最小成对视觉距离最大（并列时总和最大）」的三元组
+// （chooseMaxDistanceTriple），保证三张视觉差异最大化；自拍策略在选完后追加四维
+// 不重复断言（selfieBatchIsDistinct）。count=5 仍按家族覆盖 + 逐组随机选 + 尾部洗牌。
+//
+// 消耗随机数的顺序与 mjs 严格一致：①count==3 抽家族组 -> ②families 洗牌 ->
+// ③count==3 抽角度组 -> ④首 band 池（selectedBands ∩ F01-F03）洗牌 ->
+// ⑤首 expression 池洗牌 -> ⑥剩余 band 洗牌 -> ⑦剩余 expression 洗牌 ->
+// count==3: ⑧三组候选各洗牌后穷举 / count==5: ⑨逐组随机选 + ⑩尾部洗牌。
+// 相同 batchSeed 复现相同结果。requiredNamePrefix 作为主题候选池前缀。
+// 数据不足以满足策略时降级返回原蓝图顺序（mjs throw 处改为降级，正常 JSON 不触发）。
+func selectContrastMaxVisualDistanceBlueprints(blueprints []XhsImageBlueprint, rule BlueprintSelectionRule, count int, batchSeed string, angleAware bool) []XhsImageBlueprint {
+	if count != 3 && count != 5 {
+		return blueprints
+	}
+	pool := blueprints
+	if rule.RequiredNamePrefix != "" {
+		filtered := make([]XhsImageBlueprint, 0, len(blueprints))
+		for _, bp := range blueprints {
+			if strings.HasPrefix(bp.Name, rule.RequiredNamePrefix) {
+				filtered = append(filtered, bp)
+			}
+		}
+		pool = filtered
+	}
+	if len(pool) == 0 {
+		return blueprints
+	}
+
+	random := seededBlueprintRandom(batchSeed)
+
+	// ① families：count==5 全覆盖 S01-S05；count==3 从 5 组家族组合抽一组。
+	var families []string
+	if count == 5 {
+		families = []string{"S01", "S02", "S03", "S04", "S05"}
+	} else {
+		src := threeImageFamilySets[int(random()*float64(len(threeImageFamilySets)))]
+		families = make([]string, len(src))
+		copy(families, src)
+	}
+	// ② orderedFamilies = shuffle(families)。
+	shuffleBlueprints(families, random)
+	firstFamily := families[0]
+
+	// ③ selectedBands：count==3 从 5 组角度组抽一组；count==5 全 F01-F05。
+	var selectedBands []string
+	if count == 3 {
+		src := threeImageAngleSets[int(random()*float64(len(threeImageAngleSets)))]
+		selectedBands = make([]string, len(src))
+		copy(selectedBands, src)
+	} else {
+		selectedBands = []string{"F01", "F02", "F03", "F04", "F05"}
+	}
+
+	// ④ firstBand = shuffle(selectedBands ∩ {F01,F02,F03})[0]。
+	firstBandPool := make([]string, 0, 3)
+	for _, band := range selectedBands {
+		if band == "F01" || band == "F02" || band == "F03" {
+			firstBandPool = append(firstBandPool, band)
+		}
+	}
+	shuffleBlueprints(firstBandPool, random)
+	firstBand := firstBandPool[0]
+
+	// ⑤ firstExpression = shuffle(allExpressions)[0]。
+	firstExprPool := []string{"E01", "E02", "E03", "E04", "E05"}
+	shuffleBlueprints(firstExprPool, random)
+	firstExpression := firstExprPool[0]
+
+	// candidatesFor：按 (band, expression, family) 过滤，angleAware 时追加角度约束。
+	candidatesFor := func(band, expression, family string) []XhsImageBlueprint {
+		out := make([]XhsImageBlueprint, 0)
+		for _, bp := range pool {
+			if angleBand(bp.Name) != band || expressionGroup(bp.Name) != expression || silhouetteFamily(bp.Name) != family {
+				continue
+			}
+			if angleAware && !isAngleCompatibleUpperAction(bp.Name) {
+				continue
+			}
+			out = append(out, bp)
+		}
+		return out
+	}
+
+	// ⑥ bands：count==3 = shuffle(selectedBands - firstBand)；count==5 = shuffle(allBands - firstBand)[:count-1]。
+	// count==5 时 selectedBands == allBands，两者等价；统一从 selectedBands 去首。
+	bands := make([]string, 0, len(selectedBands)-1)
+	for _, band := range selectedBands {
+		if band != firstBand {
+			bands = append(bands, band)
+		}
+	}
+	shuffleBlueprints(bands, random)
+	if count == 5 {
+		bands = bands[:count-1]
+	}
+
+	// ⑦ expressions = shuffle(allExpressions - firstExpression)[:count-1]。
+	remainingExprs := filterOutString(allExpressionGroups, firstExpression)
+	shuffleBlueprints(remainingExprs, random)
+	expressions := remainingExprs[:count-1]
+
+	// 构建候选组：首组 + families[1:] 对应 (bands[i], expressions[i], family)。
+	firstCandidates := candidatesFor(firstBand, firstExpression, firstFamily)
+	if len(firstCandidates) == 0 {
+		return blueprints
+	}
+	candidateGroups := make([][]XhsImageBlueprint, 0, count)
+	candidateGroups = append(candidateGroups, firstCandidates)
+	for index, family := range families[1:] {
+		candidates := candidatesFor(bands[index], expressions[index], family)
+		if len(candidates) == 0 {
+			return blueprints
+		}
+		candidateGroups = append(candidateGroups, candidates)
+	}
+
+	if count == 3 {
+		// ⑧ 每组候选洗牌后穷举选最大最小成对距离三元组。
+		best := chooseMaxDistanceTriple(candidateGroups, random)
+		if best == nil {
+			return blueprints
+		}
+		if !angleAware && !selfieBatchIsDistinct(best) {
+			return blueprints
+		}
+		return best
+	}
+
+	// count == 5：⑨ 逐组随机选一个。
+	selected := make([]XhsImageBlueprint, 0, count)
+	for _, candidates := range candidateGroups {
+		selected = append(selected, candidates[int(random()*float64(len(candidates)))])
+	}
+	// ⑩ [selected[0], ...shuffle(selected[1:])]。
+	tail := make([]XhsImageBlueprint, len(selected)-1)
+	copy(tail, selected[1:])
+	shuffleBlueprints(tail, random)
+	return append([]XhsImageBlueprint{selected[0]}, tail...)
 }
