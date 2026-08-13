@@ -496,12 +496,14 @@ func TestV370StrategyAliasEquivalence(t *testing.T) {
 	}
 }
 
-// TestSelectBlueprintsV310MaxVisualDistance 对齐 mjs v3.10.1
-// contrastSilhouetteMaxVisualDistance（非自拍）：count=3 改用最大视觉距离三元组
-// 穷举选择，band 组必取自 threeImageAngleSets；确定性复现、首图 F01-F03 露脸、
-// 批次内 band/expression/family 不重复、angleAware 上半身动作约束、count=5 覆盖
-// F01-F05+S01-S05、count 非 3/5 降级、前缀过滤。
-func TestSelectBlueprintsV310MaxVisualDistance(t *testing.T) {
+// TestSelectBlueprintsV311ThreeImageRoles 对齐 mjs v3.11.0
+// contrastSilhouetteMaxVisualDistance（非自拍）count=3 三图角色结构：
+// 图1 Proof（F01+U01/U02+V01+E01）、图2 Action Contrast（F02/F03+E02/E03，
+// 相对图1 S/U/V 至少两项不同）、图3 Side-Safe（F04/F05+E04/E05）；三张轮廓家族/
+// 上半身动作全不同；extraRequirement 注入对应角色文本（默认 SIDE SAFE）；
+// angleAware 约束生效；确定性复现、前缀过滤、count=5 覆盖 F01-F05+S01-S05
+// 且不注入角色文本、count 非 3/5 降级。
+func TestSelectBlueprintsV311ThreeImageRoles(t *testing.T) {
 	blueprints := buildContrastSilhouettePool("FTE", 1)
 	blueprints = append(blueprints, XhsImageBlueprint{Name: "OTHER-001｜F01-正面｜S01-轮廓｜U01-动作｜V01-支撑｜E01-表情"})
 	rule := BlueprintSelectionRule{
@@ -509,82 +511,95 @@ func TestSelectBlueprintsV310MaxVisualDistance(t *testing.T) {
 		RequiredNamePrefix: "FTE-",
 	}
 
-	// 相同 seed 确定性复现（count=3）
-	a := selectBlueprints(blueprints, rule, 3, "v310-seed")
-	b := selectBlueprints(blueprints, rule, 3, "v310-seed")
+	assertRoleStructure := func(t *testing.T, sel []XhsImageBlueprint, seed string) {
+		t.Helper()
+		if len(sel) != 3 {
+			t.Fatalf("seed=%s: want 3 blueprints, got %d", seed, len(sel))
+		}
+		// 图1 Proof：F01 + U01/U02 + V01 + E01
+		if angleBand(sel[0].Name) != "F01" {
+			t.Fatalf("seed=%s: proof slot must be F01, got %s", seed, sel[0].Name)
+		}
+		if !proofSafeUpperActions[upperBodyGroup(sel[0].Name)] {
+			t.Fatalf("seed=%s: proof upper must be U01/U02, got %s", seed, sel[0].Name)
+		}
+		if supportVariant(sel[0].Name) != "V01" {
+			t.Fatalf("seed=%s: proof support must be V01, got %s", seed, sel[0].Name)
+		}
+		if !proofExpressions[expressionGroup(sel[0].Name)] {
+			t.Fatalf("seed=%s: proof expression must be E01, got %s", seed, sel[0].Name)
+		}
+		// 图2 Action：F02/F03 + E02/E03
+		if b := angleBand(sel[1].Name); b != "F02" && b != "F03" {
+			t.Fatalf("seed=%s: action slot must be F02/F03, got %s", seed, sel[1].Name)
+		}
+		if !actionExpressions[expressionGroup(sel[1].Name)] {
+			t.Fatalf("seed=%s: action expression must be E02/E03, got %s", seed, sel[1].Name)
+		}
+		// 图3 Side：F04/F05 + E04/E05
+		if !sideAngles[angleBand(sel[2].Name)] {
+			t.Fatalf("seed=%s: side slot must be F04/F05, got %s", seed, sel[2].Name)
+		}
+		if !sideExpressions[expressionGroup(sel[2].Name)] {
+			t.Fatalf("seed=%s: side expression must be E04/E05, got %s", seed, sel[2].Name)
+		}
+		// 图2 相对图1 S/U/V 至少两项不同
+		if n := actionContrastCount(sel[0].Name, sel[1].Name); n < 2 {
+			t.Fatalf("seed=%s: action must differ from proof in >=2 of S/U/V, got %d", seed, n)
+		}
+		// 三张轮廓家族全不同、上半身动作全不同
+		if !allDistinct3(silhouetteFamily(sel[0].Name), silhouetteFamily(sel[1].Name), silhouetteFamily(sel[2].Name)) {
+			t.Fatalf("seed=%s: silhouette families must be all distinct", seed)
+		}
+		if !allDistinct3(upperBodyGroup(sel[0].Name), upperBodyGroup(sel[1].Name), upperBodyGroup(sel[2].Name)) {
+			t.Fatalf("seed=%s: upper actions must be all distinct", seed)
+		}
+		// 角色文本注入（默认 backReferenceSafe=false -> 图3 SIDE SAFE）
+		if !strings.HasPrefix(sel[0].ExtraRequirement, "IMAGE ROLE — PROOF.") {
+			t.Fatalf("seed=%s: proof extraRequirement must start with PROOF role text, got %.60s", seed, sel[0].ExtraRequirement)
+		}
+		if !strings.HasPrefix(sel[1].ExtraRequirement, "IMAGE ROLE — ACTION CONTRAST.") {
+			t.Fatalf("seed=%s: action extraRequirement must start with ACTION role text", seed)
+		}
+		if !strings.HasPrefix(sel[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
+			t.Fatalf("seed=%s: side extraRequirement must start with SIDE SAFE role text", seed)
+		}
+	}
+
+	// 相同 seed 确定性复现（count=3，含注入的角色文本）
+	a := selectBlueprints(blueprints, rule, 3, "v311-seed")
+	b := selectBlueprints(blueprints, rule, 3, "v311-seed")
 	if len(a) != 3 || len(b) != 3 {
 		t.Fatalf("want 3 blueprints, got %d / %d", len(a), len(b))
 	}
 	for i := range a {
-		if a[i].Name != b[i].Name {
-			t.Fatalf("same seed must be deterministic: %s != %s", a[i].Name, b[i].Name)
+		if a[i].Name != b[i].Name || a[i].ExtraRequirement != b[i].ExtraRequirement {
+			t.Fatalf("same seed must be deterministic at index %d", i)
 		}
 	}
+	assertRoleStructure(t, a, "v311-seed")
 
-	// 首图 F01-F03 露脸候选
-	if !isFaceVisibleFirstCandidate(a[0].Name) {
-		t.Fatalf("first image must be face-visible (F01-F03), got %s", a[0].Name)
-	}
-
-	// 批次内 band/expression/family 不重复 + 不泄漏非候选前缀
-	bands := map[string]bool{}
-	expressions := map[string]bool{}
-	families := map[string]bool{}
+	// 不泄漏非候选前缀
 	for _, bp := range a {
 		if !strings.HasPrefix(bp.Name, "FTE-") {
 			t.Fatalf("non-pool blueprint leaked: %s", bp.Name)
 		}
-		fb := angleBand(bp.Name)
-		eb := expressionGroup(bp.Name)
-		sf := silhouetteFamily(bp.Name)
-		if bands[fb] {
-			t.Fatalf("angle band duplicated within batch: %s", fb)
-		}
-		if expressions[eb] {
-			t.Fatalf("expression group duplicated within batch: %s", eb)
-		}
-		if families[sf] {
-			t.Fatalf("silhouette family duplicated within batch: %s", sf)
-		}
-		bands[fb] = true
-		expressions[eb] = true
-		families[sf] = true
 	}
 
-	// angleAware：非首图必须走配套上半身动作
+	// angleAware：action/side 槽位（F02-F05）必须走配套上半身动作（proof 槽 F01 恒兼容）
 	for _, bp := range a[1:] {
 		if !isAngleCompatibleUpperAction(bp.Name) {
-			t.Fatalf("angleAware violation (non-first): %s", bp.Name)
+			t.Fatalf("angleAware violation (action/side): %s", bp.Name)
 		}
 	}
 
-	// count=3 的 band 组合必取自 threeImageAngleSets（v3.10.0 独有性质）
-	bandKey := func(bs []string) string {
-		cp := append([]string(nil), bs...)
-		sort.Strings(cp)
-		return strings.Join(cp, "|")
-	}
-	for _, seed := range []string{"v310-a", "v310-b", "v310-c", "v310-d", "v310-e"} {
-		sel := selectBlueprints(blueprints, rule, 3, seed)
-		if len(sel) != 3 {
-			t.Fatalf("seed=%s: want 3 blueprints, got %d", seed, len(sel))
-		}
-		bs := []string{angleBand(sel[0].Name), angleBand(sel[1].Name), angleBand(sel[2].Name)}
-		got := bandKey(bs)
-		approved := false
-		for _, set := range threeImageAngleSets {
-			if bandKey(set) == got {
-				approved = true
-				break
-			}
-		}
-		if !approved {
-			t.Fatalf("seed=%s: 3-count band set must be from threeImageAngleSets, got %v", seed, bs)
-		}
+	// 多 seed 角色结构验证
+	for _, seed := range []string{"v311-a", "v311-b", "v311-c", "v311-d", "v311-e"} {
+		assertRoleStructure(t, selectBlueprints(blueprints, rule, 3, seed), seed)
 	}
 
-	// count=5 完整覆盖 F01-F05 + S01-S05
-	c := selectBlueprints(blueprints, rule, 5, "v310-5")
+	// count=5 完整覆盖 F01-F05 + S01-S05（v3.11.0 保持 Five-View 不变）且不注入角色文本
+	c := selectBlueprints(blueprints, rule, 5, "v311-5")
 	if len(c) != 5 {
 		t.Fatalf("want 5 blueprints, got %d", len(c))
 	}
@@ -593,6 +608,9 @@ func TestSelectBlueprintsV310MaxVisualDistance(t *testing.T) {
 	for _, bp := range c {
 		bands5[angleBand(bp.Name)] = true
 		families5[silhouetteFamily(bp.Name)] = true
+		if strings.Contains(bp.ExtraRequirement, "IMAGE ROLE") {
+			t.Fatalf("count=5 must not inject role text: %s", bp.Name)
+		}
 	}
 	if len(bands5) != 5 {
 		t.Fatalf("5-count batch must cover F01-F05, got %v", bands5)
@@ -608,11 +626,11 @@ func TestSelectBlueprintsV310MaxVisualDistance(t *testing.T) {
 	}
 }
 
-// TestSelectBlueprintsV310SelfieMaxVisualDistance 对齐 mjs v3.10.1
-// selfieContrastSilhouetteMaxVisualDistance：自拍不做 angleAware 约束，选完后
-// 追加四维不重复断言（selfieBatchIsDistinct，失败降级）。count=3 能返回 3 条即
-// 说明断言通过；band 组必取自 threeImageAngleSets；count=5 覆盖 F01-F05+S01-S05。
-func TestSelectBlueprintsV310SelfieMaxVisualDistance(t *testing.T) {
+// TestSelectBlueprintsV311SelfieThreeImageRoles 对齐 mjs v3.11.0
+// selfieContrastSilhouetteMaxVisualDistance：自拍不做 angleAware 约束，角色结构与
+// 非自拍相同（Proof/Action/Side 槽位）；四维不重复断言仅 count=3 生效（mjs 行 271，
+// 能返回 3 条即断言通过）；count=5 覆盖 F01-F05+S01-S05。
+func TestSelectBlueprintsV311SelfieThreeImageRoles(t *testing.T) {
 	blueprints := buildContrastSilhouettePool("PMS", 1)
 	rule := BlueprintSelectionRule{
 		Strategy:           "selfieContrastSilhouetteMaxVisualDistance",
@@ -620,8 +638,8 @@ func TestSelectBlueprintsV310SelfieMaxVisualDistance(t *testing.T) {
 	}
 
 	// 确定性复现 + 自拍断言不阻断正常数据（返回 3 条即断言通过）
-	a := selectBlueprints(blueprints, rule, 3, "selfie-v310-1")
-	b := selectBlueprints(blueprints, rule, 3, "selfie-v310-1")
+	a := selectBlueprints(blueprints, rule, 3, "selfie-v311-1")
+	b := selectBlueprints(blueprints, rule, 3, "selfie-v311-1")
 	if len(a) != 3 || len(b) != 3 {
 		t.Fatalf("want 3 blueprints, got %d / %d", len(a), len(b))
 	}
@@ -631,38 +649,31 @@ func TestSelectBlueprintsV310SelfieMaxVisualDistance(t *testing.T) {
 		}
 	}
 
-	if !isFaceVisibleFirstCandidate(a[0].Name) {
-		t.Fatalf("first image must be face-visible (F01-F03), got %s", a[0].Name)
+	// 角色槽位结构（与非自拍一致）
+	if angleBand(a[0].Name) != "F01" {
+		t.Fatalf("proof slot must be F01, got %s", a[0].Name)
 	}
-
-	bands := map[string]bool{}
-	expressions := map[string]bool{}
-	families := map[string]bool{}
-	for _, bp := range a {
-		fb := angleBand(bp.Name)
-		eb := expressionGroup(bp.Name)
-		sf := silhouetteFamily(bp.Name)
-		if bands[fb] {
-			t.Fatalf("angle band duplicated: %s", fb)
-		}
-		if expressions[eb] {
-			t.Fatalf("expression duplicated: %s", eb)
-		}
-		if families[sf] {
-			t.Fatalf("silhouette duplicated: %s", sf)
-		}
-		bands[fb] = true
-		expressions[eb] = true
-		families[sf] = true
+	if b2 := angleBand(a[1].Name); b2 != "F02" && b2 != "F03" {
+		t.Fatalf("action slot must be F02/F03, got %s", a[1].Name)
+	}
+	if !sideAngles[angleBand(a[2].Name)] {
+		t.Fatalf("side slot must be F04/F05, got %s", a[2].Name)
+	}
+	if n := actionContrastCount(a[0].Name, a[1].Name); n < 2 {
+		t.Fatalf("action must differ from proof in >=2 of S/U/V, got %d", n)
+	}
+	if !allDistinct3(silhouetteFamily(a[0].Name), silhouetteFamily(a[1].Name), silhouetteFamily(a[2].Name)) ||
+		!allDistinct3(upperBodyGroup(a[0].Name), upperBodyGroup(a[1].Name), upperBodyGroup(a[2].Name)) {
+		t.Fatal("silhouette families and upper actions must be all distinct")
 	}
 
 	// selfie 不做 angleAware 约束：与 v3.6.0 共用 isAngleCompatibleUpperAction，
 	// 该过滤逻辑已由 TestSelectBlueprintsSelfieContrastSilhouette 充分覆盖（5000
-	// 循环证明自拍允许 angleAware-incompatible 组合）。v3.10.0 此处仅断言自拍
-	// 策略不因 chooseMaxDistanceTriple + 自拍断言降级（返回 3 条即通过）。
+	// 循环证明自拍允许 angleAware-incompatible 组合）。v3.11.0 此处仅断言自拍
+	// 策略不因角色结构穷举 + 自拍断言降级（返回 3 条即通过）。
 
 	// count=5 覆盖 F01-F05 + S01-S05
-	c := selectBlueprints(blueprints, rule, 5, "selfie-v310-5")
+	c := selectBlueprints(blueprints, rule, 5, "selfie-v311-5")
 	if len(c) != 5 {
 		t.Fatalf("want 5 blueprints, got %d", len(c))
 	}
@@ -677,10 +688,37 @@ func TestSelectBlueprintsV310SelfieMaxVisualDistance(t *testing.T) {
 	}
 }
 
-// TestVisualDistanceAndChooseMaxDistanceTriple 单元验证 v3.10.1 的视觉距离计算与
-// 最大最小成对距离三元组选择：相同蓝图距离 0；各维度差异按权重累加；
-// chooseMaxDistanceTriple 必选最小成对距离最大（并列时总和最大）的三元组。
-func TestVisualDistanceAndChooseMaxDistanceTriple(t *testing.T) {
+// TestBackReferenceSafeRoleText v3.11.0 新增 options.backReferenceSafe：
+// false（默认）图3 注入 SIDE SAFE 文本，true 注入 VERIFIED BACK-SAFE 文本；
+// 两种模式同 seed 选中的蓝图 name 一致（该选项只影响注入文本，不影响抽样）。
+func TestBackReferenceSafeRoleText(t *testing.T) {
+	blueprints := buildContrastSilhouettePool("FTE", 1)
+	offRule := BlueprintSelectionRule{Strategy: "contrastSilhouetteMaxVisualDistance", RequiredNamePrefix: "FTE-"}
+	onRule := BlueprintSelectionRule{Strategy: "contrastSilhouetteMaxVisualDistance", RequiredNamePrefix: "FTE-", BackReferenceSafe: true}
+
+	off := selectBlueprints(blueprints, offRule, 3, "brs-seed")
+	on := selectBlueprints(blueprints, onRule, 3, "brs-seed")
+	if len(off) != 3 || len(on) != 3 {
+		t.Fatalf("want 3/3 blueprints, got %d/%d", len(off), len(on))
+	}
+	for i := range off {
+		if off[i].Name != on[i].Name {
+			t.Fatalf("backReferenceSafe must not change sampling at index %d: %s != %s", i, off[i].Name, on[i].Name)
+		}
+	}
+	if !strings.HasPrefix(off[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
+		t.Fatalf("default must inject SIDE SAFE text, got %.60s", off[2].ExtraRequirement)
+	}
+	if !strings.HasPrefix(on[2].ExtraRequirement, "IMAGE ROLE — VERIFIED BACK-SAFE.") {
+		t.Fatalf("backReferenceSafe=true must inject VERIFIED BACK-SAFE text, got %.60s", on[2].ExtraRequirement)
+	}
+}
+
+// TestVisualDistanceAndChooseMaxDistanceRoleBatch 单元验证 v3.11.0 的视觉距离计算与
+// 角色批次穷举选择：相同蓝图距离 0；各维度差异按权重累加；
+// chooseMaxDistanceRoleBatch 跳过「图1图2 S/U/V 不同数<2」「三张 S/U 非全不同」的
+// 组合后，必选最小成对距离最大（并列时总和最大）的合法三元组。
+func TestVisualDistanceAndChooseMaxDistanceRoleBatch(t *testing.T) {
 	mk := func(tag string, f, s, u, v, e int) string {
 		return fmt.Sprintf("%s｜F0%d-角度｜S0%d-轮廓｜U%02d-动作｜V0%d-支撑｜E0%d-表情", tag, f, s, u, v, e)
 	}
@@ -700,10 +738,9 @@ func TestVisualDistanceAndChooseMaxDistanceTriple(t *testing.T) {
 		t.Fatalf("distance(A,D) want 6, got %d", got)
 	}
 
-	// chooseMaxDistanceTriple：独立穷举所有三元组找最优（最小成对距离最大，
-	// 并列时总和最大），对比函数返回三元组的 minimum/total 是否等于全局最优。
-	// 不比具体 name：并列时 chooseMaxDistanceTriple 内部 shuffle 影响选哪个，
-	// 但最优 minimum/total 必唯一。
+	// chooseMaxDistanceRoleBatch：独立穷举合法三元组（应用同样跳过条件）找最优
+	// （最小成对距离最大，并列时总和最大），对比函数返回三元组的 minimum/total。
+	// 不比具体 name：并列时函数内部 shuffle 影响选哪个，但最优 minimum/total 必唯一。
 	groups := [][]XhsImageBlueprint{
 		{{Name: mk("A1", 1, 1, 1, 1, 1)}, {Name: mk("A2", 2, 2, 3, 2, 2)}, {Name: mk("A3", 3, 3, 5, 3, 3)}},
 		{{Name: mk("B1", 2, 3, 4, 2, 1)}, {Name: mk("B2", 4, 1, 7, 4, 5)}, {Name: mk("B3", 1, 5, 2, 1, 3)}},
@@ -719,10 +756,22 @@ func TestVisualDistanceAndChooseMaxDistanceTriple(t *testing.T) {
 		}
 		return m
 	}
+	legal := func(a, b, c XhsImageBlueprint) bool {
+		if actionContrastCount(a.Name, b.Name) < 2 {
+			return false
+		}
+		if !allDistinct3(silhouetteFamily(a.Name), silhouetteFamily(b.Name), silhouetteFamily(c.Name)) {
+			return false
+		}
+		return allDistinct3(upperBodyGroup(a.Name), upperBodyGroup(b.Name), upperBodyGroup(c.Name))
+	}
 	bestMin, bestTotal := -1, -1
 	for _, a := range groups[0] {
 		for _, b := range groups[1] {
 			for _, c := range groups[2] {
+				if !legal(a, b, c) {
+					continue
+				}
 				dab := visualDistance(a.Name, b.Name)
 				dac := visualDistance(a.Name, c.Name)
 				dbc := visualDistance(b.Name, c.Name)
@@ -734,9 +783,13 @@ func TestVisualDistanceAndChooseMaxDistanceTriple(t *testing.T) {
 			}
 		}
 	}
-	got := chooseMaxDistanceTriple(groups, seededBlueprintRandom("triple-seed"))
+	got := chooseMaxDistanceRoleBatch(groups, seededBlueprintRandom("role-seed"))
 	if len(got) != 3 {
 		t.Fatalf("want 3 blueprints, got %d", len(got))
+	}
+	// 返回三元组必须满足跳过条件
+	if !legal(got[0], got[1], got[2]) {
+		t.Fatalf("chosen batch violates role constraints: %v / %v / %v", got[0].Name, got[1].Name, got[2].Name)
 	}
 	gm := min3(visualDistance(got[0].Name, got[1].Name), visualDistance(got[0].Name, got[2].Name), visualDistance(got[1].Name, got[2].Name))
 	if gm != bestMin {
@@ -745,6 +798,45 @@ func TestVisualDistanceAndChooseMaxDistanceTriple(t *testing.T) {
 	gt := visualDistance(got[0].Name, got[1].Name) + visualDistance(got[0].Name, got[2].Name) + visualDistance(got[1].Name, got[2].Name)
 	if gt != bestTotal {
 		t.Fatalf("chosen triple total distance %d != optimal %d", gt, bestTotal)
+	}
+}
+
+// TestStandingOnlyBatchOk 单元验证 v3.11.0 站姿断言：name/purpose/description 任一
+// 命中非站姿黑名单（忽略大小写）或支撑变体非 V01-V04 -> false；extraRequirement
+// 不扫描（standing lock 文本故意提到禁止姿势）。
+func TestStandingOnlyBatchOk(t *testing.T) {
+	base := XhsImageBlueprint{Name: "PMS-0001｜F01-正面｜S01-轮廓｜U01-动作｜V01-支撑｜E01-表情"}
+	if !standingOnlyBatchOk([]XhsImageBlueprint{base}) {
+		t.Fatal("normal standing blueprint must pass")
+	}
+	// name 命中 sitting -> false
+	seated := base
+	seated.Name = "PMS-0002 sitting pose｜F01-正面｜S01-轮廓｜U01-动作｜V01-支撑｜E01-表情"
+	if standingOnlyBatchOk([]XhsImageBlueprint{seated}) {
+		t.Fatal("sitting in name must fail")
+	}
+	// description 命中 Seated（大小写不敏感）-> false
+	desc := base
+	desc.Description = "A Seated portrait moment"
+	if standingOnlyBatchOk([]XhsImageBlueprint{desc}) {
+		t.Fatal("Seated in description must fail")
+	}
+	// purpose 命中 crouching -> false
+	purp := base
+	purp.Purpose = "show a crouching detail"
+	if standingOnlyBatchOk([]XhsImageBlueprint{purp}) {
+		t.Fatal("crouching in purpose must fail")
+	}
+	// extraRequirement 含禁止词但不扫描 -> true
+	er := base
+	er.ExtraRequirement = "Do not show sitting or crouching poses; stay standing"
+	if !standingOnlyBatchOk([]XhsImageBlueprint{er}) {
+		t.Fatal("extraRequirement must not be scanned")
+	}
+	// 支撑变体缺失（无 V 标记）-> false
+	noV := XhsImageBlueprint{Name: "PMS-0003｜F01-正面｜S01-轮廓｜U01-动作｜E01-表情"}
+	if standingOnlyBatchOk([]XhsImageBlueprint{noV}) {
+		t.Fatal("missing support variant must fail")
 	}
 }
 
@@ -787,7 +879,7 @@ func TestSelfieBatchIsDistinct(t *testing.T) {
 	}
 }
 
-// TestV310NotAliasOfV360 验证 v3.10.0 MaxVisualDistance 与 v3.6.0/v3.7.0
+// TestV310NotAliasOfV360 验证 v3.11.0 MaxVisualDistance 与 v3.6.0/v3.7.0
 // WithBatchDistinction 是不同算法（非别名）：相同 seed 下 count=3 至少有一处输出不同。
 // 对照 TestV370StrategyAliasEquivalence（v3.7.0 是 v3.6.0 别名，输出完全一致）。
 func TestV310NotAliasOfV360(t *testing.T) {
@@ -812,6 +904,6 @@ func TestV310NotAliasOfV360(t *testing.T) {
 		}
 	}
 	if !diffFound {
-		t.Fatal("v3.10.0 must differ from v3.6.0/v3.7.0 on at least one seed (not an alias)")
+		t.Fatal("v3.11.0 must differ from v3.6.0/v3.7.0 on at least one seed (not an alias)")
 	}
 }

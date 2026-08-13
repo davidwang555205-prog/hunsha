@@ -107,6 +107,11 @@ type XhsContentProfile struct {
 type BlueprintSelectionRule struct {
 	Strategy           string `json:"strategy"`
 	RequiredNamePrefix string `json:"requiredNamePrefix"`
+	// BackReferenceSafe 对齐 mjs v3.11.0 selector 的 options.backReferenceSafe（默认 false）：
+	// false 时三图第三张注入 SIDE SAFE 角色文本（禁止虚构未验证背部结构）；
+	// true 时注入 VERIFIED BACK-SAFE（允许基于可信参考展示经验证的侧后/背部结构）。
+	// 平台当前不自行分析参考图，业务 JSON 不显式配置时保持 false。
+	BackReferenceSafe bool `json:"backReferenceSafe,omitempty"`
 }
 
 // TopicCopyDraft 主题文案草稿输出（TS :91-97）

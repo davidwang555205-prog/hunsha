@@ -35,9 +35,11 @@ var blueprintSelectors = map[string]blueprintSelector{
 	"selfieContrastSilhouetteWithBatchDistinction": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastSilhouetteBlueprints(b, r, c, s, false)
 	},
-	// v3.10.0 引入、当前对齐 mjs v3.10.1 的两个 MaxVisualDistance 策略：count=3 改用
-	// 最大视觉距离三元组穷举选择（chooseMaxDistanceTriple），与 v3.6.0/v3.7.0 随机抽取
-	// 算法不同，随机数消耗顺序也不同，必须独立分支，不得复用旧函数。
+	// v3.10.0 引入、当前对齐 mjs v3.11.0 的两个 MaxVisualDistance 策略：v3.11.0 起
+	// count=3 改用三图角色结构（Proof -> Action Contrast -> Side-Safe 槽位 +
+	// chooseMaxDistanceRoleBatch 穷举 + 角色文本注入 + 站姿断言），count=5 保持
+	// Five-View 家族覆盖不变（仅追加站姿断言）。与 v3.6.0/v3.7.0 算法不同，
+	// 随机数消耗顺序也不同，必须独立分支，不得复用旧函数。
 	"contrastSilhouetteMaxVisualDistance": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastMaxVisualDistanceBlueprints(b, r, c, s, true)
 	},
@@ -440,25 +442,44 @@ func selectContrastSilhouetteBlueprints(blueprints []XhsImageBlueprint, rule Blu
 	return append([]XhsImageBlueprint{first}, secondary...)
 }
 
-// threeImageAngleSets 是 mjs v3.10.1 审核的 3 张角度带组合（每组从 F01-F05 取 3 个，
-// 且必含 F01/F02/F03 之一作为首图候选）。count=3 时按 seed 从中抽一组。
-// 对齐 mjs viewpoint-sampling v3.10.1 的 THREE_IMAGE_ANGLE_SETS。
-var threeImageAngleSets = [][]string{
-	{"F01", "F02", "F05"},
-	{"F01", "F03", "F04"},
-	{"F02", "F03", "F05"},
-	{"F02", "F04", "F05"},
-	{"F03", "F04", "F05"},
-}
+// ===== v3.11.0 三图角色结构（count=3）常量 =====
+// 槽位约束：图1 Proof（F01 + U01/U02 + V01 + E01）、图2 Action Contrast
+// （F02/F03 + E02/E03）、图3 Side-Safe（F04/F05 + E04/E05）。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 PROOF_SAFE_UPPER_ACTIONS / PROOF_EXPRESSIONS /
+// ACTION_EXPRESSIONS / SIDE_EXPRESSIONS / SIDE_ANGLES。
+var (
+	proofSafeUpperActions = map[string]bool{"U01": true, "U02": true}
+	proofExpressions      = map[string]bool{"E01": true}
+	actionExpressions     = map[string]bool{"E02": true, "E03": true}
+	sideExpressions       = map[string]bool{"E04": true, "E05": true}
+	sideAngles            = map[string]bool{"F04": true, "F05": true}
+)
+
+// standingForbiddenRe 非站姿姿势黑名单（忽略大小写、词边界）。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 STANDING_FORBIDDEN（/i）。
+var standingForbiddenRe = regexp.MustCompile(`(?i)\b(?:seat(?:ed|ing)?|sitting|crouch(?:ed|ing)?|kneel(?:ed|ing)?|squat(?:ted|ting)?|floor sitting|half sitting)\b`)
+
+// standingVariantRe 站姿支撑变体白名单 V01-V04。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 /^V0[1-4]$/。
+var standingVariantRe = regexp.MustCompile(`^V0[1-4]$`)
+
+// 三图角色文本，注入对应槽位蓝图 extraRequirement 前缀（角色文本 + 空格 + 原文）。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 withThreeImageRoles。
+const (
+	roleProofText    = "IMAGE ROLE — PROOF. Create a stable standing, full-length product proof with the face, neckline, shoulder line, waistline, skirt volume, hemline, train and body-to-gown proportion clearly readable. Keep the upper action restrained and do not block the neckline or waistline."
+	roleActionText   = "IMAGE ROLE — ACTION CONTRAST. Keep a realistic standing fitting pose and execute the selected S, U and V assignments visibly; this frame must read as a different whole-body posture from image 1, not merely a gaze, expression, head-direction or camera change."
+	roleSideSafeText = "IMAGE ROLE — SIDE SAFE. Use a side-profile or side-turned standing view. Do not invent unverified back construction, expose or emphasize an unverified back design, or turn this into a pure back-facing hero shot."
+	roleBackSafeText = "IMAGE ROLE — VERIFIED BACK-SAFE. Use the selected side or three-quarter-back standing angle and reproduce only back construction visibly supported by trusted uploaded references. Do not add or reinterpret any back detail."
+)
 
 // anglePosition 角度带映射到机位数值（用于视觉距离计算）。
-// 对齐 mjs viewpoint-sampling v3.10.1 的 ANGLE_POSITION。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 ANGLE_POSITION。
 var anglePosition = map[string]int{
 	"F01": 0, "F02": -1, "F03": 1, "F04": -2, "F05": 2,
 }
 
 // upperMotionClass 上半身动作映射到动作大类（用于视觉距离计算）。
-// 对齐 mjs viewpoint-sampling v3.10.1 的 UPPER_MOTION_CLASS。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 UPPER_MOTION_CLASS。
 var upperMotionClass = map[string]string{
 	"U01": "low", "U02": "low",
 	"U03": "bent", "U04": "bent",
@@ -470,7 +491,7 @@ var upperMotionClass = map[string]string{
 // visualDistance 计算两张蓝图的视觉距离（越大越不相似）。
 // angleGap 取机位差绝对值并封顶 3；轮廓家族不同 +4，上半身动作大类不同 +3，
 // 上半身动作不同 +2，支撑变体不同 +2，微表情组不同 +1。
-// 对齐 mjs viewpoint-sampling v3.10.1 的 visualDistance。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 visualDistance。
 func visualDistance(left, right string) int {
 	angleGap := anglePosition[angleBand(left)] - anglePosition[angleBand(right)]
 	if angleGap < 0 {
@@ -498,11 +519,34 @@ func visualDistance(left, right string) int {
 	return dist
 }
 
-// chooseMaxDistanceTriple 从三个候选组中穷举所有三元组，选「最小成对视觉距离最大
-// （并列时总和最大）」的三元组。每组先按 random 洗牌（消耗随机数顺序与 mjs 一致：
-// 组 0 -> 组 1 -> 组 2 各洗一次），穷举过程不消耗随机数。
-// 对齐 mjs viewpoint-sampling v3.10.1 的 chooseMaxDistanceTriple。
-func chooseMaxDistanceTriple(groups [][]XhsImageBlueprint, random func() float64) []XhsImageBlueprint {
+// actionContrastCount 计算两张蓝图在轮廓家族/上半身动作/支撑变体三个维度上的不同数。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 actionContrastCount。
+func actionContrastCount(left, right string) int {
+	n := 0
+	if silhouetteFamily(left) != silhouetteFamily(right) {
+		n++
+	}
+	if upperBodyGroup(left) != upperBodyGroup(right) {
+		n++
+	}
+	if supportVariant(left) != supportVariant(right) {
+		n++
+	}
+	return n
+}
+
+// allDistinct3 三值互不相同（对齐 mjs 的 new Set([...]).size === 3 判定）。
+func allDistinct3(a, b, c string) bool {
+	return a != b && a != c && b != c
+}
+
+// chooseMaxDistanceRoleBatch 从 proof/action/side 三组候选中穷举三元组：跳过
+// 「图1图2 S/U/V 不同数 <2」「三张轮廓家族非全不同」「三张上半身动作非全不同」的组合，
+// 在剩余组合中选「最小成对视觉距离最大（并列时总和最大）」者。
+// 每组先按 random 洗牌（消耗随机数顺序与 mjs 一致：组 0 -> 组 1 -> 组 2 各洗一次），
+// 穷举过程不消耗随机数。无合法三元组返回 nil（mjs throw 处，Go 由调用方降级）。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 chooseMaxDistanceRoleBatch。
+func chooseMaxDistanceRoleBatch(groups [][]XhsImageBlueprint, random func() float64) []XhsImageBlueprint {
 	shuffled := make([][]XhsImageBlueprint, len(groups))
 	for i, g := range groups {
 		shuffled[i] = make([]XhsImageBlueprint, len(g))
@@ -514,7 +558,16 @@ func chooseMaxDistanceTriple(groups [][]XhsImageBlueprint, random func() float64
 	bestTotal := -1
 	for _, first := range shuffled[0] {
 		for _, second := range shuffled[1] {
+			if actionContrastCount(first.Name, second.Name) < 2 {
+				continue
+			}
 			for _, third := range shuffled[2] {
+				if !allDistinct3(silhouetteFamily(first.Name), silhouetteFamily(second.Name), silhouetteFamily(third.Name)) {
+					continue
+				}
+				if !allDistinct3(upperBodyGroup(first.Name), upperBodyGroup(second.Name), upperBodyGroup(third.Name)) {
+					continue
+				}
 				d12 := visualDistance(first.Name, second.Name)
 				d13 := visualDistance(first.Name, third.Name)
 				d23 := visualDistance(second.Name, third.Name)
@@ -537,11 +590,88 @@ func chooseMaxDistanceTriple(groups [][]XhsImageBlueprint, random func() float64
 	return best
 }
 
+// standingOnlyBatchOk 站姿断言：批次内每条蓝图的 name+purpose+description 拼接文本
+// （空字段跳过，对齐 mjs filter(Boolean)）不得命中非站姿黑名单，且支撑变体必须为
+// V01-V04。不扫 extraRequirement（standing lock 文本故意提到禁止姿势）。
+// mjs 命中即 throw；Go 返回 false 由调用方降级。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 assertStandingOnlyBatch。
+func standingOnlyBatchOk(batch []XhsImageBlueprint) bool {
+	for _, bp := range batch {
+		parts := make([]string, 0, 3)
+		for _, s := range []string{bp.Name, bp.Purpose, bp.Description} {
+			if s != "" {
+				parts = append(parts, s)
+			}
+		}
+		if standingForbiddenRe.MatchString(strings.Join(parts, " ")) {
+			return false
+		}
+		if !standingVariantRe.MatchString(supportVariant(bp.Name)) {
+			return false
+		}
+	}
+	return true
+}
+
+// withThreeImageRoles 给三图角色批次的每条蓝图 extraRequirement 前置对应角色文本；
+// backReferenceSafe=true 时第三张用 VERIFIED BACK-SAFE，否则 SIDE SAFE（平台默认）。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 withThreeImageRoles。
+func withThreeImageRoles(batch []XhsImageBlueprint, backReferenceSafe bool) []XhsImageBlueprint {
+	sideText := roleSideSafeText
+	if backReferenceSafe {
+		sideText = roleBackSafeText
+	}
+	texts := []string{roleProofText, roleActionText, sideText}
+	out := make([]XhsImageBlueprint, len(batch))
+	for i, bp := range batch {
+		out[i] = bp
+		out[i].ExtraRequirement = texts[i] + " " + bp.ExtraRequirement
+	}
+	return out
+}
+
+// selectThreeImageRoleBatch 实现 mjs viewpoint-sampling v3.11.0 的三图角色结构选择：
+// proof/action/side 三槽位候选池（均保 pool 原序，band 互斥故一条蓝图只入一池）->
+// chooseMaxDistanceRoleBatch 穷举 -> 站姿断言 -> 角色文本注入。
+// 随机数消耗：仅穷举前三组各洗牌一次（组 0 -> 组 1 -> 组 2），候选过滤不消耗。
+// mjs 的 assertThreeImageRoleStructure / assertImage2ActionContrast / assertImage3SideSafe
+// 由候选池构建与穷举跳过条件结构性保证（恒真），不单独断言。
+// 候选池为空 / 无合法三元组 / 站姿断言失败时返回 nil，由调用方降级（mjs throw 处）。
+func selectThreeImageRoleBatch(pool []XhsImageBlueprint, random func() float64, angleAware, backReferenceSafe bool) []XhsImageBlueprint {
+	compatible := func(name string) bool { return !angleAware || isAngleCompatibleUpperAction(name) }
+	var proof, action, side []XhsImageBlueprint
+	for _, bp := range pool {
+		band := angleBand(bp.Name)
+		expr := expressionGroup(bp.Name)
+		if band == "F01" && proofSafeUpperActions[upperBodyGroup(bp.Name)] &&
+			supportVariant(bp.Name) == "V01" && proofExpressions[expr] && compatible(bp.Name) {
+			proof = append(proof, bp)
+		}
+		if (band == "F02" || band == "F03") && actionExpressions[expr] && compatible(bp.Name) {
+			action = append(action, bp)
+		}
+		if sideAngles[band] && sideExpressions[expr] && compatible(bp.Name) {
+			side = append(side, bp)
+		}
+	}
+	if len(proof) == 0 || len(action) == 0 || len(side) == 0 {
+		return nil
+	}
+	batch := chooseMaxDistanceRoleBatch([][]XhsImageBlueprint{proof, action, side}, random)
+	if batch == nil {
+		return nil
+	}
+	if !standingOnlyBatchOk(batch) {
+		return nil
+	}
+	return withThreeImageRoles(batch, backReferenceSafe)
+}
+
 // selfieBatchIsDistinct 自拍批次四维不重复断言：批次内任意两条的
 // (angleBand, silhouetteFamily, upperBodyGroup, expressionGroup) 四元组均不同，
 // 且第 3 张与第 1 张在任一维度都不重复。mjs 命中即 throw；Go 侧不抛错，返回 false
-// 由调用方降级（正常 JSON 数据不触发，chooseMaxDistanceTriple 已倾向选最大距离）。
-// 对齐 mjs viewpoint-sampling v3.10.1 的 assertDistinctSelfieBatch。
+// 由调用方降级（正常 JSON 数据不触发）。mjs v3.11.0 仅对 count=3 批次执行本断言。
+// 对齐 mjs viewpoint-sampling v3.11.0 的 assertDistinctSelfieBatch。
 func selfieBatchIsDistinct(batch []XhsImageBlueprint) bool {
 	if len(batch) < 3 {
 		return true
@@ -561,20 +691,23 @@ func selfieBatchIsDistinct(batch []XhsImageBlueprint) bool {
 		expressionGroup(batch[0].Name) != expressionGroup(batch[2].Name)
 }
 
-// selectContrastMaxVisualDistanceBlueprints 实现 mjs viewpoint-sampling v3.10.1 的
+// selectContrastMaxVisualDistanceBlueprints 实现 mjs viewpoint-sampling v3.11.0 的
 // contrastSilhouetteMaxVisualDistance（非自拍，angleAware=true）与
 // selfieContrastSilhouetteMaxVisualDistance（自拍，angleAware=false）策略。
 //
-// 与 v3.6.0/v3.7.0 的 WithBatchDistinction 核心差异：count=3 时不再随机抽取首图与
-// 次图，而是按审核过的 5 组角度带组合（threeImageAngleSets）确定三张角度带，穷举
-// 三组候选的所有三元组，选「最小成对视觉距离最大（并列时总和最大）」的三元组
-// （chooseMaxDistanceTriple），保证三张视觉差异最大化；自拍策略在选完后追加四维
-// 不重复断言（selfieBatchIsDistinct）。count=5 仍按家族覆盖 + 逐组随机选 + 尾部洗牌。
+// v3.11.0 起 count=3 为三图角色结构（selectThreeImageRoleBatch）：图1 Proof
+// （F01+U01/U02+V01+E01）、图2 Action Contrast（F02/F03+E02/E03，相对图1 S/U/V
+// 至少两项不同）、图3 Side-Safe（F04/F05+E04/E05；backReferenceSafe=false 注入
+// SIDE SAFE 角色文本，true 注入 VERIFIED BACK-SAFE），三组候选洗牌后穷举选
+// 「最小成对视觉距离最大（并列时总和最大）」三元组，结果注入角色文本并过站姿断言。
+// count=5 保持 v3.10.0 起的 Five-View 家族覆盖 + 逐组随机选不变，v3.11.0 仅追加
+// 站姿断言（standingOnlyBatchOk）。
+// 自拍四维不重复断言（selfieBatchIsDistinct）mjs v3.11.0 仅对 count=3 生效。
 //
-// 消耗随机数的顺序与 mjs 严格一致：①count==3 抽家族组 -> ②families 洗牌 ->
-// ③count==3 抽角度组 -> ④首 band 池（selectedBands ∩ F01-F03）洗牌 ->
-// ⑤首 expression 池洗牌 -> ⑥剩余 band 洗牌 -> ⑦剩余 expression 洗牌 ->
-// count==3: ⑧三组候选各洗牌后穷举 / count==5: ⑨逐组随机选 + ⑩尾部洗牌。
+// count=3 随机数消耗：仅穷举前三组各洗牌一次（组 0 -> 组 1 -> 组 2）。
+// count=5 随机数消耗顺序与 mjs 严格一致：①families 洗牌 -> ②首 band 池洗牌 ->
+// ③首 expression 洗牌 -> ④剩余 band 洗牌 -> ⑤剩余 expression 洗牌 ->
+// ⑥逐组随机选 -> ⑦尾部洗牌 -> 站姿断言（不消耗随机数）。
 // 相同 batchSeed 复现相同结果。requiredNamePrefix 作为主题候选池前缀。
 // 数据不足以满足策略时降级返回原蓝图顺序（mjs throw 处改为降级，正常 JSON 不触发）。
 func selectContrastMaxVisualDistanceBlueprints(blueprints []XhsImageBlueprint, rule BlueprintSelectionRule, count int, batchSeed string, angleAware bool) []XhsImageBlueprint {
@@ -597,40 +730,31 @@ func selectContrastMaxVisualDistanceBlueprints(blueprints []XhsImageBlueprint, r
 
 	random := seededBlueprintRandom(batchSeed)
 
-	// ① families：count==5 全覆盖 S01-S05；count==3 从 5 组家族组合抽一组。
-	var families []string
-	if count == 5 {
-		families = []string{"S01", "S02", "S03", "S04", "S05"}
-	} else {
-		src := threeImageFamilySets[int(random()*float64(len(threeImageFamilySets)))]
-		families = make([]string, len(src))
-		copy(families, src)
+	if count == 3 {
+		// v3.11.0 三图角色结构；mjs 自拍四维断言仅对 count=3 生效（行 271）。
+		batch := selectThreeImageRoleBatch(pool, random, angleAware, rule.BackReferenceSafe)
+		if batch == nil {
+			return blueprints
+		}
+		if !angleAware && !selfieBatchIsDistinct(batch) {
+			return blueprints
+		}
+		return batch
 	}
-	// ② orderedFamilies = shuffle(families)。
+
+	// count == 5：Five-View 家族覆盖 + 逐组随机选（v3.10.0 起算法，v3.11.0 保持不变）。
+	// ① families 全覆盖 S01-S05，orderedFamilies = shuffle(families)。
+	families := []string{"S01", "S02", "S03", "S04", "S05"}
 	shuffleBlueprints(families, random)
 	firstFamily := families[0]
 
-	// ③ selectedBands：count==3 从 5 组角度组抽一组；count==5 全 F01-F05。
-	var selectedBands []string
-	if count == 3 {
-		src := threeImageAngleSets[int(random()*float64(len(threeImageAngleSets)))]
-		selectedBands = make([]string, len(src))
-		copy(selectedBands, src)
-	} else {
-		selectedBands = []string{"F01", "F02", "F03", "F04", "F05"}
-	}
-
-	// ④ firstBand = shuffle(selectedBands ∩ {F01,F02,F03})[0]。
-	firstBandPool := make([]string, 0, 3)
-	for _, band := range selectedBands {
-		if band == "F01" || band == "F02" || band == "F03" {
-			firstBandPool = append(firstBandPool, band)
-		}
-	}
+	// ② firstBand = shuffle(allBands ∩ {F01,F02,F03})[0]。
+	allBands := []string{"F01", "F02", "F03", "F04", "F05"}
+	firstBandPool := []string{"F01", "F02", "F03"}
 	shuffleBlueprints(firstBandPool, random)
 	firstBand := firstBandPool[0]
 
-	// ⑤ firstExpression = shuffle(allExpressions)[0]。
+	// ③ firstExpression = shuffle(allExpressions)[0]。
 	firstExprPool := []string{"E01", "E02", "E03", "E04", "E05"}
 	shuffleBlueprints(firstExprPool, random)
 	firstExpression := firstExprPool[0]
@@ -650,20 +774,12 @@ func selectContrastMaxVisualDistanceBlueprints(blueprints []XhsImageBlueprint, r
 		return out
 	}
 
-	// ⑥ bands：count==3 = shuffle(selectedBands - firstBand)；count==5 = shuffle(allBands - firstBand)[:count-1]。
-	// count==5 时 selectedBands == allBands，两者等价；统一从 selectedBands 去首。
-	bands := make([]string, 0, len(selectedBands)-1)
-	for _, band := range selectedBands {
-		if band != firstBand {
-			bands = append(bands, band)
-		}
-	}
+	// ④ bands = shuffle(allBands - firstBand)[:count-1]。
+	bands := filterOutString(allBands, firstBand)
 	shuffleBlueprints(bands, random)
-	if count == 5 {
-		bands = bands[:count-1]
-	}
+	bands = bands[:count-1]
 
-	// ⑦ expressions = shuffle(allExpressions - firstExpression)[:count-1]。
+	// ⑤ expressions = shuffle(allExpressions - firstExpression)[:count-1]。
 	remainingExprs := filterOutString(allExpressionGroups, firstExpression)
 	shuffleBlueprints(remainingExprs, random)
 	expressions := remainingExprs[:count-1]
@@ -683,32 +799,17 @@ func selectContrastMaxVisualDistanceBlueprints(blueprints []XhsImageBlueprint, r
 		candidateGroups = append(candidateGroups, candidates)
 	}
 
-	if count == 3 {
-		// ⑧ 每组候选洗牌后穷举选最大最小成对距离三元组。
-		best := chooseMaxDistanceTriple(candidateGroups, random)
-		if best == nil {
-			return blueprints
-		}
-		if !angleAware && !selfieBatchIsDistinct(best) {
-			return blueprints
-		}
-		return best
-	}
-
-	// count == 5：⑨ 逐组随机选一个。
+	// ⑥ 逐组随机选一个。
 	selected := make([]XhsImageBlueprint, 0, count)
 	for _, candidates := range candidateGroups {
 		selected = append(selected, candidates[int(random()*float64(len(candidates)))])
 	}
-	// ⑩ [selected[0], ...shuffle(selected[1:])]。
+	// ⑦ [selected[0], ...shuffle(selected[1:])]，v3.11.0 追加站姿断言（不消耗随机数）。
 	tail := make([]XhsImageBlueprint, len(selected)-1)
 	copy(tail, selected[1:])
 	shuffleBlueprints(tail, random)
 	result := append([]XhsImageBlueprint{selected[0]}, tail...)
-	// mjs 的自拍断言在导出入口外层，对 count=3/5 均生效（selectSelfieContrastSilhouetteBlueprints
-	// 包裹 selectContrast 返回值）。count=5 时 band/家族/表情天然全不同，断言恒真；
-	// 保留此断言与 mjs 结构 1:1，防未来 count 泛化后漏检。
-	if !angleAware && !selfieBatchIsDistinct(result) {
+	if !standingOnlyBatchOk(result) {
 		return blueprints
 	}
 	return result
