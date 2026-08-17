@@ -35,7 +35,7 @@ var blueprintSelectors = map[string]blueprintSelector{
 	"selfieContrastSilhouetteWithBatchDistinction": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastSilhouetteBlueprints(b, r, c, s, false)
 	},
-	// v3.10.0 引入、当前对齐 mjs v3.11.0 的两个 MaxVisualDistance 策略：v3.11.0 起
+	// v3.10.0 引入、当前对齐 mjs v3.11.1 的两个 MaxVisualDistance 策略：v3.11.0 起
 	// count=3 改用三图角色结构（Proof -> Action Contrast -> Side-Safe 槽位 +
 	// chooseMaxDistanceRoleBatch 穷举 + 角色文本注入 + 站姿断言），count=5 保持
 	// Five-View 家族覆盖不变（仅追加站姿断言）。与 v3.6.0/v3.7.0 算法不同，
@@ -442,17 +442,21 @@ func selectContrastSilhouetteBlueprints(blueprints []XhsImageBlueprint, rule Blu
 	return append([]XhsImageBlueprint{first}, secondary...)
 }
 
-// ===== v3.11.0 三图角色结构（count=3）常量 =====
+// ===== v3.11.0/v3.11.1 三图角色结构（count=3）常量 =====
 // 槽位约束：图1 Proof（F01 + U01/U02 + V01 + E01）、图2 Action Contrast
-// （F02/F03 + E02/E03）、图3 Side-Safe（F04/F05 + E04/E05）。
-// 对齐 mjs viewpoint-sampling v3.11.0 的 PROOF_SAFE_UPPER_ACTIONS / PROOF_EXPRESSIONS /
-// ACTION_EXPRESSIONS / SIDE_EXPRESSIONS / SIDE_ANGLES。
+// （F02/F03 + E02/E03）、图3 Side-Safe（F04/F05 + E04/E05 + v3.11.1 起 U01-U06）。
+// 对齐 mjs viewpoint-sampling v3.11.1 的 PROOF_SAFE_UPPER_ACTIONS / PROOF_EXPRESSIONS /
+// ACTION_EXPRESSIONS / SIDE_EXPRESSIONS / SIDE_ANGLES / SIDE_COMPATIBLE_UPPER_ACTIONS。
 var (
 	proofSafeUpperActions = map[string]bool{"U01": true, "U02": true}
 	proofExpressions      = map[string]bool{"E01": true}
 	actionExpressions     = map[string]bool{"E02": true, "E03": true}
 	sideExpressions       = map[string]bool{"E04": true, "E05": true}
 	sideAngles            = map[string]bool{"F04": true, "F05": true}
+	// sideCompatibleUpperActions v3.11.1 图3 侧身上肢白名单：避免大幅双臂展开
+	// 迫使胸口转回正面。mjs isSideCompatibleUpperAction 另查 SIDE_ANGLES，
+	// 图3 候选池已限定 F04/F05，此处只需 U 白名单即等价。
+	sideCompatibleUpperActions = map[string]bool{"U01": true, "U02": true, "U03": true, "U04": true, "U05": true, "U06": true}
 )
 
 // standingForbiddenRe 非站姿姿势黑名单（忽略大小写、词边界）。
@@ -464,12 +468,17 @@ var standingForbiddenRe = regexp.MustCompile(`(?i)\b(?:seat(?:ed|ing)?|sitting|c
 var standingVariantRe = regexp.MustCompile(`^V0[1-4]$`)
 
 // 三图角色文本，注入对应槽位蓝图 extraRequirement 前缀（角色文本 + 空格 + 原文）。
-// 对齐 mjs viewpoint-sampling v3.11.0 的 withThreeImageRoles。
+// 图3 注入顺序对齐 mjs：躯干转向锁 [+ PMS 物理转身锁] + 侧后安全文本。
+// 对齐 mjs viewpoint-sampling v3.11.1 的 withThreeImageRoles。
 const (
-	roleProofText    = "IMAGE ROLE — PROOF. Create a stable standing, full-length product proof with the face, neckline, shoulder line, waistline, skirt volume, hemline, train and body-to-gown proportion clearly readable. Keep the upper action restrained and do not block the neckline or waistline."
-	roleActionText   = "IMAGE ROLE — ACTION CONTRAST. Keep a realistic standing fitting pose and execute the selected S, U and V assignments visibly; this frame must read as a different whole-body posture from image 1, not merely a gaze, expression, head-direction or camera change."
-	roleSideSafeText = "IMAGE ROLE — SIDE SAFE. Use a side-profile or side-turned standing view. Do not invent unverified back construction, expose or emphasize an unverified back design, or turn this into a pure back-facing hero shot."
-	roleBackSafeText = "IMAGE ROLE — VERIFIED BACK-SAFE. Use the selected side or three-quarter-back standing angle and reproduce only back construction visibly supported by trusted uploaded references. Do not add or reinterpret any back detail."
+	roleProofText  = "IMAGE ROLE — PROOF. Create a stable standing, full-length product proof with the face, neckline, shoulder line, waistline, skirt volume, hemline, train and body-to-gown proportion clearly readable. Keep the upper action restrained and do not block the neckline or waistline."
+	roleActionText = "IMAGE ROLE — ACTION CONTRAST. Keep a realistic standing fitting pose and execute the selected S, U and V assignments visibly; this frame must read as a different whole-body posture from image 1, not merely a gaze, expression, head-direction or camera change."
+	// roleTorsoOrientationText v3.11.1 图3 最高优先级躯干转向锁（高于 S/U 指令）+ 正面替身禁令。
+	roleTorsoOrientationText = "TORSO ORIENTATION LOCK — IMAGE 3. Image 3 must show a clearly side-turned torso. The bride's torso, shoulder line, chest plane and waist or pelvis direction must all rotate approximately 45–75 degrees away from frontal orientation. One shoulder must visibly sit closer to the viewer than the other. The neckline and bodice must show natural perspective foreshortening caused by the body turn. A frontal torso with only the head, gaze, arm, phone or camera angle changed does not satisfy this requirement. Do not keep the chest square to the viewer or use a frontal standing pose plus a sideways arm gesture as a substitute. For Image 3, TORSO ORIENTATION has higher priority than SILHOUETTE FAMILY and UPPER ACTION. If the selected upper-body action cannot remain clearly visible while preserving the required torso rotation, preserve the torso rotation and use an angle-compatible action instead of rotating the torso back toward frontal. FRONTAL SUBSTITUTION BAN — IMAGE 3. If both shoulders and the chest remain nearly parallel to the image plane, the pose is invalid. Image 3 must visibly read as a side-turned body even at thumbnail size."
+	// roleSelfieTorsoText v3.11.1 PMS 图3 物理转身锁：手机朝镜面不能代替身体转向（仅 name 以 PMS- 开头的图3 注入）。
+	roleSelfieTorsoText = "PMS PHYSICAL TURN LOCK — The bride's physical body must rotate relative to the mirror. The phone may remain aimed toward the mirror, but the torso itself must visibly turn 45–75 degrees. Do not keep both shoulders parallel to the mirror or preserve a frontal chest plane merely to make the phone selfie easier."
+	roleSideSafeText    = "IMAGE ROLE — SIDE SAFE. Use a genuine side-profile or side-turned standing orientation. Slight natural side-back body surface is allowed, but do not create a full back-facing product presentation or invent any unseen back construction."
+	roleBackSafeText    = "IMAGE ROLE — VERIFIED BACK-SAFE. Use the selected genuine side or three-quarter-back standing orientation and reproduce only back construction visibly supported by trusted uploaded references. Do not add or reinterpret any back detail."
 )
 
 // anglePosition 角度带映射到机位数值（用于视觉距离计算）。
@@ -614,14 +623,20 @@ func standingOnlyBatchOk(batch []XhsImageBlueprint) bool {
 }
 
 // withThreeImageRoles 给三图角色批次的每条蓝图 extraRequirement 前置对应角色文本；
-// backReferenceSafe=true 时第三张用 VERIFIED BACK-SAFE，否则 SIDE SAFE（平台默认）。
-// 对齐 mjs viewpoint-sampling v3.11.0 的 withThreeImageRoles。
+// backReferenceSafe=true 时第三张侧后安全文本用 VERIFIED BACK-SAFE，否则 SIDE SAFE（平台默认）。
+// 图3 注入顺序：躯干转向锁 +（PMS 蓝图追加物理转身锁）+ 侧后安全文本。
+// 对齐 mjs viewpoint-sampling v3.11.1 的 withThreeImageRoles。
 func withThreeImageRoles(batch []XhsImageBlueprint, backReferenceSafe bool) []XhsImageBlueprint {
 	sideText := roleSideSafeText
 	if backReferenceSafe {
 		sideText = roleBackSafeText
 	}
-	texts := []string{roleProofText, roleActionText, sideText}
+	image3Text := roleTorsoOrientationText + " "
+	if strings.HasPrefix(batch[2].Name, "PMS-") {
+		image3Text += roleSelfieTorsoText + " "
+	}
+	image3Text += sideText
+	texts := []string{roleProofText, roleActionText, image3Text}
 	out := make([]XhsImageBlueprint, len(batch))
 	for i, bp := range batch {
 		out[i] = bp
@@ -630,9 +645,10 @@ func withThreeImageRoles(batch []XhsImageBlueprint, backReferenceSafe bool) []Xh
 	return out
 }
 
-// selectThreeImageRoleBatch 实现 mjs viewpoint-sampling v3.11.0 的三图角色结构选择：
-// proof/action/side 三槽位候选池（均保 pool 原序，band 互斥故一条蓝图只入一池）->
-// chooseMaxDistanceRoleBatch 穷举 -> 站姿断言 -> 角色文本注入。
+// selectThreeImageRoleBatch 实现 mjs viewpoint-sampling v3.11.1 的三图角色结构选择：
+// proof/action/side 三槽位候选池（均保 pool 原序，band 互斥故一条蓝图只入一池；
+// 图3 v3.11.1 起另限 U01-U06 侧身兼容上肢）-> chooseMaxDistanceRoleBatch 穷举 ->
+// 站姿断言 -> 角色文本注入。
 // 随机数消耗：仅穷举前三组各洗牌一次（组 0 -> 组 1 -> 组 2），候选过滤不消耗。
 // mjs 的 assertThreeImageRoleStructure / assertImage2ActionContrast / assertImage3SideSafe
 // 由候选池构建与穷举跳过条件结构性保证（恒真），不单独断言。
@@ -650,7 +666,7 @@ func selectThreeImageRoleBatch(pool []XhsImageBlueprint, random func() float64, 
 		if (band == "F02" || band == "F03") && actionExpressions[expr] && compatible(bp.Name) {
 			action = append(action, bp)
 		}
-		if sideAngles[band] && sideExpressions[expr] && compatible(bp.Name) {
+		if sideAngles[band] && sideExpressions[expr] && sideCompatibleUpperActions[upperBodyGroup(bp.Name)] && compatible(bp.Name) {
 			side = append(side, bp)
 		}
 	}
@@ -691,7 +707,7 @@ func selfieBatchIsDistinct(batch []XhsImageBlueprint) bool {
 		expressionGroup(batch[0].Name) != expressionGroup(batch[2].Name)
 }
 
-// selectContrastMaxVisualDistanceBlueprints 实现 mjs viewpoint-sampling v3.11.0 的
+// selectContrastMaxVisualDistanceBlueprints 实现 mjs viewpoint-sampling v3.11.1 的
 // contrastSilhouetteMaxVisualDistance（非自拍，angleAware=true）与
 // selfieContrastSilhouetteMaxVisualDistance（自拍，angleAware=false）策略。
 //
@@ -700,6 +716,9 @@ func selfieBatchIsDistinct(batch []XhsImageBlueprint) bool {
 // 至少两项不同）、图3 Side-Safe（F04/F05+E04/E05；backReferenceSafe=false 注入
 // SIDE SAFE 角色文本，true 注入 VERIFIED BACK-SAFE），三组候选洗牌后穷举选
 // 「最小成对视觉距离最大（并列时总和最大）」三元组，结果注入角色文本并过站姿断言。
+// v3.11.1 图3 定向修复：候选池另限 U01-U06 侧身兼容上肢，注入文本前置
+// TORSO ORIENTATION LOCK / FRONTAL SUBSTITUTION BAN（PMS 图3 另加 PHYSICAL TURN LOCK），
+// 图1/图2 与穷举逻辑不变。
 // count=5 保持 v3.10.0 起的 Five-View 家族覆盖 + 逐组随机选不变，v3.11.0 仅追加
 // 站姿断言（standingOnlyBatchOk）。
 // 自拍四维不重复断言（selfieBatchIsDistinct）mjs v3.11.0 仅对 count=3 生效。

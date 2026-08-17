@@ -496,13 +496,13 @@ func TestV370StrategyAliasEquivalence(t *testing.T) {
 	}
 }
 
-// TestSelectBlueprintsV311ThreeImageRoles 对齐 mjs v3.11.0
+// TestSelectBlueprintsV311ThreeImageRoles 对齐 mjs v3.11.1
 // contrastSilhouetteMaxVisualDistance（非自拍）count=3 三图角色结构：
 // 图1 Proof（F01+U01/U02+V01+E01）、图2 Action Contrast（F02/F03+E02/E03，
-// 相对图1 S/U/V 至少两项不同）、图3 Side-Safe（F04/F05+E04/E05）；三张轮廓家族/
-// 上半身动作全不同；extraRequirement 注入对应角色文本（默认 SIDE SAFE）；
-// angleAware 约束生效；确定性复现、前缀过滤、count=5 覆盖 F01-F05+S01-S05
-// 且不注入角色文本、count 非 3/5 降级。
+// 相对图1 S/U/V 至少两项不同）、图3 Side-Safe（F04/F05+E04/E05+U01-U06）；三张轮廓家族/
+// 上半身动作全不同；extraRequirement 注入对应角色文本（图3 前置 TORSO ORIENTATION
+// LOCK，默认侧后安全文本 SIDE SAFE）；angleAware 约束生效；确定性复现、前缀过滤、
+// count=5 覆盖 F01-F05+S01-S05 且不注入角色文本、count 非 3/5 降级。
 func TestSelectBlueprintsV311ThreeImageRoles(t *testing.T) {
 	blueprints := buildContrastSilhouettePool("FTE", 1)
 	blueprints = append(blueprints, XhsImageBlueprint{Name: "OTHER-001｜F01-正面｜S01-轮廓｜U01-动作｜V01-支撑｜E01-表情"})
@@ -536,12 +536,15 @@ func TestSelectBlueprintsV311ThreeImageRoles(t *testing.T) {
 		if !actionExpressions[expressionGroup(sel[1].Name)] {
 			t.Fatalf("seed=%s: action expression must be E02/E03, got %s", seed, sel[1].Name)
 		}
-		// 图3 Side：F04/F05 + E04/E05
+		// 图3 Side：F04/F05 + E04/E05 + U01-U06（v3.11.1 侧身兼容上肢白名单）
 		if !sideAngles[angleBand(sel[2].Name)] {
 			t.Fatalf("seed=%s: side slot must be F04/F05, got %s", seed, sel[2].Name)
 		}
 		if !sideExpressions[expressionGroup(sel[2].Name)] {
 			t.Fatalf("seed=%s: side expression must be E04/E05, got %s", seed, sel[2].Name)
+		}
+		if !sideCompatibleUpperActions[upperBodyGroup(sel[2].Name)] {
+			t.Fatalf("seed=%s: side upper must be U01-U06, got %s", seed, sel[2].Name)
 		}
 		// 图2 相对图1 S/U/V 至少两项不同
 		if n := actionContrastCount(sel[0].Name, sel[1].Name); n < 2 {
@@ -554,15 +557,22 @@ func TestSelectBlueprintsV311ThreeImageRoles(t *testing.T) {
 		if !allDistinct3(upperBodyGroup(sel[0].Name), upperBodyGroup(sel[1].Name), upperBodyGroup(sel[2].Name)) {
 			t.Fatalf("seed=%s: upper actions must be all distinct", seed)
 		}
-		// 角色文本注入（默认 backReferenceSafe=false -> 图3 SIDE SAFE）
+		// 角色文本注入（v3.11.1：图3 前置 TORSO ORIENTATION LOCK，默认侧后安全文本 SIDE SAFE；
+		// 非自拍主题不注入 PMS PHYSICAL TURN LOCK）
 		if !strings.HasPrefix(sel[0].ExtraRequirement, "IMAGE ROLE — PROOF.") {
 			t.Fatalf("seed=%s: proof extraRequirement must start with PROOF role text, got %.60s", seed, sel[0].ExtraRequirement)
 		}
 		if !strings.HasPrefix(sel[1].ExtraRequirement, "IMAGE ROLE — ACTION CONTRAST.") {
 			t.Fatalf("seed=%s: action extraRequirement must start with ACTION role text", seed)
 		}
-		if !strings.HasPrefix(sel[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
-			t.Fatalf("seed=%s: side extraRequirement must start with SIDE SAFE role text", seed)
+		if !strings.HasPrefix(sel[2].ExtraRequirement, "TORSO ORIENTATION LOCK — IMAGE 3.") {
+			t.Fatalf("seed=%s: side extraRequirement must start with TORSO ORIENTATION LOCK text", seed)
+		}
+		if !strings.Contains(sel[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
+			t.Fatalf("seed=%s: side extraRequirement must contain SIDE SAFE role text", seed)
+		}
+		if strings.Contains(sel[2].ExtraRequirement, "PMS PHYSICAL TURN LOCK") {
+			t.Fatalf("seed=%s: non-selfie side must not contain PMS PHYSICAL TURN LOCK", seed)
 		}
 	}
 
@@ -626,10 +636,11 @@ func TestSelectBlueprintsV311ThreeImageRoles(t *testing.T) {
 	}
 }
 
-// TestSelectBlueprintsV311SelfieThreeImageRoles 对齐 mjs v3.11.0
+// TestSelectBlueprintsV311SelfieThreeImageRoles 对齐 mjs v3.11.1
 // selfieContrastSilhouetteMaxVisualDistance：自拍不做 angleAware 约束，角色结构与
-// 非自拍相同（Proof/Action/Side 槽位）；四维不重复断言仅 count=3 生效（mjs 行 271，
-// 能返回 3 条即断言通过）；count=5 覆盖 F01-F05+S01-S05。
+// 非自拍相同（Proof/Action/Side 槽位）；图3 另限 U01-U06 并注入 PMS PHYSICAL TURN
+// LOCK；四维不重复断言仅 count=3 生效（mjs 行 271，能返回 3 条即断言通过）；
+// count=5 覆盖 F01-F05+S01-S05。
 func TestSelectBlueprintsV311SelfieThreeImageRoles(t *testing.T) {
 	blueprints := buildContrastSilhouettePool("PMS", 1)
 	rule := BlueprintSelectionRule{
@@ -658,6 +669,16 @@ func TestSelectBlueprintsV311SelfieThreeImageRoles(t *testing.T) {
 	}
 	if !sideAngles[angleBand(a[2].Name)] {
 		t.Fatalf("side slot must be F04/F05, got %s", a[2].Name)
+	}
+	if !sideCompatibleUpperActions[upperBodyGroup(a[2].Name)] {
+		t.Fatalf("side upper must be U01-U06, got %s", a[2].Name)
+	}
+	// v3.11.1 PMS 图3 物理转身锁（自拍蓝图 name 以 PMS- 开头）
+	if !strings.Contains(a[2].ExtraRequirement, "PMS PHYSICAL TURN LOCK") {
+		t.Fatalf("PMS image 3 must contain PMS PHYSICAL TURN LOCK, got %.60s", a[2].ExtraRequirement)
+	}
+	if !strings.HasPrefix(a[2].ExtraRequirement, "TORSO ORIENTATION LOCK — IMAGE 3.") {
+		t.Fatalf("PMS image 3 must start with TORSO ORIENTATION LOCK")
 	}
 	if n := actionContrastCount(a[0].Name, a[1].Name); n < 2 {
 		t.Fatalf("action must differ from proof in >=2 of S/U/V, got %d", n)
@@ -691,6 +712,7 @@ func TestSelectBlueprintsV311SelfieThreeImageRoles(t *testing.T) {
 // TestBackReferenceSafeRoleText v3.11.0 新增 options.backReferenceSafe：
 // false（默认）图3 注入 SIDE SAFE 文本，true 注入 VERIFIED BACK-SAFE 文本；
 // 两种模式同 seed 选中的蓝图 name 一致（该选项只影响注入文本，不影响抽样）。
+// v3.11.1 起图3 前缀为 TORSO ORIENTATION LOCK，侧后安全文本在其后。
 func TestBackReferenceSafeRoleText(t *testing.T) {
 	blueprints := buildContrastSilhouettePool("FTE", 1)
 	offRule := BlueprintSelectionRule{Strategy: "contrastSilhouetteMaxVisualDistance", RequiredNamePrefix: "FTE-"}
@@ -706,11 +728,20 @@ func TestBackReferenceSafeRoleText(t *testing.T) {
 			t.Fatalf("backReferenceSafe must not change sampling at index %d: %s != %s", i, off[i].Name, on[i].Name)
 		}
 	}
-	if !strings.HasPrefix(off[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
+	if !strings.HasPrefix(off[2].ExtraRequirement, "TORSO ORIENTATION LOCK — IMAGE 3.") {
+		t.Fatalf("image 3 must start with TORSO ORIENTATION LOCK, got %.60s", off[2].ExtraRequirement)
+	}
+	if !strings.Contains(off[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
 		t.Fatalf("default must inject SIDE SAFE text, got %.60s", off[2].ExtraRequirement)
 	}
-	if !strings.HasPrefix(on[2].ExtraRequirement, "IMAGE ROLE — VERIFIED BACK-SAFE.") {
+	if strings.Contains(off[2].ExtraRequirement, "VERIFIED BACK-SAFE") {
+		t.Fatalf("default must not contain VERIFIED BACK-SAFE text")
+	}
+	if !strings.Contains(on[2].ExtraRequirement, "IMAGE ROLE — VERIFIED BACK-SAFE.") {
 		t.Fatalf("backReferenceSafe=true must inject VERIFIED BACK-SAFE text, got %.60s", on[2].ExtraRequirement)
+	}
+	if strings.Contains(on[2].ExtraRequirement, "IMAGE ROLE — SIDE SAFE.") {
+		t.Fatalf("backReferenceSafe=true must not contain SIDE SAFE text")
 	}
 }
 
