@@ -135,6 +135,13 @@ func (fakeStore) GetImage(_ context.Context, _ string) (io.ReadCloser, error) {
 type fakeCredits struct {
 	mu       sync.Mutex
 	consumes int
+	balance  int // GetBalance 返回值；默认 0，需积分通过的测试显式设置
+}
+
+func (c *fakeCredits) GetBalance(context.Context, uuid.UUID) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.balance, nil
 }
 
 func (c *fakeCredits) Consume(context.Context, uuid.UUID, int, uuid.UUID, string) error {
@@ -564,7 +571,7 @@ func testGenerateReq() GenerateReq {
 func TestGenerate_ActiveTaskLimitBlocksUser(t *testing.T) {
 	repo := newFakeRepo()
 	repo.activeTasks = 5
-	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u := newTestUsecase(repo, &fakeCredits{balance: 100}, &fakeChannels{}, &fakeCaller{})
 	u.engines = nil // 跳过内容引擎加载，确保只测限流
 	user := &domain.User{
 		ID:              uuid.New(),
@@ -593,7 +600,7 @@ func TestGenerate_ActiveTaskLimitBlocksUser(t *testing.T) {
 func TestGenerate_ActiveTaskLimitUsesMaxActiveTasks(t *testing.T) {
 	repo := newFakeRepo()
 	repo.activeTasks = 3
-	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u := newTestUsecase(repo, &fakeCredits{balance: 100}, &fakeChannels{}, &fakeCaller{})
 	u.engines = nil
 	user := &domain.User{
 		ID:              uuid.New(),
@@ -619,7 +626,7 @@ func TestGenerate_ActiveTaskLimitUsesMaxActiveTasks(t *testing.T) {
 func TestGenerate_ActiveTaskLimitAllowsBelowLimit(t *testing.T) {
 	repo := newFakeRepo()
 	repo.activeTasks = 4
-	u := newTestUsecase(repo, &fakeCredits{}, &fakeChannels{}, &fakeCaller{})
+	u := newTestUsecase(repo, &fakeCredits{balance: 100}, &fakeChannels{}, &fakeCaller{})
 	u.engines = nil
 	user := &domain.User{
 		ID:              uuid.New(),
@@ -659,4 +666,47 @@ func TestGenerate_ActiveTaskLimitSkippedForAdmin(t *testing.T) {
 	if ok && walaErr.StatusCode == 429 {
 		t.Fatalf("admin 不应被限流，实际被限流: %q", walaErr.Message)
 	}
+}
+
+// TestGenerate_CreditsUsesLiveBalanceNotStaleSession 复现生产事故：
+// 用户登录时写入 session 的快照 Credits=0（短信/OAuth 路径漏填或充值后未刷新），
+// 但数据库实时余额充足。积分校验必须走 GetBalance 实时查库，不能信快照，否则所有普通账号误报 402。
+func TestGenerate_CreditsUsesLiveBalanceNotStaleSession(t *testing.T) {
+	repo := newFakeRepo()
+	// 快照 Credits=0，但实时余额充足。
+	u := newTestUsecase(repo, &fakeCredits{balance: 99}, &fakeChannels{}, &fakeCaller{})
+	u.engines = nil
+	user := &domain.User{
+		ID:              uuid.New(),
+		Role:            "subaccount",
+		Credits:         0, // 故意为 0，模拟过期/漏填的 session 快照
+		DailyImageLimit: 20,
+		MaxActiveTasks:  5,
+	}
+
+	_, err := u.Generate(context.Background(), user, testGenerateReq())
+	if err == nil {
+		t.Fatal("应在引擎加载阶段返回错误，实际为 nil")
+	}
+	if we, ok := err.(*wala.Error); ok && we.StatusCode == 402 {
+		t.Fatalf("实时余额充足时不应报积分不足，得 402: %q", we.Message)
+	}
+}
+
+// TestGenerate_CreditsLiveBalanceZeroStillBlocks 反向确保校验仍生效：
+// 快照 Credits 很高但实时余额为 0 时必须拦截 402（不能因为快照有分就放行）。
+func TestGenerate_CreditsLiveBalanceZeroStillBlocks(t *testing.T) {
+	repo := newFakeRepo()
+	u := newTestUsecase(repo, &fakeCredits{balance: 0}, &fakeChannels{}, &fakeCaller{})
+	u.engines = nil
+	user := &domain.User{
+		ID:              uuid.New(),
+		Role:            "subaccount",
+		Credits:         999, // 快照很高，但库内已为 0
+		DailyImageLimit: 20,
+		MaxActiveTasks:  5,
+	}
+
+	_, err := u.Generate(context.Background(), user, testGenerateReq())
+	wantStatusCode(t, err, 402)
 }

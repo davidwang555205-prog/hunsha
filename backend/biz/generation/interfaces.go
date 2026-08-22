@@ -58,8 +58,11 @@ type taskStore interface {
 	ThumbURL(filename string) string
 }
 
-// taskCredits 抽象积分扣减（*credits.Usecase 实现）。
+// taskCredits 抽象积分余额查询与扣减（*credits.Usecase 实现）。
 type taskCredits interface {
+	// GetBalance 实时查库返回用户当前积分余额。
+	// 生图校验必须用实时值，不能信任登录时写入 session 的快照（充值/消耗后快照不会刷新）。
+	GetBalance(ctx context.Context, userID uuid.UUID) (int, error)
 	Consume(ctx context.Context, userID uuid.UUID, amount int, taskID uuid.UUID, desc string) error
 }
 

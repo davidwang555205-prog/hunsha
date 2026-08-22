@@ -701,10 +701,17 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 	}
 	sceneLocked := sceneFile != nil
 
-	// 积分校验（非管理员需 credits >= 请求数，与 Node index.mjs:784 一致）
+	// 积分校验（非管理员需 实时余额 >= 请求数）。
+	// 必须实时查库，不能用 user.Credits（登录时写入 session 的快照，充值/消耗后不刷新，
+	// 曾导致短信/OAuth 等登录路径漏填 Credits 时所有普通账号被误判为 0 积分）。
 	if !user.HasUnlimitedImageGeneration() {
-		if user.Credits < len(paramsList) {
-			return nil, wala.NewError(402, fmt.Sprintf("积分余额不足。当前余额 %d，本次需要 %d 积分。请联系管理员充值。", user.Credits, len(paramsList)))
+		balance, err := u.credits.GetBalance(ctx, user.ID)
+		if err != nil {
+			u.logger.ErrorContext(ctx, "get balance failed", "user_id", user.ID, "error", err)
+			return nil, wala.NewError(500, "查询积分余额失败，请稍后重试。")
+		}
+		if balance < len(paramsList) {
+			return nil, wala.NewError(402, fmt.Sprintf("积分余额不足。当前余额 %d，本次需要 %d 积分。请联系管理员充值。", balance, len(paramsList)))
 		}
 	}
 

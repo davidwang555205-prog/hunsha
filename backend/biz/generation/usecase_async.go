@@ -179,9 +179,16 @@ func (u *Usecase) RetryImage(ctx context.Context, taskID uuid.UUID, imageNumber 
 	if firstSuccess == nil {
 		return wala.NewError(400, "无成功图片作为连续性参考，请整任务重试。")
 	}
-	// 积分校验（非管理员需 credits >= 1）
-	if !user.HasUnlimitedImageGeneration() && user.Credits < 1 {
-		return wala.NewError(402, fmt.Sprintf("积分余额不足。当前余额 %d，本次需要 1 积分。", user.Credits))
+	// 积分校验（非管理员需 实时余额 >= 1）。实时查库，不用 user.Credits 快照（理由同 Generate）。
+	if !user.HasUnlimitedImageGeneration() {
+		balance, err := u.credits.GetBalance(ctx, user.ID)
+		if err != nil {
+			u.logger.ErrorContext(ctx, "get balance failed", "user_id", user.ID, "error", err)
+			return wala.NewError(500, "查询积分余额失败，请稍后重试。")
+		}
+		if balance < 1 {
+			return wala.NewError(402, fmt.Sprintf("积分余额不足。当前余额 %d，本次需要 1 积分。", balance))
+		}
 	}
 	// 重建参考图（reference_images URL -> wala.FileInput）
 	var sceneFile *wala.FileInput
