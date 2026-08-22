@@ -45,3 +45,6 @@ backend/server
 # docs 目录整体不入库（需求文档/备忘录/本地 json/权威 md 一律本地保留，已跟踪文件停止跟踪）
 /docs/
 build/
+
+# bridal-agent-mcp 本地编译产物（151MB Linux x86-64 ELF 二进制，不入库）
+backend/bridal-agent-mcp
