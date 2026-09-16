@@ -125,7 +125,17 @@ export function ChangePhoneModal({ open, onClose, onSuccess }: Props) {
       setMaskedDestination(d.masked_destination);
       setCountdown(d.retry_after_seconds || 60);
       setInfo(`验证码已发送至 ${d.masked_destination}`);
+      // Cap token 一次性：后端发码成功即消费，重发前必须重新过验证
+      setCaptchaToken(null);
+      setCaptchaResetSignal((s) => s + 1);
     } catch (err) {
+      // 403=后端 Cap token 校验失败（token 已消费或过期），重置验证码引导重新验证
+      if ((err as ApiError | undefined)?.statusCode === 403) {
+        setCaptchaToken(null);
+        setCaptchaResetSignal((s) => s + 1);
+        setError("人机验证已失效，请重新完成验证后再试。");
+        return;
+      }
       const code = errorCodeOf(err);
       if (code === VerificationErrorCode.SmsUnavailableForPhone) {
         setError("短信通道暂不可用，当前无法变更手机号，请稍后再试。");
