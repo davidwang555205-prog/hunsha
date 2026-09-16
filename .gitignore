@@ -48,3 +48,7 @@ build/
 
 # bridal-agent-mcp 本地编译产物（151MB Linux x86-64 ELF 二进制，不入库）
 backend/bridal-agent-mcp
+
+# 本地知识与技能目录不入库
+.claude/
+docs/
