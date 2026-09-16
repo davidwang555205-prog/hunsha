@@ -14,8 +14,8 @@ func NewCaptcha() *Captcha {
 	return &Captcha{
 		Cap: gocap.New(
 			gocap.WithChallenge(50, 32, 3),
-			gocap.WithChallengeExpires(60*2),
-			gocap.WithTokenExpires(60*5),
+			gocap.WithChallengeExpires(60*5),
+			gocap.WithTokenExpires(60*20),
 		),
 	}
 }
