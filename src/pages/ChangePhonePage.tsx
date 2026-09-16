@@ -78,6 +78,7 @@ export function ChangePhonePage() {
   };
 
   const handleSendCode = async () => {
+    if (sending) return;
     clearFeedback();
     if (!isPhone(phone)) {
       setError("请输入 11 位手机号。");
@@ -106,10 +107,12 @@ export function ChangePhonePage() {
       setCaptchaToken(null);
       setCaptchaResetSignal((s) => s + 1);
     } catch (err) {
-      // 403=后端 Cap token 校验失败（token 已消费或过期），重置验证码引导重新验证
+      // 后端 Cap token 一次性：无论成功或何种业务失败，后端均已消费 token，必须清空并重置
+      setCaptchaToken(null);
+      setCaptchaResetSignal((s) => s + 1);
+
+      // 403=后端 Cap token 校验失败（token 已消费或过期）
       if ((err as ApiError | undefined)?.statusCode === 403) {
-        setCaptchaToken(null);
-        setCaptchaResetSignal((s) => s + 1);
         setError("人机验证已失效，请重新完成验证后再试。");
         return;
       }

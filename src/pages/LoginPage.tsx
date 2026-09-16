@@ -66,6 +66,7 @@ export function LoginPage() {
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     setError("");
     setErrorKind(null);
     // 前端空值校验，避免空请求打到后端
@@ -86,17 +87,16 @@ export function LoginPage() {
       setCaptchaToken(null);
       setCaptchaResetSignal((s) => s + 1);
     } catch (err) {
-      // 网络错误（statusCode 缺失）单独提示；业务错误（含 HTTP 200 的登录失败）统一友好文案，
-      // 不暴露后端技术性 message，也不泄露邮箱是否存在。保留密码并选中，方便用户直接修正输入。
+      // 后端 Cap token 是一次性的（无论成功还是密码错误等业务失败，后端的 token 都已被消费）。
+      // 失败后必须立即清空前端 token 并重置 widget，防止用户修改密码后二次提交旧 token 被 403 拦截。
+      setCaptchaToken(null);
+      setCaptchaResetSignal((s) => s + 1);
+
       const statusCode = (err as ApiError | undefined)?.statusCode;
       if (statusCode === undefined) {
         setError("无法连接服务，请检查网络后重试。");
         setErrorKind("network");
       } else if (statusCode === 403) {
-        // 403=后端 Cap token 校验失败（token 一次性，上次失败后未重新过验证即失效）。
-        // 与密码错误区分提示，并重置验证码 widget 引导用户重新验证，避免"越试越失败"。
-        setCaptchaToken(null);
-        setCaptchaResetSignal((s) => s + 1);
         setError("人机验证已失效，请重新完成验证后再登录。");
         setErrorKind("validation");
       } else {
