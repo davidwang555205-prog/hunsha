@@ -46,6 +46,9 @@ var blueprintSelectors = map[string]blueprintSelector{
 	"selfieContrastSilhouetteMaxVisualDistance": func(b []XhsImageBlueprint, r BlueprintSelectionRule, c int, s string) []XhsImageBlueprint {
 		return selectContrastMaxVisualDistanceBlueprints(b, r, c, s, false)
 	},
+	// 2026-09 婚纱 macro 迁移配套策略：按蓝图 action 元数据做动作族多样性抽样，
+	// 图1 固定 static_display + frontal + proofSafe 稳定证明帧。实现见 macro_action.go。
+	"macroActionDiversity": selectMacroActionBlueprints,
 }
 
 // BlueprintStrategyNames 平台支持的蓝图抽样策略名（含 fixed），排序返回。
