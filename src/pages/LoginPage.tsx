@@ -89,10 +89,21 @@ export function LoginPage() {
       // 网络错误（statusCode 缺失）单独提示；业务错误（含 HTTP 200 的登录失败）统一友好文案，
       // 不暴露后端技术性 message，也不泄露邮箱是否存在。保留密码并选中，方便用户直接修正输入。
       const statusCode = (err as ApiError | undefined)?.statusCode;
-      const isNetworkError = statusCode === undefined;
-      setError(isNetworkError ? "无法连接服务，请检查网络后重试。" : "邮箱或密码不正确，请检查后重试。");
-      setErrorKind(isNetworkError ? "network" : "credentials");
-      if (!isNetworkError) requestAnimationFrame(() => passwordRef.current?.select());
+      if (statusCode === undefined) {
+        setError("无法连接服务，请检查网络后重试。");
+        setErrorKind("network");
+      } else if (statusCode === 403) {
+        // 403=后端 Cap token 校验失败（token 一次性，上次失败后未重新过验证即失效）。
+        // 与密码错误区分提示，并重置验证码 widget 引导用户重新验证，避免"越试越失败"。
+        setCaptchaToken(null);
+        setCaptchaResetSignal((s) => s + 1);
+        setError("人机验证已失效，请重新完成验证后再登录。");
+        setErrorKind("validation");
+      } else {
+        setError("邮箱或密码不正确，请检查后重试。");
+        setErrorKind("credentials");
+        requestAnimationFrame(() => passwordRef.current?.select());
+      }
     } finally {
       setLoading(false);
     }
