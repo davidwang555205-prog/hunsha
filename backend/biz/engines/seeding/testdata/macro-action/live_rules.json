@@ -1,0 +1,50 @@
+{
+    "试纱体验": {
+        "strategy": "macroActionDiversity",
+        "backReferenceSafe": false,
+        "requiredNamePrefix": "FTE-",
+        "allowedActionFamilies": [
+            "static_display",
+            "walking",
+            "body_turn",
+            "lateral_extension",
+            "elevated_forearm"
+        ]
+    },
+    "真实客户试纱": {
+        "strategy": "macroActionDiversity",
+        "backReferenceSafe": false,
+        "requiredNamePrefix": "RCF-",
+        "allowedActionFamilies": [
+            "static_display",
+            "walking",
+            "body_turn",
+            "lateral_extension",
+            "elevated_forearm"
+        ]
+    },
+    "试纱陪同视角": {
+        "strategy": "macroActionDiversity",
+        "backReferenceSafe": false,
+        "requiredNamePrefix": "CCF-",
+        "allowedActionFamilies": [
+            "static_display",
+            "walking",
+            "body_turn",
+            "lateral_extension",
+            "elevated_forearm"
+        ]
+    },
+    "手机对镜自拍试纱": {
+        "strategy": "macroActionDiversity",
+        "backReferenceSafe": false,
+        "requiredNamePrefix": "PMS-",
+        "allowedActionFamilies": [
+            "static_display",
+            "walking",
+            "body_turn",
+            "lateral_extension",
+            "elevated_forearm"
+        ]
+    }
+}

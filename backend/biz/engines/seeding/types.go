@@ -91,6 +91,23 @@ type XhsImageBlueprint struct {
 	ScenePreference  string `json:"scenePreference"`
 	KeywordProfileID string `json:"keywordProfileId"`
 	ExtraRequirement string `json:"extraRequirement"`
+	// Action macro 蓝图的动作元数据（可选）：macroActionDiversity 策略的抽样依据，
+	// 普通蓝图省略。线上 macro JSON 契约见 2026-09 婚纱四主题 MACRO-* 蓝图。
+	Action *BlueprintAction `json:"action,omitempty"`
+}
+
+// BlueprintAction macro 蓝图动作元数据（线上 macro JSON "action" 字段契约，字段均可选）。
+// 四维度 movement / orientation / armSilhouette / garmentSilhouette 是动作差异度量依据；
+// standing=false 或非站姿的蓝图不进入 macroActionDiversity 候选池。
+type BlueprintAction struct {
+	Family            string `json:"family,omitempty"`
+	Movement          string `json:"movement,omitempty"`
+	Standing          bool   `json:"standing,omitempty"`
+	PhoneSafe         bool   `json:"phoneSafe,omitempty"`
+	ProofSafe         bool   `json:"proofSafe,omitempty"`
+	Orientation       string `json:"orientation,omitempty"`
+	ArmSilhouette     string `json:"armSilhouette,omitempty"`
+	GarmentSilhouette string `json:"garmentSilhouette,omitempty"`
 }
 
 // XhsContentProfile 小红书内容档案（src/data :47-53）
@@ -107,6 +124,9 @@ type XhsContentProfile struct {
 type BlueprintSelectionRule struct {
 	Strategy           string `json:"strategy"`
 	RequiredNamePrefix string `json:"requiredNamePrefix"`
+	// AllowedActionFamilies macroActionDiversity 候选动作族白名单（默认空 = 不限制）。
+	// 非空时仅 family 命中白名单且带 action 元数据的蓝图进入候选池。
+	AllowedActionFamilies []string `json:"allowedActionFamilies,omitempty"`
 	// BackReferenceSafe 对齐 mjs v3.11.0 selector 的 options.backReferenceSafe（默认 false）：
 	// false 时三图第三张注入 SIDE SAFE 角色文本（禁止虚构未验证背部结构）；
 	// true 时注入 VERIFIED BACK-SAFE（允许基于可信参考展示经验证的侧后/背部结构）。
