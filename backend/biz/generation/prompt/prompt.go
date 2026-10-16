@@ -50,6 +50,7 @@ type Params struct {
 	BridalKeywordProfileID string `json:"bridalKeywordProfileId"`
 	GeneratedImageName     string `json:"generatedImageName"`
 	SceneLocked            bool   `json:"sceneLocked"` // 传了场景参考图则 true：强制复用场景图环境生成，跳过场景轮转
+	CameraScale            string `json:"cameraScale,omitempty"` // 取景景别：full / half / partial（局部特写）
 	// ProductSpec 产品规格（P-1 透传，P-2 编译为 prompt 行）。omitempty 保证婚纱空值不影响 golden。
 	ProductSpec *ProductSpec `json:"productSpec,omitempty"`
 	// ModelSelection 模特选择（P0 透传，P1 解析）。nil 走旧 ModelChoice，omitempty 保证婚纱 golden 不变。
@@ -305,7 +306,11 @@ func buildProductPresenceLine(p Params) string {
 	case "拍摄花絮 / 材质图", "产品静物图":
 		base = "Product presence: show accurate fabric and construction details through fabric close-up, lace, satin, veil, hanger, dress rack, mood board, refined styling props, and clean material surfaces."
 	default:
-		base = "Product presence: the dress or gown should be clearly visible, accurately proportioned, and naturally integrated into the scene."
+		if p.CameraScale == "partial" {
+			base = "Product presence: show tight detail crop of the gown's fabric, embroidery, beading, and construction. For this close-up frame, full gown silhouette and full body are not required."
+		} else {
+			base = "Product presence: the dress or gown should be clearly visible, accurately proportioned, and naturally integrated into the scene."
+		}
 	}
 	if p.V31Enabled {
 		switch p.ProductPresence {
@@ -589,7 +594,7 @@ func Compile(input ResolvedPromptInput, ctx SeriesContext, assets *Assets) *Cano
 		SeriesContinuity:      seriesContinuity,
 		BrandDirection:        brandDirection,
 		BrandVisual:           brandVisual,
-		Composition:           compositionLine,
+		Composition:           resolveCompositionLine(p, extraRequirement),
 		CameraFeel:            cameraFeelLine,
 		Extra:                 extraLine,
 		Negatives:             negativeLines,
@@ -631,4 +636,12 @@ func intToStr(i int) string {
 		b = append([]byte{'-'}, b...)
 	}
 	return string(b)
+}
+
+// resolveCompositionLine 动态决定构图行约束：对局部特写帧（partial）解耦全局 balanced crop 站姿构图。
+func resolveCompositionLine(p Params, extraRequirement string) string {
+	if p.CameraScale == "partial" || strings.Contains(strings.ToLower(extraRequirement), "frame-filling detail crop") {
+		return "Composition: tight close-up detail framing, strictly focused on garment construction, embroidery, and textile weave. Crop tightly to show craftsmanship; no full-body view, no face."
+	}
+	return compositionLine
 }

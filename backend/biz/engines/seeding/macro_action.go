@@ -5,30 +5,35 @@ import "strings"
 // selectMacroActionBlueprints 实现 macroActionDiversity 策略（2026-09 婚纱 macro 迁移
 // 配套策略，线上四主题各 25 条 MACRO-* 蓝图：5 动作族 × 5 表情变体，每条带 action 元数据）。
 //
-// count=3：图1 从「static_display + frontal + proofSafe」证明帧候选中按 batchSeed 随机
-// 取一条；图2/图3 从其余动作族（AllowedActionFamilies 白名单内）穷举二元组合，选与图1
-// 及彼此「最小成对动作维度差最大（并列时总和最大）」的两个不同 family，各按 seed 随机
-// 取一条变体。动作维度为 movement / orientation / armSilhouette / garmentSilhouette
-// 四项，维度差计数即两条蓝图的动作距离（0-4）。
-// count=5：五个动作族各取一条（图1 仍为 static_display + frontal + proofSafe 证明帧），
-// 其余家族按 seed 洗牌定序，各随机取一条变体。
-//
-// 候选必须带 action 元数据且 standing=true；AllowedActionFamilies 非空时 family 必须在
-// 白名单内。数据不足以满足策略时降级返回原蓝图顺序（与既有策略一致，保证生图链路不中断）。
+// 升级特性（2026-10 动作多样性与局部细节图支持）：
+// 1. 若候选池含局部特写蓝图（cameraScale="partial" 或细节/特写属性）：
+//    - count=3：图1 证明帧 + 图2 差异最大动作族 + 图3 局部特写帧（固定位 3）；
+//    - count=5：图1 证明帧 + 图2~4 三个互斥动作族 + 图5 局部特写帧（固定位 5）；
+// 2. 若无局部特写蓝图，保持原行为：count=3 取三动作族，count=5 取五动作族全覆盖；
+// 3. 彻底消除静默降级毒丸：候选条件不足时通过 fallbackDiverseBlueprints 跨家族轮流或洗牌抽样，
+//    杜绝顺序截取前 N 条返回同动作族变体（彻底根除「三图同动作」事故）。
 func selectMacroActionBlueprints(blueprints []XhsImageBlueprint, rule BlueprintSelectionRule, count int, batchSeed string) []XhsImageBlueprint {
 	if count != 3 && count != 5 {
 		return blueprints
 	}
 	pool := macroActionPool(blueprints, rule)
 	if len(pool) == 0 {
-		return blueprints
+		return fallbackDiverseBlueprints(blueprints, batchSeed)
 	}
 	groups, familyOrder := macroActionGroups(pool)
 	proof := macroProofCandidates(pool)
 	if len(proof) == 0 {
-		return blueprints
+		return fallbackDiverseBlueprints(blueprints, batchSeed)
 	}
+
+	partials := filterPartialCandidates(blueprints, rule.RequiredNamePrefix)
+	hasPartials := len(partials) > 0
+
 	need := count - 1
+	if hasPartials {
+		need = count - 2
+	}
+
 	otherFamilies := make([]string, 0, len(groups))
 	for _, family := range familyOrder {
 		if family == macroProofFamily {
@@ -37,7 +42,7 @@ func selectMacroActionBlueprints(blueprints []XhsImageBlueprint, rule BlueprintS
 		otherFamilies = append(otherFamilies, family)
 	}
 	if len(otherFamilies) < need {
-		return blueprints
+		return fallbackDiverseBlueprints(blueprints, batchSeed)
 	}
 
 	random := seededBlueprintRandom(batchSeed)
@@ -48,15 +53,15 @@ func selectMacroActionBlueprints(blueprints []XhsImageBlueprint, rule BlueprintS
 	shuffleBlueprints(shuffledProof, random)
 	first := shuffledProof[0]
 
-	// 选 need 个动作族：count=3 穷举二元组最大化成对差异；count=5 全家集、seed 洗牌定序。
+	// 选 need 个动作族：need=1 或 need=2 穷举组合最大化成对差异；need=3 或 4 洗牌定序。
 	var chosenFamilies []string
-	if count == 3 {
+	if need <= 2 {
 		chosenFamilies = chooseMacroActionFamilies(first, otherFamilies, groups, need)
 	} else {
 		chosenFamilies = shuffleStrings(otherFamilies, random)
 	}
 	if len(chosenFamilies) < need {
-		return blueprints
+		return fallbackDiverseBlueprints(blueprints, batchSeed)
 	}
 
 	out := make([]XhsImageBlueprint, 0, count)
@@ -65,11 +70,103 @@ func selectMacroActionBlueprints(blueprints []XhsImageBlueprint, rule BlueprintS
 		variants := groups[family]
 		out = append(out, variants[int(random()*float64(len(variants)))])
 	}
+
+	// 若启用局部特写，末位注入 1 帧局部特写（固定位 3 或位 5）
+	if hasPartials {
+		shuffledPartials := make([]XhsImageBlueprint, len(partials))
+		copy(shuffledPartials, partials)
+		shuffleBlueprints(shuffledPartials, random)
+		chosenPartial := shuffledPartials[0]
+		if chosenPartial.CameraScale == "" {
+			chosenPartial.CameraScale = "partial"
+		}
+		out = append(out, chosenPartial)
+	}
+
 	return out
 }
 
 // macroProofFamily 图1 证明帧动作族。
 const macroProofFamily = "static_display"
+
+// isPartialBlueprint 判断是否为局部特写蓝图。
+func isPartialBlueprint(bp XhsImageBlueprint) bool {
+	if bp.CameraScale == "partial" {
+		return true
+	}
+	if bp.Action != nil && bp.Action.Family == "partial_detail" {
+		return true
+	}
+	return strings.Contains(bp.Purpose, "细节") || strings.Contains(bp.Name, "细节") || strings.Contains(bp.Purpose, "特写")
+}
+
+// filterPartialCandidates 筛选符合前缀与局部特写属性的蓝图。
+func filterPartialCandidates(blueprints []XhsImageBlueprint, requiredPrefix string) []XhsImageBlueprint {
+	out := make([]XhsImageBlueprint, 0)
+	for _, bp := range blueprints {
+		if requiredPrefix != "" && !strings.HasPrefix(bp.Name, requiredPrefix) {
+			continue
+		}
+		if isPartialBlueprint(bp) {
+			out = append(out, bp)
+		}
+	}
+	return out
+}
+
+// fallbackDiverseBlueprints 降级多样性抽样：
+// 保持总长度 len(blueprints) 兼容平台既有契约，同时通过家族交错（Round-Robin Interleaving）
+// 重新排列，杜绝前 N 条出现连续同家族变体，防止外部切取前 3 条时发生「三图同动作」。
+func fallbackDiverseBlueprints(blueprints []XhsImageBlueprint, batchSeed string) []XhsImageBlueprint {
+	if len(blueprints) <= 1 {
+		return blueprints
+	}
+	random := seededBlueprintRandom(batchSeed)
+	groups := map[string][]XhsImageBlueprint{}
+	families := make([]string, 0)
+	for _, bp := range blueprints {
+		fam := ""
+		if bp.Action != nil && bp.Action.Family != "" {
+			fam = bp.Action.Family
+		} else {
+			fam = blueprintFamily(bp.Name)
+		}
+		if fam == "" {
+			fam = "default"
+		}
+		if _, exists := groups[fam]; !exists {
+			families = append(families, fam)
+		}
+		groups[fam] = append(groups[fam], bp)
+	}
+
+	if len(families) > 1 {
+		shuffledFamilies := make([]string, len(families))
+		copy(shuffledFamilies, families)
+		shuffleStrings(shuffledFamilies, random)
+		out := make([]XhsImageBlueprint, 0, len(blueprints))
+		maxLen := 0
+		for _, v := range groups {
+			if len(v) > maxLen {
+				maxLen = len(v)
+			}
+		}
+		for round := 0; round < maxLen; round++ {
+			for _, fam := range shuffledFamilies {
+				vars := groups[fam]
+				if round < len(vars) {
+					out = append(out, vars[round])
+				}
+			}
+		}
+		return out
+	}
+
+	shuffled := make([]XhsImageBlueprint, len(blueprints))
+	copy(shuffled, blueprints)
+	shuffleBlueprints(shuffled, random)
+	return shuffled
+}
 
 // macroActionPool 按 requiredNamePrefix + action 元数据完整性 + standing + 动作族白名单
 // 过滤候选池；无任何候选时返回空切片，由调用方降级。
@@ -148,7 +245,7 @@ func macroActionDistance(left, right *BlueprintAction) int {
 	return n
 }
 
-// chooseMacroActionFamilies 从其余动作族中选 need 个（count=3 即 2 个）不同 family：
+// chooseMacroActionFamilies 从其余动作族中选 need 个不同 family：
 // 穷举全部 need 元组合（保持 otherFamilies 原序，保证确定性），计算组内（含图1）最小
 // 成对动作维度差，取最大者（并列取总和最大）。无组合返回 nil。
 func chooseMacroActionFamilies(first XhsImageBlueprint, families []string, groups map[string][]XhsImageBlueprint, need int) []string {
