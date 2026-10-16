@@ -458,7 +458,7 @@ export function StudioPage() {
                 </div>
               </div>
               <div className="mt-4 rounded-lg bg-primary/5 p-3 text-xs leading-5 text-text-muted ring-1 ring-primary/10">
-                本次将生成 {imageCount} 张 {imageSize} 图片，完成后按独立卡片逐张交付。
+                本次将生成 {imageCount} 张 {imageSize} 图片，完成后按独立卡片逐张交付。{imageCount === 3 ? "（含 2 张不同站姿/转身展示 + 1 张关键局部细节特写）" : "（含 4 张不同动作展示 + 1 张关键局部细节特写）"}
               </div>
               {copyEnabled && gen.stage === "idle" && (
                 <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={handleChangeContent} disabled={contentTopicOptions.length === 0 || contentPreview.images.length === 0}>

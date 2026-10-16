@@ -637,6 +637,11 @@ func (u *Usecase) Generate(ctx context.Context, user *domain.User, req GenerateR
 		return nil, wala.NewError(400, "缺少生图参数。")
 	}
 
+	// 1.1 组内动作多样性终检门禁（V-ACTION-DIVERSITY-GATE，杜绝三图同动作与全站桩退化）
+	if err := validateGroupActionDiversity(paramsList); err != nil {
+		return nil, wala.NewError(400, "生图参数未通过动作多样性校验："+err.Error()+"。")
+	}
+
 	// categoryId 是内容生成和生图共同的引擎路由键。存量客户端未传时兼容默认 bridal；
 	// 新工作台必须按已选类目的 engine 读取 imagePrompt，不能硬编码默认引擎。
 	var categoryID uuid.UUID
@@ -999,4 +1004,42 @@ func (u *Usecase) SubmitFeedback(ctx context.Context, user *domain.User, taskID 
 	}
 	rec.Feedback = &fb
 	return rec, nil
+}
+
+// validateGroupActionDiversity 组内动作多样性与防重终检门禁（V-ACTION-DIVERSITY-GATE）。
+// 杜绝前台多张图存在相同动作族或完全重复的 extraRequirement 提交给 Provider。
+func validateGroupActionDiversity(paramsList []prompt.Params) error {
+	if len(paramsList) <= 1 {
+		return nil
+	}
+	seenExtra := make(map[string]int)
+	seenMacroFamily := make(map[string]int)
+
+	for i, p := range paramsList {
+		// partial 局部特写帧豁免人像站姿排他性校验
+		if p.CameraScale == "partial" {
+			continue
+		}
+		extra := strings.TrimSpace(p.ExtraRequirement)
+		if len(extra) > 30 {
+			if firstIdx, exists := seenExtra[extra]; exists {
+				return fmt.Errorf("第 %d 帧与第 %d 帧动作指令完全重复，违背组内动作多样性原则", firstIdx+1, i+1)
+			}
+			seenExtra[extra] = i
+		}
+		if strings.Contains(extra, "WHOLE-BODY ACTION — ") {
+			parts := strings.Split(extra, "WHOLE-BODY ACTION — ")
+			if len(parts) > 1 {
+				subParts := strings.Split(parts[1], ":")
+				family := strings.TrimSpace(subParts[0])
+				if family != "" {
+					if firstIdx, exists := seenMacroFamily[family]; exists {
+						return fmt.Errorf("第 %d 帧与第 %d 帧动作族重复（%s），整组图片动作必须互斥", firstIdx+1, i+1, family)
+					}
+					seenMacroFamily[family] = i
+				}
+			}
+		}
+	}
+	return nil
 }

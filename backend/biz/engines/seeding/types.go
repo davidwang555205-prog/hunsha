@@ -91,6 +91,8 @@ type XhsImageBlueprint struct {
 	ScenePreference  string `json:"scenePreference"`
 	KeywordProfileID string `json:"keywordProfileId"`
 	ExtraRequirement string `json:"extraRequirement"`
+	// CameraScale 取景景别（可选）：full / half / partial（局部特写），对齐 content_themes 契约
+	CameraScale string `json:"cameraScale,omitempty"`
 	// Action macro 蓝图的动作元数据（可选）：macroActionDiversity 策略的抽样依据，
 	// 普通蓝图省略。线上 macro JSON 契约见 2026-09 婚纱四主题 MACRO-* 蓝图。
 	Action *BlueprintAction `json:"action,omitempty"`
@@ -158,6 +160,7 @@ type PromptParams struct {
 	GenerationNonce        int    `json:"generationNonce"`
 	BridalKeywordProfileID string `json:"bridalKeywordProfileId"`
 	GeneratedImageName     string `json:"generatedImageName"`
+	CameraScale            string `json:"cameraScale,omitempty"`
 }
 
 // ImageDraft 配图草稿（TS :71-79）
@@ -169,6 +172,7 @@ type ImageDraft struct {
 	ScenePreference        string
 	ExtraRequirement       string
 	BridalKeywordProfileID string
+	CameraScale            string
 }
 
 // FashionSeedingImagePlan 配图方案（TS :40-45）。JSON tag 对齐前端契约。

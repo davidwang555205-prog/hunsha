@@ -256,3 +256,71 @@ func TestMacroActionJSONContract(t *testing.T) {
 		t.Fatalf("allowedActionFamilies=%v, want [static_display walking]", rule.AllowedActionFamilies)
 	}
 }
+
+// TestSelectMacroActionWithPartialFrames 验证引入 partial 局部细节蓝图后的抽样规则：
+// count=3 时：图1证明帧 + 图2动作差异帧 + 图3局部细节特写（cameraScale=partial）
+// count=5 时：图1证明帧 + 图2~4动作差异帧 + 图5局部细节特写（cameraScale=partial）
+func TestSelectMacroActionWithPartialFrames(t *testing.T) {
+	blueprints := macroTestPool("FTE")
+	rule := macroTestRule()
+	rule.RequiredNamePrefix = "FTE-"
+
+	// 注入 2 条局部细节蓝图
+	partial1 := XhsImageBlueprint{
+		Name:             "FTE-DETAIL-1｜领口与胸衣珠绣特写",
+		Purpose:          "展示胸口手工刺绣与珠绣细节",
+		Description:      "领口与胸衣珠绣局部近景特写",
+		ImageType:        "产品上身图",
+		CameraScale:      "partial",
+		ExtraRequirement: "Frame-filling detail crop: the neckline, beading, and lace occupy most of the frame; for this frame only, complete silhouette is NOT required; no full body, no face.",
+	}
+	partial2 := XhsImageBlueprint{
+		Name:             "FTE-DETAIL-2｜裙摆面料纹理特写",
+		Purpose:          "展示缎面裙摆与褶皱垂坠细节",
+		Description:      "裙摆缎面微距特写",
+		ImageType:        "拍摄花絮 / 材质图",
+		CameraScale:      "partial",
+		ExtraRequirement: "Frame-filling detail crop: the satin drape and skirt hem occupy most of the frame.",
+	}
+	blueprintsWithPartial := append(blueprints, partial1, partial2)
+
+	// count=3：验证图1证明帧、图2动作帧、图3局部特写
+	seeds := []string{"seed-p1", "seed-p2", "seed-p3", "seed-p4"}
+	for _, seed := range seeds {
+		got3 := selectMacroActionBlueprints(blueprintsWithPartial, rule, 3, seed)
+		if len(got3) != 3 {
+			t.Fatalf("seed=%s: len=%d, want 3", seed, len(got3))
+		}
+		if got3[0].Action.Family != "static_display" {
+			t.Fatalf("seed=%s: first family=%s, want static_display", seed, got3[0].Action.Family)
+		}
+		if got3[1].Action.Family == "static_display" {
+			t.Fatalf("seed=%s: second family should not be static_display", seed)
+		}
+		if got3[2].CameraScale != "partial" {
+			t.Fatalf("seed=%s: third cameraScale=%s, want partial", seed, got3[2].CameraScale)
+		}
+	}
+
+	// count=5：验证图1证明帧、图2~4动作帧互斥、图5局部特写
+	for _, seed := range seeds {
+		got5 := selectMacroActionBlueprints(blueprintsWithPartial, rule, 5, seed)
+		if len(got5) != 5 {
+			t.Fatalf("seed=%s: len=%d, want 5", seed, len(got5))
+		}
+		if got5[0].Action.Family != "static_display" {
+			t.Fatalf("seed=%s: first family=%s, want static_display", seed, got5[0].Action.Family)
+		}
+		seen := map[string]bool{"static_display": true}
+		for i := 1; i < 4; i++ {
+			f := got5[i].Action.Family
+			if seen[f] {
+				t.Fatalf("seed=%s: duplicated action family=%s at index %d", seed, f, i)
+			}
+			seen[f] = true
+		}
+		if got5[4].CameraScale != "partial" {
+			t.Fatalf("seed=%s: fifth cameraScale=%s, want partial", seed, got5[4].CameraScale)
+		}
+	}
+}

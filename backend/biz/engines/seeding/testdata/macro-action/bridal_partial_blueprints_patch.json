@@ -1,0 +1,63 @@
+{
+  "description": "婚纱四大核心主题局部细节特写（Partial）蓝图补丁，注入 O-T1 取景覆盖度语言，消除全身权威行冲突",
+  "themePartials": {
+    "试纱体验": [
+      {
+        "name": "FTE-MACRO-PARTIAL-E01｜领口与胸衣珠绣特写",
+        "purpose": "展示领口手工刺绣与珠绣细节",
+        "description": "领口与胸衣珠绣微距细节图",
+        "imageType": "产品上身图",
+        "cameraScale": "partial",
+        "scenePreference": "试纱间",
+        "keywordProfileId": "soloFittingViewpointPool",
+        "extraRequirement": "Frame-filling detail crop: the neckline, beading, and lace embroidery occupy most of the frame; only the minimum wearing context remains visible. For this frame only, the complete product silhouette is NOT required; no full body, no face. Focus on real textile textures and delicate bridal craftsmanship."
+      },
+      {
+        "name": "FTE-MACRO-PARTIAL-E02｜裙摆缎面垂坠与拖尾特写",
+        "purpose": "展示缎面裙摆剪裁与下摆细节",
+        "description": "裙摆缎面垂坠特写",
+        "imageType": "拍摄花絮 / 材质图",
+        "cameraScale": "partial",
+        "scenePreference": "材质工作台",
+        "keywordProfileId": "soloFittingViewpointPool",
+        "extraRequirement": "Frame-filling detail crop: the bridal gown hemline, satin drape, and train fabric occupy most of the frame; for this frame only, the complete product silhouette is NOT required; no full body, no face. Capture accurate weave and luxury luster."
+      }
+    ],
+    "真实客户试纱": [
+      {
+        "name": "RCF-MACRO-PARTIAL-E01｜背部镂空与绑带细节特写",
+        "purpose": "展示背部露背线条与细致绑带工艺",
+        "description": "婚纱背部工艺特写",
+        "imageType": "产品上身图",
+        "cameraScale": "partial",
+        "scenePreference": "试纱间",
+        "keywordProfileId": "soloFittingViewpointPool",
+        "extraRequirement": "Frame-filling detail crop: the back corset lace-up, open-back neckline, and delicate gown fastening occupy most of the frame; for this frame only, the complete product silhouette is NOT required; no full body, no face."
+      }
+    ],
+    "试纱陪同视角": [
+      {
+        "name": "CCF-MACRO-PARTIAL-E01｜头纱透光质感与手部整理特写",
+        "purpose": "展示轻盈头纱微距与陪伴整理细节",
+        "description": "头纱发饰特写",
+        "imageType": "产品上身图",
+        "cameraScale": "partial",
+        "scenePreference": "试纱间",
+        "keywordProfileId": "soloFittingViewpointPool",
+        "extraRequirement": "Frame-filling detail crop: the translucent bridal veil, delicate lace edging, and hair ornament occupy most of the frame; for this frame only, the complete product silhouette is NOT required; no full body, no face."
+      }
+    ],
+    "手机对镜自拍试纱": [
+      {
+        "name": "PMS-MACRO-PARTIAL-E01｜手部特写与腰线剪裁细节",
+        "purpose": "展示腰部收腰比例与手持捧花细节",
+        "description": "腰身剪裁与手部特写",
+        "imageType": "产品上身图",
+        "cameraScale": "partial",
+        "scenePreference": "试纱间",
+        "keywordProfileId": "phoneMirrorSelfieFitting",
+        "extraRequirement": "Frame-filling detail crop: the waistline tailoring, fabric seam, and delicate hand placement occupy most of the frame; for this frame only, the complete product silhouette is NOT required; no full body, no face."
+      }
+    ]
+  }
+}

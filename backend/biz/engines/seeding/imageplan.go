@@ -357,6 +357,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 				ScenePreference:        bp.ScenePreference,
 				ExtraRequirement:       stripCjkFromBlueprintRequirement(bp.ExtraRequirement),
 				BridalKeywordProfileID: bp.KeywordProfileID,
+				CameraScale:            bp.CameraScale,
 			})
 		}
 		return drafts
@@ -386,6 +387,7 @@ func getBridalImageDrafts(assets *Assets, topic string, imageCount int, batchSee
 			ImageType:        "拍摄花絮 / 材质图",
 			ScenePreference:  "材质工作台",
 			ExtraRequirement: "Focus on fabric close-up, lace pattern, satin drape, veil texture, embroidery, beadwork, hanger, dress rack, sketch notes, and refined tactile details.",
+			CameraScale:      "partial",
 		},
 		{
 			Name:             "图4-氛围",
@@ -477,6 +479,7 @@ func buildImagePlan(assets *Assets, baseParams PromptParams, draft ImageDraft, i
 	}, " ")
 	params.GenerationNonce = baseParams.GenerationNonce + variantIndex*10 + index + 1
 	params.BridalKeywordProfileID = draft.BridalKeywordProfileID
+	params.CameraScale = draft.CameraScale
 	return FashionSeedingImagePlan{
 		Name:        draft.Name,
 		Purpose:     draft.Purpose,

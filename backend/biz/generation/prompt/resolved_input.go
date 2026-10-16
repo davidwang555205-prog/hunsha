@@ -28,6 +28,7 @@ type ResolvedPromptBase struct {
 	BridalKeywordProfileID string
 	GeneratedImageName     string
 	SceneLocked            bool
+	CameraScale            string
 }
 
 // ResolvedModel 解析后的模特语义（§3.2/§11.4 P0-04）。
@@ -97,6 +98,7 @@ func ResolvePromptInput(p Params) ResolvedPromptInput {
 			BridalKeywordProfileID: p.BridalKeywordProfileID,
 			GeneratedImageName:     p.GeneratedImageName,
 			SceneLocked:            p.SceneLocked,
+			CameraScale:            p.CameraScale,
 		},
 		Model: ResolvedModel{LegacyModelChoice: p.ModelChoice},
 	}
@@ -123,5 +125,6 @@ func (b ResolvedPromptBase) toLegacyParams() Params {
 		BridalKeywordProfileID: b.BridalKeywordProfileID,
 		GeneratedImageName:     b.GeneratedImageName,
 		SceneLocked:            b.SceneLocked,
+		CameraScale:            b.CameraScale,
 	}
 }
